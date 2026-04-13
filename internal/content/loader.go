@@ -3,6 +3,7 @@ package content
 import (
 	"os"
 	"path/filepath"
+	"sort"
 )
 
 // ContentLoader merges packs from multiple layers: official → company → user → project.
@@ -43,6 +44,9 @@ func (cl *ContentLoader) LoadPacks(profile *Profile) ([]*Pack, error) {
 	for _, p := range packMap {
 		packs = append(packs, p)
 	}
+	sort.Slice(packs, func(i, j int) bool {
+		return packs[i].Weight > packs[j].Weight
+	})
 	return ApplyWeights(packs, profile), nil
 }
 

@@ -126,10 +126,7 @@ func parseTips(md string) []Tip {
 	sections := strings.Split(md, "\n## ")
 	for i, section := range sections {
 		if i == 0 && !strings.HasPrefix(section, "## ") {
-			section = strings.TrimPrefix(section, "## ")
-			if strings.TrimSpace(section) == "" {
-				continue
-			}
+			continue // preamble before first heading — not a tip
 		}
 		lines := strings.SplitN(strings.TrimSpace(section), "\n", 3)
 		if len(lines) == 0 {
