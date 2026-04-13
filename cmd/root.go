@@ -81,9 +81,11 @@ func newAdapterEngine(renderedContext string, opts adapter.Options) (*adapter.En
 		}
 	}
 
-	// Dev fallback: always merge local content/adapters (overrides by ID)
-	if a, err := adapter.LoadAdapters("content/adapters"); err == nil {
-		allAdapters = mergeAdapters(allAdapters, a)
+	// Dev fallback: only when SAP_DEVS_DEV=1 (local development from repo root)
+	if os.Getenv("SAP_DEVS_DEV") == "1" {
+		if a, err := adapter.LoadAdapters("content/adapters"); err == nil {
+			allAdapters = mergeAdapters(allAdapters, a)
+		}
 	}
 
 	return adapter.NewEngine(allAdapters, renderedContext, opts), nil

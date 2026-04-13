@@ -11,7 +11,6 @@ import (
 )
 
 var (
-	injectGlobal  bool
 	injectProject bool
 	injectTool    string
 	injectDryRun  bool
@@ -22,9 +21,9 @@ var injectCmd = &cobra.Command{
 	Short: "Push SAP context to your AI tools",
 	Long: `Inject up-to-date SAP developer context into all detected AI tools.
 
-By default, injects at global (user) scope into tools such as Claude Code,
-Cursor, and GitHub Copilot. Use --project to inject into project-level files
-(CLAUDE.md, .cursorrules, etc.) in the current directory.`,
+Injects at global (user) scope by default into tools such as Claude Code,
+Cursor, and GitHub Copilot. Use --project to opt into project scope and inject
+into project-level files (CLAUDE.md, .cursorrules, etc.) in the current directory.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		// Resolve scope
 		scope := "global"
@@ -52,6 +51,9 @@ Cursor, and GitHub Copilot. Use --project to inject into project-level files
 			activeProfile, err = loader.FindProfile(configProfile.ID)
 			if err != nil {
 				return err
+			}
+			if activeProfile == nil {
+				return fmt.Errorf("profile %q not found in any content layer", configProfile.ID)
 			}
 		}
 
@@ -92,10 +94,8 @@ Cursor, and GitHub Copilot. Use --project to inject into project-level files
 }
 
 func init() {
-	injectCmd.Flags().BoolVar(&injectGlobal, "global", true, "inject at user (global) scope (default)")
 	injectCmd.Flags().BoolVar(&injectProject, "project", false, "inject at project scope (current directory)")
 	injectCmd.Flags().StringVar(&injectTool, "tool", "", "inject into a specific tool only (e.g. claude-code)")
 	injectCmd.Flags().BoolVar(&injectDryRun, "dry-run", false, "preview changes without writing files")
-	injectCmd.MarkFlagsMutuallyExclusive("global", "project")
 	rootCmd.AddCommand(injectCmd)
 }
