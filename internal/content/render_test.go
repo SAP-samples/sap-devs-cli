@@ -34,13 +34,21 @@ func TestRenderContext_WithProfile(t *testing.T) {
 
 	out := content.RenderContext(packs, profile)
 
-	assert.Contains(t, out, "CAP Developer")
+	// Exact format check
+	assert.Contains(t, out, "**Developer Profile:** CAP Developer — Building cloud-native apps with SAP CAP on BTP")
 	assert.Contains(t, out, "CAP context.")
+	// Profile line appears before pack content
+	profileIdx := strings.Index(out, "**Developer Profile:**")
+	packIdx := strings.Index(out, "CAP context.")
+	assert.Less(t, profileIdx, packIdx, "profile line should appear before pack content")
 }
 
 func TestRenderContext_EmptyPacks(t *testing.T) {
 	out := content.RenderContext(nil, nil)
-	assert.NotEmpty(t, out) // Always emits the SAP header
+	assert.True(t, strings.HasPrefix(out, "# SAP Developer Context\n"))
+	assert.True(t, strings.HasSuffix(out, "\n") && !strings.HasSuffix(out, "\n\n"),
+		"output should end with exactly one newline")
+	assert.NotContains(t, out, "\n\n\n")
 }
 
 func TestRenderContext_SkipsEmptyContext(t *testing.T) {
@@ -53,4 +61,11 @@ func TestRenderContext_SkipsEmptyContext(t *testing.T) {
 	assert.Contains(t, out, "BTP content.")
 	// The empty pack should not add extra blank lines
 	assert.NotContains(t, out, "\n\n\n")
+}
+
+func TestRenderContext_SingleTrailingNewline(t *testing.T) {
+	packs := []*content.Pack{{ID: "cap", ContextMD: "## CAP\n\nContent.\n\n\n"}}
+	out := content.RenderContext(packs, nil)
+	assert.True(t, strings.HasSuffix(out, "\n"), "output should end with a newline")
+	assert.False(t, strings.HasSuffix(out, "\n\n"), "output should not end with double newline")
 }
