@@ -1,7 +1,6 @@
 package xdg_test
 
 import (
-	"os"
 	"runtime"
 	"strings"
 	"testing"
