@@ -272,7 +272,9 @@ The `id` is used by `sap-devs mcp install <id>`. The `hosts` list determines whi
 
 ```
 sap-devs init                     First-time setup wizard
-sap-devs sync                     Pull latest from all configured content repos
+sap-devs sync                     Sync all stale categories now (foreground, shows progress)
+  --force                         Re-sync all categories regardless of TTL
+  --category <name>               Sync a single category only (tips/tools/resources/context/mcp/advocates)
 sap-devs inject                   Push SAP context to all detected AI tools
   --tool <name>                   Target a specific tool only
   --global                        User-level injection (default)
@@ -420,19 +422,58 @@ extra_context: |                # freeform text appended to injected AI context
 
 ## Sync & Update Mechanism
 
-**Content sync (`sap-devs sync`):**
+### Automated Background Refresh
 
-- Fetches latest from the official content repo via HTTP — downloads a tagged zip archive from GitHub Releases (no git binary required, consistent with the single-binary no-runtime-dependency principle)
+Content freshness is managed by **per-category TTLs**. On every `sap-devs` command invocation, the binary checks the last-sync timestamp for each content category against its configured TTL. Any stale category is fetched in a background goroutine — non-blocking, so the command executes immediately. If anything was updated before the command completes, a single summary line is printed (e.g., `↻ Updated: tips, tools`). If the refresh is still in progress when the command finishes, it continues silently in the background.
+
+Default TTLs (configurable per-category in `config.yaml`):
+
+| Category | Default TTL | Rationale |
+| --- | --- | --- |
+| `tips` | 24h | Seen on every terminal open — staleness is immediately visible |
+| `tools` | 24h | SDK version info is time-sensitive |
+| `advocates` | 72h | New blog posts and videos appear frequently |
+| `resources` | 168h (weekly) | Links are stable; curation cadence is slow |
+| `context` | 168h (weekly) | Authored prose; changes rarely |
+| `mcp` | 168h (weekly) | Server definitions are stable |
+
+**`config.yaml` sync configuration:**
+
+```yaml
+sync:
+  tips:      24h
+  tools:     24h
+  advocates: 72h
+  resources: 168h
+  context:   168h
+  mcp:       168h
+  disabled: false    # set true to disable all automatic background sync
+```
+
+Set a category to `0` to disable automatic refresh for it (manual `sap-devs sync --category <name>` only). Set `disabled: true` to opt out of all automatic sync (fully offline / enterprise-locked environments).
+
+### Manual Sync Commands
+
+```
+sap-devs sync                     Sync all stale categories now (foreground, with progress)
+sap-devs sync --force             Force re-sync all categories regardless of TTL
+sap-devs sync --category tips     Sync a single category only
+```
+
+### Content Sync Implementation
+
+- Fetches from the official content repo via HTTP — downloads a tagged zip archive from GitHub Releases (no git binary required, consistent with the single-binary no-runtime-dependency principle)
+- Each content category is a separately downloadable archive so only stale categories are fetched, not the entire content repo
 - Company repos: if the URL is a GitHub/GitLab HTTPS URL, the same HTTP archive mechanism is used. Private repos require a personal access token configured via `sap-devs config set company_token <token>`, stored in the OS keychain or config file. Internal git servers (non-GitHub/GitLab) are **not supported in v1**; the company repo must be a GitHub or GitLab instance accessible over HTTPS.
 - Updates local cache; preserves user overrides
-- Runs automatically on `init`; otherwise on-demand
+- `sap-devs init` performs the initial full sync; subsequent runs use the TTL-based background model
 - Full offline support after first sync — no network dependency for `inject`, `tip`, `doctor`, `resources`
 
-**Binary self-update (`sap-devs update`):**
+### Binary Self-Update
 
-- Checks GitHub Releases for a newer binary
-- Downloads, verifies checksum, replaces current binary
-- Separate from content sync — binary and content version independently
+- `sap-devs update` checks GitHub Releases for a newer binary, downloads, verifies checksum, and replaces the current binary
+- Binary versioning is independent of content versioning — the binary can be updated without re-syncing content and vice versa
+- Binary update check TTL defaults to 168h (weekly) and is also configurable under `sync` in `config.yaml`
 
 ---
 
