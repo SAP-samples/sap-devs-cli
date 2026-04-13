@@ -125,9 +125,11 @@ func addShellHook() error {
 }
 
 func runInjectGlobal() error {
+	prevProject, prevDryRun, prevTool := injectProject, injectDryRun, injectTool
 	injectProject = false
 	injectDryRun = false
 	injectTool = ""
+	defer func() { injectProject, injectDryRun, injectTool = prevProject, prevDryRun, prevTool }()
 	return injectCmd.RunE(injectCmd, nil)
 }
 
