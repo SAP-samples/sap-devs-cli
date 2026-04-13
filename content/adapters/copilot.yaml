@@ -1,0 +1,11 @@
+id: copilot
+name: GitHub Copilot
+type: file-inject
+targets:
+  - scope: project
+    path: ".github/copilot-instructions.md"
+    mode: replace-section
+    section: "SAP Developer Context"
+detect:
+  - path: "~/.config/github-copilot"
+  - command: "gh extension list"

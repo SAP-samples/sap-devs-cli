@@ -1,0 +1,5 @@
+id: gemini
+name: Google Gemini
+type: clipboard-export
+format: markdown
+instructions: "Paste this into Gemini → Settings → Custom Instructions or into your Gemini for Google Workspace prompt."

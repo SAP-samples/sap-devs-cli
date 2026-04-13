@@ -1,0 +1,5 @@
+id: chatgpt
+name: ChatGPT
+type: clipboard-export
+format: markdown
+instructions: "Paste this into ChatGPT → Settings → Custom Instructions → 'What would you like ChatGPT to know about you?'"

@@ -1,4 +1,15 @@
-# Adapter definition — implemented in Plan 2
 id: cursor
 name: Cursor
 type: file-inject
+targets:
+  - scope: global
+    path: "~/.cursor/rules/sap-developer-context.mdc"
+    mode: replace-section
+    section: "SAP Developer Context"
+  - scope: project
+    path: ".cursorrules"
+    mode: replace-section
+    section: "SAP Developer Context"
+detect:
+  - path: "~/.cursor"
+  - command: "cursor --version"
