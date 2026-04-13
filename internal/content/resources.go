@@ -11,13 +11,14 @@ func FlattenResources(packs []*Pack) []Resource {
 	return out
 }
 
-// FilterResources returns resources whose title, type, or any tag contains query
+// FilterResources returns resources whose id, title, type, or any tag contains query
 // (case-insensitive substring match).
 func FilterResources(resources []Resource, query string) []Resource {
 	q := strings.ToLower(query)
 	var out []Resource
 	for _, r := range resources {
-		if strings.Contains(strings.ToLower(r.Title), q) ||
+		if strings.Contains(strings.ToLower(r.ID), q) ||
+			strings.Contains(strings.ToLower(r.Title), q) ||
 			strings.Contains(strings.ToLower(r.Type), q) {
 			out = append(out, r)
 			continue
