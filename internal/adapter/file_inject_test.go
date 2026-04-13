@@ -40,7 +40,8 @@ func TestReplaceSection_Idempotent(t *testing.T) {
 	// Second inject with different content
 	require.NoError(t, adapter.ReplaceSection(path, "SAP Developer Context", "v2 content", false))
 
-	got, _ := os.ReadFile(path)
+	got, err := os.ReadFile(path)
+	require.NoError(t, err)
 	content := string(got)
 
 	// Only one section
@@ -70,4 +71,30 @@ func TestReplaceSection_DryRun(t *testing.T) {
 	// File should not be created in dry-run
 	_, err = os.Stat(path)
 	assert.True(t, os.IsNotExist(err))
+}
+
+func TestExpandHome_TildeSlash(t *testing.T) {
+	result, err := adapter.ExpandHome("~/foo/bar")
+	require.NoError(t, err)
+	home, _ := os.UserHomeDir()
+	assert.Equal(t, filepath.Join(home, "foo", "bar"), result)
+}
+
+func TestExpandHome_TildeOnly(t *testing.T) {
+	result, err := adapter.ExpandHome("~")
+	require.NoError(t, err)
+	home, _ := os.UserHomeDir()
+	assert.Equal(t, home, result)
+}
+
+func TestExpandHome_NoTilde(t *testing.T) {
+	result, err := adapter.ExpandHome("/absolute/path")
+	require.NoError(t, err)
+	assert.Equal(t, "/absolute/path", result)
+}
+
+func TestExpandHome_Relative(t *testing.T) {
+	result, err := adapter.ExpandHome("./relative/path")
+	require.NoError(t, err)
+	assert.Equal(t, "./relative/path", result)
 }

@@ -36,6 +36,12 @@ func ReplaceSection(filePath, section, content string, dryRun bool) error {
 	var result string
 	startIdx := strings.Index(existing, start)
 	endIdx := strings.Index(existing, end)
+
+	// Detect orphaned/mismatched markers
+	if (startIdx == -1) != (endIdx == -1) {
+		return fmt.Errorf("file %s has mismatched section markers for %q; fix manually", filePath, section)
+	}
+
 	if startIdx != -1 && endIdx != -1 && endIdx > startIdx {
 		// Replace in-place; consume the trailing newline after the end marker if present
 		afterEnd := endIdx + len(end)
