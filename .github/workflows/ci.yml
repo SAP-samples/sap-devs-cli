@@ -2,9 +2,11 @@ name: CI
 on: [push, pull_request]
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64]
     steps:
       - uses: actions/checkout@v4
+      - name: Install X11 dev headers (required by golang.design/x/clipboard)
+        run: sudo apt-get install -y libx11-dev
       - uses: actions/setup-go@v5
         with:
           go-version: 'stable'
