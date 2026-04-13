@@ -3,6 +3,7 @@ package xdg_test
 import (
 	"os"
 	"runtime"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -30,8 +31,15 @@ func TestNew_XDGEnvOverridesOnLinux(t *testing.T) {
 	if runtime.GOOS != "linux" {
 		t.Skip("XDG env vars only honoured on Linux")
 	}
-	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	configBase := t.TempDir()
+	cacheBase := t.TempDir()
+	dataBase := t.TempDir()
+	t.Setenv("XDG_CONFIG_HOME", configBase)
+	t.Setenv("XDG_CACHE_HOME", cacheBase)
+	t.Setenv("XDG_DATA_HOME", dataBase)
 	paths, err := xdg.New()
 	require.NoError(t, err)
-	assert.Contains(t, paths.ConfigDir, "sap-devs")
+	assert.True(t, strings.HasPrefix(paths.ConfigDir, configBase), "ConfigDir should start with XDG_CONFIG_HOME")
+	assert.True(t, strings.HasPrefix(paths.CacheDir, cacheBase), "CacheDir should start with XDG_CACHE_HOME")
+	assert.True(t, strings.HasPrefix(paths.DataDir, dataBase), "DataDir should start with XDG_DATA_HOME")
 }

@@ -86,6 +86,6 @@ func dataDir(configDir string) (string, error) {
 		}
 		return filepath.Join(base, appName, "data"), nil
 	}
-	// macOS: sibling of config dir
+	// macOS: ~/Library/Application Support/sap-devs/data
 	return filepath.Join(configDir, "data"), nil
 }
