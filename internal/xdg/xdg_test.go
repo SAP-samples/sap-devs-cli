@@ -2,6 +2,7 @@ package xdg_test
 
 import (
 	"os"
+	"runtime"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -26,8 +27,8 @@ func TestNew_PathsContainAppName(t *testing.T) {
 }
 
 func TestNew_XDGEnvOverridesOnLinux(t *testing.T) {
-	if os.Getenv("GOOS") == "windows" {
-		t.Skip("XDG env vars not honoured on Windows")
+	if runtime.GOOS != "linux" {
+		t.Skip("XDG env vars only honoured on Linux")
 	}
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
 	paths, err := xdg.New()
