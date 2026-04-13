@@ -13,7 +13,9 @@ import (
 func ExportToClipboard(content, instructions string, dryRun bool) error {
 	if dryRun {
 		fmt.Printf("[dry-run] would copy %d bytes to clipboard\n", len(content))
-		fmt.Printf("[dry-run] instructions: %s\n", instructions)
+		if instructions != "" {
+			fmt.Printf("[dry-run] instructions: %s\n", instructions)
+		}
 		return nil
 	}
 
@@ -26,7 +28,15 @@ func ExportToClipboard(content, instructions string, dryRun bool) error {
 		return nil
 	}
 
-	clipboard.Write(clipboard.FmtText, []byte(content))
+	ch := clipboard.Write(clipboard.FmtText, []byte(content))
+	if ch == nil {
+		// Write failed despite Init succeeding — fall back to stdout
+		fmt.Printf("--- SAP Developer Context ---\n%s\n--- End ---\n", strings.TrimSpace(content))
+		if instructions != "" {
+			fmt.Printf("\n%s\n", instructions)
+		}
+		return nil
+	}
 	fmt.Println("SAP developer context copied to clipboard.")
 	if instructions != "" {
 		fmt.Printf("%s\n", instructions)
