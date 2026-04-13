@@ -54,6 +54,10 @@ func TestInjectEndToEnd(t *testing.T) {
 
 	// Second run — idempotent
 	require.NoError(t, engine.Run())
-	data2, _ := os.ReadFile(claudeMD)
-	assert.Equal(t, 1, strings.Count(string(data2), "<!-- sap-devs:start:SAP Developer Context -->"))
+	data2, err := os.ReadFile(claudeMD)
+	require.NoError(t, err)
+	result2 := string(data2)
+	assert.Equal(t, 1, strings.Count(result2, "<!-- sap-devs:start:SAP Developer Context -->"))
+	assert.Contains(t, result2, "# My Project")
+	assert.Contains(t, result2, "My notes.")
 }
