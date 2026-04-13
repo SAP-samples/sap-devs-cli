@@ -42,8 +42,11 @@ func newContentLoader() (*content.ContentLoader, error) {
 		loader.CompanyDir = filepath.Join(paths.CacheDir, "company")
 	}
 	// Check for per-project .sap-devs dir
-	if _, err := os.Stat(".sap-devs"); err == nil {
-		loader.ProjectDir = ".sap-devs"
+	if wd, wdErr := os.Getwd(); wdErr == nil {
+		projectDir := filepath.Join(wd, ".sap-devs")
+		if _, err := os.Stat(projectDir); err == nil {
+			loader.ProjectDir = projectDir
+		}
 	}
 	return loader, nil
 }

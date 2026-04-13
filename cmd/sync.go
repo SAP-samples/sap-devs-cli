@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -68,20 +69,23 @@ var syncCmd = &cobra.Command{
 			return fmt.Errorf("sync official content: %w", err)
 		}
 
-		for _, cat := range categories {
-			if err := engine.MarkSynced(cat); err != nil {
-				return err
-			}
+		if err := engine.MarkAllSynced(categories); err != nil {
+			return err
 		}
 		fmt.Printf("Updated: %v\n", categories)
 
 		// Sync company repo if configured
 		if cfg.CompanyRepo != "" {
-			companyCache := filepath.Join(paths.CacheDir, "company")
-			companyArchive := cfg.CompanyRepo + "/archive/refs/heads/main.zip"
-			fmt.Println("Syncing company repo...")
-			if err := sapSync.FetchArchive(companyArchive, companyCache); err != nil {
-				fmt.Printf("Warning: company repo sync failed: %v\n", err)
+			if !strings.HasPrefix(cfg.CompanyRepo, "https://") {
+				fmt.Printf("Warning: company_repo must be an HTTPS URL (got: %s) — skipping sync.\n", cfg.CompanyRepo)
+			} else {
+				companyCache := filepath.Join(paths.CacheDir, "company")
+				repoURL := strings.TrimRight(cfg.CompanyRepo, "/")
+				companyArchive := repoURL + "/archive/refs/heads/main.zip"
+				fmt.Println("Syncing company repo...")
+				if err := sapSync.FetchArchive(companyArchive, companyCache); err != nil {
+					fmt.Printf("Warning: company repo sync failed: %v\n", err)
+				}
 			}
 		}
 		return nil
