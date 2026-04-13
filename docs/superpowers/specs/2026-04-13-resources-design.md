@@ -74,8 +74,9 @@ Thin presentation layer only. All data logic stays in `internal/content`.
 ### `resources list`
 
 1. Load active profile: `config.LoadProfile` → `loader.FindProfile`
-2. **No profile set → print `"No profile set. Run 'sap-devs profile set <name>' first."` and exit 1.**
-   *(This intentionally diverges from `tip.go` which runs without a profile. `list` is profile-filtered by definition — showing all resources when no profile is set would be misleading.)*
+2. **No profile set** (empty ID) → print `"No profile set. Run 'sap-devs profile set <name>' first."` and exit 1.
+   **Profile ID configured but not found** (`FindProfile` returns `nil, nil`) → print `"Profile '<id>' not found. Run 'sap-devs sync' to refresh content."` and exit 1.
+   *(Both cases intentionally diverge from `tip.go` which runs without a profile. `list` is profile-filtered by definition — showing all resources with a missing/unknown profile would be misleading.)*
 3. Call `loader.LoadPacks(activeProfile)` — returns profile-weighted packs
 4. Call `content.FlattenResources(packs)`
 5. Print aligned table (no `PACK` column):
