@@ -9,4 +9,6 @@ jobs:
         with:
           go-version: 'stable'
       - run: go test ./...
-      - run: go build ./...
+      - run: |
+          VERSION=$(git describe --tags --always --dirty)
+          go build -ldflags "-X github.tools.sap/developer-relations/sap-devs-cli/cmd.Version=${VERSION}" -o sap-devs .
