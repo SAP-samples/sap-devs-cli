@@ -35,11 +35,11 @@ func newContentLoader() (*content.ContentLoader, error) {
 		return nil, err
 	}
 	loader := &content.ContentLoader{
-		OfficialDir: filepath.Join(paths.CacheDir, "official"),
+		OfficialDir: filepath.Join(paths.CacheDir, "official", "content"),
 		UserDir:     paths.DataDir,
 	}
 	if cfg.CompanyRepo != "" {
-		loader.CompanyDir = filepath.Join(paths.CacheDir, "company")
+		loader.CompanyDir = filepath.Join(paths.CacheDir, "company", "content")
 	}
 	// Check for per-project .sap-devs dir
 	if wd, wdErr := os.Getwd(); wdErr == nil {

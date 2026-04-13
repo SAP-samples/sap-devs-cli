@@ -18,7 +18,7 @@ func TestFetcher_DownloadsAndExtractsZip(t *testing.T) {
 	// Create an in-memory zip with one file
 	buf := new(bytes.Buffer)
 	w := zip.NewWriter(buf)
-	f, _ := w.Create("packs/cap/pack.yaml")
+	f, _ := w.Create("sap-devs-cli-main/content/packs/cap/pack.yaml")
 	f.Write([]byte("id: cap\nname: CAP\n"))
 	w.Close()
 
@@ -32,7 +32,7 @@ func TestFetcher_DownloadsAndExtractsZip(t *testing.T) {
 	err := sapSync.FetchArchive(srv.URL, dest)
 	require.NoError(t, err)
 
-	data, err := os.ReadFile(filepath.Join(dest, "packs", "cap", "pack.yaml"))
+	data, err := os.ReadFile(filepath.Join(dest, "content", "packs", "cap", "pack.yaml"))
 	require.NoError(t, err)
 	assert.Contains(t, string(data), "id: cap")
 }
