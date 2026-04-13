@@ -141,3 +141,18 @@ func TestEngine_FilterByTool(t *testing.T) {
 	assert.NoError(t, errA, "tool-a target should be written")
 	assert.True(t, os.IsNotExist(errB), "tool-b target should be skipped")
 }
+
+func TestEngine_ClipboardSkippedForProject(t *testing.T) {
+	adapters := []adapter.Adapter{
+		{
+			ID:           "chatgpt",
+			Type:         "clipboard-export",
+			Instructions: "Paste into ChatGPT.",
+		},
+	}
+
+	// clipboard-export should be skipped entirely for project scope
+	engine := adapter.NewEngine(adapters, "content", adapter.Options{Scope: "project"})
+	// Should run without error (skipped, not attempted)
+	require.NoError(t, engine.Run())
+}

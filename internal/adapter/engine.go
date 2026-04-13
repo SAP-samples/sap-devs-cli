@@ -55,12 +55,15 @@ func (e *Engine) runFileInject(a Adapter) error {
 		}
 		path, err := ExpandHome(target.Path)
 		if err != nil {
-			return err
+			return fmt.Errorf("target %s: %w", target.Path, err)
 		}
-		if target.Mode == "replace-section" {
+		switch target.Mode {
+		case "replace-section":
 			if err := ReplaceSection(path, target.Section, e.context, e.opts.DryRun); err != nil {
-				return err
+				return fmt.Errorf("target %s: %w", target.Path, err)
 			}
+		default:
+			return fmt.Errorf("target %s: unknown mode %q", target.Path, target.Mode)
 		}
 	}
 	return nil
