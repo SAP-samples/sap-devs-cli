@@ -13,3 +13,7 @@ targets:
 detect:
   - command: "claude --version"
   - path: "~/.claude"
+mcp_config:
+  path: "~/.claude/settings.json"
+  format: json
+  key: "mcpServers"

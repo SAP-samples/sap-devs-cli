@@ -7,9 +7,13 @@ targets:
     mode: replace-section
     section: "SAP Developer Context"
   - scope: project
-    path: ".cursorrules"
+    path: ".cursor/rules/sap-developer-context.mdc"
     mode: replace-section
     section: "SAP Developer Context"
 detect:
   - path: "~/.cursor"
   - command: "cursor --version"
+mcp_config:
+  path: "~/.cursor/mcp.json"
+  format: json
+  key: "mcpServers"
