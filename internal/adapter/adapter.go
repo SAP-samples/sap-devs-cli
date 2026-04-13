@@ -16,8 +16,8 @@ type Adapter struct {
 	ClipFormat   string     `yaml:"format"`
 	Template     string     `yaml:"template"`
 	Instructions string     `yaml:"instructions"`
-	MCPConfig    *MCPConfig `yaml:"mcp_config,omitempty"`
-	Detect       []DetectRule `yaml:"detect"`
+	MCPConfig *MCPConfig `yaml:"mcp_config,omitempty"`
+	Detect    []DetectRule `yaml:"detect"`
 }
 
 // Target is a single file injection target.

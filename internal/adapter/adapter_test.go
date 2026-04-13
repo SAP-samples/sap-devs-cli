@@ -51,6 +51,21 @@ func TestLoadAdapters_NonexistentDir(t *testing.T) {
 	assert.Empty(t, adapters)
 }
 
+func TestLoadAdapters_SkipsNoID(t *testing.T) {
+	dir := t.TempDir()
+	writeYAML(t, filepath.Join(dir, "incomplete.yaml"), "name: Incomplete\ntype: file-inject\n")
+	adapters, err := adapter.LoadAdapters(dir)
+	require.NoError(t, err)
+	assert.Empty(t, adapters)
+}
+
+func TestLoadAdapters_MalformedYAML(t *testing.T) {
+	dir := t.TempDir()
+	writeYAML(t, filepath.Join(dir, "bad.yaml"), "id: [broken yaml")
+	_, err := adapter.LoadAdapters(dir)
+	require.Error(t, err)
+}
+
 func writeYAML(t *testing.T, path, content string) {
 	t.Helper()
 	require.NoError(t, os.WriteFile(path, []byte(content), 0644))
