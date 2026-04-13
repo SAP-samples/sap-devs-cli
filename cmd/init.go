@@ -104,8 +104,8 @@ func addShellHook() error {
 			if err != nil {
 				return err
 			}
-			defer f.Close()
 			_, err = f.WriteString("\n# SAP developer tips\nsap-devs tip\n")
+			f.Close()
 			return err
 		}
 	}
