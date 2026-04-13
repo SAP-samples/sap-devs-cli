@@ -81,11 +81,9 @@ func newAdapterEngine(renderedContext string, opts adapter.Options) (*adapter.En
 		}
 	}
 
-	// Fall back to bundled adapters in the working directory (dev mode)
-	if len(allAdapters) == 0 {
-		if a, err := adapter.LoadAdapters("content/adapters"); err == nil {
-			allAdapters = a
-		}
+	// Dev fallback: always merge local content/adapters (overrides by ID)
+	if a, err := adapter.LoadAdapters("content/adapters"); err == nil {
+		allAdapters = mergeAdapters(allAdapters, a)
 	}
 
 	return adapter.NewEngine(allAdapters, renderedContext, opts), nil
