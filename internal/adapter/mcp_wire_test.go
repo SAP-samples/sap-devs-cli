@@ -65,7 +65,8 @@ func TestWriteMCPConfig_Idempotent(t *testing.T) {
 	// Existing key preserved
 	assert.Equal(t, "dark", result["theme"])
 	// Server is present once
-	servers := result["mcpServers"].(map[string]interface{})
+	servers, ok := result["mcpServers"].(map[string]interface{})
+	require.True(t, ok, "mcpServers should be a JSON object")
 	assert.Len(t, servers, 1)
 }
 
@@ -78,4 +79,15 @@ func TestWriteMCPConfig_DryRun(t *testing.T) {
 
 	_, err := os.Stat(settingsPath)
 	assert.True(t, os.IsNotExist(err))
+}
+
+func TestWriteMCPConfig_BadKeyType(t *testing.T) {
+	dir := t.TempDir()
+	settingsPath := filepath.Join(dir, "settings.json")
+	require.NoError(t, os.WriteFile(settingsPath, []byte(`{"mcpServers":"not-an-object"}`), 0644))
+
+	server := content.MCPServer{ID: "cap-mcp", Install: content.MCPInstall{Command: "npx"}}
+	err := adapter.WriteMCPConfig(settingsPath, "mcpServers", server, false)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "not a JSON object")
 }

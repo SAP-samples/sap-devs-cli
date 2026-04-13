@@ -33,19 +33,25 @@ func WriteMCPConfig(settingsPath, key string, server content.MCPServer, dryRun b
 
 	// Get or create the mcpServers map
 	var servers map[string]interface{}
-	if v, ok := root[key]; ok {
-		if m, ok := v.(map[string]interface{}); ok {
-			servers = m
+	if v, ok := root[key]; ok && v != nil {
+		m, ok := v.(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("key %q in %s is not a JSON object (got %T); cannot merge", key, settingsPath, v)
 		}
+		servers = m
 	}
 	if servers == nil {
 		servers = make(map[string]interface{})
 	}
 
 	// Build the server entry
+	args := server.Install.Args
+	if args == nil {
+		args = []string{}
+	}
 	entry := map[string]interface{}{
 		"command": server.Install.Command,
-		"args":    server.Install.Args,
+		"args":    args,
 	}
 	servers[server.ID] = entry
 	root[key] = servers
