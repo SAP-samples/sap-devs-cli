@@ -1,0 +1,91 @@
+<h2>Content Repository Structure</h2>
+<p class="subtitle">How knowledge packs are organized in the git repo. Does this structure feel right?</p>
+
+<div class="split">
+  <div class="mockup">
+    <div class="mockup-header">📁 sap-devs-cli/content/</div>
+    <div class="mockup-body" style="font-family: monospace; font-size: 0.8rem; line-height: 1.9;">
+      <div style="color: #0070f3;">content/</div>
+      <div style="margin-left: 1rem;">
+        <div style="color: #ffa000;">packs/</div>
+        <div style="margin-left: 1rem; color: #aaa;">
+          <div>cap/</div>
+          <div style="margin-left: 1rem; color: #666;">
+            <div>pack.yaml &nbsp;&nbsp;<span style="color:#444;">← metadata</span></div>
+            <div>context.md &nbsp;<span style="color:#444;">← AI context text</span></div>
+            <div>resources.yaml <span style="color:#444;">← links</span></div>
+            <div>tools.yaml &nbsp;&nbsp;<span style="color:#444;">← tool catalog</span></div>
+            <div>mcp.yaml &nbsp;&nbsp;&nbsp;<span style="color:#444;">← MCP server defs</span></div>
+            <div>tips.md &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#444;">← tip pool</span></div>
+          </div>
+          <div>abap/</div>
+          <div>btp-core/</div>
+          <div>fiori/</div>
+          <div>sap-build/</div>
+          <div>integration/</div>
+          <div>analytics/</div>
+        </div>
+        <div style="color: #ffa000;">advocates/</div>
+        <div style="margin-left: 1rem; color: #666;">
+          <div>thomas-jung.yaml</div>
+          <div>daniel-van-leeuwen.yaml</div>
+          <div>rich-heilman.yaml</div>
+          <div>...</div>
+        </div>
+        <div style="color: #ffa000;">profiles/</div>
+        <div style="margin-left: 1rem; color: #666;">
+          <div>abap-developer.yaml</div>
+          <div>cap-developer.yaml</div>
+          <div>fiori-developer.yaml</div>
+          <div>btp-developer.yaml</div>
+          <div>...</div>
+        </div>
+        <div style="color: #ffa000;">adapters/</div>
+        <div style="margin-left: 1rem; color: #666;">
+          <div>claude-code.yaml</div>
+          <div>cursor.yaml</div>
+          <div>copilot.yaml</div>
+          <div>chatgpt.yaml</div>
+          <div>gemini.yaml</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mockup">
+    <div class="mockup-header">📄 content/packs/cap/pack.yaml</div>
+    <div class="mockup-body" style="font-family: monospace; font-size: 0.78rem; line-height: 1.7; color: #ccc;">
+      <div><span style="color:#0070f3;">id</span>: cap</div>
+      <div><span style="color:#0070f3;">name</span>: SAP Cloud Application Programming Model</div>
+      <div><span style="color:#0070f3;">description</span>: CAP framework for Node.js and Java</div>
+      <div><span style="color:#0070f3;">tags</span>: [cloud, btp, node, java, odata]</div>
+      <div><span style="color:#0070f3;">profiles</span>: [cap-developer, btp-developer]</div>
+      <div><span style="color:#0070f3;">weight</span>: 100 <span style="color:#444;"># base priority</span></div>
+      <div>&nbsp;</div>
+      <div style="color: #888;"># context.md injected into AI tools</div>
+      <div style="color: #888;"># resources.yaml — curated links:</div>
+      <div style="margin-left: 1rem; color: #666;">
+        <div>- title: CAP Documentation</div>
+        <div>&nbsp;&nbsp;url: https://cap.cloud.sap</div>
+        <div>&nbsp;&nbsp;type: official-docs</div>
+        <div>&nbsp;&nbsp;tags: [reference]</div>
+        <div>- title: SAP Devs YouTube — CAP</div>
+        <div>&nbsp;&nbsp;url: https://youtube.com/...</div>
+        <div>&nbsp;&nbsp;type: video</div>
+        <div>&nbsp;&nbsp;advocate: daniel-van-leeuwen</div>
+      </div>
+      <div>&nbsp;</div>
+      <div style="color: #888;"># mcp.yaml — MCP server:</div>
+      <div style="margin-left: 1rem; color: #666;">
+        <div>- id: cap-mcp-server</div>
+        <div>&nbsp;&nbsp;install: npx @sap/cap-mcp</div>
+        <div>&nbsp;&nbsp;hosts: [claude-code, cursor]</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top: 1rem;">
+  <p>A <strong>profile</strong> (e.g., <code>abap-developer.yaml</code>) lists which packs to weight highly and in what order — it doesn't restrict access, just sets priority. The <strong>adapter files</strong> define how each AI tool gets content written to it (file paths, format, template). Adding support for a new AI tool = adding one YAML file.</p>
+  <p class="subtitle" style="margin-top: 0.5rem;">Does this structure make sense? Any pack domains missing from the initial list?</p>
+</div>

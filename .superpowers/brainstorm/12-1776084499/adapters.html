@@ -1,0 +1,80 @@
+<h2>AI Platform Adapter System</h2>
+<p class="subtitle">How the tool injects SAP context into each AI tool. Adding a new tool = adding one YAML file.</p>
+
+<div class="split">
+  <div class="mockup">
+    <div class="mockup-header">📄 content/adapters/claude-code.yaml</div>
+    <div class="mockup-body" style="font-family: monospace; font-size: 0.78rem; line-height: 1.7; color: #ccc;">
+      <div><span style="color:#0070f3;">id</span>: claude-code</div>
+      <div><span style="color:#0070f3;">name</span>: Claude Code</div>
+      <div><span style="color:#0070f3;">type</span>: file-inject</div>
+      <div>&nbsp;</div>
+      <div style="color:#888;"># Where to write context</div>
+      <div><span style="color:#0070f3;">targets</span>:</div>
+      <div style="margin-left:1rem;">
+        <div>- scope: global</div>
+        <div style="margin-left:1rem;">path: <span style="color:#ffa000;">"~/.claude/CLAUDE.md"</span></div>
+        <div style="margin-left:1rem;">mode: append-section</div>
+        <div style="margin-left:1rem;">section: "SAP Developer Context"</div>
+        <div>- scope: project</div>
+        <div style="margin-left:1rem;">path: <span style="color:#ffa000;">"./CLAUDE.md"</span></div>
+        <div style="margin-left:1rem;">mode: append-section</div>
+        <div style="margin-left:1rem;">section: "SAP Developer Context"</div>
+      </div>
+      <div>&nbsp;</div>
+      <div style="color:#888;"># MCP server wiring</div>
+      <div><span style="color:#0070f3;">mcp_config</span>:</div>
+      <div style="margin-left:1rem;">
+        <div>path: <span style="color:#ffa000;">"~/.claude/settings.json"</span></div>
+        <div>format: json</div>
+        <div>key: <span style="color:#ffa000;">"mcpServers"</span></div>
+      </div>
+      <div>&nbsp;</div>
+      <div style="color:#888;"># Detection — is this tool installed?</div>
+      <div><span style="color:#0070f3;">detect</span>:</div>
+      <div style="margin-left:1rem;">
+        <div>- command: <span style="color:#ffa000;">"claude --version"</span></div>
+        <div>- path: <span style="color:#ffa000;">"~/.claude"</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mockup">
+    <div class="mockup-header">Adapter types + known tools</div>
+    <div class="mockup-body" style="font-size: 0.8rem; line-height: 1.8;">
+
+      <div class="label" style="margin-bottom:0.5rem;">FILE INJECT — writes to a config file</div>
+      <div style="font-family: monospace; color: #aaa; font-size: 0.75rem;">
+        <div>✓ claude-code → ~/.claude/CLAUDE.md</div>
+        <div>✓ cursor → .cursorrules</div>
+        <div>✓ copilot → .github/copilot-instructions.md</div>
+        <div>✓ continue → ~/.continue/config.json</div>
+        <div>✓ jetbrains-ai → .idea/ai-instructions.md</div>
+        <div>✓ cody → .cody/context.md</div>
+      </div>
+
+      <div class="label" style="margin: 1rem 0 0.5rem;">CLIPBOARD EXPORT — copies formatted text</div>
+      <div style="font-family: monospace; color: #aaa; font-size: 0.75rem;">
+        <div>✓ chatgpt → custom instructions format</div>
+        <div>✓ gemini → system prompt format</div>
+        <div>✓ claude-ai → project instructions format</div>
+        <div>✓ copilot-chat → custom format</div>
+      </div>
+
+      <div class="label" style="margin: 1rem 0 0.5rem;">MCP WIRE — installs + configures MCP server</div>
+      <div style="font-family: monospace; color: #aaa; font-size: 0.75rem;">
+        <div>✓ claude-code → ~/.claude/settings.json</div>
+        <div>✓ cursor → ~/.cursor/mcp.json</div>
+        <div>✓ vscode-mcp → settings.json</div>
+      </div>
+
+      <div style="margin-top: 1rem; padding: 0.75rem; background: rgba(0,200,100,0.08); border: 1px solid rgba(0,200,100,0.2); border-radius: 6px; font-size: 0.75rem; color: #888;">
+        💡 Adding "tool X tomorrow" = drop a new <code>.yaml</code> file into <code>content/adapters/</code> and submit a PR. No Go code needed.
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top:1rem">
+  <p class="subtitle">Three adapter types cover all cases: file injection for local coding tools, clipboard export for web AI tools, and MCP wiring for hosts that support it. Does this adapter model make sense?</p>
+</div>
