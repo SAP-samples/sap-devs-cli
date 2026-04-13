@@ -21,7 +21,7 @@ func RenderContext(packs []*Pack, profile *Profile) string {
 		if strings.TrimSpace(p.ContextMD) == "" {
 			continue
 		}
-		b.WriteString(strings.TrimRight(p.ContextMD, "\n"))
+		b.WriteString(strings.TrimSpace(p.ContextMD))
 		b.WriteString("\n\n")
 	}
 
