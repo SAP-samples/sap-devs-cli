@@ -1,0 +1,21 @@
+- id: nodejs
+  name: Node.js
+  required: ">=18.0.0"
+  detect:
+    command: "node --version"
+    pattern: "v(\\d+\\.\\d+\\.\\d+)"
+  install:
+    windows: "winget install OpenJS.NodeJS.LTS"
+    macos: "brew install node@20"
+    linux: "nvm install 20"
+  docs: "https://nodejs.org"
+
+- id: cds-dk
+  name: SAP CDS CLI
+  required: ">=7.0.0"
+  detect:
+    command: "cds --version"
+    pattern: "@sap/cds: (\\d+\\.\\d+\\.\\d+)"
+  install:
+    all: "npm install -g @sap/cds-dk"
+  docs: "https://cap.cloud.sap"

@@ -1,0 +1,4 @@
+# Adapter definition — implemented in Plan 2
+id: claude-code
+name: Claude Code
+type: file-inject

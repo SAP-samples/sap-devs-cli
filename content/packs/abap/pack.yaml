@@ -1,0 +1,6 @@
+id: abap
+name: ABAP Cloud
+description: Modern ABAP development for SAP BTP and S/4HANA Cloud
+tags: [abap, s4hana, btp, cloud]
+profiles: [abap-developer]
+weight: 90

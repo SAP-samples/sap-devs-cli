@@ -1,0 +1,4 @@
+# Adapter definition — implemented in Plan 2
+id: cursor
+name: Cursor
+type: file-inject

@@ -1,0 +1,17 @@
+- id: cap/docs-official
+  title: CAP Documentation
+  url: https://cap.cloud.sap/docs
+  type: official-docs
+  tags: [reference, getting-started]
+
+- id: cap/samples-github
+  title: CAP Samples on GitHub
+  url: https://github.com/SAP-samples/cloud-cap-samples
+  type: sample
+  tags: [examples, reference]
+
+- id: cap/community-forum
+  title: SAP Community — CAP
+  url: https://community.sap.com/t5/technology-q-a/questions-related-to-tag/ta-p/9850/tag-id/73555000100800000895
+  type: community
+  tags: [q&a, help]

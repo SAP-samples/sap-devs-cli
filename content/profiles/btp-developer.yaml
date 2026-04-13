@@ -1,0 +1,11 @@
+id: btp-developer
+name: BTP Developer
+description: Platform engineering, integration, and multi-runtime development on SAP BTP
+packs:
+  - id: btp-core
+    weight: 100
+  - id: cap
+    weight: 70
+  - id: abap
+    weight: 40
+tip_tags: [btp, cloud-foundry, kyma, cf]

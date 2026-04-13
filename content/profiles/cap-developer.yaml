@@ -1,0 +1,11 @@
+id: cap-developer
+name: CAP Developer
+description: Building cloud-native apps with SAP CAP on BTP
+packs:
+  - id: cap
+    weight: 100
+  - id: btp-core
+    weight: 80
+  - id: abap
+    weight: 10
+tip_tags: [cap, nodejs, odata, cds, btp]
