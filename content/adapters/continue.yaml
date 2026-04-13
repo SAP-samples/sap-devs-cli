@@ -1,19 +1,18 @@
-id: claude-code
-name: Claude Code
+id: continue
+name: Continue.dev
 type: file-inject
 targets:
   - scope: global
-    path: "~/.claude/CLAUDE.md"
+    path: "~/.continue/sap-context.md"
     mode: replace-section
     section: "SAP Developer Context"
   - scope: project
-    path: "./CLAUDE.md"
+    path: ".continue/sap-context.md"
     mode: replace-section
     section: "SAP Developer Context"
 detect:
-  - command: "claude --version"
-  - path: "~/.claude"
+  - path: "~/.continue"
 mcp_config:
-  path: "~/.claude/settings.json"
+  path: "~/.continue/config.yaml"
   format: json
   key: "mcpServers"

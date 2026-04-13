@@ -1,0 +1,5 @@
+id: claude-ai
+name: Claude.ai
+type: clipboard-export
+format: markdown
+instructions: "Paste this into claude.ai → Settings → Custom Instructions."

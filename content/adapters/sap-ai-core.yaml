@@ -1,0 +1,5 @@
+id: sap-ai-core
+name: SAP AI Core
+type: clipboard-export
+format: markdown
+instructions: "Paste this as a system message in your SAP AI Core deployment prompt template."

@@ -19,7 +19,7 @@ var initCmd = &cobra.Command{
 		fmt.Println()
 
 		// Step 1: Sync content
-		fmt.Println("Step 1/3: Downloading SAP developer content...")
+		fmt.Println("Step 1/4: Downloading SAP developer content...")
 		if err := runSyncForce(); err != nil {
 			fmt.Printf("Warning: content sync failed (%v). Continuing with any cached content.\n", err)
 		}
@@ -30,7 +30,7 @@ var initCmd = &cobra.Command{
 		}
 
 		// Step 2: Choose profile
-		fmt.Println("\nStep 2/3: What kind of SAP developer are you?")
+		fmt.Println("\nStep 2/4: What kind of SAP developer are you?")
 		loader, err := newContentLoader()
 		if err != nil {
 			return err
@@ -60,8 +60,20 @@ var initCmd = &cobra.Command{
 			fmt.Println("No profiles found. Run 'sap-devs sync' then 'sap-devs profile list'.")
 		}
 
-		// Step 3: Shell profile hook
-		fmt.Println("\nStep 3/3: Add SAP tip to your terminal startup?")
+		// Step 3: Inject into AI tools
+		fmt.Println("\nStep 3/4: Inject SAP context into your AI tools?")
+		fmt.Println("  This writes SAP developer context to your AI tool configuration files.")
+		fmt.Print("  Inject now? [Y/n]: ")
+		if answer := strings.ToLower(strings.TrimSpace(readLine())); answer == "" || answer == "y" {
+			if err := runInjectGlobal(); err != nil {
+				fmt.Printf("  Warning: inject failed (%v). You can run 'sap-devs inject' manually.\n", err)
+			} else {
+				fmt.Println("  SAP context injected into your AI tools.")
+			}
+		}
+
+		// Step 4: Shell profile hook
+		fmt.Println("\nStep 4/4: Add SAP tip to your terminal startup?")
 		fmt.Println("  This adds 'sap-devs tip' to your shell profile so you see a tip each time you open a terminal.")
 		fmt.Print("  Add it? [y/N]: ")
 		if strings.ToLower(strings.TrimSpace(readLine())) == "y" {
@@ -73,7 +85,7 @@ var initCmd = &cobra.Command{
 		}
 
 		fmt.Println("\nSetup complete! Run 'sap-devs --help' to explore all commands.")
-		fmt.Println("Next: run 'sap-devs inject' (coming soon) to inject SAP context into your AI tools.")
+		fmt.Println("Run 'sap-devs inject' to re-inject after syncing new content.")
 		return nil
 	},
 }
@@ -110,6 +122,15 @@ func addShellHook() error {
 		}
 	}
 	return fmt.Errorf("no shell rc file found (.zshrc, .bashrc, .bash_profile)")
+}
+
+func runInjectGlobal() error {
+	prevProject, prevDryRun, prevTool := injectProject, injectDryRun, injectTool
+	injectProject = false
+	injectDryRun = false
+	injectTool = ""
+	defer func() { injectProject, injectDryRun, injectTool = prevProject, prevDryRun, prevTool }()
+	return injectCmd.RunE(injectCmd, nil)
 }
 
 func init() {

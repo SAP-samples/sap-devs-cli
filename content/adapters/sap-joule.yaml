@@ -1,0 +1,5 @@
+id: sap-joule
+name: SAP Joule
+type: clipboard-export
+format: markdown
+instructions: "Paste this context into your SAP Joule workspace configuration prompt."
