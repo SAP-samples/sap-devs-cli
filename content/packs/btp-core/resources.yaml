@@ -1,0 +1,17 @@
+- id: btp/docs
+  title: SAP BTP Documentation
+  url: https://help.sap.com/docs/btp
+  type: official-docs
+  tags: [reference]
+
+- id: btp/discovery-center
+  title: SAP BTP Discovery Center
+  url: https://discovery-center.cloud.sap
+  type: tool
+  tags: [services, catalog]
+
+- id: btp/cli-docs
+  title: SAP BTP CLI Reference
+  url: https://help.sap.com/docs/btp/sap-business-technology-platform/account-administration-using-sap-btp-command-line-interface-btp-cli
+  type: official-docs
+  tags: [cli, automation]

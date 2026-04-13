@@ -1,0 +1,6 @@
+id: btp-core
+name: SAP Business Technology Platform
+description: Core BTP services — subaccounts, entitlements, service bindings, Cloud Foundry, Kyma
+tags: [btp, cloud-foundry, kyma, cf, kubernetes]
+profiles: [btp-developer, cap-developer]
+weight: 80

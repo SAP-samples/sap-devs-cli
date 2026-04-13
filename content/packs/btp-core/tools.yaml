@@ -1,0 +1,23 @@
+- id: btp-cli
+  name: SAP BTP CLI
+  required: "latest"
+  detect:
+    command: "btp --version"
+    pattern: "SAP BTP command line interface \\(client v(\\S+)\\)"
+  install:
+    windows: "winget install SAP.BTPCLI"
+    macos: "brew install btp"
+    linux: "https://tools.hana.ondemand.com/#cloud"
+  docs: "https://tools.hana.ondemand.com/#cloud"
+
+- id: cf-cli
+  name: Cloud Foundry CLI
+  required: ">=8.0.0"
+  detect:
+    command: "cf --version"
+    pattern: "cf version (\\d+\\.\\d+\\.\\d+)"
+  install:
+    windows: "winget install CloudFoundry.cli"
+    macos: "brew install cloudfoundry/tap/cf-cli@8"
+    linux: "apt-get install cf8-cli"
+  docs: "https://docs.cloudfoundry.org/cf-cli/"

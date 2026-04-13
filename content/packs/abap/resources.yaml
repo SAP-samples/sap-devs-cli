@@ -1,0 +1,11 @@
+- id: abap/rap-guide
+  title: ABAP RESTful Application Programming Model
+  url: https://help.sap.com/docs/abap-cloud/abap-rap/abap-restful-application-programming-model
+  type: official-docs
+  tags: [reference, rap]
+
+- id: abap/community
+  title: SAP Community — ABAP
+  url: https://community.sap.com/t5/abap-blog/bg-p/abap-blogs
+  type: community
+  tags: [blog, help]

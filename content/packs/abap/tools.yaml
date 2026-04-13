@@ -1,0 +1,9 @@
+- id: adt
+  name: ABAP Development Tools (Eclipse)
+  required: "latest"
+  detect:
+    command: "eclipse --version"
+    pattern: "Eclipse IDE (\\S+)"
+  install:
+    all: "https://tools.hana.ondemand.com/#abap"
+  docs: "https://tools.hana.ondemand.com/#abap"

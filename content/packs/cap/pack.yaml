@@ -1,0 +1,6 @@
+id: cap
+name: SAP Cloud Application Programming Model
+description: Node.js and Java framework for building cloud-native business applications on BTP
+tags: [cloud, btp, nodejs, java, odata, cds]
+profiles: [cap-developer, btp-developer]
+weight: 100

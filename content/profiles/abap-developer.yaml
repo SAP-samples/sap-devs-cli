@@ -1,0 +1,11 @@
+id: abap-developer
+name: ABAP Developer
+description: Building business applications with ABAP Cloud and RAP
+packs:
+  - id: abap
+    weight: 100
+  - id: btp-core
+    weight: 60
+  - id: cap
+    weight: 20
+tip_tags: [abap, rap, cds, clean-core]
