@@ -2,3 +2,4 @@
 .superpowers/
 sap-devs
 sap-devs.exe
+*.test.exe

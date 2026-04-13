@@ -1,0 +1,10 @@
+id: jetbrains-ai
+name: JetBrains AI Assistant
+type: file-inject
+targets:
+  - scope: project
+    path: ".idea/ai-context.md"
+    mode: replace-section
+    section: "SAP Developer Context"
+detect:
+  - path: "~/.config/JetBrains"
