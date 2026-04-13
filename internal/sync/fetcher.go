@@ -38,12 +38,21 @@ func FetchArchive(url, destDir string) error {
 	// Strip one leading path component (GitHub archives include repo-name-sha/ prefix)
 	strip := zipStripPrefix(zr)
 
+	absBase, err := filepath.Abs(destDir)
+	if err != nil {
+		return fmt.Errorf("resolve destDir: %w", err)
+	}
+
 	for _, f := range zr.File {
 		name := strings.TrimPrefix(f.Name, strip)
 		if name == "" || strings.HasSuffix(name, "/") {
 			continue
 		}
-		dest := filepath.Join(destDir, filepath.FromSlash(name))
+		dest := filepath.Join(absBase, filepath.FromSlash(name))
+		// Zip slip guard: ensure destination is within destDir
+		if !strings.HasPrefix(dest, absBase+string(os.PathSeparator)) {
+			return fmt.Errorf("zip slip blocked: %q escapes destination", f.Name)
+		}
 		if err := extractFile(f, dest); err != nil {
 			return err
 		}
@@ -63,18 +72,20 @@ func zipStripPrefix(zr *zip.Reader) string {
 
 func extractFile(f *zip.File, dest string) error {
 	if err := os.MkdirAll(filepath.Dir(dest), 0755); err != nil {
-		return err
+		return fmt.Errorf("create dir for %s: %w", dest, err)
 	}
 	rc, err := f.Open()
 	if err != nil {
-		return err
+		return fmt.Errorf("open zip entry %s: %w", f.Name, err)
 	}
 	defer rc.Close()
 	out, err := os.Create(dest)
 	if err != nil {
-		return err
+		return fmt.Errorf("create %s: %w", dest, err)
 	}
 	defer out.Close()
-	_, err = io.Copy(out, rc)
-	return err
+	if _, err = io.Copy(out, rc); err != nil {
+		return fmt.Errorf("write %s: %w", dest, err)
+	}
+	return nil
 }

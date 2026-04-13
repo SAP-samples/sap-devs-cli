@@ -47,7 +47,11 @@ func (e *Engine) loadState() map[string]time.Time {
 	if err != nil {
 		return state
 	}
-	_ = json.Unmarshal(data, &state)
+	if err := json.Unmarshal(data, &state); err != nil {
+		// Corrupted state file — remove it so it gets rebuilt cleanly
+		_ = os.Remove(filepath.Join(e.stateDir, "sync-state.json"))
+		return make(map[string]time.Time)
+	}
 	return state
 }
 
