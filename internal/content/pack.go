@@ -31,6 +31,7 @@ type Resource struct {
 	Type     string   `yaml:"type"`
 	Tags     []string `yaml:"tags"`
 	Advocate string   `yaml:"advocate,omitempty"`
+	PackID   string   // set at load time, not in YAML
 }
 
 // ToolDef is an entry in the tool catalog with version detection rules.
@@ -105,6 +106,9 @@ func LoadPack(packDir string) (*Pack, error) {
 	}
 	if data, err := os.ReadFile(filepath.Join(packDir, "resources.yaml")); err == nil {
 		_ = yaml.Unmarshal(data, &pack.Resources)
+		for i := range pack.Resources {
+			pack.Resources[i].PackID = pack.ID
+		}
 	}
 	if data, err := os.ReadFile(filepath.Join(packDir, "tools.yaml")); err == nil {
 		_ = yaml.Unmarshal(data, &pack.Tools)
