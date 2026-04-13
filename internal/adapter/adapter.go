@@ -9,22 +9,22 @@ import (
 
 // Adapter defines how to inject SAP context into a specific AI tool.
 type Adapter struct {
-	ID           string     `yaml:"id"`
-	Name         string     `yaml:"name"`
-	Type         string     `yaml:"type"`    // file-inject | clipboard-export | mcp-wire
-	Targets      []Target   `yaml:"targets"`
-	ClipFormat   string     `yaml:"format"`
-	Template     string     `yaml:"template"`
-	Instructions string     `yaml:"instructions"`
-	MCPConfig *MCPConfig `yaml:"mcp_config,omitempty"`
-	Detect    []DetectRule `yaml:"detect"`
+	ID           string       `yaml:"id"`
+	Name         string       `yaml:"name"`
+	Type         string       `yaml:"type"` // file-inject | clipboard-export | mcp-wire
+	Targets      []Target     `yaml:"targets"`
+	ClipFormat   string       `yaml:"format"`
+	Template     string       `yaml:"template"`
+	Instructions string       `yaml:"instructions"`
+	MCPConfig    *MCPConfig   `yaml:"mcp_config,omitempty"`
+	Detect       []DetectRule `yaml:"detect"`
 }
 
 // Target is a single file injection target.
 type Target struct {
-	Scope   string `yaml:"scope"`   // global | project
+	Scope   string `yaml:"scope"` // global | project
 	Path    string `yaml:"path"`
-	Mode    string `yaml:"mode"`    // replace-section | append
+	Mode    string `yaml:"mode"` // replace-section | append
 	Section string `yaml:"section"`
 }
 
