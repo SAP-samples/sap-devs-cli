@@ -111,10 +111,10 @@ Thin presentation layer only.
 
 #### `mcp list` flow
 
-1. Resolve packs per profile resolution table above
+1. Resolve packs per profile resolution table above (call `newContentLoader()` to get the loader, then `loader.LoadPacks(...)`)
 2. `content.FlattenMCPServers(packs)`
 3. If empty: print `"No MCP servers found for your current profile."` and return nil
-4. Print aligned table (columns: TOOL, PACK, HOSTS, NAME)
+4. Print aligned table (columns: ID, PACK, HOSTS, NAME)
 
 Example output:
 ```
