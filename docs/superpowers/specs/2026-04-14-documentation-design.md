@@ -92,7 +92,7 @@ Each file is fully self-contained for its audience. The project README will be u
 2. **Pack structure**  
    Directory: `content/packs/<pack-id>/`. Full schema for each file:
 
-   - **`pack.yaml`** — `id` (unique slug), `name`, `description`, `tags` (list), `profiles` (list of profile IDs that include this pack), `locales` block mapping language tag to translated `name`/`description`. Note: `weight` is NOT a pack.yaml field — it is set per-pack inside the profile's `packs` list.
+   - **`pack.yaml`** — `id` (unique slug), `name`, `description`, `tags` (list), `profiles` (list of profile IDs that include this pack), `weight` (integer default priority; profiles can override per-pack in their `packs` list), `locales` block mapping language tag to translated `name`/`description`.
    - **`context.md`** — Free-form Markdown injected as AI context into tools. No special syntax. May be long-form reference material.
    - **`context.<lang>.md`** — Localised version of `context.md` for language `<lang>` (e.g. `context.de.md`). Falls back to `context.md` if absent.
    - **`tips.md`** — H2-delimited tips. Each tip starts with `## <Title>`, followed by optional `Tags: tag1,tag2` line, then tip body.
