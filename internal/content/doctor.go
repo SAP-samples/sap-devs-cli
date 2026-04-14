@@ -1,6 +1,7 @@
 package content
 
 import (
+	"regexp"
 	"strconv"
 	"strings"
 )
@@ -102,4 +103,68 @@ func parseConstraint(required, found string) bool {
 // ParseConstraintForTest exposes parseConstraint for use in external test packages.
 func ParseConstraintForTest(required, found string) bool {
 	return parseConstraint(required, found)
+}
+
+// CheckStatus represents the result of a tool version check.
+type CheckStatus string
+
+const (
+	StatusOK      CheckStatus = "ok"
+	StatusFail    CheckStatus = "fail"
+	StatusMissing CheckStatus = "missing"
+	StatusUnknown CheckStatus = "unknown" // required is "latest"
+)
+
+// ToolResult holds the outcome of checking a single tool.
+type ToolResult struct {
+	Tool   ToolDef
+	Status CheckStatus
+	Found  string // raw captured version string, empty if missing
+}
+
+// Runner abstracts exec.Command for testability.
+// It receives the full command string (e.g. "node --version") and returns
+// the combined stdout+stderr output.
+type Runner func(command string) (string, error)
+
+// CheckTool runs the tool's detect command via run, extracts the version using
+// the tool's regex pattern, and compares it against tool.Required.
+func CheckTool(tool ToolDef, run Runner) ToolResult {
+	output, err := run(tool.Detect.Command)
+	if err != nil {
+		return ToolResult{Tool: tool, Status: StatusMissing}
+	}
+
+	re, err := regexp.Compile(tool.Detect.Pattern)
+	if err != nil {
+		return ToolResult{Tool: tool, Status: StatusMissing}
+	}
+	matches := re.FindStringSubmatch(output)
+	if len(matches) < 2 {
+		return ToolResult{Tool: tool, Status: StatusMissing}
+	}
+	found := matches[1]
+
+	if tool.Required == "latest" {
+		return ToolResult{Tool: tool, Status: StatusUnknown, Found: found}
+	}
+
+	if parseConstraint(tool.Required, found) {
+		return ToolResult{Tool: tool, Status: StatusOK, Found: found}
+	}
+	return ToolResult{Tool: tool, Status: StatusFail, Found: found}
+}
+
+// CheckTools runs CheckTool for each tool, deduplicating by ID (first seen wins).
+func CheckTools(tools []ToolDef, run Runner) []ToolResult {
+	seen := make(map[string]bool)
+	var results []ToolResult
+	for _, t := range tools {
+		if seen[t.ID] {
+			continue
+		}
+		seen[t.ID] = true
+		results = append(results, CheckTool(t, run))
+	}
+	return results
 }
