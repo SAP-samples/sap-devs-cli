@@ -26,7 +26,7 @@ var updateCmd = &cobra.Command{
 
 		rel, newer, err := update.CheckLatest(repoURL, Version)
 		if err != nil {
-			return fmt.Errorf("could not reach GitHub: %w", err)
+			return err
 		}
 
 		if !newer {

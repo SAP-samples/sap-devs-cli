@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"time"
 )
 
 // maxDownloadBytes caps downloads to prevent memory exhaustion on malicious/misconfigured servers.
@@ -110,7 +111,8 @@ func Install(repoURL string, release *Release) error {
 }
 
 func httpGet(url string) ([]byte, error) {
-	resp, err := http.Get(url) //nolint:noctx
+	client := &http.Client{Timeout: 300 * time.Second}
+	resp, err := client.Get(url) //nolint:noctx
 	if err != nil {
 		return nil, err
 	}
