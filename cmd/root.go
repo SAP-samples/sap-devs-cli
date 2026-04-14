@@ -52,10 +52,9 @@ func newContentLoader() (*content.ContentLoader, error) {
 	return loader, nil
 }
 
-// newAdapterEngine constructs an adapter engine from all configured adapter layers.
-// It reads adapter YAML files from: official cache, company cache, and a local
-// content/adapters fallback for development use.
-func newAdapterEngine(renderedContext string, opts adapter.Options) (*adapter.Engine, error) {
+// loadAdapters returns the merged adapter list across all configured layers:
+// official cache, optional company cache, and an optional SAP_DEVS_DEV=1 local fallback.
+func loadAdapters() ([]adapter.Adapter, error) {
 	paths, err := xdg.New()
 	if err != nil {
 		return nil, err
@@ -88,6 +87,15 @@ func newAdapterEngine(renderedContext string, opts adapter.Options) (*adapter.En
 		}
 	}
 
+	return allAdapters, nil
+}
+
+// newAdapterEngine constructs an adapter engine from all configured adapter layers.
+func newAdapterEngine(renderedContext string, opts adapter.Options) (*adapter.Engine, error) {
+	allAdapters, err := loadAdapters()
+	if err != nil {
+		return nil, err
+	}
 	return adapter.NewEngine(allAdapters, renderedContext, opts), nil
 }
 
