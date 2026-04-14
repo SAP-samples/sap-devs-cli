@@ -85,7 +85,7 @@ func TestCheckTool_OK(t *testing.T) {
 	tool := toolDef("node", ">=18.0.0", "node --version", `v(\d+\.\d+\.\d+)`)
 	result := content.CheckTool(tool, fakeRunner("v20.11.0", nil))
 	assert.Equal(t, content.StatusOK, result.Status)
-	assert.Equal(t, "v20.11.0", result.Found)
+	assert.Equal(t, "20.11.0", result.Found)
 }
 
 func TestCheckTool_Fail(t *testing.T) {
