@@ -47,7 +47,7 @@ func FetchArchive(rawURL, destDir, token string) error {
 
 	// Auth redirect detection: if we ended up on the login page, surface a clear error.
 	// Check resp.Request.URL (the final URL after redirects) for a /login path on the same host.
-	if resp.Request.URL.Host == parsedURL.Host && strings.Contains(resp.Request.URL.Path, "/login") {
+	if resp.Request != nil && resp.Request.URL != nil && resp.Request.URL.Host == parsedURL.Host && strings.Contains(resp.Request.URL.Path, "/login") {
 		return fmt.Errorf("authentication required for %s — set GITHUB_TOOLS_SAP_TOKEN or run 'sap-devs config token'", parsedURL.Host)
 	}
 

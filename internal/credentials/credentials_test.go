@@ -196,12 +196,14 @@ func TestResolve_KeychainErrorWarnsAndFallsBack(t *testing.T) {
 }
 
 func TestDelete_KeychainUnavailableNoFile(t *testing.T) {
-	keyringBackend = unavailableKeyring{err: errors.New("permission denied")}
+	keychainErr := errors.New("permission denied")
+	keyringBackend = unavailableKeyring{err: keychainErr}
 	dir := t.TempDir()
 	err := Delete(dir)
-	// Keychain is unavailable and no file exists — returns ErrNotFound
-	// (the keychain access error is not propagated in this case).
-	assert.ErrorIs(t, err, ErrNotFound)
+	// A real keychain access error (not ErrNotFound) must be propagated so the
+	// caller knows the token may still be stored in the keychain.
+	assert.NotNil(t, err)
+	assert.ErrorContains(t, err, "permission denied")
 }
 
 func TestCredFile_IsRestrictedPermissions(t *testing.T) {

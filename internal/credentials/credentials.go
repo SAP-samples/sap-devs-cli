@@ -70,13 +70,21 @@ func Load(configDir string) (string, error) {
 // Returns ErrNotFound if no token was stored anywhere.
 func Delete(configDir string) error {
 	keychainErr := keyringBackend.Delete(keyringSvc, keyringUser)
-	if keychainErr == nil {
-		return nil
+	if keychainErr != nil && !errors.Is(keychainErr, errKeyringNotFound) {
+		// Real keychain access error (e.g. "access denied") — surface it; the
+		// token may still be in the keychain so we must not silently succeed.
+		return keychainErr
 	}
-	// Keychain either had "not found" or an access error — try the file.
+	// Keychain either succeeded (keychainErr == nil) or reported "not found".
+	// Either way, also remove the fallback credentials file if present.
 	path := credFile(configDir)
 	err := os.Remove(path)
 	if os.IsNotExist(err) {
+		if keychainErr == nil {
+			// Keychain delete succeeded; file absence is fine.
+			return nil
+		}
+		// Token was neither in keychain nor in file.
 		return ErrNotFound
 	}
 	return err
