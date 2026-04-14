@@ -28,6 +28,8 @@
   "doctor.col_found": "GEFUNDEN",
   "doctor.col_status": "STATUS",
   "doctor.install_header": "\nInstallationsbefehle:",
+  "doctor.install_see": "siehe: ",
+  "doctor.install_none": "kein Installationsbefehl verfügbar",
   "doctor.status_ok": "ok",
   "doctor.status_ok_unverified": "ok (nicht verifiziert)",
   "doctor.status_fail": "FEHLER",

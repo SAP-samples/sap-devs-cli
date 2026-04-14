@@ -153,14 +153,14 @@ func printInstallCommands(results []content.ToolResult) {
 	}
 	fmt.Println(i18n.T(i18n.ActiveLang, "doctor.install_header"))
 	for _, r := range toFix {
-		cmd := installCommand(r.Tool)
+		cmd := installCommand(r.Tool, i18n.ActiveLang)
 		fmt.Printf("  %-20s %s\n", r.Tool.ID, cmd)
 	}
 }
 
 // installCommand returns the best install command for the current OS,
 // falling back to "all", then to the docs URL.
-func installCommand(tool content.ToolDef) string {
+func installCommand(tool content.ToolDef, lang string) string {
 	osKey := map[string]string{
 		"windows": "windows",
 		"darwin":  "macos",
@@ -174,9 +174,9 @@ func installCommand(tool content.ToolDef) string {
 		return cmd
 	}
 	if tool.Docs != "" {
-		return "see: " + tool.Docs
+		return i18n.T(lang, "doctor.install_see") + tool.Docs
 	}
-	return "no install command available"
+	return i18n.T(lang, "doctor.install_none")
 }
 
 func init() {

@@ -28,6 +28,8 @@
   "doctor.col_found": "FOUND",
   "doctor.col_status": "STATUS",
   "doctor.install_header": "\nInstall commands:",
+  "doctor.install_see": "see: ",
+  "doctor.install_none": "no install command available",
   "doctor.status_ok": "ok",
   "doctor.status_ok_unverified": "ok (unverified)",
   "doctor.status_fail": "FAIL",

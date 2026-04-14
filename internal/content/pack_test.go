@@ -76,6 +76,26 @@ func TestLoadPack_LocaleContextFile(t *testing.T) {
 	assert.Equal(t, "English context", p.ContextMD)
 }
 
+func TestLoadPack_LocaleTipsFile(t *testing.T) {
+	dir := t.TempDir()
+	yaml := "id: test\nname: Test Pack\ndescription: Test\ntags: []\nprofiles: []\nweight: 0\n"
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "pack.yaml"), []byte(yaml), 0644))
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "tips.md"), []byte("## English tip\nEnglish content"), 0644))
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "tips.de.md"), []byte("## German tip\nGerman content"), 0644))
+
+	// German: locale tips file used
+	p, err := content.LoadPack(dir, "de")
+	require.NoError(t, err)
+	require.Len(t, p.Tips, 1)
+	assert.Equal(t, "German tip", p.Tips[0].Title)
+
+	// English: base tips file used
+	p, err = content.LoadPack(dir, "")
+	require.NoError(t, err)
+	require.Len(t, p.Tips, 1)
+	assert.Equal(t, "English tip", p.Tips[0].Title)
+}
+
 func TestLoadPack_LocaleMetadata(t *testing.T) {
 	dir := t.TempDir()
 	yaml := `id: test
