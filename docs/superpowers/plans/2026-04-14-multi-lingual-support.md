@@ -468,6 +468,16 @@ locales:
 	assert.Equal(t, "Test Pack", p.Name)
 	assert.Equal(t, "A test pack", p.Description)
 }
+
+func TestLoadPack_MalformedLocales(t *testing.T) {
+	dir := t.TempDir()
+	// locales value is a string instead of a map — invalid YAML for the field
+	yaml := "id: test\nname: Test\ndescription: Test\ntags: []\nprofiles: []\nweight: 0\nlocales: not-a-map\n"
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "pack.yaml"), []byte(yaml), 0644))
+
+	_, err := content.LoadPack(dir, "de")
+	assert.Error(t, err, "malformed locales block should return an error")
+}
 ```
 
 Update the existing `TestLoadPack_ParsesAllFiles` and `TestLoadPack_MissingOptionalFilesOK` calls to pass an empty `lang` argument — they will fail to compile before the signature change.
@@ -552,7 +562,7 @@ func fileExists(path string) bool {
 }
 ```
 
-- [ ] **Step 3.4: Fix existing tests to pass the new `lang` argument**
+- [ ] **Step 3.4: Fix existing tests and the internal `LoadPack` call in `loader.go`**
 
 In `internal/content/pack_test.go`, update the two existing test calls:
 ```go
@@ -563,20 +573,27 @@ pack, err := content.LoadPack(dir, "")
 pack, err := content.LoadPack(dir, "")
 ```
 
-Also update any `LoadPack` call in `loader.go` (it calls `LoadPack` internally — fix in next task).
+Also update the `LoadPack` call inside `internal/content/loader.go` (line ~35) to compile now — pass `""` as a placeholder lang; the correct `lang` parameter is threaded in Task 4:
 
-- [ ] **Step 3.5: Verify tests pass**
+```go
+pack, err := LoadPack(filepath.Join(packsDir, e.Name()), "")
+```
+
+- [ ] **Step 3.5: Verify the full module compiles and tests pass**
 
 ```bash
+go build ./...
+go vet ./...
 go test ./internal/content/...
-# Expected: PASS (loader.go may have a compile error — that's fixed in Task 4)
+# Expected: all PASS
 ```
-Local: `go build ./internal/content/... && go vet ./internal/content/...`
+
+Local (Windows): `go build ./... && go vet ./...`
 
 - [ ] **Step 3.6: Commit**
 
 ```bash
-git add internal/content/pack.go internal/content/pack_test.go
+git add internal/content/pack.go internal/content/pack_test.go internal/content/loader.go
 git commit -m "feat: add lang param to LoadPack with locale file and metadata support"
 ```
 
@@ -610,11 +627,11 @@ func (cl *ContentLoader) LoadPacks(profile *Profile, lang string) ([]*Pack, erro
 
 - [ ] **Step 4.2: Update `loader_test.go`**
 
-Find all `LoadPacks(` and `LoadPack(` calls in `internal/content/loader_test.go` and add `""` as the `lang` argument:
+Find all `LoadPacks(` calls in `internal/content/loader_test.go` and add `""` as the `lang` argument (`LoadPack` calls are only in `pack_test.go`, already addressed in Task 3):
 ```bash
-grep -n "LoadPacks\|LoadPack" internal/content/loader_test.go
+grep -n "LoadPacks(" internal/content/loader_test.go
 ```
-Update each call: `LoadPacks(profile)` → `LoadPacks(profile, "")` and `LoadPack(dir)` → `LoadPack(dir, "")`.
+Update each call: `LoadPacks(profile)` → `LoadPacks(profile, "")`.
 
 - [ ] **Step 4.3: Update all `cmd/` call sites**
 
@@ -679,12 +696,14 @@ git commit -m "feat: add lang param to LoadPacks and update all call sites"
 
 1. Add the import `"github.tools.sap/developer-relations/sap-devs-cli/internal/i18n"` to the import block.
 
-2. In `PersistentPreRunE`, add language resolution at the top of the function, before the update check:
+2. In `PersistentPreRunE`, add language resolution at the top of the function. The i18n init runs for **all** commands (including `update`) so all commands see the resolved language. Replace the entire function opening up to the update check guard:
+
 ```go
 PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-    updateHintCh = nil
+    updateHintCh = nil // reset before every invocation
 
     // Resolve active language before any command body runs.
+    // Runs for all commands so that Short/Long are always localized.
     if paths, err := xdg.New(); err == nil {
         if cfg, err := config.Load(paths.ConfigDir); err == nil {
             i18n.ActiveLang = i18n.Resolve(cfg.Language)
@@ -695,7 +714,11 @@ PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
     }
     localizeCommands(rootCmd, i18n.ActiveLang)
 
-    // ... existing update check code unchanged ...
+    // Skip background update check for "update" command and dev builds.
+    if cmd.Name() == "update" || Version == "dev" {
+        return nil
+    }
+    // ... rest of the existing update check code unchanged ...
 ```
 
 3. Add `localizeCommands` and `buildLocalizeKey` at the bottom of `cmd/root.go`:
@@ -1039,22 +1062,24 @@ Overwrite `internal/i18n/catalogs/de.json`:
 
 - [ ] **Step 7.2: Smoke test with German locale**
 
+> **Note:** `--help` and `help` bypass `PersistentPreRunE`, so cobra `Short`/`Long` strings are always displayed in English for help invocations. This is a known limitation documented in the spec. Smoke test using commands that complete normally instead.
+
 ```bash
-SAP_DEVS_DEV=1 LANG=de go run . --help
-# Expected: German Short description for all commands
 SAP_DEVS_DEV=1 LANG=de go run . inject --dry-run
 # Expected: "[Testlauf] Es werden keine Dateien geändert"
 SAP_DEVS_DEV=1 LANG=de go run . sync
-# Expected: German sync output
+# Expected: German sync output (e.g. "Alle Inhalte sind aktuell." if content already synced)
+SAP_DEVS_DEV=1 LANG=de go run . doctor
+# Expected: German table headers (TOOL, ERFORDERLICH, GEFUNDEN, STATUS)
 ```
 
 - [ ] **Step 7.3: Verify English still works**
 
 ```bash
-SAP_DEVS_DEV=1 go run . --help
-# Expected: English descriptions unchanged
 SAP_DEVS_DEV=1 go run . inject --dry-run
 # Expected: "[dry-run] no files will be modified"
+SAP_DEVS_DEV=1 go run . doctor
+# Expected: English table headers (TOOL, REQUIRED, FOUND, STATUS)
 ```
 
 - [ ] **Step 7.4: Commit**
@@ -1087,7 +1112,7 @@ locales:
 
 - [ ] **Step 8.2: Create `content/packs/cap/context.de.md`**
 
-```markdown
+~~~markdown
 ## SAP CAP (Cloud Application Programming Model)
 
 CAP ist SAPs primäres Framework für Cloud-native Business-Anwendungen auf SAP BTP.
@@ -1118,7 +1143,7 @@ service CatalogService @(path:'/browse') {
 - Entities in `db/schema.cds` definieren, Services in `srv/*.cds`
 - `cds.ql` für typsichere CQL-Abfragen verwenden
 - Eingebaute Authentifizierung via `@requires`-Annotationen nutzen
-```
+~~~
 
 - [ ] **Step 8.3: Create `content/packs/cap/tips.de.md`**
 
@@ -1178,19 +1203,27 @@ go vet ./...
 
 ```bash
 SAP_DEVS_DEV=1 LANG=de go run . --help
+# Expected: English output (--help bypasses PersistentPreRunE — known limitation; Short/Long are not localized for help invocations)
 SAP_DEVS_DEV=1 LANG=de go run . inject --dry-run
+# Expected: "[Testlauf] Es werden keine Dateien geändert"
 SAP_DEVS_DEV=1 LANG=de go run . sync --force
+# Expected: German sync output (e.g. "SAP-Entwicklerinhalt wird synchronisiert...")
 SAP_DEVS_DEV=1 LANG=de go run . tip
+# Expected: German tip output (if cap pack German tips are present)
 SAP_DEVS_DEV=1 LANG=de go run . doctor
+# Expected: German table headers (TOOL, ERFORDERLICH, GEFUNDEN, STATUS)
 ```
 
 - [ ] **End-to-end English smoke test (regression check)**
 
 ```bash
 SAP_DEVS_DEV=1 go run . --help
+# Expected: English descriptions unchanged
 SAP_DEVS_DEV=1 go run . inject --dry-run
+# Expected: "[dry-run] no files will be modified"
 SAP_DEVS_DEV=1 go run . tip
 SAP_DEVS_DEV=1 go run . doctor
+# Expected: English table headers (TOOL, REQUIRED, FOUND, STATUS)
 ```
 
 - [ ] **Config language override test**
