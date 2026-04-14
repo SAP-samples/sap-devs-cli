@@ -41,11 +41,11 @@ func parseSegment(s string) int {
 
 // padVersion zero-pads a version string to exactly three dot-separated components.
 func padVersion(v string) string {
-	parts := strings.Split(v, ".")
+	parts := strings.SplitN(v, ".", 3) // 3-capped: pre-release on last segment stays intact
 	for len(parts) < 3 {
 		parts = append(parts, "0")
 	}
-	return strings.Join(parts[:3], ".")
+	return strings.Join(parts, ".")
 }
 
 // parseConstraint parses a required string of the form ">=1.2.3", ">1.2.3",
@@ -70,7 +70,11 @@ func parseConstraint(required, found string) bool {
 		return false
 	}
 
-	reqVer = padVersion(strings.TrimPrefix(strings.TrimSpace(reqVer), "v"))
+	reqVer = strings.TrimPrefix(strings.TrimSpace(reqVer), "v")
+	if len(reqVer) == 0 || reqVer[0] < '0' || reqVer[0] > '9' {
+		return false
+	}
+	reqVer = padVersion(reqVer)
 	foundNorm := strings.TrimPrefix(strings.TrimSpace(found), "v")
 
 	// Guard: if found doesn't start with a digit it cannot be parsed — return false.

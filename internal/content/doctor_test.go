@@ -57,3 +57,7 @@ func TestParseConstraint_UnrecognisedOperator(t *testing.T) {
 func TestParseConstraint_UnparsableFound(t *testing.T) {
 	assert.False(t, content.ParseConstraintForTest(">=18.0.0", "not-a-version"))
 }
+
+func TestParseConstraint_UnparsableRequired(t *testing.T) {
+	assert.False(t, content.ParseConstraintForTest(">=not-a-version", "1.0.0"))
+}
