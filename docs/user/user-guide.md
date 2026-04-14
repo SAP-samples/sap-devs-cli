@@ -23,8 +23,11 @@ Go to the [GitHub Releases page](https://github.tools.sap/developer-relations/sa
 Download `checksums.txt` from the same release and verify:
 
 ```bash
-# macOS / Linux
+# Linux
 sha256sum --check checksums.txt
+
+# macOS
+shasum -a 256 --check checksums.txt
 
 # Windows (PowerShell)
 Get-FileHash sap-devs_<version>_windows_amd64.zip -Algorithm SHA256
@@ -71,9 +74,11 @@ sap-devs init
 ```
 
 The wizard will:
-1. Ask you to select a developer profile (e.g. `cap-developer`, `btp-developer`, `abap-developer`)
-2. Run an initial content sync
+
+1. Download SAP developer content (initial sync)
+2. Ask you to select a developer profile (e.g. `cap-developer`, `btp-developer`, `abap-developer`)
 3. Inject SAP context into all detected AI tools
+4. Optionally add `sap-devs tip` to your shell profile so you see a tip on every new terminal
 
 ---
 
@@ -144,7 +149,7 @@ sap-devs sync [flags]
 | Flag | Description |
 |---|---|
 | `--force` | Re-sync all content regardless of TTL |
-| `--category` | Sync a single category only |
+| `--category <name>` | Sync a single category only (e.g. `tips`, `tools`, `resources`, `context`, `mcp`, `advocates`) |
 
 ---
 
@@ -193,11 +198,13 @@ sap-devs config company <git-url>
 |---|---|---|
 | `language` | Language tag for CLI output and content | `de`, `en` |
 
+> The company content repo is configured via `sap-devs config company <url>` rather than `config set`.
+
 ---
 
 ### `tip`
 
-Print a random SAP developer tip from your active profile's packs. Add to your shell profile for a tip on every new terminal:
+Print a SAP developer tip from your active profile's packs. The tip rotates daily. Add to your shell profile for a tip on every new terminal:
 
 ```bash
 # ~/.bashrc or ~/.zshrc
@@ -227,7 +234,7 @@ sap-devs doctor --fix
 Output:
 ```
 TOOL       REQUIRED    FOUND      STATUS
-Node.js    >=18.0.0    20.11.0    ok
+nodejs     >=18.0.0    20.11.0    ok
 cds-dk     >=7.0.0     -          MISSING
 
 Install commands:
@@ -273,8 +280,10 @@ sap-devs resources open <id>
 | Subcommand | Description |
 |---|---|
 | `list` | List all resources for the active profile |
-| `search <query>` | Search resources by keyword |
+| `search <query>` | Search resources by keyword (searches across all packs, not just the active profile) |
 | `open <id>` | Open a resource URL in the default browser |
+
+> **Note:** `resources list` requires an active profile. Run `sap-devs profile set <id>` first if you haven't done so.
 
 ---
 
