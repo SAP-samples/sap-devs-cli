@@ -42,11 +42,11 @@ var keyringBackend keyring = osKeyring{}
 // Store saves the token to the OS keychain.
 // Falls back to <configDir>/credentials (0600) if the keychain is unavailable.
 func Store(configDir, token string) error {
-	if err := keyringBackend.Set(keyringSvc, keyringUser, token); err == nil {
+	err := keyringBackend.Set(keyringSvc, keyringUser, token)
+	if err == nil {
 		return nil
-	} else {
-		fmt.Fprintf(os.Stderr, "keychain unavailable: %v; token stored in credentials file\n", err)
 	}
+	fmt.Fprintf(os.Stderr, "keychain unavailable: %v; token stored in credentials file\n", err)
 	return writeCredFile(configDir, token)
 }
 

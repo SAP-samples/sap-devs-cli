@@ -195,6 +195,15 @@ func TestResolve_KeychainErrorWarnsAndFallsBack(t *testing.T) {
 	assert.NotContains(t, stderr, "file-tok") // token never in warning
 }
 
+func TestDelete_KeychainUnavailableNoFile(t *testing.T) {
+	keyringBackend = unavailableKeyring{err: errors.New("permission denied")}
+	dir := t.TempDir()
+	err := Delete(dir)
+	// Keychain is unavailable and no file exists — returns ErrNotFound
+	// (the keychain access error is not propagated in this case).
+	assert.ErrorIs(t, err, ErrNotFound)
+}
+
 func TestCredFile_IsRestrictedPermissions(t *testing.T) {
 	keyringBackend = unavailableKeyring{err: errors.New("no keychain")}
 	dir := t.TempDir()
