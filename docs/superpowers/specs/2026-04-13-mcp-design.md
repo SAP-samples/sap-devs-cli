@@ -58,6 +58,7 @@ type MCPConfig struct {
 - `ExpandHome(path)` — in `internal/adapter/file_inject.go`
 - `LoadPacks(nil)` / `LoadPacks(profile)` — in `internal/content/loader.go`
 - Profile resolution — `config.LoadProfile` + `loader.FindProfile`
+- Multi-layer adapter loading logic — in `newAdapterEngine` in `cmd/root.go` (loads official cache, optional company cache, optional `SAP_DEVS_DEV=1` local fallback; uses `mergeAdapters` for override-by-ID)
 
 ### New code: `internal/content/mcp.go`
 
@@ -166,9 +167,19 @@ Define a package-level function `pickAdapters(adapters []adapter.Adapter) ([]ada
 
 #### adaptersDir resolution
 
-`adaptersDir` is resolved from `newContentLoader()` — use the same content cache path used by other commands. The loader's `BasePath` field (or equivalent) gives the root; adapters live at `<basePath>/adapters`.
+`cmd/mcp.go` needs a `[]adapter.Adapter` slice, not an `adapter.Engine`. The multi-layer loading logic (official cache → company cache → `SAP_DEVS_DEV` fallback, with `mergeAdapters` for override-by-ID) currently lives inline in `newAdapterEngine` in `cmd/root.go`.
 
-Look at how `cmd/inject.go` resolves the adapters directory and follow the same pattern.
+**Modify `cmd/root.go`:** extract that loading into a new package-level helper:
+
+```go
+// loadAdapters returns the merged adapter list across all configured layers.
+// Official cache first, company cache overrides by ID, dev fallback if SAP_DEVS_DEV=1.
+func loadAdapters() ([]adapter.Adapter, error)
+```
+
+Then have `newAdapterEngine` call `loadAdapters` internally (no behaviour change), and have `cmd/mcp.go` call `loadAdapters()` directly.
+
+Also clarify expanding paths: wherever `WriteMCPConfig` or `ReadMCPConfig` is called with `a.MCPConfig.Path`, first expand it via `adapter.ExpandHome(a.MCPConfig.Path)`. Same for `status` flow step 4.
 
 ## Output Format
 
@@ -245,4 +256,5 @@ Or dry-run:
 - **Create:** `internal/adapter/detect_test.go`
 - **Modify:** `internal/adapter/mcp_wire.go` — add `ReadMCPConfig`
 - **Modify:** `internal/adapter/mcp_wire_test.go` — add `ReadMCPConfig` tests
+- **Modify:** `cmd/root.go` — extract `loadAdapters() ([]adapter.Adapter, error)` from `newAdapterEngine`; have `newAdapterEngine` call it
 - **Create:** `cmd/mcp.go` — `mcp` Cobra command with `list`, `install`, `status` subcommands
