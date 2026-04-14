@@ -1,0 +1,62 @@
+{
+  "root.short": "KI-gestütztes SAP Entwickler-Toolkit",
+  "root.long": "sap-devs integriert aktuelles SAP-Entwicklerwissen in deine KI-Tools.",
+
+  "inject.short": "SAP-Kontext in deine KI-Tools einbinden",
+  "inject.long": "Aktuellen SAP-Entwicklerkontext in alle erkannten KI-Tools einbinden.\n\nStandardmäßig globaler (Benutzer-)Bereich für Tools wie Claude Code, Cursor und GitHub Copilot. Mit --project auf Projektbereich umschalten und in Projektdateien (CLAUDE.md, .cursorrules, etc.) im aktuellen Verzeichnis einbinden.",
+  "inject.dry_run": "[Testlauf] Es werden keine Dateien geändert",
+  "inject.done": "SAP-Entwicklerkontext eingefügt ({{.Scope}}-Bereich).",
+  "inject.hint": "Führe 'sap-devs inject --dry-run' aus, um Änderungen vorab anzuzeigen.",
+
+  "sync.short": "Aktuellen SAP-Entwicklerinhalt herunterladen",
+  "sync.long": "Synchronisiert Inhalte aus dem offiziellen Repo (und dem Unternehmens-Repo, falls konfiguriert). Berücksichtigt kategoriespezifische TTLs, außer --force ist gesetzt.",
+  "sync.disabled": "Synchronisierung ist in der Konfiguration deaktiviert.",
+  "sync.up_to_date": "Alle Inhalte sind aktuell.",
+  "sync.syncing": "SAP-Entwicklerinhalt wird synchronisiert...",
+  "sync.updated": "Aktualisiert: {{.Categories}}",
+  "sync.warn_https": "Warnung: company_repo muss eine HTTPS-URL sein (erhalten: {{.URL}}) — Synchronisierung übersprungen.",
+  "sync.syncing_company": "Unternehmens-Repo wird synchronisiert...",
+  "sync.warn_company_failed": "Warnung: Synchronisierung des Unternehmens-Repos fehlgeschlagen: {{.Err}}",
+
+  "tip.short": "Einen SAP-Entwicklertipp anzeigen (in dein Shell-Profil einfügen)",
+  "tip.no_tips": "Keine Tipps verfügbar. Führe 'sap-devs sync' aus, um Inhalte herunterzuladen.",
+
+  "doctor.short": "Lokale Tool-Versionen gegen Pack-Anforderungen prüfen",
+  "doctor.no_tools": "Keine Tools für die aktuelle Auswahl definiert.",
+  "doctor.col_tool": "TOOL",
+  "doctor.col_required": "ERFORDERLICH",
+  "doctor.col_found": "GEFUNDEN",
+  "doctor.col_status": "STATUS",
+  "doctor.install_header": "\nInstallationsbefehle:",
+  "doctor.install_see": "siehe: ",
+  "doctor.install_none": "kein Installationsbefehl verfügbar",
+  "doctor.status_ok": "ok",
+  "doctor.status_ok_unverified": "ok (nicht verifiziert)",
+  "doctor.status_fail": "FEHLER",
+  "doctor.status_missing": "FEHLT",
+
+  "profile.short": "Entwicklerprofil verwalten",
+  "profile.list.short": "Verfügbare Entwicklerprofile auflisten",
+  "profile.set.short": "Aktives Entwicklerprofil festlegen",
+  "profile.show.short": "Aktuelles Profil und Pack-Gewichtungen anzeigen",
+
+  "config.short": "sap-devs-Konfiguration verwalten",
+  "config.show.short": "Aktuelle Konfiguration anzeigen",
+  "config.set.short": "Konfigurationswert setzen",
+  "config.company.short": "URL des Unternehmens-Inhalts-Repos konfigurieren",
+
+  "mcp.short": "SAP MCP-Server verwalten",
+  "mcp.list.short": "Verfügbare SAP MCP-Server auflisten",
+  "mcp.status.short": "Registrierte SAP MCP-Server in KI-Tool-Konfigurationen anzeigen",
+  "mcp.install.short": "Einen SAP MCP-Server installieren und in KI-Tools einbinden",
+
+  "resources.short": "Kuratierte SAP-Ressourcen durchsuchen",
+  "resources.list.short": "Kuratierte Ressourcen für aktives Profil auflisten",
+  "resources.search.short": "Über alle SAP-Ressourcen suchen",
+  "resources.open.short": "Ressourcen-URL im Standardbrowser öffnen",
+
+  "version.short": "sap-devs-Version ausgeben",
+  "update.short": "sap-devs auf die neueste Version aktualisieren",
+  "update.long": "Sucht auf GitHub nach einer neueren Version und installiert diese, falls gefunden.",
+  "init.short": "Ersteinrichtungsassistent"
+}

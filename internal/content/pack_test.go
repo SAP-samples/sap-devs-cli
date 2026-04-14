@@ -25,7 +25,7 @@ weight: 100
   type: official-docs
 `, "## Tip One\nTags: cap,nodejs\nUse cds watch for local development.")
 
-	pack, err := content.LoadPack(dir)
+	pack, err := content.LoadPack(dir, "")
 	require.NoError(t, err)
 	assert.Equal(t, "cap", pack.ID)
 	assert.Equal(t, "SAP CAP", pack.Name)
@@ -41,11 +41,97 @@ func TestLoadPack_MissingOptionalFilesOK(t *testing.T) {
 	yaml := "id: abap\nname: ABAP\ndescription: ABAP Cloud\ntags: []\nprofiles: []\nweight: 90\n"
 	require.NoError(t, os.WriteFile(filepath.Join(dir, "pack.yaml"), []byte(yaml), 0644))
 
-	pack, err := content.LoadPack(dir)
+	pack, err := content.LoadPack(dir, "")
 	require.NoError(t, err)
 	assert.Equal(t, "abap", pack.ID)
 	assert.Empty(t, pack.ContextMD)
 	assert.Empty(t, pack.Tips)
+}
+
+func TestLoadPack_LocaleContextFile(t *testing.T) {
+	dir := t.TempDir()
+	yaml := "id: test\nname: Test Pack\ndescription: Test\ntags: []\nprofiles: []\nweight: 0\n"
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "pack.yaml"), []byte(yaml), 0644))
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "context.md"), []byte("English context"), 0644))
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "context.de.md"), []byte("German context"), 0644))
+
+	// German: locale file used
+	p, err := content.LoadPack(dir, "de")
+	require.NoError(t, err)
+	assert.Equal(t, "German context", p.ContextMD)
+
+	// French: no locale file, falls back to base
+	p, err = content.LoadPack(dir, "fr")
+	require.NoError(t, err)
+	assert.Equal(t, "English context", p.ContextMD)
+
+	// Empty lang: base file used
+	p, err = content.LoadPack(dir, "")
+	require.NoError(t, err)
+	assert.Equal(t, "English context", p.ContextMD)
+
+	// lang="en": base file used (no context.en.md attempted)
+	p, err = content.LoadPack(dir, "en")
+	require.NoError(t, err)
+	assert.Equal(t, "English context", p.ContextMD)
+}
+
+func TestLoadPack_LocaleTipsFile(t *testing.T) {
+	dir := t.TempDir()
+	yaml := "id: test\nname: Test Pack\ndescription: Test\ntags: []\nprofiles: []\nweight: 0\n"
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "pack.yaml"), []byte(yaml), 0644))
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "tips.md"), []byte("## English tip\nEnglish content"), 0644))
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "tips.de.md"), []byte("## German tip\nGerman content"), 0644))
+
+	// German: locale tips file used
+	p, err := content.LoadPack(dir, "de")
+	require.NoError(t, err)
+	require.Len(t, p.Tips, 1)
+	assert.Equal(t, "German tip", p.Tips[0].Title)
+
+	// English: base tips file used
+	p, err = content.LoadPack(dir, "")
+	require.NoError(t, err)
+	require.Len(t, p.Tips, 1)
+	assert.Equal(t, "English tip", p.Tips[0].Title)
+}
+
+func TestLoadPack_LocaleMetadata(t *testing.T) {
+	dir := t.TempDir()
+	yaml := `id: test
+name: Test Pack
+description: A test pack
+tags: []
+profiles: []
+weight: 0
+locales:
+  de:
+    name: Testpaket
+    description: Ein Testpaket
+`
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "pack.yaml"), []byte(yaml), 0644))
+
+	// German locale
+	p, err := content.LoadPack(dir, "de")
+	require.NoError(t, err)
+	assert.Equal(t, "Testpaket", p.Name)
+	assert.Equal(t, "Ein Testpaket", p.Description)
+
+	// English (no locale block)
+	p, err = content.LoadPack(dir, "en")
+	require.NoError(t, err)
+	assert.Equal(t, "Test Pack", p.Name)
+	assert.Equal(t, "A test pack", p.Description)
+}
+
+func TestLoadPack_MalformedLocales(t *testing.T) {
+	dir := t.TempDir()
+	// locales value is a string instead of a map — invalid YAML for the field
+	yaml := "id: test\nname: Test\ndescription: Test\ntags: []\nprofiles: []\nweight: 0\nlocales: not-a-map\n"
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "pack.yaml"), []byte(yaml), 0644))
+
+	_, err := content.LoadPack(dir, "de")
+	assert.Error(t, err, "malformed locales block should return an error")
 }
 
 func makeTempPack(t *testing.T, id, packYAML, contextMD, resourcesYAML, tipsMD string) string {

@@ -4,12 +4,14 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/adapter"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/config"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
+	"github.tools.sap/developer-relations/sap-devs-cli/internal/i18n"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/update"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/xdg"
 )
@@ -25,7 +27,20 @@ var rootCmd = &cobra.Command{
 	Long:  `sap-devs injects up-to-date SAP developer knowledge into your AI tools.`,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		updateHintCh = nil // reset before every invocation
-		// Skip background check for the "update" command itself and dev builds
+
+		// Resolve active language before any command body runs.
+		// Runs for all commands so that Short/Long are always localized.
+		if paths, err := xdg.New(); err == nil {
+			if cfg, err := config.Load(paths.ConfigDir); err == nil {
+				i18n.ActiveLang = i18n.Resolve(cfg.Language)
+			}
+		}
+		if i18n.ActiveLang == "" {
+			i18n.ActiveLang = "en"
+		}
+		localizeCommands(cmd.Root(), i18n.ActiveLang)
+
+		// Skip background update check for "update" command and dev builds.
 		if cmd.Name() == "update" || Version == "dev" {
 			return nil
 		}
@@ -168,4 +183,41 @@ func mergeAdapters(dst, src []adapter.Adapter) []adapter.Adapter {
 		}
 	}
 	return dst
+}
+
+// localizeCommands walks root and all its descendants and updates Short and Long
+// from the i18n catalog. Uses i18n.Lookup so cobra-registered strings are never
+// overwritten with bare key names when a key is absent from both catalogs.
+// Key path segments are derived from cmd.Name() (cobra's first word of Use).
+// The root command uses the hardcoded prefix "root".
+func localizeCommands(root *cobra.Command, lang string) {
+	var walk func(cmd *cobra.Command)
+	walk = func(cmd *cobra.Command) {
+		prefix := buildLocalizeKey(cmd)
+		if s, ok := i18n.Lookup(lang, prefix+".short"); ok {
+			cmd.Short = s
+		}
+		if s, ok := i18n.Lookup(lang, prefix+".long"); ok {
+			cmd.Long = s
+		}
+		for _, sub := range cmd.Commands() {
+			walk(sub)
+		}
+	}
+	walk(root)
+}
+
+// buildLocalizeKey returns the dot-separated i18n key prefix for cmd.
+// The root command (!cmd.HasParent()) returns "root".
+// Other commands build the path by walking up the parent chain
+// (excluding the root command itself).
+func buildLocalizeKey(cmd *cobra.Command) string {
+	if !cmd.HasParent() {
+		return "root"
+	}
+	var parts []string
+	for c := cmd; c.HasParent(); c = c.Parent() {
+		parts = append([]string{c.Name()}, parts...)
+	}
+	return strings.Join(parts, ".")
 }

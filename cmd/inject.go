@@ -7,6 +7,7 @@ import (
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/adapter"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/config"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
+	"github.tools.sap/developer-relations/sap-devs-cli/internal/i18n"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/xdg"
 )
 
@@ -57,7 +58,7 @@ into project-level files (CLAUDE.md, .cursorrules, etc.) in the current director
 			}
 		}
 
-		packs, err := loader.LoadPacks(activeProfile)
+		packs, err := loader.LoadPacks(activeProfile, i18n.ActiveLang)
 		if err != nil {
 			return err
 		}
@@ -76,7 +77,7 @@ into project-level files (CLAUDE.md, .cursorrules, etc.) in the current director
 		}
 
 		if injectDryRun {
-			fmt.Println("[dry-run] no files will be modified")
+			fmt.Fprintln(cmd.OutOrStdout(), i18n.T(i18n.ActiveLang, "inject.dry_run"))
 		}
 
 		if err := engine.Run(); err != nil {
@@ -84,9 +85,9 @@ into project-level files (CLAUDE.md, .cursorrules, etc.) in the current director
 		}
 
 		if !injectDryRun {
-			fmt.Printf("SAP developer context injected (%s scope).\n", scope)
+			fmt.Fprintln(cmd.OutOrStdout(), i18n.Tf(i18n.ActiveLang, "inject.done", map[string]any{"Scope": scope}))
 			if injectTool == "" {
-				fmt.Println("Run 'sap-devs inject --dry-run' to preview changes before writing.")
+				fmt.Fprintln(cmd.OutOrStdout(), i18n.T(i18n.ActiveLang, "inject.hint"))
 			}
 		}
 		return nil

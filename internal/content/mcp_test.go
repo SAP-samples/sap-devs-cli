@@ -70,7 +70,7 @@ description: Test pack
   hosts: [claude-code]
 `), 0644))
 
-	pack, err := content.LoadPack(dir)
+	pack, err := content.LoadPack(dir, "")
 	require.NoError(t, err)
 	require.Len(t, pack.MCPServers, 1)
 	assert.Equal(t, "mypak", pack.MCPServers[0].PackID)

@@ -8,6 +8,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/config"
+	"github.tools.sap/developer-relations/sap-devs-cli/internal/i18n"
 	sapSync "github.tools.sap/developer-relations/sap-devs-cli/internal/sync"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/xdg"
 )
@@ -31,7 +32,7 @@ var syncCmd = &cobra.Command{
 			return err
 		}
 		if cfg.Sync.Disabled {
-			fmt.Println("Sync is disabled in config.")
+			fmt.Fprintln(cmd.OutOrStdout(), i18n.T(i18n.ActiveLang, "sync.disabled"))
 			return nil
 		}
 
@@ -60,11 +61,11 @@ var syncCmd = &cobra.Command{
 		}
 
 		if !needsSync {
-			fmt.Println("All content is up to date.")
+			fmt.Fprintln(cmd.OutOrStdout(), i18n.T(i18n.ActiveLang, "sync.up_to_date"))
 			return nil
 		}
 
-		fmt.Println("Syncing SAP developer content...")
+		fmt.Fprintln(cmd.OutOrStdout(), i18n.T(i18n.ActiveLang, "sync.syncing"))
 		if err := sapSync.FetchArchive(officialRepoArchive, officialCache); err != nil {
 			return fmt.Errorf("sync official content: %w", err)
 		}
@@ -72,19 +73,19 @@ var syncCmd = &cobra.Command{
 		if err := engine.MarkAllSynced(categories); err != nil {
 			return err
 		}
-		fmt.Printf("Updated: %v\n", categories)
+		fmt.Fprintln(cmd.OutOrStdout(), i18n.Tf(i18n.ActiveLang, "sync.updated", map[string]any{"Categories": categories}))
 
 		// Sync company repo if configured
 		if cfg.CompanyRepo != "" {
 			if !strings.HasPrefix(cfg.CompanyRepo, "https://") {
-				fmt.Printf("Warning: company_repo must be an HTTPS URL (got: %s) — skipping sync.\n", cfg.CompanyRepo)
+				fmt.Fprintln(cmd.OutOrStdout(), i18n.Tf(i18n.ActiveLang, "sync.warn_https", map[string]any{"URL": cfg.CompanyRepo}))
 			} else {
 				companyCache := filepath.Join(paths.CacheDir, "company")
 				repoURL := strings.TrimRight(cfg.CompanyRepo, "/")
 				companyArchive := repoURL + "/archive/refs/heads/main.zip"
-				fmt.Println("Syncing company repo...")
+				fmt.Fprintln(cmd.OutOrStdout(), i18n.T(i18n.ActiveLang, "sync.syncing_company"))
 				if err := sapSync.FetchArchive(companyArchive, companyCache); err != nil {
-					fmt.Printf("Warning: company repo sync failed: %v\n", err)
+					fmt.Fprintln(cmd.OutOrStdout(), i18n.Tf(i18n.ActiveLang, "sync.warn_company_failed", map[string]any{"Err": err}))
 				}
 			}
 		}

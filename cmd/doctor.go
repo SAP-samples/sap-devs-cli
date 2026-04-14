@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/config"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
+	"github.tools.sap/developer-relations/sap-devs-cli/internal/i18n"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/xdg"
 )
 
@@ -30,7 +31,7 @@ var doctorCmd = &cobra.Command{
 		var packs []*content.Pack
 		switch doctorProfile {
 		case "":
-			packs, err = loader.LoadPacks(nil)
+			packs, err = loader.LoadPacks(nil, i18n.ActiveLang)
 			if err != nil {
 				return err
 			}
@@ -53,7 +54,7 @@ var doctorCmd = &cobra.Command{
 			if active == nil {
 				return fmt.Errorf("profile %q not found — run 'sap-devs sync' to refresh content", profileCfg.ID)
 			}
-			packs, err = loader.LoadPacks(active)
+			packs, err = loader.LoadPacks(active, i18n.ActiveLang)
 			if err != nil {
 				return err
 			}
@@ -65,7 +66,7 @@ var doctorCmd = &cobra.Command{
 			if p == nil {
 				return fmt.Errorf("profile %q not found — run 'sap-devs sync' to refresh content", doctorProfile)
 			}
-			packs, err = loader.LoadPacks(p)
+			packs, err = loader.LoadPacks(p, i18n.ActiveLang)
 			if err != nil {
 				return err
 			}
@@ -78,12 +79,12 @@ var doctorCmd = &cobra.Command{
 		}
 
 		if len(tools) == 0 {
-			fmt.Println("No tools defined for the current selection.")
+			fmt.Fprintln(cmd.OutOrStdout(), i18n.T(i18n.ActiveLang, "doctor.no_tools"))
 			return nil
 		}
 
 		results := content.CheckTools(tools, execRunner)
-		printDoctorTable(results)
+		printDoctorTable(results, i18n.ActiveLang)
 
 		if doctorFix {
 			printInstallCommands(results)
@@ -109,29 +110,32 @@ func execRunner(command string) (string, error) {
 }
 
 // printDoctorTable prints an aligned table of tool check results.
-func printDoctorTable(results []content.ToolResult) {
-	fmt.Printf("%-20s %-12s %-12s %s\n", "TOOL", "REQUIRED", "FOUND", "STATUS")
+func printDoctorTable(results []content.ToolResult, lang string) {
+	fmt.Printf("%-20s %-12s %-12s %s\n",
+		i18n.T(lang, "doctor.col_tool"),
+		i18n.T(lang, "doctor.col_required"),
+		i18n.T(lang, "doctor.col_found"),
+		i18n.T(lang, "doctor.col_status"))
 	fmt.Println(strings.Repeat("-", 62))
 	for _, r := range results {
 		found := r.Found
 		if found == "" {
 			found = "-"
 		}
-		status := statusLabel(r.Status)
-		fmt.Printf("%-20s %-12s %-12s %s\n", r.Tool.ID, r.Tool.Required, found, status)
+		fmt.Printf("%-20s %-12s %-12s %s\n", r.Tool.ID, r.Tool.Required, found, statusLabel(r.Status, lang))
 	}
 }
 
-func statusLabel(s content.CheckStatus) string {
+func statusLabel(s content.CheckStatus, lang string) string {
 	switch s {
 	case content.StatusOK:
-		return "ok"
+		return i18n.T(lang, "doctor.status_ok")
 	case content.StatusUnknown:
-		return "ok (unverified)"
+		return i18n.T(lang, "doctor.status_ok_unverified")
 	case content.StatusFail:
-		return "FAIL"
+		return i18n.T(lang, "doctor.status_fail")
 	case content.StatusMissing:
-		return "MISSING"
+		return i18n.T(lang, "doctor.status_missing")
 	}
 	return string(s)
 }
@@ -147,16 +151,16 @@ func printInstallCommands(results []content.ToolResult) {
 	if len(toFix) == 0 {
 		return
 	}
-	fmt.Println("\nInstall commands:")
+	fmt.Println(i18n.T(i18n.ActiveLang, "doctor.install_header"))
 	for _, r := range toFix {
-		cmd := installCommand(r.Tool)
+		cmd := installCommand(r.Tool, i18n.ActiveLang)
 		fmt.Printf("  %-20s %s\n", r.Tool.ID, cmd)
 	}
 }
 
 // installCommand returns the best install command for the current OS,
 // falling back to "all", then to the docs URL.
-func installCommand(tool content.ToolDef) string {
+func installCommand(tool content.ToolDef, lang string) string {
 	osKey := map[string]string{
 		"windows": "windows",
 		"darwin":  "macos",
@@ -170,9 +174,9 @@ func installCommand(tool content.ToolDef) string {
 		return cmd
 	}
 	if tool.Docs != "" {
-		return "see: " + tool.Docs
+		return i18n.T(lang, "doctor.install_see") + tool.Docs
 	}
-	return "no install command available"
+	return i18n.T(lang, "doctor.install_none")
 }
 
 func init() {

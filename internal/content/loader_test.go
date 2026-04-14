@@ -23,7 +23,7 @@ func TestContentLoader_LoadPacks_MergesLayers(t *testing.T) {
 		OfficialDir: official,
 		CompanyDir:  company,
 	}
-	packs, err := loader.LoadPacks(nil)
+	packs, err := loader.LoadPacks(nil, "")
 	require.NoError(t, err)
 	assert.Len(t, packs, 2)
 	capPack := findPack(packs, "cap")
