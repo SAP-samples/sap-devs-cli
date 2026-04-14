@@ -6,7 +6,7 @@ This guide covers everything you need to build, test, and release the `sap-devs`
 
 ## Prerequisites
 
-- **Go 1.26+** — [download](https://go.dev/dl/)
+- **Go 1.26.1+** — [download](https://go.dev/dl/)
 - **git**
 - **Linux only:** `libx11-dev` (required by the clipboard dependency `golang.design/x/clipboard`)
   ```bash
@@ -63,7 +63,7 @@ go test ./internal/content/...
 go test ./internal/i18n/...
 ```
 
-CI runs on a self-hosted `Linux X64` runner and is the authoritative test runner. Tests that pass locally will pass in CI; the reverse is not always true on Windows.
+CI runs on a self-hosted `Linux X64` runner and is the authoritative test runner. On Windows, tests may fail locally but pass in CI (Linux). A test failure in CI that passes locally indicates a genuine cross-platform bug.
 
 ---
 
@@ -112,7 +112,7 @@ Content is loaded from up to four sources, merged by `id` with later layers over
 
 Adapters (`content/adapters/<tool>.yaml`) define how to push context into a specific AI tool. Three types:
 
-- **`file-inject`** — writes a fenced section into a config file (e.g. `~/.claude/CLAUDE.md`). Modes: `replace-section` (replaces a named fenced block) or `append` (adds if not present).
+- **`file-inject`** — writes a fenced section into a config file (e.g. `~/.claude/CLAUDE.md`) using HTML comment markers. The section is identified by markers of the form `<!-- sap-devs:start:Section Name -->` and `<!-- sap-devs:end:Section Name -->`. Currently only `replace-section` mode is implemented (replaces an existing section or appends if not present); `append` mode is defined in the adapter schema but not yet active.
 - **`clipboard-export`** — copies context to clipboard (global scope only).
 - **`mcp-wire`** — registers MCP servers in the tool's JSON config (used by `mcp install`, not `inject`).
 
