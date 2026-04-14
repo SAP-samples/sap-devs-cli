@@ -13,6 +13,7 @@ func TestCheckLatest_NewerAvailable(t *testing.T) {
 	}))
 	defer srv.Close()
 	apiBase = srv.URL
+	t.Cleanup(func() { apiBase = "" })
 
 	rel, newer, err := CheckLatest("https://example.com/owner/repo", "1.0.0")
 	if err != nil {
@@ -35,6 +36,7 @@ func TestCheckLatest_AlreadyLatest(t *testing.T) {
 	}))
 	defer srv.Close()
 	apiBase = srv.URL
+	t.Cleanup(func() { apiBase = "" })
 
 	_, newer, err := CheckLatest("https://example.com/owner/repo", "1.0.0")
 	if err != nil {
@@ -47,6 +49,7 @@ func TestCheckLatest_AlreadyLatest(t *testing.T) {
 
 func TestCheckLatest_NetworkError(t *testing.T) {
 	apiBase = "http://127.0.0.1:1" // nothing listening
+	t.Cleanup(func() { apiBase = "" })
 
 	_, _, err := CheckLatest("https://example.com/owner/repo", "1.0.0")
 	if err == nil {
@@ -60,6 +63,7 @@ func TestCheckLatest_MalformedJSON(t *testing.T) {
 	}))
 	defer srv.Close()
 	apiBase = srv.URL
+	t.Cleanup(func() { apiBase = "" })
 
 	_, _, err := CheckLatest("https://example.com/owner/repo", "1.0.0")
 	if err == nil {

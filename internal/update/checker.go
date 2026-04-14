@@ -40,6 +40,10 @@ func CheckLatest(repoURL, currentVersion string) (*Release, bool, error) {
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode != http.StatusOK {
+		return nil, false, fmt.Errorf("GitHub API returned HTTP %d", resp.StatusCode)
+	}
+
 	var result struct {
 		TagName string `json:"tag_name"`
 	}
