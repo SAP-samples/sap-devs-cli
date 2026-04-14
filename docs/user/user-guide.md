@@ -226,6 +226,8 @@ sap-devs doctor [flags]
 | `--fix` | Print install commands for failed or missing tools |
 | `--profile <id>` | Check a specific profile (`@active` for the configured profile) |
 
+> **Note:** Without `--profile`, `doctor` checks tools from **all packs**, not just your active profile. Use `sap-devs doctor --profile @active` to check only the tools required by your configured profile.
+
 **Example:**
 ```bash
 sap-devs doctor --fix

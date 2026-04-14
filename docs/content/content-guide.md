@@ -234,7 +234,7 @@ tip_tags: [cap, nodejs, odata, cds, btp]   # tips with these tags are preferred 
 
 5. Test with dev mode:
    ```bash
-   SAP_DEVS_DEV=1 sap-devs inject --dry-run
+   SAP_DEVS_DEV=1 go run . inject --dry-run
    ```
    Verify the new context appears in the output.
 
@@ -338,8 +338,8 @@ Values may be plain strings or Go `text/template` expressions (e.g. `{{.Scope}}`
 4. **Test:**
    ```bash
    sap-devs config set language <lang>
-   SAP_DEVS_DEV=1 sap-devs inject --dry-run
-   SAP_DEVS_DEV=1 sap-devs tip
+   SAP_DEVS_DEV=1 go run . inject --dry-run
+   SAP_DEVS_DEV=1 go run . tip
    ```
    Verify translated strings appear in output.
 
