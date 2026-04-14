@@ -71,12 +71,12 @@ func Load(configDir string) (string, error) {
 func Delete(configDir string) error {
 	keychainErr := keyringBackend.Delete(keyringSvc, keyringUser)
 	if keychainErr != nil && !errors.Is(keychainErr, errKeyringNotFound) {
-		// Real keychain access error (e.g. "access denied") — surface it; the
-		// token may still be in the keychain so we must not silently succeed.
-		return keychainErr
+		// Keychain unavailable or access error — warn and fall through to file,
+		// matching the Store/Load fallback pattern.
+		fmt.Fprintf(os.Stderr, "keychain unavailable: %v; trying credentials file\n", keychainErr)
 	}
-	// Keychain either succeeded (keychainErr == nil) or reported "not found".
-	// Either way, also remove the fallback credentials file if present.
+	// Keychain either succeeded, reported "not found", or is unavailable.
+	// Also remove the fallback credentials file if present.
 	path := credFile(configDir)
 	err := os.Remove(path)
 	if os.IsNotExist(err) {

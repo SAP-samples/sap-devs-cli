@@ -196,14 +196,13 @@ func TestResolve_KeychainErrorWarnsAndFallsBack(t *testing.T) {
 }
 
 func TestDelete_KeychainUnavailableNoFile(t *testing.T) {
-	keychainErr := errors.New("permission denied")
-	keyringBackend = unavailableKeyring{err: keychainErr}
+	keyringBackend = unavailableKeyring{err: errors.New("permission denied")}
 	dir := t.TempDir()
 	err := Delete(dir)
-	// A real keychain access error (not ErrNotFound) must be propagated so the
-	// caller knows the token may still be stored in the keychain.
-	assert.NotNil(t, err)
-	assert.ErrorContains(t, err, "permission denied")
+	// Keychain unavailable + no file = nothing stored anywhere → ErrNotFound.
+	// Matches the Store/Load fallback pattern: warn to stderr, don't surface the
+	// keychain error as a failure when the token was likely stored in the file.
+	assert.ErrorIs(t, err, ErrNotFound)
 }
 
 func TestCredFile_IsRestrictedPermissions(t *testing.T) {
