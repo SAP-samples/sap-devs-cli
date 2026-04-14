@@ -47,7 +47,7 @@ Each file is fully self-contained for its audience. The project README will be u
    `go build ./...` + `go vet ./...`. Explanation of why `go test` is blocked on Windows: Windows Defender quarantines test binaries executed from `~/.config` paths.
 
 5. **Running tests**  
-   `go test ./...` for all packages; single-package form for focused runs. CI on `ubuntu-latest` is the authoritative test runner.
+   `go test ./...` for all packages; single-package form for focused runs. CI runs on a self-hosted `Linux X64` runner (`runs-on: [self-hosted, Linux, X64]`) and is the authoritative test runner.
 
 6. **Project layout**  
    Brief directory map: `cmd/` (cobra commands), `internal/` (adapter, config, content, i18n, sync, update, xdg packages), `content/` (packs, adapters, profiles), `.github/` (CI + release workflows), `.goreleaser.yml`.
@@ -71,7 +71,7 @@ Each file is fully self-contained for its audience. The project README will be u
    - GitHub Actions `release.yml` triggers on `v*` tags, runs GoReleaser on `ubuntu-latest`.
    - GoReleaser reads `.goreleaser.yml`:
      - Builds: Linux amd64/arm64 (`.tar.gz`), macOS amd64/arm64 (`.tar.gz`), Windows amd64 (`.zip`). Windows arm64 excluded.
-     - Version injected via `-ldflags -X cmd.Version={{ .Version }}`.
+     - Version injected via `-ldflags "-X github.tools.sap/developer-relations/sap-devs-cli/cmd.Version={{ .Version }}"` (full symbol path required).
      - Archive naming: `sap-devs_<version>_<os>_<arch>.<ext>`.
      - `checksums.txt` (SHA256) included in release assets.
    - Verify artifacts appear on the GitHub Releases page.
@@ -92,7 +92,7 @@ Each file is fully self-contained for its audience. The project README will be u
 2. **Pack structure**  
    Directory: `content/packs/<pack-id>/`. Full schema for each file:
 
-   - **`pack.yaml`** — `id` (unique slug), `name`, `description`, `tags` (list), `profiles` (list of profile IDs), `weight` (integer, higher = higher priority in rendering), `locales` block mapping language tag to translated `name`/`description`.
+   - **`pack.yaml`** — `id` (unique slug), `name`, `description`, `tags` (list), `profiles` (list of profile IDs that include this pack), `locales` block mapping language tag to translated `name`/`description`. Note: `weight` is NOT a pack.yaml field — it is set per-pack inside the profile's `packs` list.
    - **`context.md`** — Free-form Markdown injected as AI context into tools. No special syntax. May be long-form reference material.
    - **`context.<lang>.md`** — Localised version of `context.md` for language `<lang>` (e.g. `context.de.md`). Falls back to `context.md` if absent.
    - **`tips.md`** — H2-delimited tips. Each tip starts with `## <Title>`, followed by optional `Tags: tag1,tag2` line, then tip body.
@@ -128,7 +128,7 @@ Each file is fully self-contained for its audience. The project README will be u
          name: Translated name
          description: Translated description
      ```
-   - **CLI string catalog:** Add `internal/i18n/catalogs/<lang>.json`. Keys follow the pattern `cmd.subcommand.string_name` (e.g. `inject.done`). Values may be plain strings or Go `text/template` expressions. Use `T(key)` for plain strings; `Tf(key, data)` for template strings (e.g. `"sync.updated": "Updated: {{.Categories}}"`).
+   - **CLI string catalog:** Add `internal/i18n/catalogs/<lang>.json`. Keys follow the pattern `cmd.subcommand.string_name` (e.g. `inject.done`). Values may be plain strings or Go `text/template` expressions. Use `T(lang, key)` for plain strings; `Tf(lang, key, data)` for template strings (e.g. `"sync.updated": "Updated: {{.Categories}}"`). Both require `lang` as the first argument — typically `i18n.ActiveLang`.
    - **Adding a new language end-to-end:**
      1. Create `internal/i18n/catalogs/<lang>.json` with translated keys (copy `en.json` as starting point; any missing keys fall back to English).
      2. Add `context.<lang>.md` and `tips.<lang>.md` to each pack you want to translate.
@@ -198,7 +198,7 @@ Each file is fully self-contained for its audience. The project README will be u
 10. **Platform notes**  
     Config, cache, and data directory paths per OS:
     - Linux: `~/.config/sap-devs`, `~/.cache/sap-devs`, `~/.local/share/sap-devs` (XDG env vars honoured)
-    - macOS: `~/Library/Application Support/sap-devs`, `~/Library/Caches/sap-devs`
+    - macOS: `~/Library/Application Support/sap-devs`, `~/Library/Caches/sap-devs`, `~/Library/Application Support/sap-devs/data`
     - Windows: `%APPDATA%/sap-devs`, `%LOCALAPPDATA%/sap-devs/cache`, `%LOCALAPPDATA%/sap-devs/data`
 
 ---
