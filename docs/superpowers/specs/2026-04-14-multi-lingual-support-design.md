@@ -31,8 +31,11 @@ New package with three responsibilities:
 //   LANG env var → LC_ALL env var → "en".
 // "Non-empty" means a string that is not "". An env var set to ""
 // is treated as unset and the next source is checked.
-// On Windows, LANG/LC_ALL are rarely set; callers should encourage
-// users to set language via config.
+// If cfgLang is non-empty, it is used exclusively — env vars are NOT
+// consulted, even if cfgLang strips to an unsupported language tag.
+// Unsupported stripped tags resolve directly to "en".
+// On Windows, LANG/LC_ALL are rarely set; users should set language
+// via config.
 // Parsing strips encoding and region suffixes from all inputs
 // (cfgLang, LANG, LC_ALL): "de_AT.UTF-8" → "de", "de_AT" → "de".
 // Catalog lookup is performed on the stripped base tag only.
@@ -58,6 +61,12 @@ var ActiveLang string  // set once in rootCmd.PersistentPreRunE; read-only there
 // Falls back to en.json if key absent in lang catalog.
 // Falls back to raw key string if absent in both (never panics).
 func T(lang, key string) string
+
+// Lookup looks up key and reports whether it was found in any catalog.
+// Returns the resolved string and true if found in lang or en.json;
+// returns "", false if the key is absent from both.
+// Used by localizeCommands to avoid overwriting cobra strings with raw key names.
+func Lookup(lang, key string) (string, bool)
 
 // Tf looks up key and executes it as a text/template with the provided data map.
 // data may be nil (equivalent to calling T).
@@ -142,8 +151,10 @@ Two categories of strings:
 //   direct child "inject"       → "inject.short" / "inject.long"
 //   subcommand "profile list"   → "profile.list.short" / "profile.list.long"
 //   subcommand "config show"    → "config.show.short" / "config.show.long"
-// localizeCommands calls i18n.T for each key, which provides the full fallback
-// chain automatically (target lang → en.json → cobra-registered string).
+// localizeCommands calls i18n.Lookup for each key. If Lookup returns false
+// (key absent from both target lang and en.json), the cobra-registered string
+// is left unchanged. This prevents bare key names from appearing in output
+// if en.json is ever incomplete.
 func localizeCommands(root *cobra.Command, lang string)
 ```
 
@@ -184,7 +195,7 @@ content/packs/cap/
 ```go
 func LoadPack(packDir string, lang string) (*Pack, error)
 ```
-`lang` is expected to be a stripped base language tag (e.g. `"de"`, `"en"`) as produced by `i18n.Resolve` — never a full locale tag like `"de_AT"`. An empty `lang` (`""`) is treated as `"en"`: no locale suffix is attempted and base files are used. When loading `context.md` and `tips.md`, tries `<file>.<lang>.md` first (when lang is non-empty and not `"en"`); falls back to the base file silently if absent.
+`lang` is expected to be a stripped base language tag as produced by `i18n.Resolve` — `LoadPack` does NOT strip the tag itself; passing a non-stripped tag (e.g. `"de_AT"`) results in a silent locale-file miss and English fallback. Callers are responsible for passing a stripped tag. When `lang` is `""` or `"en"`, no locale suffix is attempted and base files are used directly (avoids fruitless `context.en.md` lookups). For any other value, `context.<lang>.md` and `tips.<lang>.md` are tried first, falling back to base files silently if absent.
 
 **`ContentLoader.LoadPacks` new signature:**
 ```go
@@ -262,7 +273,8 @@ command body
 
 - `Resolve`: config value wins over env vars; `LANG` wins over `LC_ALL`; `LANG=""` treated as unset (falls through to `LC_ALL`); `de_AT.UTF-8` parses to `de`; unknown language falls back to `en`; empty config + no env vars returns `en`
 - `T`: known key returns translation; missing key falls back to `en` catalog value; missing in both returns raw key
-- `Tf`: template substitution works; nil data behaves like `T`; missing key falls back before template execution; template execution failure returns raw template string; missing data key returns raw template string
+- `Lookup`: found in target lang returns `(value, true)`; missing in target but in `en.json` returns `(en value, true)`; missing in both returns `("", false)`
+- `Tf`: template substitution works; nil data behaves like `T`; missing key falls back before template execution; template execution failure returns raw template string; missing data key (missingkey=error) returns raw template string; non-nil template string + nil data triggers missingkey error and returns raw template string
 
 **`LoadPack` tests:**
 
