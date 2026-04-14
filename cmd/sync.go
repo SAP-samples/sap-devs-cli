@@ -8,6 +8,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/config"
+	"github.tools.sap/developer-relations/sap-devs-cli/internal/credentials"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/i18n"
 	sapSync "github.tools.sap/developer-relations/sap-devs-cli/internal/sync"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/xdg"
@@ -35,6 +36,8 @@ var syncCmd = &cobra.Command{
 			fmt.Fprintln(cmd.OutOrStdout(), i18n.T(i18n.ActiveLang, "sync.disabled"))
 			return nil
 		}
+
+		token := credentials.Resolve(paths.ConfigDir)
 
 		categories := allCategories()
 		if syncCategory != "" {
@@ -66,7 +69,7 @@ var syncCmd = &cobra.Command{
 		}
 
 		fmt.Fprintln(cmd.OutOrStdout(), i18n.T(i18n.ActiveLang, "sync.syncing"))
-		if err := sapSync.FetchArchive(officialRepoArchive, officialCache); err != nil {
+		if err := sapSync.FetchArchive(officialRepoArchive, officialCache, token); err != nil {
 			return fmt.Errorf("sync official content: %w", err)
 		}
 
@@ -84,7 +87,7 @@ var syncCmd = &cobra.Command{
 				repoURL := strings.TrimRight(cfg.CompanyRepo, "/")
 				companyArchive := repoURL + "/archive/refs/heads/main.zip"
 				fmt.Fprintln(cmd.OutOrStdout(), i18n.T(i18n.ActiveLang, "sync.syncing_company"))
-				if err := sapSync.FetchArchive(companyArchive, companyCache); err != nil {
+				if err := sapSync.FetchArchive(companyArchive, companyCache, token); err != nil {
 					fmt.Fprintln(cmd.OutOrStdout(), i18n.Tf(i18n.ActiveLang, "sync.warn_company_failed", map[string]any{"Err": err}))
 				}
 			}

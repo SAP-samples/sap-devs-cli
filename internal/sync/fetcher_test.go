@@ -29,7 +29,7 @@ func TestFetcher_DownloadsAndExtractsZip(t *testing.T) {
 	defer srv.Close()
 
 	dest := t.TempDir()
-	err := sapSync.FetchArchive(srv.URL, dest)
+	err := sapSync.FetchArchive(srv.URL, dest, "")
 	require.NoError(t, err)
 
 	data, err := os.ReadFile(filepath.Join(dest, "content", "packs", "cap", "pack.yaml"))
@@ -52,7 +52,68 @@ func TestFetcher_BlocksZipSlip(t *testing.T) {
 	defer srv.Close()
 
 	dest := t.TempDir()
-	err := sapSync.FetchArchive(srv.URL, dest)
+	err := sapSync.FetchArchive(srv.URL, dest, "")
 	assert.Error(t, err, "zip slip should be blocked")
 	assert.Contains(t, err.Error(), "zip slip blocked")
+}
+
+func TestFetcher_AuthRedirectReturnsActionableError(t *testing.T) {
+	// Server that redirects to /login on the same host (simulates GHE auth wall)
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/login" {
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte("<html>Login page</html>"))
+			return
+		}
+		http.Redirect(w, r, "/login", http.StatusFound)
+	}))
+	defer srv.Close()
+
+	dest := t.TempDir()
+	err := sapSync.FetchArchive(srv.URL+"/repo.zip", dest, "")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "authentication required")
+	assert.Contains(t, err.Error(), "GITHUB_TOOLS_SAP_TOKEN")
+	assert.Contains(t, err.Error(), "sap-devs config token")
+}
+
+func TestFetcher_SendsAuthHeader(t *testing.T) {
+	var gotAuth string
+	buf := new(bytes.Buffer)
+	w := zip.NewWriter(buf)
+	f, _ := w.Create("repo-main/content/pack.yaml")
+	f.Write([]byte("id: test\n"))
+	w.Close()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotAuth = r.Header.Get("Authorization")
+		w.Header().Set("Content-Type", "application/zip")
+		w.Write(buf.Bytes())
+	}))
+	defer srv.Close()
+
+	dest := t.TempDir()
+	err := sapSync.FetchArchive(srv.URL, dest, "mytoken")
+	require.NoError(t, err)
+	assert.Equal(t, "token mytoken", gotAuth)
+}
+
+func TestFetcher_NoAuthHeaderWhenTokenEmpty(t *testing.T) {
+	var gotAuth string
+	buf := new(bytes.Buffer)
+	w := zip.NewWriter(buf)
+	f, _ := w.Create("repo-main/content/pack.yaml")
+	f.Write([]byte("id: test\n"))
+	w.Close()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotAuth = r.Header.Get("Authorization")
+		w.Header().Set("Content-Type", "application/zip")
+		w.Write(buf.Bytes())
+	}))
+	defer srv.Close()
+
+	dest := t.TempDir()
+	require.NoError(t, sapSync.FetchArchive(srv.URL, dest, ""))
+	assert.Equal(t, "", gotAuth)
 }

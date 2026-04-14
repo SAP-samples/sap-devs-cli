@@ -6,28 +6,49 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
 )
 
-// FetchArchive downloads a zip archive from url and extracts it to destDir.
+// FetchArchive downloads a zip archive from rawURL and extracts it to destDir.
+// If token is non-empty it is sent as an Authorization header.
 // Existing files are overwritten; directories are created as needed.
 // GitHub/GitLab archives include a top-level directory prefix which is stripped.
-func FetchArchive(url, destDir string) error {
-	resp, err := http.Get(url) //nolint:gosec // URL comes from user config, not untrusted input
+func FetchArchive(rawURL, destDir, token string) error {
+	parsedURL, err := url.Parse(rawURL)
 	if err != nil {
-		return fmt.Errorf("fetch %s: %w", url, err)
+		return fmt.Errorf("parse URL: %w", err)
+	}
+
+	req, err := http.NewRequest(http.MethodGet, rawURL, nil) //nolint:gosec // URL comes from user config, not untrusted input
+	if err != nil {
+		return fmt.Errorf("create request: %w", err)
+	}
+	if token != "" {
+		req.Header.Set("Authorization", "token "+token)
+	}
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("fetch %s: %w", rawURL, err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("fetch %s: HTTP %d", url, resp.StatusCode)
+		return fmt.Errorf("fetch %s: HTTP %d", rawURL, resp.StatusCode)
 	}
 
 	data, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return fmt.Errorf("read response: %w", err)
+	}
+
+	// Auth redirect detection: if we ended up on the login page, surface a clear error.
+	// Check resp.Request.URL (the final URL after redirects) for a /login path on the same host.
+	if resp.Request.URL.Host == parsedURL.Host && strings.Contains(resp.Request.URL.Path, "/login") {
+		return fmt.Errorf("authentication required for %s — set GITHUB_TOOLS_SAP_TOKEN or run 'sap-devs config token'", parsedURL.Host)
 	}
 
 	zr, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
