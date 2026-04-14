@@ -62,7 +62,7 @@ New package with four exported functions:
 func Store(configDir, token string) error
 
 // Load retrieves the token from the OS keychain or credentials file.
-// Returns ("", nil) if no token is stored.
+// Returns ErrNotFound if no token is stored.
 func Load(configDir string) (string, error)
 
 // Delete removes the stored token from the keychain or credentials file.
