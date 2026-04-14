@@ -4,18 +4,63 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/spf13/cobra"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/adapter"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/config"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
+	"github.tools.sap/developer-relations/sap-devs-cli/internal/update"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/xdg"
 )
+
+// updateHintCh carries a background update hint to PersistentPostRunE.
+// Reset to nil at the top of each PersistentPreRunE to avoid stale channels
+// across multiple command invocations in a single process (e.g. tests).
+var updateHintCh chan string
 
 var rootCmd = &cobra.Command{
 	Use:   "sap-devs",
 	Short: "AI-first SAP developer toolkit",
 	Long:  `sap-devs injects up-to-date SAP developer knowledge into your AI tools.`,
+	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+		updateHintCh = nil // reset before every invocation
+		// Skip background check for the "update" command itself and dev builds
+		if cmd.Name() == "update" || Version == "dev" {
+			return nil
+		}
+		cacheDir := mustCacheDir()
+		if cacheDir == "" {
+			return nil // can't determine cache dir; skip check silently
+		}
+		if !update.ShouldCheck(cacheDir, 168*time.Hour) {
+			return nil
+		}
+		updateHintCh = make(chan string, 1)
+		go func() {
+			rel, newer, err := update.CheckLatest(repoURL, Version)
+			if err == nil {
+				update.RecordCheck(cacheDir)
+				if newer {
+					updateHintCh <- "↻ sap-devs " + rel.TagName + " available — run 'sap-devs update' to install"
+				}
+			}
+			// on error: channel stays empty, hint is skipped, RecordCheck not called
+		}()
+		return nil
+	},
+	PersistentPostRunE: func(cmd *cobra.Command, args []string) error {
+		if updateHintCh == nil {
+			return nil
+		}
+		select {
+		case hint := <-updateHintCh:
+			fmt.Fprintln(os.Stderr, hint)
+		case <-time.After(3 * time.Second):
+			// goroutine too slow or no update available — skip silently
+		}
+		return nil
+	},
 }
 
 func Execute() {
@@ -23,6 +68,16 @@ func Execute() {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
+}
+
+// mustCacheDir returns the XDG cache directory, or empty string on failure.
+// An empty string causes the background update check to be skipped silently.
+func mustCacheDir() string {
+	paths, err := xdg.New()
+	if err != nil {
+		return ""
+	}
+	return paths.CacheDir
 }
 
 // newContentLoader constructs a ContentLoader using platform paths and config.
