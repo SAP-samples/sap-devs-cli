@@ -16,7 +16,7 @@ type ContentLoader struct {
 
 // LoadPacks loads and merges packs from all configured layers,
 // then orders them by the given profile. Later layers override earlier ones by pack ID.
-func (cl *ContentLoader) LoadPacks(profile *Profile) ([]*Pack, error) {
+func (cl *ContentLoader) LoadPacks(profile *Profile, lang string) ([]*Pack, error) {
 	packMap := make(map[string]*Pack)
 
 	for _, dir := range cl.activeDirs() {
@@ -32,7 +32,7 @@ func (cl *ContentLoader) LoadPacks(profile *Profile) ([]*Pack, error) {
 			if !e.IsDir() {
 				continue
 			}
-			pack, err := LoadPack(filepath.Join(packsDir, e.Name()), "")
+			pack, err := LoadPack(filepath.Join(packsDir, e.Name()), lang)
 			if err != nil {
 				return nil, err
 			}

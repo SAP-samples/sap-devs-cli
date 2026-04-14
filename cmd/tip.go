@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/config"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
+	"github.tools.sap/developer-relations/sap-devs-cli/internal/i18n"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/xdg"
 )
 
@@ -37,7 +38,7 @@ var tipCmd = &cobra.Command{
 			}
 		}
 
-		packs, err := loader.LoadPacks(activeProfile)
+		packs, err := loader.LoadPacks(activeProfile, i18n.ActiveLang)
 		if err != nil {
 			return err
 		}

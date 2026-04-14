@@ -7,6 +7,7 @@ import (
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/adapter"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/config"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
+	"github.tools.sap/developer-relations/sap-devs-cli/internal/i18n"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/xdg"
 )
 
@@ -57,7 +58,7 @@ into project-level files (CLAUDE.md, .cursorrules, etc.) in the current director
 			}
 		}
 
-		packs, err := loader.LoadPacks(activeProfile)
+		packs, err := loader.LoadPacks(activeProfile, i18n.ActiveLang)
 		if err != nil {
 			return err
 		}

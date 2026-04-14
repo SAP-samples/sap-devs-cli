@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/config"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
+	"github.tools.sap/developer-relations/sap-devs-cli/internal/i18n"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/xdg"
 )
 
@@ -30,7 +31,7 @@ var doctorCmd = &cobra.Command{
 		var packs []*content.Pack
 		switch doctorProfile {
 		case "":
-			packs, err = loader.LoadPacks(nil)
+			packs, err = loader.LoadPacks(nil, i18n.ActiveLang)
 			if err != nil {
 				return err
 			}
@@ -53,7 +54,7 @@ var doctorCmd = &cobra.Command{
 			if active == nil {
 				return fmt.Errorf("profile %q not found — run 'sap-devs sync' to refresh content", profileCfg.ID)
 			}
-			packs, err = loader.LoadPacks(active)
+			packs, err = loader.LoadPacks(active, i18n.ActiveLang)
 			if err != nil {
 				return err
 			}
@@ -65,7 +66,7 @@ var doctorCmd = &cobra.Command{
 			if p == nil {
 				return fmt.Errorf("profile %q not found — run 'sap-devs sync' to refresh content", doctorProfile)
 			}
-			packs, err = loader.LoadPacks(p)
+			packs, err = loader.LoadPacks(p, i18n.ActiveLang)
 			if err != nil {
 				return err
 			}
