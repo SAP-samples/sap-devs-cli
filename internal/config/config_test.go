@@ -57,3 +57,25 @@ func TestSaveAndLoadProfile_RoundTrip(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "cap-developer", loaded.ID)
 }
+
+func TestConfigLanguageRoundTrip(t *testing.T) {
+	dir := t.TempDir()
+	cfg := config.Default()
+	cfg.Language = "de"
+	require.NoError(t, cfg.Save(dir))
+
+	loaded, err := config.Load(dir)
+	require.NoError(t, err)
+	assert.Equal(t, "de", loaded.Language)
+}
+
+func TestConfigLanguageOmitempty(t *testing.T) {
+	dir := t.TempDir()
+	cfg := config.Default() // Language is ""
+	require.NoError(t, cfg.Save(dir))
+
+	data, err := os.ReadFile(filepath.Join(dir, "config.yaml"))
+	require.NoError(t, err)
+	assert.NotContains(t, string(data), "language",
+		"empty Language should not appear in YAML output")
+}

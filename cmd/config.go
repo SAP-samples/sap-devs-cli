@@ -26,6 +26,7 @@ var configShowCmd = &cobra.Command{
 			return err
 		}
 		fmt.Printf("company_repo:    %s\n", cfg.CompanyRepo)
+		fmt.Printf("language:        %s\n", cfg.Language)
 		fmt.Printf("sync.tips:       %s\n", cfg.Sync.Tips)
 		fmt.Printf("sync.tools:      %s\n", cfg.Sync.Tools)
 		fmt.Printf("sync.advocates:  %s\n", cfg.Sync.Advocates)
@@ -53,6 +54,8 @@ var configSetCmd = &cobra.Command{
 		switch args[0] {
 		case "company_repo":
 			cfg.CompanyRepo = args[1]
+		case "language":
+			cfg.Language = args[1]
 		default:
 			return fmt.Errorf("unknown config key: %s", args[0])
 		}
