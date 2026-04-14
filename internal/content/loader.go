@@ -32,7 +32,7 @@ func (cl *ContentLoader) LoadPacks(profile *Profile) ([]*Pack, error) {
 			if !e.IsDir() {
 				continue
 			}
-			pack, err := LoadPack(filepath.Join(packsDir, e.Name()))
+			pack, err := LoadPack(filepath.Join(packsDir, e.Name()), "")
 			if err != nil {
 				return nil, err
 			}

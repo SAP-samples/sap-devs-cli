@@ -110,7 +110,7 @@ description: Test pack
   tags: [test]
 `), 0644))
 
-	pack, err := content.LoadPack(dir)
+	pack, err := content.LoadPack(dir, "")
 	require.NoError(t, err)
 	require.Len(t, pack.Resources, 1)
 	assert.Equal(t, "mypak", pack.Resources[0].PackID)

@@ -73,17 +73,25 @@ type Tip struct {
 	Tags    []string
 }
 
+type packMetaLocale struct {
+	Name        string `yaml:"name"`
+	Description string `yaml:"description"`
+}
+
 type packMeta struct {
-	ID          string   `yaml:"id"`
-	Name        string   `yaml:"name"`
-	Description string   `yaml:"description"`
-	Tags        []string `yaml:"tags"`
-	Profiles    []string `yaml:"profiles"`
-	Weight      int      `yaml:"weight"`
+	ID          string                    `yaml:"id"`
+	Name        string                    `yaml:"name"`
+	Description string                    `yaml:"description"`
+	Tags        []string                  `yaml:"tags"`
+	Profiles    []string                  `yaml:"profiles"`
+	Weight      int                       `yaml:"weight"`
+	Locales     map[string]packMetaLocale `yaml:"locales,omitempty"`
 }
 
 // LoadPack reads all files from packDir and returns a populated Pack.
-func LoadPack(packDir string) (*Pack, error) {
+// lang selects locale-specific files and metadata overrides (e.g. "de", "fr").
+// Pass "" or "en" to use the base (English) content.
+func LoadPack(packDir string, lang string) (*Pack, error) {
 	metaData, err := os.ReadFile(filepath.Join(packDir, "pack.yaml"))
 	if err != nil {
 		return nil, err
@@ -102,7 +110,24 @@ func LoadPack(packDir string) (*Pack, error) {
 		Weight:      meta.Weight,
 	}
 
-	if data, err := os.ReadFile(filepath.Join(packDir, "context.md")); err == nil {
+	if lang != "" && lang != "en" {
+		if loc, ok := meta.Locales[lang]; ok {
+			if loc.Name != "" {
+				pack.Name = loc.Name
+			}
+			if loc.Description != "" {
+				pack.Description = loc.Description
+			}
+		}
+	}
+
+	contextFile := filepath.Join(packDir, "context.md")
+	if lang != "" && lang != "en" {
+		if loc := filepath.Join(packDir, "context."+lang+".md"); fileExists(loc) {
+			contextFile = loc
+		}
+	}
+	if data, err := os.ReadFile(contextFile); err == nil {
 		pack.ContextMD = string(data)
 	}
 	if data, err := os.ReadFile(filepath.Join(packDir, "resources.yaml")); err == nil {
@@ -120,11 +145,23 @@ func LoadPack(packDir string) (*Pack, error) {
 			pack.MCPServers[i].PackID = pack.ID
 		}
 	}
-	if data, err := os.ReadFile(filepath.Join(packDir, "tips.md")); err == nil {
+	tipsFile := filepath.Join(packDir, "tips.md")
+	if lang != "" && lang != "en" {
+		if loc := filepath.Join(packDir, "tips."+lang+".md"); fileExists(loc) {
+			tipsFile = loc
+		}
+	}
+	if data, err := os.ReadFile(tipsFile); err == nil {
 		pack.Tips = parseTips(string(data))
 	}
 
 	return pack, nil
+}
+
+// fileExists reports whether the file at path exists and is accessible.
+func fileExists(path string) bool {
+	_, err := os.Stat(path)
+	return err == nil
 }
 
 // parseTips splits a Markdown file on H2 headings into individual Tip entries.
