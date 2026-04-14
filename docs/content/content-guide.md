@@ -10,8 +10,8 @@ Content is loaded from up to four sources, merged by `id` with later layers over
 
 | Layer | Location | Purpose |
 |---|---|---|
-| Official | `~/.cache/sap-devs/official/` (Linux/macOS) or `%LOCALAPPDATA%/sap-devs/cache/official/` (Windows) | Fetched from the official repo via `sap-devs sync` |
-| Company | `~/.cache/sap-devs/company/` | Optional; configured via `sap-devs config company <url>` |
+| Official | `~/.cache/sap-devs/official/content/` (Linux), `~/Library/Caches/sap-devs/official/content/` (macOS), or `%LOCALAPPDATA%/sap-devs/cache/official/content/` (Windows) | Fetched from the official repo via `sap-devs sync` |
+| Company | `~/.cache/sap-devs/company/content/` (Linux), `~/Library/Caches/sap-devs/company/content/` (macOS), or `%LOCALAPPDATA%/sap-devs/cache/company/content/` (Windows) | Optional; configured via `sap-devs config company <url>` |
 | User | `~/.local/share/sap-devs/` (Linux), `~/Library/Application Support/sap-devs/data/` (macOS), `%LOCALAPPDATA%/sap-devs/data/` (Windows) | Per-user overrides |
 | Project | `.sap-devs/` in the current working directory | Per-project overrides |
 
@@ -42,7 +42,7 @@ id: cap                          # unique slug — used as the merge key
 name: SAP Cloud Application Programming Model
 description: Node.js and Java framework for building cloud-native business applications on BTP
 tags: [cloud, btp, nodejs, java, odata, cds]
-profiles: [cap-developer, btp-developer]   # profiles that include this pack
+profiles: [cap-developer, btp-developer]   # informational metadata only — see note below
 weight: 100                      # default weight; profiles can override this per-pack
 locales:
   de:
@@ -51,6 +51,8 @@ locales:
 ```
 
 > **Note:** `weight` sets the default priority for this pack. Individual profiles can override it in their `packs` list (see [Profiles](#profiles) below).
+>
+> **Note:** The `profiles` field is informational metadata only. A pack is only active when it is explicitly listed in a profile's `packs` list. Adding a pack id to `profiles` here does not automatically include it in that profile.
 
 ### `context.md`
 
@@ -95,8 +97,17 @@ Localised version of `tips.md`. Same format.
     windows: "winget install OpenJS.NodeJS.LTS"
     macos: "brew install node@20"
     linux: "nvm install 20"
-    # use "all" key for cross-platform: all: "npm install -g @sap/cds-dk"
   docs: "https://nodejs.org"
+
+- id: cds-dk
+  name: SAP CDS CLI
+  required: ">=7.0.0"
+  detect:
+    command: "cds --version"
+    pattern: "@sap/cds: (\\d+\\.\\d+\\.\\d+)"
+  install:
+    all: "npm install -g @sap/cds-dk"   # "all" key applies to every platform
+  docs: "https://cap.cloud.sap"
 ```
 
 ### `resources.yaml`
@@ -111,7 +122,28 @@ Localised version of `tips.md`. Same format.
 
 ### `mcp.yaml`
 
-MCP server definitions for the pack. See the MCP documentation for the full schema.
+MCP server definitions for the pack. The file is a YAML list of `MCPServer` entries.
+
+```yaml
+- id: cap-mcp                        # unique slug within the pack
+  name: CAP MCP Server
+  description: MCP server for SAP CAP development
+  install:
+    command: "npx"                   # executable to run
+    args: ["-y", "@sap/cap-mcp"]    # arguments passed to the command
+  hosts: [claude-code, cursor]       # AI tools that should register this server
+```
+
+Fields:
+
+- `id` — unique identifier (combined with `PackID` at load time)
+- `name` — human-readable display name
+- `description` — short description shown in `sap-devs mcp list`
+- `install.command` — executable to run (e.g. `npx`, `node`, `python`)
+- `install.args` — list of arguments passed to the command
+- `hosts` — list of AI tool IDs that should register this server (used by `sap-devs mcp install`)
+
+> **Note:** All existing `mcp.yaml` files in official packs are currently stubs pending Plan 2 implementation.
 
 ---
 
@@ -143,7 +175,7 @@ mcp_config:
 
 **Modes:**
 - `replace-section` — replaces the named fenced section. The injected block is wrapped with `<!-- sap-devs:start:SAP Developer Context -->` and `<!-- sap-devs:end:SAP Developer Context -->` markers.
-- `append` — defined in the adapter schema; not yet active in the engine.
+- `append` — defined in the adapter schema but not yet implemented; using it causes a runtime error. Do not use until engine support is added.
 
 **Types:**
 - `file-inject` — writes context to a config file. Used by `sap-devs inject`.
@@ -307,7 +339,7 @@ Values may be plain strings or Go `text/template` expressions (e.g. `{{.Scope}}`
    ```bash
    sap-devs config set language <lang>
    SAP_DEVS_DEV=1 sap-devs inject --dry-run
-   sap-devs tip
+   SAP_DEVS_DEV=1 sap-devs tip
    ```
    Verify translated strings appear in output.
 
