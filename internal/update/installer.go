@@ -15,6 +15,9 @@ import (
 	"strings"
 )
 
+// maxDownloadBytes caps downloads to prevent memory exhaustion on malicious/misconfigured servers.
+const maxDownloadBytes = 100 * 1024 * 1024 // 100 MB
+
 // downloadBase overrides the releases download URL in tests.
 // When empty, repoURL is used as the base.
 var downloadBase string
@@ -82,12 +85,12 @@ func Install(repoURL string, release *Release) error {
 	tmpPath := tmp.Name()
 	if _, err := tmp.Write(binBytes); err != nil {
 		tmp.Close()
-		os.Remove(tmpPath)
+		_ = os.Remove(tmpPath)
 		return fmt.Errorf("could not write temp file: %w", err)
 	}
 	tmp.Close()
 	if err := os.Chmod(tmpPath, 0o755); err != nil {
-		os.Remove(tmpPath)
+		_ = os.Remove(tmpPath)
 		return err
 	}
 
@@ -95,7 +98,7 @@ func Install(repoURL string, release *Release) error {
 	if runtime.GOOS == "windows" {
 		// Windows locks running executables; remove then rename
 		if err := os.Remove(currentPath); err != nil {
-			os.Remove(tmpPath)
+			_ = os.Remove(tmpPath)
 			return fmt.Errorf("could not remove old binary: %w", err)
 		}
 	}
@@ -115,7 +118,7 @@ func httpGet(url string) ([]byte, error) {
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("HTTP %d fetching %s", resp.StatusCode, url)
 	}
-	return io.ReadAll(resp.Body)
+	return io.ReadAll(io.LimitReader(resp.Body, maxDownloadBytes))
 }
 
 // findChecksum parses checksums.txt and returns the SHA256 hex for assetName.
@@ -163,7 +166,7 @@ func extractFromTarGz(data []byte, name string) ([]byte, error) {
 			return nil, err
 		}
 		if filepath.Base(hdr.Name) == name {
-			return io.ReadAll(tr)
+			return io.ReadAll(io.LimitReader(tr, maxDownloadBytes))
 		}
 	}
 	return nil, fmt.Errorf("binary %q not found in archive", name)
@@ -180,8 +183,9 @@ func extractFromZip(data []byte, name string) ([]byte, error) {
 			if err != nil {
 				return nil, err
 			}
-			defer rc.Close()
-			return io.ReadAll(rc)
+			data, err := io.ReadAll(io.LimitReader(rc, maxDownloadBytes))
+			rc.Close()
+			return data, err
 		}
 	}
 	return nil, fmt.Errorf("binary %q not found in zip archive", name)

@@ -2,6 +2,7 @@ package update
 
 import (
 	"archive/tar"
+	"archive/zip"
 	"bytes"
 	"compress/gzip"
 	"crypto/sha256"
@@ -27,13 +28,37 @@ func makeTarGz(name string, content []byte) []byte {
 	return buf.Bytes()
 }
 
-// setupInstallServer creates an httptest server serving a tar.gz archive and checksums.txt.
+// makeZip creates an in-memory zip archive containing one file named `name` with `content`.
+func makeZip(name string, content []byte) []byte {
+	var buf bytes.Buffer
+	zw := zip.NewWriter(&buf)
+	f, _ := zw.Create(name)
+	f.Write(content)
+	zw.Close()
+	return buf.Bytes()
+}
+
+// platformExt returns the archive extension for the current OS, matching installer.go logic.
+func platformExt() string {
+	if runtime.GOOS == "windows" {
+		return ".zip"
+	}
+	return ".tar.gz"
+}
+
+// setupInstallServer creates an httptest server serving a platform-appropriate archive and checksums.txt.
 // Returns the server, the asset name, and the hex SHA256 of the archive.
 func setupInstallServer(t *testing.T, version string) (*httptest.Server, string) {
 	t.Helper()
 	binaryContent := []byte("fake-binary-content")
-	assetName := fmt.Sprintf("sap-devs_%s_%s_%s.tar.gz", version, runtime.GOOS, runtime.GOARCH)
-	archive := makeTarGz("sap-devs", binaryContent)
+	ext := platformExt()
+	assetName := fmt.Sprintf("sap-devs_%s_%s_%s%s", version, runtime.GOOS, runtime.GOARCH, ext)
+	var archive []byte
+	if ext == ".zip" {
+		archive = makeZip("sap-devs.exe", binaryContent)
+	} else {
+		archive = makeTarGz("sap-devs", binaryContent)
+	}
 	sum := sha256.Sum256(archive)
 	checksums := fmt.Sprintf("%x  %s\n", sum, assetName)
 
@@ -75,8 +100,14 @@ func TestInstall_Success(t *testing.T) {
 
 func TestInstall_ChecksumMismatch(t *testing.T) {
 	version := "9.9.9"
-	assetName := fmt.Sprintf("sap-devs_%s_%s_%s.tar.gz", version, runtime.GOOS, runtime.GOARCH)
-	archive := makeTarGz("sap-devs", []byte("fake-binary"))
+	ext := platformExt()
+	assetName := fmt.Sprintf("sap-devs_%s_%s_%s%s", version, runtime.GOOS, runtime.GOARCH, ext)
+	var archive []byte
+	if ext == ".zip" {
+		archive = makeZip("sap-devs.exe", []byte("fake-binary"))
+	} else {
+		archive = makeTarGz("sap-devs", []byte("fake-binary"))
+	}
 	// Wrong hash in checksums.txt
 	checksums := fmt.Sprintf("%x  %s\n", sha256.Sum256([]byte("wrong")), assetName)
 
