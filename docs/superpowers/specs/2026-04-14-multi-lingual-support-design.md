@@ -62,10 +62,11 @@ func T(lang, key string) string
 // Tf looks up key and executes it as a text/template with the provided data map.
 // data may be nil (equivalent to calling T).
 // Falls back using the same rules as T before template execution.
+// Template execution uses option("missingkey=error") so missing data keys
+// produce an error rather than rendering as "<no value>".
 // On template parse or execution failure (e.g. malformed template string,
-// missing data key causing {{.Count}} to error), returns the resolved raw
-// template string (the catalog value after key fallback, before execution)
-// rather than an error or empty string.
+// missing data key), returns the resolved raw template string (the catalog
+// value after key fallback, before execution) rather than an error or empty string.
 func Tf(lang, key string, data map[string]any) string
 ```
 
@@ -106,7 +107,7 @@ type Config struct {
 }
 ```
 
-Empty string means auto-detect from system locale. Existing configs require no migration. `config set language ""` stores an empty string, which is treated identically to "not set" — auto-detect from locale. No validation at write time; unsupported values (e.g. `klingon`) are accepted silently and fall back to `en` via `Resolve` at runtime. This is intentional — runtime fallback is the sole response.
+Empty string means auto-detect from system locale. Existing configs require no migration. `config set language ""` stores an empty string; because `Language` uses `yaml:"language,omitempty"`, it marshals as absent from YAML (same as not set). The existing `config set` mechanism reads, updates, and re-marshals the full `Config` struct, so `omitempty` handles the empty-value case automatically — no special write logic is needed. Unsupported values (e.g. `klingon`) are accepted silently and fall back to `en` via `Resolve` at runtime. This is intentional — runtime fallback is the sole response.
 
 **Setting the language:**
 ```
@@ -133,17 +134,16 @@ Two categories of strings:
 // localizeCommands walks root and all its descendants (recursively via Commands())
 // and updates Short and Long from the i18n catalog.
 // Use strings are not translated (they contain argument placeholders, not prose).
-// Key derivation: the walker builds a dot-separated path by walking each command's
-// parent chain up to (but not including) the root command itself. The root command
-// uses the hardcoded prefix "root". For example:
+// Root identification: a command is the root if !cmd.HasParent(). The root command
+// uses the hardcoded key prefix "root". All other commands build a dot-separated
+// path by walking their parent chain upward until a command with !cmd.HasParent()
+// is reached (that ancestor is excluded from the path). For example:
 //   root command (sap-devs)     → "root.short" / "root.long"
 //   direct child "inject"       → "inject.short" / "inject.long"
 //   subcommand "profile list"   → "profile.list.short" / "profile.list.long"
 //   subcommand "config show"    → "config.show.short" / "config.show.long"
-// en.json is the authoritative source for both .short and .long keys.
-// If a key is absent in the target language catalog, falls back to en.json value.
-// If a key is absent in en.json, falls back to the cobra-registered English
-// string unchanged (so a missing en.json key never blanks a description).
+// localizeCommands calls i18n.T for each key, which provides the full fallback
+// chain automatically (target lang → en.json → cobra-registered string).
 func localizeCommands(root *cobra.Command, lang string)
 ```
 
@@ -161,7 +161,7 @@ fmt.Fprintln(cmd.OutOrStdout(), i18n.Tf(i18n.ActiveLang, "inject.done", map[stri
 **German pilot scope for CLI strings:**
 
 - All `Short`/`Long` command descriptions (highest visibility)
-- Runtime output for `inject`, `sync`, `tip`, and `doctor` commands
+- Runtime output for `inject`, `sync`, `tip`, and `doctor` commands (all four are in scope)
 
 All other commands fall back to English silently. The English catalog (`en.json`) is the complete authoritative key set.
 
@@ -184,7 +184,7 @@ content/packs/cap/
 ```go
 func LoadPack(packDir string, lang string) (*Pack, error)
 ```
-`lang` is expected to be a stripped base language tag (e.g. `"de"`, `"en"`) as produced by `i18n.Resolve` — never a full locale tag like `"de_AT"`. When loading `context.md` and `tips.md`, tries `<file>.<lang>.md` first; falls back to the base file silently if absent.
+`lang` is expected to be a stripped base language tag (e.g. `"de"`, `"en"`) as produced by `i18n.Resolve` — never a full locale tag like `"de_AT"`. An empty `lang` (`""`) is treated as `"en"`: no locale suffix is attempted and base files are used. When loading `context.md` and `tips.md`, tries `<file>.<lang>.md` first (when lang is non-empty and not `"en"`); falls back to the base file silently if absent.
 
 **`ContentLoader.LoadPacks` new signature:**
 ```go
@@ -287,11 +287,12 @@ command body
 - On Windows, `LANG`/`LC_ALL` are typically unset. Users wanting non-English output on Windows must run `sap-devs config set language <lang>`.
 - No validation of the `language` config value at write time; unsupported values fall back to English silently.
 - Running `sap-devs tip` in German with a profile that includes non-`cap` packs returns tips in English (only the `cap` pack has German content in this iteration). Mixed-language output is expected and accepted.
+- Duplicate keys in a catalog JSON file are silently resolved by Go's `encoding/json` (last value wins). This is a translator error that the infrastructure does not detect.
 
 ## Out of Scope (this iteration)
 
 - Plural rules, gender inflection, RTL layout
 - Translations for any language other than German
 - Content pack translations beyond the `cap` pack
-- CLI output for `init`, `mcp`, `update`, `resources`, `version`, `config`, `profile`, and `doctor` (beyond German pilot commands: inject/sync/tip/doctor)
+- CLI output for `init`, `mcp`, `update`, `resources`, `version`, `config`, and `profile` (beyond German pilot commands: inject/sync/tip/doctor)
 - Contributor tooling (translation workflow, string extraction scripts, key linting)
