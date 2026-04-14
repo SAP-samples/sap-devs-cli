@@ -66,3 +66,29 @@ func WriteMCPConfig(settingsPath, key string, server content.MCPServer, dryRun b
 	}
 	return os.WriteFile(settingsPath, out, 0644)
 }
+
+// ReadMCPConfig reads the mcpServers map from a JSON settings file.
+// Returns an empty map (not an error) if the file does not exist or the key is absent.
+// Returns an error if the file exists but cannot be parsed, or if the key is not a JSON object.
+func ReadMCPConfig(settingsPath, key string) (map[string]interface{}, error) {
+	data, err := os.ReadFile(settingsPath)
+	if os.IsNotExist(err) {
+		return map[string]interface{}{}, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	var root map[string]interface{}
+	if err := json.Unmarshal(data, &root); err != nil {
+		return nil, fmt.Errorf("parse %s: %w", settingsPath, err)
+	}
+	v, ok := root[key]
+	if !ok || v == nil {
+		return map[string]interface{}{}, nil
+	}
+	m, ok := v.(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("key %q in %s is not a JSON object (got %T); cannot read", key, settingsPath, v)
+	}
+	return m, nil
+}
