@@ -221,3 +221,6 @@ func buildLocalizeKey(cmd *cobra.Command) string {
 	}
 	return strings.Join(parts, ".")
 }
+
+// RootCmd returns the root cobra command. Used in tests.
+func RootCmd() *cobra.Command { return rootCmd }
