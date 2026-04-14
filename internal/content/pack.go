@@ -57,6 +57,7 @@ type MCPServer struct {
 	Description string     `yaml:"description"`
 	Install     MCPInstall `yaml:"install"`
 	Hosts       []string   `yaml:"hosts"`
+	PackID      string     // set at load time, not in YAML
 }
 
 // MCPInstall defines how to run the MCP server.
@@ -115,6 +116,9 @@ func LoadPack(packDir string) (*Pack, error) {
 	}
 	if data, err := os.ReadFile(filepath.Join(packDir, "mcp.yaml")); err == nil {
 		_ = yaml.Unmarshal(data, &pack.MCPServers)
+		for i := range pack.MCPServers {
+			pack.MCPServers[i].PackID = pack.ID
+		}
 	}
 	if data, err := os.ReadFile(filepath.Join(packDir, "tips.md")); err == nil {
 		pack.Tips = parseTips(string(data))
