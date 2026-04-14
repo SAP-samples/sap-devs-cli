@@ -135,4 +135,5 @@ func TestCheckTools_Dedup(t *testing.T) {
 	results := content.CheckTools(tools, countingRunner)
 	assert.Len(t, results, 1)
 	assert.Equal(t, 1, callCount)
+	assert.Equal(t, content.StatusOK, results[0].Status)
 }
