@@ -495,7 +495,6 @@ sap-devs sync --category tips     Sync a single category only
 - **Go stdlib** — HTTP, filesystem, JSON/YAML, `os.UserConfigDir()`, `os.UserCacheDir()`
 - **[cobra](https://github.com/spf13/cobra)** — CLI command structure
 - **[viper](https://github.com/spf13/viper)** — configuration management; does not handle XDG natively — the `internal/xdg/` package computes XDG paths and passes them to viper explicitly
-- **[go-semver](https://github.com/blang/semver)** — version comparison for `doctor`
 - **[glamour](https://github.com/charmbracelet/glamour)** — render Markdown in terminal (tip of the day, context previews)
 - **YAML parsing** — `gopkg.in/yaml.v3`
 
