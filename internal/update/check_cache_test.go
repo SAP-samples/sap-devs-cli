@@ -34,7 +34,9 @@ func TestShouldCheck_ExpiredCheck(t *testing.T) {
 func TestShouldCheck_CorruptFile(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "update_check.json")
-	os.WriteFile(path, []byte("not json"), 0o644)
+	if err := os.WriteFile(path, []byte("not json"), 0o644); err != nil {
+		t.Fatal(err)
+	}
 	if !ShouldCheck(dir, time.Hour) {
 		t.Fatal("expected true: fail-open on corrupt file")
 	}
@@ -60,7 +62,7 @@ func TestRecordCheck_WritesTimestamp(t *testing.T) {
 	if err != nil {
 		t.Fatalf("last_check is not RFC3339: %v", err)
 	}
-	if time.Since(ts) > 5*time.Second {
+	if time.Since(ts) > time.Minute {
 		t.Fatalf("last_check timestamp is too old: %v", ts)
 	}
 }

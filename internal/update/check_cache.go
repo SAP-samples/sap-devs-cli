@@ -35,6 +35,9 @@ func ShouldCheck(cacheDir string, ttl time.Duration) bool {
 // RecordCheck writes the current time to the cache file.
 // Only called after a successful response from CheckLatest (not on network errors).
 func RecordCheck(cacheDir string) error {
+	if err := os.MkdirAll(cacheDir, 0o755); err != nil {
+		return err
+	}
 	path := filepath.Join(cacheDir, cacheFile)
 	rec := checkRecord{LastCheck: time.Now().Format(time.RFC3339)}
 	data, err := json.Marshal(rec)
