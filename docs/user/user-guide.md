@@ -60,7 +60,7 @@ source ~/.bashrc
 ### Verify
 
 ```bash
-sap-devs --version
+sap-devs version
 ```
 
 ---

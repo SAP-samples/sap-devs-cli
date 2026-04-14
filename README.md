@@ -12,7 +12,7 @@
 
 ```bash
 # Install: download from GitHub Releases, extract, add to PATH
-sap-devs --version
+sap-devs version
 
 # First-time setup
 sap-devs init
