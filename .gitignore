@@ -3,3 +3,9 @@
 sap-devs
 sap-devs.exe
 *.test.exe
+sap-devs-cli.exe
+*.test-cli.exe
+*.log
+*.tmp
+*.bak
+*.swp
