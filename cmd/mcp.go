@@ -269,7 +269,7 @@ func installAll(loader *content.ContentLoader, allAdapters []adapter.Adapter) er
 		return err
 	}
 
-	installed := 0
+	serversWritten := make(map[string]bool)
 	for _, s := range servers {
 		for _, a := range chosen {
 			if !containsString(s.Hosts, a.ID) {
@@ -284,12 +284,12 @@ func installAll(loader *content.ContentLoader, allAdapters []adapter.Adapter) er
 			}
 			if !mcpInstallDryRun {
 				fmt.Printf("✓ Registered %s in %s\n", s.ID, path)
-				installed++
+				serversWritten[s.ID] = true
 			}
 		}
 	}
 	if !mcpInstallDryRun {
-		fmt.Printf("Registered %d server(s) in %d host(s).\n", installed/len(chosen), len(chosen))
+		fmt.Printf("Registered %d server(s) in %d host(s).\n", len(serversWritten), len(chosen))
 	}
 	return nil
 }
