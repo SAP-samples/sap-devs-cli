@@ -7,7 +7,9 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
+	"golang.org/x/term"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/config"
+	"github.tools.sap/developer-relations/sap-devs-cli/internal/credentials"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/xdg"
 )
 
@@ -18,19 +20,43 @@ var initCmd = &cobra.Command{
 		fmt.Println("Welcome to sap-devs — your AI-first SAP developer toolkit.")
 		fmt.Println()
 
-		// Step 1: Sync content
-		fmt.Println("Step 1/4: Downloading SAP developer content...")
-		if err := runSyncForce(); err != nil {
-			fmt.Printf("Warning: content sync failed (%v). Continuing with any cached content.\n", err)
-		}
-
 		paths, err := xdg.New()
 		if err != nil {
 			return err
 		}
 
-		// Step 2: Choose profile
-		fmt.Println("\nStep 2/4: What kind of SAP developer are you?")
+		// Step 1: GitHub authentication (optional)
+		fmt.Println("Step 1/5: GitHub authentication (optional)")
+		fmt.Println()
+		fmt.Println("  sap-devs syncs content from github.tools.sap, which requires a Personal")
+		fmt.Println("  Access Token if you are inside the SAP corporate network. If you are")
+		fmt.Println("  outside SAP or already have GITHUB_TOOLS_SAP_TOKEN set in your")
+		fmt.Println("  environment, press Enter to skip.")
+		fmt.Println()
+		fmt.Print("  GitHub token (press Enter to skip): ")
+		raw, termErr := term.ReadPassword(int(os.Stdin.Fd()))
+		fmt.Println() // newline after hidden input
+		if termErr != nil {
+			fmt.Println("  Note: interactive token input unavailable. Run 'sap-devs config token <value>' after setup to authenticate.")
+		} else {
+			token := strings.TrimSpace(string(raw))
+			if token != "" {
+				if storeErr := credentials.Store(paths.ConfigDir, token); storeErr != nil {
+					fmt.Printf("  Warning: could not store token (%v).\n", storeErr)
+				} else {
+					fmt.Println("  Token stored securely.")
+				}
+			}
+		}
+
+		// Step 2: Sync content
+		fmt.Println("\nStep 2/5: Downloading SAP developer content...")
+		if err := runSyncForce(); err != nil {
+			fmt.Printf("Warning: content sync failed (%v). Continuing with any cached content.\n", err)
+		}
+
+		// Step 3: Choose profile
+		fmt.Println("\nStep 3/5: What kind of SAP developer are you?")
 		loader, err := newContentLoader()
 		if err != nil {
 			return err
@@ -60,8 +86,8 @@ var initCmd = &cobra.Command{
 			fmt.Println("No profiles found. Run 'sap-devs sync' then 'sap-devs profile list'.")
 		}
 
-		// Step 3: Inject into AI tools
-		fmt.Println("\nStep 3/4: Inject SAP context into your AI tools?")
+		// Step 4: Inject into AI tools
+		fmt.Println("\nStep 4/5: Inject SAP context into your AI tools?")
 		fmt.Println("  This writes SAP developer context to your AI tool configuration files.")
 		fmt.Print("  Inject now? [Y/n]: ")
 		if answer := strings.ToLower(strings.TrimSpace(readLine())); answer == "" || answer == "y" {
@@ -72,8 +98,8 @@ var initCmd = &cobra.Command{
 			}
 		}
 
-		// Step 4: Shell profile hook
-		fmt.Println("\nStep 4/4: Add SAP tip to your terminal startup?")
+		// Step 5: Shell profile hook
+		fmt.Println("\nStep 5/5: Add SAP tip to your terminal startup?")
 		fmt.Println("  This adds 'sap-devs tip' to your shell profile so you see a tip each time you open a terminal.")
 		fmt.Print("  Add it? [y/N]: ")
 		if strings.ToLower(strings.TrimSpace(readLine())) == "y" {
@@ -107,7 +133,6 @@ func addShellHook() error {
 	if err != nil {
 		return err
 	}
-	// Try common shell rc files in priority order
 	candidates := []string{".zshrc", ".bashrc", ".bash_profile"}
 	for _, rc := range candidates {
 		path := home + "/" + rc
