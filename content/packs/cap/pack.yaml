@@ -4,3 +4,7 @@ description: Node.js and Java framework for building cloud-native business appli
 tags: [cloud, btp, nodejs, java, odata, cds]
 profiles: [cap-developer, btp-developer]
 weight: 100
+locales:
+  de:
+    name: SAP Cloud Application Programming Model
+    description: Node.js- und Java-Framework für Cloud-native Business-Anwendungen auf BTP
