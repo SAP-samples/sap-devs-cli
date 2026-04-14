@@ -69,13 +69,15 @@ func T(lang, key string) string
 func Lookup(lang, key string) (string, bool)
 
 // Tf looks up key and executes it as a text/template with the provided data map.
-// data may be nil (equivalent to calling T).
+// If data is nil, template execution is attempted against a nil map;
+// any template action that references a key (e.g. {{.Count}}) will trigger
+// the missingkey=error option and cause execution to fail, returning the raw
+// template string. Callers should pass nil only for keys known to be static.
 // Falls back using the same rules as T before template execution.
 // Template execution uses option("missingkey=error") so missing data keys
 // produce an error rather than rendering as "<no value>".
-// On template parse or execution failure (e.g. malformed template string,
-// missing data key), returns the resolved raw template string (the catalog
-// value after key fallback, before execution) rather than an error or empty string.
+// On template parse or execution failure, returns the resolved raw template
+// string (the catalog value after key fallback, before execution).
 func Tf(lang, key string, data map[string]any) string
 ```
 
@@ -143,6 +145,8 @@ Two categories of strings:
 // localizeCommands walks root and all its descendants (recursively via Commands())
 // and updates Short and Long from the i18n catalog.
 // Use strings are not translated (they contain argument placeholders, not prose).
+// Key path segments are derived from cmd.Name() (cobra's first-word extraction
+// of cmd.Use), not cmd.Use directly.
 // Root identification: a command is the root if !cmd.HasParent(). The root command
 // uses the hardcoded key prefix "root". All other commands build a dot-separated
 // path by walking their parent chain upward until a command with !cmd.HasParent()
