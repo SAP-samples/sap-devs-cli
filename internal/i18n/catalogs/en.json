@@ -1,0 +1,6 @@
+{
+  "root.short": "AI-first SAP developer toolkit",
+  "root.long": "sap-devs injects up-to-date SAP developer knowledge into your AI tools.",
+  "inject.short": "Push SAP context to your AI tools",
+  "inject.done": "SAP developer context injected ({{.Scope}} scope)."
+}
