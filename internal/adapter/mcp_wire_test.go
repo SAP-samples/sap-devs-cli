@@ -91,3 +91,46 @@ func TestWriteMCPConfig_BadKeyType(t *testing.T) {
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "not a JSON object")
 }
+
+func TestReadMCPConfig_Missing(t *testing.T) {
+	dir := t.TempDir()
+	settingsPath := filepath.Join(dir, "settings.json")
+
+	m, err := adapter.ReadMCPConfig(settingsPath, "mcpServers")
+	require.NoError(t, err)
+	assert.Empty(t, m)
+}
+
+func TestReadMCPConfig_Present(t *testing.T) {
+	dir := t.TempDir()
+	settingsPath := filepath.Join(dir, "settings.json")
+	require.NoError(t, os.WriteFile(settingsPath, []byte(
+		`{"mcpServers":{"cap-mcp":{"command":"npx","args":["-y","@sap/cap-mcp-server"]}}}`,
+	), 0644))
+
+	m, err := adapter.ReadMCPConfig(settingsPath, "mcpServers")
+	require.NoError(t, err)
+	require.Len(t, m, 1)
+	_, ok := m["cap-mcp"]
+	assert.True(t, ok)
+}
+
+func TestReadMCPConfig_KeyAbsent(t *testing.T) {
+	dir := t.TempDir()
+	settingsPath := filepath.Join(dir, "settings.json")
+	require.NoError(t, os.WriteFile(settingsPath, []byte(`{"theme":"dark"}`), 0644))
+
+	m, err := adapter.ReadMCPConfig(settingsPath, "mcpServers")
+	require.NoError(t, err)
+	assert.Empty(t, m)
+}
+
+func TestReadMCPConfig_BadKeyType(t *testing.T) {
+	dir := t.TempDir()
+	settingsPath := filepath.Join(dir, "settings.json")
+	require.NoError(t, os.WriteFile(settingsPath, []byte(`{"mcpServers":"not-an-object"}`), 0644))
+
+	_, err := adapter.ReadMCPConfig(settingsPath, "mcpServers")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "not a JSON object")
+}
