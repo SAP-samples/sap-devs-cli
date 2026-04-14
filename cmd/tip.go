@@ -55,7 +55,7 @@ var tipCmd = &cobra.Command{
 		tip, err := content.SelectTip(packs, tipTags, seed)
 		if err != nil {
 			// No tips available — not an error worth surfacing as exit code 1
-			fmt.Println("No tips available. Run 'sap-devs sync' to download content.")
+			fmt.Fprintln(cmd.OutOrStdout(), i18n.T(i18n.ActiveLang, "tip.no_tips"))
 			return nil
 		}
 

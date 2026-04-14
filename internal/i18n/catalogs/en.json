@@ -1,6 +1,60 @@
 {
   "root.short": "AI-first SAP developer toolkit",
   "root.long": "sap-devs injects up-to-date SAP developer knowledge into your AI tools.",
+
   "inject.short": "Push SAP context to your AI tools",
-  "inject.done": "SAP developer context injected ({{.Scope}} scope)."
+  "inject.long": "Inject up-to-date SAP developer context into all detected AI tools.\n\nInjects at global (user) scope by default into tools such as Claude Code,\nCursor, and GitHub Copilot. Use --project to opt into project scope and inject\ninto project-level files (CLAUDE.md, .cursorrules, etc.) in the current directory.",
+  "inject.dry_run": "[dry-run] no files will be modified",
+  "inject.done": "SAP developer context injected ({{.Scope}} scope).",
+  "inject.hint": "Run 'sap-devs inject --dry-run' to preview changes before writing.",
+
+  "sync.short": "Pull latest SAP developer content",
+  "sync.long": "Syncs content from the official repo (and company repo if configured). Respects per-category TTLs unless --force is set.",
+  "sync.disabled": "Sync is disabled in config.",
+  "sync.up_to_date": "All content is up to date.",
+  "sync.syncing": "Syncing SAP developer content...",
+  "sync.updated": "Updated: {{.Categories}}",
+  "sync.warn_https": "Warning: company_repo must be an HTTPS URL (got: {{.URL}}) — skipping sync.",
+  "sync.syncing_company": "Syncing company repo...",
+  "sync.warn_company_failed": "Warning: company repo sync failed: {{.Err}}",
+
+  "tip.short": "Print a SAP developer tip (add to your shell profile)",
+  "tip.no_tips": "No tips available. Run 'sap-devs sync' to download content.",
+
+  "doctor.short": "Check local tool versions against pack requirements",
+  "doctor.no_tools": "No tools defined for the current selection.",
+  "doctor.col_tool": "TOOL",
+  "doctor.col_required": "REQUIRED",
+  "doctor.col_found": "FOUND",
+  "doctor.col_status": "STATUS",
+  "doctor.install_header": "\nInstall commands:",
+  "doctor.status_ok": "ok",
+  "doctor.status_ok_unverified": "ok (unverified)",
+  "doctor.status_fail": "FAIL",
+  "doctor.status_missing": "MISSING",
+
+  "profile.short": "Manage your developer profile",
+  "profile.list.short": "List available developer profiles",
+  "profile.set.short": "Set your active developer profile",
+  "profile.show.short": "Show your current profile and pack weights",
+
+  "config.short": "Manage sap-devs configuration",
+  "config.show.short": "Display current configuration",
+  "config.set.short": "Set a configuration value",
+  "config.company.short": "Configure the company content repo URL",
+
+  "mcp.short": "Manage SAP MCP servers",
+  "mcp.list.short": "List available SAP MCP servers",
+  "mcp.status.short": "Show which SAP MCP servers are registered in your AI tool configs",
+  "mcp.install.short": "Install and wire an SAP MCP server into your AI tools",
+
+  "resources.short": "Browse curated SAP resources",
+  "resources.list.short": "List curated resources for your active profile",
+  "resources.search.short": "Search across all SAP resources",
+  "resources.open.short": "Open a resource URL in the default browser",
+
+  "version.short": "Print the sap-devs version",
+  "update.short": "Update sap-devs to the latest release",
+  "update.long": "Check for a newer release on GitHub and install it if found.",
+  "init.short": "First-time setup wizard"
 }
