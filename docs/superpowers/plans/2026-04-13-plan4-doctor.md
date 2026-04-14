@@ -190,7 +190,13 @@ func parseConstraint(required, found string) bool {
 
 	// Normalise: strip leading "v", zero-pad to three components
 	reqVer = padVersion(strings.TrimPrefix(strings.TrimSpace(reqVer), "v"))
-	foundVer := padVersion(strings.TrimPrefix(strings.TrimSpace(found), "v"))
+	foundNorm := strings.TrimPrefix(strings.TrimSpace(found), "v")
+
+	// Guard: if found doesn't start with a digit it cannot be parsed — return false.
+	if len(foundNorm) == 0 || foundNorm[0] < '0' || foundNorm[0] > '9' {
+		return false
+	}
+	foundVer := padVersion(foundNorm)
 
 	cmp := compareVersions(foundVer, reqVer)
 	switch op {
@@ -285,7 +291,7 @@ func TestCheckTool_Missing_RunnerError(t *testing.T) {
 	assert.Empty(t, result.Found)
 }
 
-func TestCheckTool_Missing_PatternNoMatch(t *testing.T) {
+func TestCheckTool_PatternNoMatch(t *testing.T) {
 	tool := toolDef("cf", ">=8.0.0", "cf --version", `cf version (\d+\.\d+\.\d+)`)
 	result := content.CheckTool(tool, fakeRunner("some unrelated output", nil))
 	assert.Equal(t, content.StatusMissing, result.Status)
