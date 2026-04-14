@@ -37,8 +37,8 @@ func TestResolve(t *testing.T) {
 func TestT(t *testing.T) {
 	// Key exists in de catalog
 	assert.Equal(t, "KI-gestütztes SAP Entwickler-Toolkit", T("de", "root.short"))
-	// Key absent in de, falls back to en
-	assert.Equal(t, "SAP developer context injected ({{.Scope}} scope).", T("de", "inject.done"))
+	// Key exists in de catalog
+	assert.Equal(t, "SAP-Entwicklerkontext eingefügt ({{.Scope}}-Bereich).", T("de", "inject.done"))
 	// Key absent from both catalogs — returns raw key
 	assert.Equal(t, "missing.key", T("de", "missing.key"))
 }
@@ -49,7 +49,7 @@ func TestLookup(t *testing.T) {
 	assert.True(t, ok)
 	assert.NotEmpty(t, v)
 
-	// Not in de, found in en fallback
+	// Found in de catalog (inject.done now has a German translation)
 	v, ok = Lookup("de", "inject.done")
 	assert.True(t, ok)
 	assert.Contains(t, v, "{{.Scope}}")
@@ -60,17 +60,17 @@ func TestLookup(t *testing.T) {
 }
 
 func TestTf(t *testing.T) {
-	// Template substitution using en fallback
+	// Template substitution using de translation
 	got := Tf("de", "inject.done", map[string]any{"Scope": "global"})
-	assert.Equal(t, "SAP developer context injected (global scope).", got)
+	assert.Equal(t, "SAP-Entwicklerkontext eingefügt (global-Bereich).", got)
 
 	// Missing data key with missingkey=error → raw template string
 	got = Tf("de", "inject.done", map[string]any{})
-	assert.Equal(t, "SAP developer context injected ({{.Scope}} scope).", got)
+	assert.Equal(t, "SAP-Entwicklerkontext eingefügt ({{.Scope}}-Bereich).", got)
 
 	// nil data with template action → raw template string
 	got = Tf("de", "inject.done", nil)
-	assert.Equal(t, "SAP developer context injected ({{.Scope}} scope).", got)
+	assert.Equal(t, "SAP-Entwicklerkontext eingefügt ({{.Scope}}-Bereich).", got)
 }
 
 func TestActiveLang(t *testing.T) {
