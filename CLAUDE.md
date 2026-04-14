@@ -57,6 +57,10 @@ Profiles ([content/profiles/](content/profiles/)) are YAML files that tag which 
 
 `sap-devs sync` ([cmd/sync.go](cmd/sync.go)) fetches the official repo as a `.zip` archive and extracts it into the cache. Per-category TTLs are tracked in `~/.cache/sap-devs/sync-state.json` via `sync.Engine` ([internal/sync/engine.go](internal/sync/engine.go)). Forced refresh: `--force`.
 
+### Credentials
+
+`internal/credentials` ([internal/credentials/credentials.go](internal/credentials/credentials.go)) provides secure token storage. `Store`/`Load`/`Delete` use the OS keychain via `zalando/go-keyring` with a `<configDir>/credentials` file fallback (0600). `Resolve()` implements the full priority chain: env vars (`GITHUB_TOOLS_SAP_TOKEN`, `GH_TOKEN`, `GITHUB_TOKEN`) → keychain → file → `""`. Used by `sync` and `config token`.
+
 ### Platform Paths
 
 `internal/xdg` ([internal/xdg/xdg.go](internal/xdg/xdg.go)) resolves platform-native directories:

@@ -126,6 +126,33 @@ Profiles (`content/profiles/`) are YAML files that tag which packs belong to a d
 
 `sap-devs sync` (`cmd/sync.go`) fetches the official repo as a `.zip` archive and extracts it to the cache. Per-category TTLs are tracked in `~/.cache/sap-devs/sync-state.json` via `sync.Engine` (`internal/sync/engine.go`). Use `--force` to ignore TTLs.
 
+The auth token is resolved once at the top of `syncCmd.RunE` via `credentials.Resolve()` and passed to both `FetchArchive` calls (official + company repo). `FetchArchive` signature: `FetchArchive(rawURL, destDir, token string) error`.
+
+### Credentials
+
+`internal/credentials/` manages token storage and resolution.
+
+**Functions:**
+
+| Function | Behaviour |
+| --- | --- |
+| `Store(configDir, token string) error` | Saves to OS keychain; falls back to `<configDir>/credentials` (0600) if keychain unavailable. Prints an informational stderr note on fallback. |
+| `Load(configDir string) (string, error)` | Reads from keychain; falls back to file on keychain error (prints stderr warning). Returns `ErrNotFound` if no token anywhere. |
+| `Delete(configDir string) error` | Removes from keychain; falls back to deleting the file. Returns `ErrNotFound` if nothing stored. |
+| `Resolve(configDir string) string` | Full priority chain: `GITHUB_TOOLS_SAP_TOKEN` → `GH_TOKEN` → `GITHUB_TOKEN` → `Load()` → `""`. Never errors. |
+
+**Keychain backend:** `zalando/go-keyring` — macOS Keychain, Windows Credential Manager, Linux Secret Service (D-Bus). Falls back to credentials file when unavailable (headless Linux, CI containers).
+
+**Security properties:**
+
+- Token only sent in `Authorization: token <tok>` header, never in URLs or error strings
+- `config show` masks the token: `<first4>****` or `(not set)`
+- Credentials file is separate from `config.yaml` to prevent accidental dotfile repo exposure
+
+**Testing:** The package uses an unexported `keyringBackend` variable (`type keyring interface`). Tests (`package credentials`) replace it with `fakeKeyring`, `unavailableKeyring`, or `notFoundKeyring` structs to exercise all paths without a real keychain. No real OS keychain is touched in CI.
+
+**Auth redirect detection in `FetchArchive`:** After reading the response body, `FetchArchive` checks `resp.Request.URL.Host == parsedURL.Host && strings.Contains(resp.Request.URL.Path, "/login")`. If matched, it returns: `authentication required for <host> — set GITHUB_TOOLS_SAP_TOKEN or run 'sap-devs config token'`. The host in the error is always from the original URL, not the redirect target.
+
 ### i18n
 
 The `internal/i18n` package resolves the active language and looks up strings from JSON catalogs embedded at build time:

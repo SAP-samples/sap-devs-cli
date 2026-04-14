@@ -138,6 +138,52 @@ sap-devs inject --tool claude-code --dry-run
 
 ---
 
+### Authentication
+
+`sap-devs sync` fetches content from `github.tools.sap`, which requires a Personal Access Token if you are inside the SAP corporate network.
+
+**When you need a token:** Only when syncing from `github.tools.sap` on the SAP corporate network. If you are outside SAP, no token is needed.
+
+**Token resolution order** (first match wins):
+
+1. `GITHUB_TOOLS_SAP_TOKEN` environment variable
+2. `GH_TOKEN` environment variable
+3. `GITHUB_TOKEN` environment variable
+4. Token stored with `sap-devs config token`
+
+**Storing a token (interactive — recommended for developer machines):**
+
+```sh
+sap-devs config token
+# Prompts: Enter GitHub token (input hidden, will not appear in shell history):
+```
+
+**Storing a token (non-interactive — scripted or CI):**
+
+```sh
+sap-devs config token ghp_yourtoken
+# Warning: token passed as argument may be saved in shell history.
+```
+
+For CI/CD, set `GITHUB_TOOLS_SAP_TOKEN` as a pipeline secret instead — no local storage needed.
+
+**Where tokens are stored:** The OS keychain (macOS Keychain, Windows Credential Manager, Linux Secret Service). On headless systems without a keychain, a credentials file at `~/.config/sap-devs/credentials` (Linux) with restricted permissions (owner read/write only). Tokens are **never** stored in `config.yaml`.
+
+**Removing a stored token:**
+
+```sh
+sap-devs config token --delete
+```
+
+**Viewing token status:**
+
+```sh
+sap-devs config show
+# github_token:    ghp_****
+```
+
+---
+
 ### `sync`
 
 Pull the latest SAP developer content from the official repo.
