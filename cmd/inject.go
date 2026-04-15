@@ -93,14 +93,12 @@ into project-level files (CLAUDE.md, .cursorrules, etc.) in the current director
 			}
 		}
 
-		rendered := content.RenderContext(packs, activeProfile)
-
 		opts := adapter.Options{
 			Scope:      scope,
 			ToolFilter: injectTool,
 			DryRun:     injectDryRun,
 		}
-		eng, err := newAdapterEngine(rendered, opts)
+		eng, err := newAdapterEngine(packs, activeProfile, opts)
 		if err != nil {
 			return err
 		}
