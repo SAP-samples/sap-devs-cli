@@ -4,7 +4,7 @@ version: 2
 
 github_urls:
   api: https://github.tools.sap/api/v3/
-  upload: https://github.tools.sap/uploads/
+  upload: https://github.tools.sap/
   download: https://github.tools.sap/
 
 release:
