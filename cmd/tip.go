@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"os"
 	"fmt"
 	"time"
 
@@ -52,6 +53,11 @@ var tipCmd = &cobra.Command{
 		// Use year*1000+yearday as seed for daily consistency
 		now := time.Now()
 		seed := int64(now.Year()*1000 + now.YearDay())
+
+		// If in local development mode, use a more variable seed
+		if os.Getenv("SAP_DEVS_DEV") == "1" {
+			seed = now.Unix()
+		}
 
 		tip, err := content.SelectTip(packs, tipTags, seed)
 		if err != nil {
