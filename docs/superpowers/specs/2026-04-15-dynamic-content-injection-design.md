@@ -297,7 +297,7 @@ If both `--sync` and `--no-sync` are passed, inject exits immediately with: `err
 
 ### Inline Sync Path
 
-Both the `sync` command and inject's inline sync (triggered by `--sync` or a `Y` prompt response) call a shared `runSync(ctx context.Context, force bool) error` helper extracted from `cmd/sync.go`. The Cobra `sync` command's `RunE` becomes a thin wrapper around this helper. The inject command calls the same helper, obtaining the context via `cmd.Context()` inside its own `RunE`.
+Both the `sync` command and inject's inline sync (triggered by `--sync` or a `Y` prompt response) call a shared `runSync(ctx context.Context, force bool, out io.Writer) error` helper extracted from `cmd/sync.go`. The `out` parameter receives all progress messages, allowing the caller to route output through `cmd.OutOrStdout()`. The Cobra `sync` command's `RunE` becomes a thin wrapper around this helper. The inject command calls the same helper, obtaining the context via `cmd.Context()` and passing `cmd.OutOrStdout()` as `out`.
 
 ---
 
