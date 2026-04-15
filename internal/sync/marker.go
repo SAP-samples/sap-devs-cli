@@ -20,6 +20,8 @@ type Marker struct {
 	Label     string
 	TTLHours  int    // 0 = use pack/engine default
 	LineNum   int
+	Format    string // "raw" | "text" | "markdown"; default "markdown"
+	Selector  string // CSS selector for DOM scoping; empty = whole body; ignored for "raw"
 }
 
 var markerRE = regexp.MustCompile(`<!--\s*sync:fetch\s+(.*?)\s*-->`)
@@ -97,6 +99,20 @@ func ScanMarkers(packID, content string) ([]Marker, []string) {
 			} else {
 				m.TTLHours = n
 			}
+		}
+		m.Format = "markdown" // default
+		if v := attrs["format"]; v != "" {
+			switch v {
+			case "raw", "text", "markdown":
+				m.Format = v
+			default:
+				warnings = append(warnings, fmt.Sprintf(
+					"%s: line %d: unknown format %q — defaulting to markdown", packID, lineNum+1, v,
+				))
+			}
+		}
+		if v := attrs["selector"]; v != "" {
+			m.Selector = v
 		}
 		markers = append(markers, m)
 		index++

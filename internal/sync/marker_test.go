@@ -163,3 +163,36 @@ func TestTruncateTokens_NoNewlines(t *testing.T) {
 	assert.LessOrEqual(t, len(got), 40)
 	assert.Greater(t, len(got), 0)
 }
+
+func TestScanMarkers_DefaultFormatIsMarkdown(t *testing.T) {
+	content := "<!-- sync:fetch url=\"https://x.com\" -->\n"
+	markers, warns := sapSync.ScanMarkers("cap", content)
+	assert.Empty(t, warns)
+	require.Len(t, markers, 1)
+	assert.Equal(t, "markdown", markers[0].Format)
+}
+
+func TestScanMarkers_FormatRaw(t *testing.T) {
+	content := "<!-- sync:fetch url=\"https://x.com\" format=\"raw\" -->\n"
+	markers, warns := sapSync.ScanMarkers("cap", content)
+	assert.Empty(t, warns)
+	require.Len(t, markers, 1)
+	assert.Equal(t, "raw", markers[0].Format)
+}
+
+func TestScanMarkers_Selector(t *testing.T) {
+	content := "<!-- sync:fetch url=\"https://x.com\" selector=\"main\" -->\n"
+	markers, warns := sapSync.ScanMarkers("cap", content)
+	assert.Empty(t, warns)
+	require.Len(t, markers, 1)
+	assert.Equal(t, "main", markers[0].Selector)
+}
+
+func TestScanMarkers_UnknownFormatWarnsAndDefaultsToMarkdown(t *testing.T) {
+	content := "<!-- sync:fetch url=\"https://x.com\" format=\"pdf\" -->\n"
+	markers, warns := sapSync.ScanMarkers("cap", content)
+	require.Len(t, markers, 1)
+	assert.Equal(t, "markdown", markers[0].Format)
+	require.Len(t, warns, 1)
+	assert.Contains(t, warns[0], "unknown format")
+}
