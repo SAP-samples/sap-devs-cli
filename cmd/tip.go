@@ -99,6 +99,9 @@ var tipUninstallCmd = &cobra.Command{
 	Short: "Remove sap-devs tip from your shell profile",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		results, err := shellhook.Remove("sap-devs tip", "# SAP developer tips")
+		if err != nil && len(results) == 0 {
+			return err
+		}
 		anyRemoved := false
 		for _, r := range results {
 			if r.Updated {
