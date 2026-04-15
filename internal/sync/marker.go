@@ -21,7 +21,7 @@ type Marker struct {
 	Label     string
 	TTLHours  int    // 0 = use pack/engine default
 	LineNum   int
-	Format    string // "raw" | "text" | "markdown"; default "markdown"
+	Format    string // "raw" | "text" | "markdown"; empty string treated as "markdown" by FetchMarker
 	Selector  string // CSS selector for DOM scoping; empty = whole body; ignored for "raw"
 }
 

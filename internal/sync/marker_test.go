@@ -235,7 +235,7 @@ func TestFetchMarker_TruncationAppliedAfterConversion(t *testing.T) {
 	content, err := sapSync.FetchMarker(m, srv.Client())
 	require.NoError(t, err)
 	lines := strings.Split(strings.TrimSpace(content), "\n")
-	assert.LessOrEqual(t, len(lines), 3)
+	assert.Equal(t, 3, len(lines))
 }
 
 func TestFetchMarker_SelectorScopesContent(t *testing.T) {
