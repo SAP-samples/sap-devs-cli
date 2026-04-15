@@ -134,6 +134,53 @@ func TestLoadPack_MalformedLocales(t *testing.T) {
 	assert.Error(t, err, "malformed locales block should return an error")
 }
 
+func TestLoadPack_PrefersExpandedOverBase(t *testing.T) {
+	dir := t.TempDir()
+	yaml := "id: cap\nname: CAP\ndescription: Test\ntags: []\nprofiles: []\nweight: 0\n"
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "pack.yaml"), []byte(yaml), 0644))
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "context.md"), []byte("static content"), 0644))
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "context.expanded.md"), []byte("expanded content"), 0644))
+
+	p, err := content.LoadPack(dir, "")
+	require.NoError(t, err)
+	assert.Equal(t, "expanded content", p.ContextMD)
+}
+
+func TestLoadPack_FallsBackToBaseWhenNoExpanded(t *testing.T) {
+	dir := t.TempDir()
+	yaml := "id: cap\nname: CAP\ndescription: Test\ntags: []\nprofiles: []\nweight: 0\n"
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "pack.yaml"), []byte(yaml), 0644))
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "context.md"), []byte("static content"), 0644))
+
+	p, err := content.LoadPack(dir, "")
+	require.NoError(t, err)
+	assert.Equal(t, "static content", p.ContextMD)
+}
+
+func TestLoadPack_LocaleBeatsExpanded(t *testing.T) {
+	dir := t.TempDir()
+	yaml := "id: cap\nname: CAP\ndescription: Test\ntags: []\nprofiles: []\nweight: 0\n"
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "pack.yaml"), []byte(yaml), 0644))
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "context.md"), []byte("base"), 0644))
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "context.de.md"), []byte("german"), 0644))
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "context.expanded.md"), []byte("expanded"), 0644))
+
+	// German locale wins over expanded
+	p, err := content.LoadPack(dir, "de")
+	require.NoError(t, err)
+	assert.Equal(t, "german", p.ContextMD)
+
+	// No locale → expanded wins
+	p, err = content.LoadPack(dir, "")
+	require.NoError(t, err)
+	assert.Equal(t, "expanded", p.ContextMD)
+
+	// "en" also skips locale branch → expanded wins
+	p, err = content.LoadPack(dir, "en")
+	require.NoError(t, err)
+	assert.Equal(t, "expanded", p.ContextMD)
+}
+
 func makeTempPack(t *testing.T, id, packYAML, contextMD, resourcesYAML, tipsMD string) string {
 	t.Helper()
 	dir := t.TempDir()

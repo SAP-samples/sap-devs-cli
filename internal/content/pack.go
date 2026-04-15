@@ -121,10 +121,19 @@ func LoadPack(packDir string, lang string) (*Pack, error) {
 		}
 	}
 
+	// Context file: locale variant → expanded base → base
 	contextFile := filepath.Join(packDir, "context.md")
+	localeFound := false
 	if lang != "" && lang != "en" {
 		if loc := filepath.Join(packDir, "context."+lang+".md"); fileExists(loc) {
 			contextFile = loc
+			localeFound = true
+		}
+	}
+	// If no locale variant selected, prefer the sync-expanded file when present.
+	if !localeFound {
+		if exp := filepath.Join(packDir, "context.expanded.md"); fileExists(exp) {
+			contextFile = exp
 		}
 	}
 	if data, err := os.ReadFile(contextFile); err == nil {
