@@ -4,6 +4,23 @@ Ideas and planned features for `sap-devs`. These are not commitments or a roadma
 
 ---
 
+## Profiles
+
+### "All" profile — dynamic catch-all
+
+Add a built-in `all` profile that automatically includes every pack available in the content layers, without needing a static `profiles/all.yaml` that must be kept in sync.
+
+**Problem:** Users who want the full context (e.g. during content development or when working across multiple SAP domains) must either create a custom profile listing every pack ID, or switch profiles constantly. The list would go stale as new packs are added.
+
+**Proposed approach:**
+
+- Reserve the profile ID `all` in `ApplyWeights()` / profile resolution — when this ID is active, skip pack filtering entirely and load all packs from all layers
+- `sap-devs profile set all` selects it; `sap-devs profile list` shows it as a built-in entry (not from a file)
+- No `profiles/all.yaml` on disk — the behaviour is hardcoded so it never drifts out of sync
+- Weight order for `all`: official packs first, then company, then user, then project (same as the content-layer merge order)
+
+---
+
 ## Content System
 
 ### Additive content layers
