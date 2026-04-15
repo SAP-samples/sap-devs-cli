@@ -2,6 +2,11 @@ project_name: sap-devs
 
 version: 2
 
+github_urls:
+  api: https://github.tools.sap/api/v3/
+  upload: https://github.tools.sap/uploads/
+  download: https://github.tools.sap/
+
 release:
   github:
     owner: developer-relations
