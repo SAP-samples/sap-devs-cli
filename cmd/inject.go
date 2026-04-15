@@ -136,8 +136,9 @@ func isStaleDynamicContent(engine *sapSync.Engine, packs []*content.Pack, paths 
 			continue
 		}
 		// Condition 1: context.expanded.md must exist
+		// Only official-layer packs support marker expansion; company/user/project packs are not checked.
 		expandedPath := filepath.Join(paths.CacheDir, "official", "content", "packs", p.ID, "context.expanded.md")
-		if _, err := os.Stat(expandedPath); os.IsNotExist(err) {
+		if _, err := os.Stat(expandedPath); err != nil {
 			return true
 		}
 		// Conditions 2+3: iterate recorded marker states until no more found

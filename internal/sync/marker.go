@@ -37,7 +37,7 @@ func ScanMarkers(packID, content string) ([]Marker, []string) {
 	index := 0
 
 	for lineNum, line := range lines {
-		if strings.HasPrefix(strings.TrimSpace(line), "```") {
+		if strings.HasPrefix(strings.TrimSpace(line), "```") || strings.HasPrefix(strings.TrimSpace(line), "~~~") {
 			inFence = !inFence
 			continue
 		}
@@ -119,7 +119,7 @@ func ExpandMarkers(content string, markers []Marker, results map[int]string) str
 	lines := strings.Split(content, "\n")
 	inFence := false
 	for i, line := range lines {
-		if strings.HasPrefix(strings.TrimSpace(line), "```") {
+		if strings.HasPrefix(strings.TrimSpace(line), "```") || strings.HasPrefix(strings.TrimSpace(line), "~~~") {
 			inFence = !inFence
 			continue
 		}
