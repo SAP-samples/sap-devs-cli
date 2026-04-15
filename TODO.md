@@ -190,12 +190,33 @@ Integrate with [SAP Discovery Center](https://discovery.sap.com) for mission and
 
 ---
 
-### developers.sap.com tutorial content
+### developers.sap.com tutorial content — render and interactive execution
 
-Pull structured tutorial content from developers.sap.com for offline use and AI context injection.
+Fetch, render, and interactively execute tutorials from developers.sap.com without leaving the terminal.
 
-**Scope (TBD):**
-- Fetch/cache tutorials for offline browsing
-- Inject tutorial content as AI context (MCP adapter pattern)
-- Needs exploration of available public APIs or feed endpoints
-- Likely closely related to `sap-devs learn` — decide whether to bundle or build separately
+This is a two-phase feature:
+
+#### Phase 1 — Content ingestion and rendering
+
+- Fetch and cache tutorials from developers.sap.com as structured step data (via public API, JSON-LD, or sitemap — needs exploration)
+- Store as YAML per pack; updated via `sap-devs sync` with its own TTL category
+- `sap-devs tutorial list` — browse tutorials relevant to the active profile
+- `sap-devs tutorial show <id>` — render a tutorial in the terminal: markdown output, step navigation (next/prev/jump), progress tracking, resume from last step
+
+#### Phase 2 — Guided execution
+
+- `sap-devs tutorial run <id>` — interactive runner that walks through each step in sequence
+- For code steps: display the snippet and optionally copy to clipboard or scaffold files in the current directory
+- For CLI steps: display the command and optionally execute it with explicit user confirmation (no silent execution)
+- Track completed steps in local state (e.g., `~/.local/share/sap-devs/tutorial-progress/`)
+
+#### Integration points
+
+- Inject active-tutorial context into AI tools via `inject` (e.g., "user is currently on step 3 of tutorial X — tailor suggestions accordingly")
+- Likely closely related to `sap-devs learn` — `learn` recommends tutorials, `tutorial run` executes them; decide whether to bundle or keep separate
+- Could feed into a future achievement or progress tracking system
+
+#### Open questions
+
+- What structured data is available from developers.sap.com? (tutorials.sap.com has a JSON-backed metadata system worth investigating)
+- Should execution be purely guided (display + confirm) or should the tool be able to run commands on the user's behalf?
