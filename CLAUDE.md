@@ -43,6 +43,7 @@ Content is loaded from up to four layered sources, with later layers overriding 
 ### Adapter System
 
 Adapters ([internal/adapter/](internal/adapter/)) define how to push context into a specific AI tool. They are YAML files in `content/adapters/` and support three types:
+
 - **`file-inject`** — writes a fenced section into a config file (e.g., `~/.claude/CLAUDE.md`), using `replace-section` or `append` mode
 - **`clipboard-export`** — copies context to clipboard (global scope only)
 - **`mcp-wire`** — registers MCP servers in a tool's JSON config (handled by `mcp install`, not `inject`)
@@ -57,6 +58,12 @@ Profiles ([content/profiles/](content/profiles/)) are YAML files that tag which 
 
 `sap-devs sync` ([cmd/sync.go](cmd/sync.go)) fetches the official repo as a `.zip` archive and extracts it into the cache. Per-category TTLs are tracked in `~/.cache/sap-devs/sync-state.json` via `sync.Engine` ([internal/sync/engine.go](internal/sync/engine.go)). Forced refresh: `--force`.
 
+**Phase 2 — Dynamic Content Expansion:** After the zip fetch, `sync` scans each `context.md` for `<!-- sap-devs:fetch ... -->` markers via `ScanMarkers()`, fetches remote content in parallel (Bubbletea progress UI), then writes `context.expanded.md` alongside `context.md`. `inject` prefers `context.expanded.md` when present. Marker authoring details: [docs/content-authoring.md](docs/content-authoring.md).
+
+### i18n
+
+`internal/i18n` ([internal/i18n/i18n.go](internal/i18n/i18n.go)) provides CLI string localisation. Language resolution: `lang` config key → `LANG` env var → `LC_ALL` env var → `"en"`. Catalogs for `en` and `de` are embedded at compile time. `T(lang, key)` and `Tf(lang, key, data)` are the public API.
+
 ### Credentials
 
 `internal/credentials` ([internal/credentials/credentials.go](internal/credentials/credentials.go)) provides secure token storage. `Store`/`Load`/`Delete` use the OS keychain via `zalando/go-keyring` with a `<configDir>/credentials` file fallback (0600). `Resolve()` implements the full priority chain: env vars (`GITHUB_TOOLS_SAP_TOKEN`, `GH_TOKEN`, `GITHUB_TOKEN`) → keychain → file → `""`. Used by `sync` and `config token`.
@@ -64,6 +71,7 @@ Profiles ([content/profiles/](content/profiles/)) are YAML files that tag which 
 ### Platform Paths
 
 `internal/xdg` ([internal/xdg/xdg.go](internal/xdg/xdg.go)) resolves platform-native directories:
+
 - **Linux**: `~/.config/sap-devs`, `~/.cache/sap-devs`, `~/.local/share/sap-devs` (XDG env vars honoured)
 - **macOS**: `~/Library/Application Support/sap-devs`, `~/Library/Caches/sap-devs`
 - **Windows**: `%APPDATA%/sap-devs`, `%LOCALAPPDATA%/sap-devs/cache`, `%LOCALAPPDATA%/sap-devs/data`
@@ -75,12 +83,12 @@ On every command invocation (except `update` and dev builds), a background gorou
 ### CLI Commands
 
 | Command | Purpose |
-|---|---|
-| `inject` | Push rendered context into detected AI tools (`--project` for project scope) |
+| --- | --- |
+| `inject` | Push rendered context into detected AI tools (`--project` for project scope); `--sync` forces fresh sync, `--no-sync` skips staleness check |
 | `sync` | Fetch latest content from official/company repos |
 | `profile set/list` | Manage active developer persona |
 | `config show/set/company` | View and edit `~/.config/sap-devs/config.yaml` |
-| `tip` | Show a random tip from the active profile's packs |
+| `tip` | Show a random tip; `tip install`/`tip uninstall` wires it into your shell prompt |
 | `doctor` | Check local tool versions against pack requirements (`--fix` for install hints) |
 | `mcp list/install/status` | Browse and wire SAP MCP servers into AI tool configs |
 | `resources` | List curated resources from active packs |
