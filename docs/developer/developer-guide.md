@@ -34,7 +34,13 @@ This produces a `sap-devs` binary in the current directory. The module path is `
 Set `SAP_DEVS_DEV=1` to load content from `./content/` instead of the user cache. This lets you iterate on content changes without syncing:
 
 ```bash
+# macOS / Linux / Git Bash
 SAP_DEVS_DEV=1 go run . inject --dry-run
+```
+
+```powershell
+# PowerShell (Windows)
+$env:SAP_DEVS_DEV="1"; go run . inject --dry-run
 ```
 
 Use `go run .` (rather than rebuilding) for rapid iteration during development.
