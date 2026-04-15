@@ -5,6 +5,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/config"
+	"github.tools.sap/developer-relations/sap-devs-cli/internal/i18n"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/xdg"
 )
 
@@ -26,11 +27,11 @@ var profileListCmd = &cobra.Command{
 			return err
 		}
 		if len(profiles) == 0 {
-			fmt.Println("No profiles found. Run 'sap-devs sync' to download content.")
+			fmt.Fprintln(cmd.OutOrStdout(), i18n.T(i18n.ActiveLang, "profile.list.no_profiles"))
 			return nil
 		}
 		for _, p := range profiles {
-			fmt.Printf("  %-25s %s\n", p.ID, p.Description)
+			fmt.Fprintf(cmd.OutOrStdout(), "  %-25s %s\n", p.ID, p.Description)
 		}
 		return nil
 	},
@@ -54,12 +55,12 @@ var profileSetCmd = &cobra.Command{
 			return err
 		}
 		if p == nil {
-			return fmt.Errorf("profile %q not found — run 'sap-devs profile list' to see options", args[0])
+			return fmt.Errorf("%s", i18n.Tf(i18n.ActiveLang, "profile.set.not_found", map[string]any{"ID": args[0]}))
 		}
 		if err := config.SaveProfile(paths.ConfigDir, &config.Profile{ID: p.ID}); err != nil {
 			return err
 		}
-		fmt.Printf("Profile set to: %s (%s)\n", p.ID, p.Name)
+		fmt.Fprintln(cmd.OutOrStdout(), i18n.Tf(i18n.ActiveLang, "profile.set.done", map[string]any{"ID": p.ID, "Name": p.Name}))
 		return nil
 	},
 }
@@ -77,7 +78,7 @@ var profileShowCmd = &cobra.Command{
 			return err
 		}
 		if saved.ID == "" {
-			fmt.Println("No profile set. Run 'sap-devs profile list' to see options.")
+			fmt.Fprintln(cmd.OutOrStdout(), i18n.T(i18n.ActiveLang, "profile.show.not_set"))
 			return nil
 		}
 		loader, err := newContentLoader()
@@ -89,13 +90,13 @@ var profileShowCmd = &cobra.Command{
 			return err
 		}
 		if p == nil {
-			fmt.Printf("Profile: %s (definition not found in content)\n", saved.ID)
+			fmt.Fprintln(cmd.OutOrStdout(), i18n.Tf(i18n.ActiveLang, "profile.show.not_found", map[string]any{"ID": saved.ID}))
 			return nil
 		}
-		fmt.Printf("Profile: %s — %s\n\n", p.Name, p.Description)
-		fmt.Println("Pack weights:")
+		fmt.Fprint(cmd.OutOrStdout(), i18n.Tf(i18n.ActiveLang, "profile.show.header", map[string]any{"Name": p.Name, "Description": p.Description}))
+		fmt.Fprintln(cmd.OutOrStdout(), i18n.T(i18n.ActiveLang, "profile.show.pack_weights"))
 		for _, pw := range p.Packs {
-			fmt.Printf("  %-20s %d\n", pw.ID, pw.Weight)
+			fmt.Fprintf(cmd.OutOrStdout(), "  %-20s %d\n", pw.ID, pw.Weight)
 		}
 		return nil
 	},

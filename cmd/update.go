@@ -6,6 +6,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/credentials"
+	"github.tools.sap/developer-relations/sap-devs-cli/internal/i18n"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/update"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/xdg"
 )
@@ -20,11 +21,11 @@ var updateCmd = &cobra.Command{
 	Long:  `Check for a newer release on GitHub and install it if found.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if Version == "dev" {
-			fmt.Fprintln(os.Stderr, "cannot update a dev build")
+			fmt.Fprintln(os.Stderr, i18n.T(i18n.ActiveLang, "update.no_dev"))
 			return nil
 		}
 
-		fmt.Println("Checking for updates...")
+		fmt.Fprintln(cmd.OutOrStdout(), i18n.T(i18n.ActiveLang, "update.checking"))
 
 		paths, err := xdg.New()
 		if err != nil {
@@ -38,16 +39,16 @@ var updateCmd = &cobra.Command{
 		}
 
 		if rel == nil || !newer {
-			fmt.Printf("sap-devs v%s is already up to date.\n", Version)
+			fmt.Fprintln(cmd.OutOrStdout(), i18n.Tf(i18n.ActiveLang, "update.up_to_date", map[string]any{"Version": Version}))
 			return nil
 		}
 
-		fmt.Printf("Updating sap-devs v%s → %s...\n", Version, rel.TagName)
+		fmt.Fprintln(cmd.OutOrStdout(), i18n.Tf(i18n.ActiveLang, "update.installing", map[string]any{"From": Version, "To": rel.TagName}))
 		if err := update.Install(repoURL, rel, token); err != nil {
 			return err
 		}
 
-		fmt.Printf("✓ Updated to %s. Restart your shell if needed.\n", rel.TagName)
+		fmt.Fprintln(cmd.OutOrStdout(), i18n.Tf(i18n.ActiveLang, "update.done", map[string]any{"TagName": rel.TagName}))
 		return nil
 	},
 }

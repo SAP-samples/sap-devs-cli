@@ -48,14 +48,14 @@ var mcpListCmd = &cobra.Command{
 				return err2
 			}
 			if profileCfg.ID == "" {
-				return fmt.Errorf("no profile set — run 'sap-devs profile set <name>' first")
+				return fmt.Errorf("%s", i18n.T(i18n.ActiveLang, "mcp.list.no_profile"))
 			}
 			activeProfile, err2 := loader.FindProfile(profileCfg.ID)
 			if err2 != nil {
 				return err2
 			}
 			if activeProfile == nil {
-				return fmt.Errorf("profile %q not found — run 'sap-devs sync' to refresh content", profileCfg.ID)
+				return fmt.Errorf("%s", i18n.Tf(i18n.ActiveLang, "mcp.list.profile_not_found", map[string]any{"ID": profileCfg.ID}))
 			}
 			packs, err = loader.LoadPacks(activeProfile, i18n.ActiveLang)
 			if err != nil {
@@ -64,7 +64,7 @@ var mcpListCmd = &cobra.Command{
 		}
 		servers := content.FlattenMCPServers(packs)
 		if len(servers) == 0 {
-			fmt.Println("No MCP servers found for your current profile.")
+			fmt.Fprintln(cmd.OutOrStdout(), i18n.T(i18n.ActiveLang, "mcp.list.no_servers"))
 			return nil
 		}
 		printMCPTable(servers)
@@ -73,7 +73,11 @@ var mcpListCmd = &cobra.Command{
 }
 
 func printMCPTable(servers []content.MCPServer) {
-	fmt.Printf("%-24s %-12s %-28s %s\n", "ID", "PACK", "HOSTS", "NAME")
+	fmt.Printf("%-24s %-12s %-28s %s\n",
+		i18n.T(i18n.ActiveLang, "mcp.list.col_id"),
+		i18n.T(i18n.ActiveLang, "mcp.list.col_pack"),
+		i18n.T(i18n.ActiveLang, "mcp.list.col_hosts"),
+		i18n.T(i18n.ActiveLang, "mcp.list.col_name"))
 	fmt.Println(strings.Repeat("-", 80))
 	for _, s := range servers {
 		fmt.Printf("%-24s %-12s %-28s %s\n", s.ID, s.PackID, strings.Join(s.Hosts, ", "), s.Name)
@@ -101,7 +105,7 @@ var mcpStatusCmd = &cobra.Command{
 		}
 		servers := content.FlattenMCPServers(packs)
 		if len(mcpAdapters) == 0 && len(servers) == 0 {
-			fmt.Println("No MCP adapters or servers found.")
+			fmt.Fprintln(cmd.OutOrStdout(), i18n.T(i18n.ActiveLang, "mcp.status.no_adapters"))
 			return nil
 		}
 
@@ -119,15 +123,18 @@ var mcpStatusCmd = &cobra.Command{
 			registered[a.ID] = m
 		}
 
-		fmt.Printf("%-20s %-14s %s\n", "SERVER", "HOST", "STATUS")
+		fmt.Printf("%-20s %-14s %s\n",
+			i18n.T(i18n.ActiveLang, "mcp.status.col_server"),
+			i18n.T(i18n.ActiveLang, "mcp.status.col_host"),
+			i18n.T(i18n.ActiveLang, "mcp.status.col_status"))
 		fmt.Println(strings.Repeat("-", 50))
 		for _, s := range servers {
 			for _, hostID := range s.Hosts {
 				m, ok := registered[hostID]
-				status := "not installed"
+				status := i18n.T(i18n.ActiveLang, "mcp.status.not_installed")
 				if ok {
 					if _, found := m[s.ID]; found {
-						status = "installed"
+						status = i18n.T(i18n.ActiveLang, "mcp.status.installed")
 					}
 				}
 				fmt.Printf("%-20s %-14s %s\n", s.ID, hostID, status)
@@ -148,10 +155,10 @@ var mcpInstallCmd = &cobra.Command{
 	Args:  cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(args) == 0 && !mcpInstallAll {
-			return fmt.Errorf("specify a server ID or use --all")
+			return fmt.Errorf("%s", i18n.T(i18n.ActiveLang, "mcp.install.specify_server"))
 		}
 		if len(args) > 0 && mcpInstallAll {
-			return fmt.Errorf("cannot use both a server ID and --all")
+			return fmt.Errorf("%s", i18n.T(i18n.ActiveLang, "mcp.install.both_server_all"))
 		}
 
 		allAdapters, err := loadAdapters()
@@ -177,7 +184,7 @@ func installOne(loader *content.ContentLoader, allAdapters []adapter.Adapter, id
 	}
 	server := content.FindMCPServer(packs, id)
 	if server == nil {
-		return fmt.Errorf("MCP server %q not found — use 'sap-devs mcp list --all' to browse", id)
+		return fmt.Errorf("%s", i18n.Tf(i18n.ActiveLang, "mcp.install.server_not_found", map[string]any{"ID": id}))
 	}
 
 	hostSet := make(map[string]bool)
@@ -186,11 +193,13 @@ func installOne(loader *content.ContentLoader, allAdapters []adapter.Adapter, id
 	}
 	detected := detectAdapters(mcpWireAdapters(allAdapters, hostSet))
 	if len(detected) == 0 {
-		return fmt.Errorf("no compatible hosts detected for %q — install one of: %s",
-			server.ID, strings.Join(server.Hosts, ", "))
+		return fmt.Errorf("%s", i18n.Tf(i18n.ActiveLang, "mcp.install.no_hosts", map[string]any{
+			"ID":    server.ID,
+			"Hosts": strings.Join(server.Hosts, ", "),
+		}))
 	}
 
-	fmt.Printf("Detected hosts compatible with %s:\n", server.ID)
+	fmt.Println(i18n.Tf(i18n.ActiveLang, "mcp.install.detected_hosts", map[string]any{"ID": server.ID}))
 	for i, a := range detected {
 		path, _ := adapter.ExpandHome(a.MCPConfig.Path)
 		fmt.Printf("  %d. %s  (%s)\n", i+1, a.Name, path)
@@ -206,10 +215,10 @@ func installOne(loader *content.ContentLoader, allAdapters []adapter.Adapter, id
 			return err
 		}
 		if err := adapter.WriteMCPConfig(path, a.MCPConfig.Key, *server, mcpInstallDryRun); err != nil {
-			return fmt.Errorf("install → %s: %w", a.Name, err)
+			return fmt.Errorf("%s: %w", i18n.Tf(i18n.ActiveLang, "mcp.install.install_err_one", map[string]any{"Name": a.Name}), err)
 		}
 		if !mcpInstallDryRun {
-			fmt.Printf("✓ Registered %s in %s\n", server.ID, path)
+			fmt.Println(i18n.Tf(i18n.ActiveLang, "mcp.install.registered", map[string]any{"ServerID": server.ID, "Path": path}))
 		}
 	}
 	return nil
@@ -225,14 +234,14 @@ func installAll(loader *content.ContentLoader, allAdapters []adapter.Adapter) er
 		return err
 	}
 	if profileCfg.ID == "" {
-		return fmt.Errorf("no profile set — run 'sap-devs profile set <name>' first")
+		return fmt.Errorf("%s", i18n.T(i18n.ActiveLang, "mcp.list.no_profile"))
 	}
 	activeProfile, err := loader.FindProfile(profileCfg.ID)
 	if err != nil {
 		return err
 	}
 	if activeProfile == nil {
-		return fmt.Errorf("profile %q not found — run 'sap-devs sync' to refresh content", profileCfg.ID)
+		return fmt.Errorf("%s", i18n.Tf(i18n.ActiveLang, "mcp.list.profile_not_found", map[string]any{"ID": profileCfg.ID}))
 	}
 	packs, err := loader.LoadPacks(activeProfile, i18n.ActiveLang)
 	if err != nil {
@@ -240,7 +249,7 @@ func installAll(loader *content.ContentLoader, allAdapters []adapter.Adapter) er
 	}
 	servers := content.FlattenMCPServers(packs)
 	if len(servers) == 0 {
-		fmt.Println("No MCP servers defined for your current profile.")
+		fmt.Println(i18n.T(i18n.ActiveLang, "mcp.install.no_servers"))
 		return nil
 	}
 
@@ -257,10 +266,12 @@ func installAll(loader *content.ContentLoader, allAdapters []adapter.Adapter) er
 		for h := range hostSet {
 			allHosts = append(allHosts, h)
 		}
-		return fmt.Errorf("no compatible hosts detected — install one of: %s", strings.Join(allHosts, ", "))
+		return fmt.Errorf("%s", i18n.Tf(i18n.ActiveLang, "mcp.install.no_hosts_all", map[string]any{
+			"Hosts": strings.Join(allHosts, ", "),
+		}))
 	}
 
-	fmt.Println("Detected compatible hosts:")
+	fmt.Println(i18n.T(i18n.ActiveLang, "mcp.install.all_detected_hosts"))
 	for i, a := range detected {
 		path, _ := adapter.ExpandHome(a.MCPConfig.Path)
 		fmt.Printf("  %d. %s  (%s)\n", i+1, a.Name, path)
@@ -281,16 +292,16 @@ func installAll(loader *content.ContentLoader, allAdapters []adapter.Adapter) er
 				return err
 			}
 			if err := adapter.WriteMCPConfig(path, a.MCPConfig.Key, s, mcpInstallDryRun); err != nil {
-				return fmt.Errorf("install %s → %s: %w", s.ID, a.Name, err)
+				return fmt.Errorf("%s: %w", i18n.Tf(i18n.ActiveLang, "mcp.install.install_err_all", map[string]any{"ID": s.ID, "Name": a.Name}), err)
 			}
 			if !mcpInstallDryRun {
-				fmt.Printf("✓ Registered %s in %s\n", s.ID, path)
+				fmt.Println(i18n.Tf(i18n.ActiveLang, "mcp.install.registered", map[string]any{"ServerID": s.ID, "Path": path}))
 				serversWritten[s.ID] = true
 			}
 		}
 	}
 	if !mcpInstallDryRun {
-		fmt.Printf("Registered %d server(s) in %d host(s).\n", len(serversWritten), len(chosen))
+		fmt.Println(i18n.Tf(i18n.ActiveLang, "mcp.install.summary", map[string]any{"Servers": len(serversWritten), "Hosts": len(chosen)}))
 	}
 	return nil
 }
@@ -298,7 +309,7 @@ func installAll(loader *content.ContentLoader, allAdapters []adapter.Adapter) er
 // pickAdapters prints a numbered list and reads a selection from stdin.
 // The user may enter comma/space-separated numbers or "all".
 func pickAdapters(adapters []adapter.Adapter) ([]adapter.Adapter, error) {
-	fmt.Print("Install to (enter numbers comma-separated, or \"all\"): ")
+	fmt.Print(i18n.T(i18n.ActiveLang, "mcp.install.prompt"))
 	reader := bufio.NewReader(os.Stdin)
 	line, err := reader.ReadString('\n')
 	if err != nil {
@@ -316,12 +327,12 @@ func pickAdapters(adapters []adapter.Adapter) ([]adapter.Adapter, error) {
 		}
 		n, err := strconv.Atoi(part)
 		if err != nil || n < 1 || n > len(adapters) {
-			return nil, fmt.Errorf("invalid selection %q — enter numbers (e.g. 1,2) or \"all\"", part)
+			return nil, fmt.Errorf("%s", i18n.Tf(i18n.ActiveLang, "mcp.install.invalid_selection", map[string]any{"Selection": part}))
 		}
 		chosen = append(chosen, adapters[n-1])
 	}
 	if len(chosen) == 0 {
-		return nil, fmt.Errorf("invalid selection %q — enter numbers (e.g. 1,2) or \"all\"", line)
+		return nil, fmt.Errorf("%s", i18n.Tf(i18n.ActiveLang, "mcp.install.invalid_selection", map[string]any{"Selection": line}))
 	}
 	return chosen, nil
 }

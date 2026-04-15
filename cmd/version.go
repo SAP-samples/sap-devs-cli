@@ -5,6 +5,7 @@ import (
 	"runtime"
 
 	"github.com/spf13/cobra"
+	"github.tools.sap/developer-relations/sap-devs-cli/internal/i18n"
 )
 
 // Version is set at build time via -ldflags.
@@ -27,14 +28,14 @@ var versionCmd = &cobra.Command{
 		errOut := cmd.ErrOrStderr()
 
 		if verbose {
-			fmt.Fprintf(out, "sap-devs %s\n", Version)
-			fmt.Fprintf(out, "  go:      %s\n", runtime.Version())
-			fmt.Fprintf(out, "  os/arch: %s/%s\n", runtime.GOOS, runtime.GOARCH)
+			fmt.Fprintln(out, i18n.Tf(i18n.ActiveLang, "version.verbose", map[string]any{"Version": Version}))
+			fmt.Fprintln(out, i18n.Tf(i18n.ActiveLang, "version.verbose_go", map[string]any{"GoVersion": runtime.Version()}))
+			fmt.Fprintln(out, i18n.Tf(i18n.ActiveLang, "version.verbose_os", map[string]any{"OS": runtime.GOOS, "Arch": runtime.GOARCH}))
 		} else {
 			fmt.Fprintln(out, Version)
 		}
 		if Version == "dev" {
-			fmt.Fprintln(errOut, "(dev build: built without -ldflags version injection — auto-update is disabled)")
+			fmt.Fprintln(errOut, i18n.T(i18n.ActiveLang, "version.dev_warn"))
 		}
 	},
 }

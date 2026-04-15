@@ -79,15 +79,15 @@ var tipInstallCmd = &cobra.Command{
 		results, err := shellhook.Add("sap-devs tip", "# SAP developer tips")
 		if err != nil && len(results) == 0 {
 			// No profiles found — print manual fallback, not an error exit.
-			fmt.Fprintln(cmd.OutOrStdout(), "No shell profile found. Add this line to your shell profile manually:")
-			fmt.Fprintln(cmd.OutOrStdout(), "  sap-devs tip")
+			fmt.Fprintln(cmd.OutOrStdout(), i18n.T(i18n.ActiveLang, "tip.install.no_profile"))
+			fmt.Fprintln(cmd.OutOrStdout(), i18n.T(i18n.ActiveLang, "tip.install.no_profile_cmd"))
 			return nil
 		}
 		for _, r := range results {
 			if r.Updated {
-				fmt.Fprintf(cmd.OutOrStdout(), "✓ Updated %s\n", r.Path)
+				fmt.Fprintln(cmd.OutOrStdout(), i18n.Tf(i18n.ActiveLang, "tip.install.updated", map[string]any{"Path": r.Path}))
 			} else {
-				fmt.Fprintf(cmd.OutOrStdout(), "  %s — already configured\n", r.Path)
+				fmt.Fprintln(cmd.OutOrStdout(), i18n.Tf(i18n.ActiveLang, "tip.install.already", map[string]any{"Path": r.Path}))
 			}
 		}
 		return err
@@ -105,14 +105,14 @@ var tipUninstallCmd = &cobra.Command{
 		anyRemoved := false
 		for _, r := range results {
 			if r.Updated {
-				fmt.Fprintf(cmd.OutOrStdout(), "✓ Removed from %s\n", r.Path)
+				fmt.Fprintln(cmd.OutOrStdout(), i18n.Tf(i18n.ActiveLang, "tip.uninstall.removed", map[string]any{"Path": r.Path}))
 				anyRemoved = true
 			} else {
-				fmt.Fprintf(cmd.OutOrStdout(), "  %s — not configured\n", r.Path)
+				fmt.Fprintln(cmd.OutOrStdout(), i18n.Tf(i18n.ActiveLang, "tip.uninstall.not_configured", map[string]any{"Path": r.Path}))
 			}
 		}
 		if !anyRemoved {
-			fmt.Fprintln(cmd.OutOrStdout(), "'sap-devs tip' was not found in any shell profile.")
+			fmt.Fprintln(cmd.OutOrStdout(), i18n.T(i18n.ActiveLang, "tip.uninstall.not_found"))
 		}
 		return err
 	},

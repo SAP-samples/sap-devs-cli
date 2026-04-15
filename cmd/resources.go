@@ -30,7 +30,7 @@ var resourcesListCmd = &cobra.Command{
 			return err
 		}
 		if profileCfg.ID == "" {
-			return fmt.Errorf("no profile set — run 'sap-devs profile set <name>' first")
+			return fmt.Errorf("%s", i18n.T(i18n.ActiveLang, "resources.list.no_profile"))
 		}
 		loader, err := newContentLoader()
 		if err != nil {
@@ -41,7 +41,7 @@ var resourcesListCmd = &cobra.Command{
 			return err
 		}
 		if activeProfile == nil {
-			return fmt.Errorf("profile %q not found — run 'sap-devs sync' to refresh content", profileCfg.ID)
+			return fmt.Errorf("%s", i18n.Tf(i18n.ActiveLang, "resources.list.profile_not_found", map[string]any{"ID": profileCfg.ID}))
 		}
 		packs, err := loader.LoadPacks(activeProfile, i18n.ActiveLang)
 		if err != nil {
@@ -49,7 +49,7 @@ var resourcesListCmd = &cobra.Command{
 		}
 		resources := content.FlattenResources(packs)
 		if len(resources) == 0 {
-			fmt.Println("No resources found for your current profile.")
+			fmt.Fprintln(cmd.OutOrStdout(), i18n.T(i18n.ActiveLang, "resources.list.no_resources"))
 			return nil
 		}
 		printResourceTable(resources, false)
@@ -72,7 +72,7 @@ var resourcesSearchCmd = &cobra.Command{
 		}
 		resources := content.FilterResources(content.FlattenResources(packs), args[0])
 		if len(resources) == 0 {
-			fmt.Printf("No resources found matching %q.\n", args[0])
+			fmt.Fprintln(cmd.OutOrStdout(), i18n.Tf(i18n.ActiveLang, "resources.search.no_results", map[string]any{"Query": args[0]}))
 			return nil
 		}
 		printResourceTable(resources, true)
@@ -95,13 +95,13 @@ var resourcesOpenCmd = &cobra.Command{
 		}
 		r := content.FindResource(content.FlattenResources(packs), args[0])
 		if r == nil {
-			return fmt.Errorf("resource %q not found — use 'sap-devs resources list' or 'sap-devs resources search' to browse", args[0])
+			return fmt.Errorf("%s", i18n.Tf(i18n.ActiveLang, "resources.open.not_found", map[string]any{"ID": args[0]}))
 		}
 		if err := browser.OpenURL(r.URL); err != nil {
-			fmt.Printf("Could not open browser: %v. URL: %s\n", err, r.URL)
+			fmt.Fprintln(cmd.OutOrStdout(), i18n.Tf(i18n.ActiveLang, "resources.open.browser_fail", map[string]any{"Err": err, "URL": r.URL}))
 			return nil
 		}
-		fmt.Printf("Opening: %s — %s\n", r.Title, r.URL)
+		fmt.Fprintln(cmd.OutOrStdout(), i18n.Tf(i18n.ActiveLang, "resources.open.opening", map[string]any{"Title": r.Title, "URL": r.URL}))
 		return nil
 	},
 }
@@ -109,14 +109,18 @@ var resourcesOpenCmd = &cobra.Command{
 // printResourceTable prints an aligned table of resources.
 // showPack adds a PACK column between ID and TYPE (used by search).
 func printResourceTable(resources []content.Resource, showPack bool) {
+	colID := i18n.T(i18n.ActiveLang, "resources.col_id")
+	colPack := i18n.T(i18n.ActiveLang, "resources.col_pack")
+	colType := i18n.T(i18n.ActiveLang, "resources.col_type")
+	colTitle := i18n.T(i18n.ActiveLang, "resources.col_title")
 	if showPack {
-		fmt.Printf("%-38s %-12s %-15s %s\n", "ID", "PACK", "TYPE", "TITLE")
+		fmt.Printf("%-38s %-12s %-15s %s\n", colID, colPack, colType, colTitle)
 		fmt.Println(strings.Repeat("-", 90))
 		for _, r := range resources {
 			fmt.Printf("%-38s %-12s %-15s %s\n", r.ID, r.PackID, r.Type, r.Title)
 		}
 	} else {
-		fmt.Printf("%-38s %-15s %s\n", "ID", "TYPE", "TITLE")
+		fmt.Printf("%-38s %-15s %s\n", colID, colType, colTitle)
 		fmt.Println(strings.Repeat("-", 75))
 		for _, r := range resources {
 			fmt.Printf("%-38s %-15s %s\n", r.ID, r.Type, r.Title)

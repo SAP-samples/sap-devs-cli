@@ -62,7 +62,7 @@ var rootCmd = &cobra.Command{
 			if err == nil {
 				update.RecordCheck(cacheDir)
 				if newer {
-					updateHintCh <- "↻ sap-devs " + rel.TagName + " available — run 'sap-devs update' to install"
+					updateHintCh <- i18n.Tf(i18n.ActiveLang, "root.update_hint", map[string]any{"TagName": rel.TagName})
 				}
 			}
 			// on error: channel stays empty, hint is skipped, RecordCheck not called

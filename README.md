@@ -7,6 +7,7 @@
 - [User Guide](docs/user/user-guide.md) — Install, configure, and use `sap-devs`
 - [Content Guide](docs/content/content-guide.md) — Add, update, and translate packs
 - [Developer Guide](docs/developer/developer-guide.md) — Build, test, and release the CLI
+- [Backlog](TODO.md) — Planned features and ideas
 
 ## Quick Start
 

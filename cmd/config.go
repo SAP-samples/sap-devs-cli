@@ -10,6 +10,7 @@ import (
 	"golang.org/x/term"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/config"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/credentials"
+	"github.tools.sap/developer-relations/sap-devs-cli/internal/i18n"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/xdg"
 )
 
@@ -30,36 +31,36 @@ var configShowCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		fmt.Fprintf(cmd.OutOrStdout(), "company_repo:    %s\n", cfg.CompanyRepo)
-		fmt.Fprintf(cmd.OutOrStdout(), "language:        %s\n", cfg.Language)
-		fmt.Fprintf(cmd.OutOrStdout(), "sync.tips:       %s\n", cfg.Sync.Tips)
-		fmt.Fprintf(cmd.OutOrStdout(), "sync.tools:      %s\n", cfg.Sync.Tools)
-		fmt.Fprintf(cmd.OutOrStdout(), "sync.advocates:  %s\n", cfg.Sync.Advocates)
-		fmt.Fprintf(cmd.OutOrStdout(), "sync.resources:  %s\n", cfg.Sync.Resources)
-		fmt.Fprintf(cmd.OutOrStdout(), "sync.context:    %s\n", cfg.Sync.Context)
-		fmt.Fprintf(cmd.OutOrStdout(), "sync.mcp:        %s\n", cfg.Sync.MCP)
-		fmt.Fprintf(cmd.OutOrStdout(), "sync.disabled:   %v\n", cfg.Sync.Disabled)
+		fmt.Fprintln(cmd.OutOrStdout(), i18n.Tf(i18n.ActiveLang, "config.show.company_repo", map[string]any{"Value": cfg.CompanyRepo}))
+		fmt.Fprintln(cmd.OutOrStdout(), i18n.Tf(i18n.ActiveLang, "config.show.language", map[string]any{"Value": cfg.Language}))
+		fmt.Fprintln(cmd.OutOrStdout(), i18n.Tf(i18n.ActiveLang, "config.show.sync_tips", map[string]any{"Value": cfg.Sync.Tips}))
+		fmt.Fprintln(cmd.OutOrStdout(), i18n.Tf(i18n.ActiveLang, "config.show.sync_tools", map[string]any{"Value": cfg.Sync.Tools}))
+		fmt.Fprintln(cmd.OutOrStdout(), i18n.Tf(i18n.ActiveLang, "config.show.sync_advocates", map[string]any{"Value": cfg.Sync.Advocates}))
+		fmt.Fprintln(cmd.OutOrStdout(), i18n.Tf(i18n.ActiveLang, "config.show.sync_resources", map[string]any{"Value": cfg.Sync.Resources}))
+		fmt.Fprintln(cmd.OutOrStdout(), i18n.Tf(i18n.ActiveLang, "config.show.sync_context", map[string]any{"Value": cfg.Sync.Context}))
+		fmt.Fprintln(cmd.OutOrStdout(), i18n.Tf(i18n.ActiveLang, "config.show.sync_mcp", map[string]any{"Value": cfg.Sync.MCP}))
+		fmt.Fprintln(cmd.OutOrStdout(), i18n.Tf(i18n.ActiveLang, "config.show.sync_disabled", map[string]any{"Value": cfg.Sync.Disabled}))
 
 		// Show token status (masked — never show the full value)
 		tok, loadErr := credentials.Load(paths.ConfigDir)
-		fmt.Fprintf(cmd.OutOrStdout(), "github_token:    %s\n", maskedToken(tok, loadErr))
+		fmt.Fprintln(cmd.OutOrStdout(), i18n.Tf(i18n.ActiveLang, "config.show.github_token", map[string]any{"Value": maskedToken(tok, loadErr, i18n.ActiveLang)}))
 		return nil
 	},
 }
 
 // maskedToken returns a display-safe representation of a stored token.
 // It is extracted here so tests can verify masking logic directly.
-func maskedToken(tok string, err error) string {
+func maskedToken(tok string, err error, lang string) string {
 	switch {
 	case err == nil:
 		if len(tok) < 4 {
-			return "(set)"
+			return i18n.T(lang, "config.token.masked_set")
 		}
 		return tok[:4] + "****"
 	case errors.Is(err, credentials.ErrNotFound):
-		return "(not set)"
+		return i18n.T(lang, "config.token.masked_not_set")
 	default:
-		return "(unavailable)"
+		return i18n.T(lang, "config.token.masked_unavailable")
 	}
 }
 
@@ -82,12 +83,12 @@ var configSetCmd = &cobra.Command{
 		case "language":
 			cfg.Language = args[1]
 		default:
-			return fmt.Errorf("unknown config key: %s", args[0])
+			return fmt.Errorf("%s", i18n.Tf(i18n.ActiveLang, "config.set.unknown_key", map[string]any{"Key": args[0]}))
 		}
 		if err := cfg.Save(paths.ConfigDir); err != nil {
 			return err
 		}
-		fmt.Fprintf(cmd.OutOrStdout(), "Set %s = %s\n", args[0], args[1])
+		fmt.Fprintln(cmd.OutOrStdout(), i18n.Tf(i18n.ActiveLang, "config.set.done", map[string]any{"Key": args[0], "Value": args[1]}))
 		return nil
 	},
 }
@@ -109,7 +110,7 @@ var configCompanyCmd = &cobra.Command{
 		if err := cfg.Save(paths.ConfigDir); err != nil {
 			return err
 		}
-		fmt.Fprintf(cmd.OutOrStdout(), "Company repo set to: %s\n", args[0])
+		fmt.Fprintln(cmd.OutOrStdout(), i18n.Tf(i18n.ActiveLang, "config.company.done", map[string]any{"Value": args[0]}))
 		return nil
 	},
 }
@@ -131,7 +132,7 @@ to a credentials file with restricted permissions.`,
 	Args: cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if tokenDeleteFlag && len(args) > 0 {
-			return fmt.Errorf("cannot use --delete with a token value")
+			return fmt.Errorf("%s", i18n.T(i18n.ActiveLang, "config.token.delete_with_value"))
 		}
 
 		paths, err := xdg.New()
@@ -142,31 +143,31 @@ to a credentials file with restricted permissions.`,
 		if tokenDeleteFlag {
 			err := credentials.Delete(paths.ConfigDir)
 			if errors.Is(err, credentials.ErrNotFound) {
-				fmt.Fprintln(cmd.OutOrStdout(), "No token was stored.")
+				fmt.Fprintln(cmd.OutOrStdout(), i18n.T(i18n.ActiveLang, "config.token.no_token"))
 				return nil
 			}
 			if err != nil {
 				return err
 			}
-			fmt.Fprintln(cmd.OutOrStdout(), "Token removed.")
+			fmt.Fprintln(cmd.OutOrStdout(), i18n.T(i18n.ActiveLang, "config.token.removed"))
 			return nil
 		}
 
 		var token string
 		if len(args) == 1 {
 			token = args[0]
-			fmt.Fprintln(cmd.OutOrStdout(), "Warning: token passed as argument may be saved in shell history.")
-			fmt.Fprintln(cmd.OutOrStdout(), "Consider using 'sap-devs config token' without arguments for interactive entry.")
+			fmt.Fprintln(cmd.OutOrStdout(), i18n.T(i18n.ActiveLang, "config.token.warn_history"))
+			fmt.Fprintln(cmd.OutOrStdout(), i18n.T(i18n.ActiveLang, "config.token.history_hint"))
 		} else {
-			fmt.Fprint(cmd.OutOrStdout(), "Enter GitHub token (input hidden, will not appear in shell history): ")
+			fmt.Fprint(cmd.OutOrStdout(), i18n.T(i18n.ActiveLang, "config.token.prompt"))
 			raw, readErr := term.ReadPassword(int(os.Stdin.Fd()))
 			fmt.Fprintln(cmd.OutOrStdout()) // newline after hidden input
 			if readErr != nil {
-				return fmt.Errorf("interactive input not available — pass token as argument: sap-devs config token <value>: %w", readErr)
+				return fmt.Errorf("%s: %w", i18n.T(i18n.ActiveLang, "config.token.interactive_unavailable"), readErr)
 			}
 			token = strings.TrimSpace(string(raw))
 			if token == "" {
-				fmt.Fprintln(cmd.OutOrStdout(), "No token entered.")
+				fmt.Fprintln(cmd.OutOrStdout(), i18n.T(i18n.ActiveLang, "config.token.empty"))
 				return nil
 			}
 		}
@@ -174,7 +175,7 @@ to a credentials file with restricted permissions.`,
 		if err := credentials.Store(paths.ConfigDir, token); err != nil {
 			return err
 		}
-		fmt.Fprintln(cmd.OutOrStdout(), "Token stored securely.")
+		fmt.Fprintln(cmd.OutOrStdout(), i18n.T(i18n.ActiveLang, "config.token.stored"))
 		return nil
 	},
 }
