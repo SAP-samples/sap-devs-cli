@@ -75,7 +75,7 @@ CI runs on a self-hosted `Linux X64` runner and is the authoritative test runner
 
 ## Project Layout
 
-```
+```bash
 sap-devs-cli/
 ├── cmd/                    # Cobra command definitions (one file per command)
 ├── internal/
