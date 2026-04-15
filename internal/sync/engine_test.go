@@ -83,6 +83,8 @@ func TestEngine_RecordAndGetMarkerState(t *testing.T) {
 	require.True(t, ok)
 	assert.Equal(t, ms.URL, got.URL)
 	assert.True(t, got.OK)
+	assert.Equal(t, ms.TTLHours, got.TTLHours)
+	assert.WithinDuration(t, ms.LastFetched, got.LastFetched, time.Second)
 }
 
 func TestEngine_GetMarkerState_NotFound(t *testing.T) {
@@ -95,13 +97,18 @@ func TestEngine_GetMarkerState_NotFound(t *testing.T) {
 func TestLoadSyncState_NewFormatRoundTrips(t *testing.T) {
 	dir := t.TempDir()
 	eng := sapSync.NewEngine(dir, 24*time.Hour, nil)
+
+	ms := sapSync.MarkerState{URL: "https://example.com", TTLHours: 168, OK: true, LastFetched: time.Now()}
 	require.NoError(t, eng.SetPackHasMarkers("cap", true))
-	ms := sapSync.MarkerState{URL: "https://x.com", TTLHours: 168, OK: true, LastFetched: time.Now()}
 	require.NoError(t, eng.RecordMarkerState("cap", 0, ms))
-	// Reload from disk and verify
-	got, ok := eng.GetMarkerState("cap", 0)
+
+	// Verify via independent read (not the same engine instance)
+	state := sapSync.LoadSyncStateForTest(dir)
+	assert.Equal(t, 1, state.Version)
+	assert.True(t, state.Packs["cap"].HasMarkers)
+	gotMS, ok := state.Markers["cap::0"]
 	require.True(t, ok)
-	assert.Equal(t, ms.URL, got.URL)
-	packs := eng.PacksBlock()
-	assert.True(t, packs["cap"].HasMarkers)
+	assert.Equal(t, ms.URL, gotMS.URL)
+	assert.Equal(t, ms.TTLHours, gotMS.TTLHours)
+	assert.Equal(t, ms.OK, gotMS.OK)
 }

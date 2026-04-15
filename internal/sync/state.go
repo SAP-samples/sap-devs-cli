@@ -48,7 +48,9 @@ func loadSyncState(stateDir string) SyncState {
 	if err := json.Unmarshal(data, &state); err != nil || state.Version < 1 {
 		// Old flat format (map[string]time.Time) or corrupt file — reset.
 		fmt.Fprintf(os.Stderr, "sap-devs: sync state reset after format upgrade\n")
-		_ = os.Remove(filepath.Join(stateDir, "sync-state.json"))
+		if removeErr := os.Remove(filepath.Join(stateDir, "sync-state.json")); removeErr != nil && !os.IsNotExist(removeErr) {
+			fmt.Fprintf(os.Stderr, "sap-devs: could not remove stale sync state: %v\n", removeErr)
+		}
 		return newSyncState()
 	}
 	if state.Categories == nil {
