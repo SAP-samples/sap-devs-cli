@@ -1,6 +1,10 @@
 package sync_test
 
 import (
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -85,4 +89,45 @@ func TestExpandMarkers_FenceSkipDirect(t *testing.T) {
 	results := map[int]string{0: "should not appear"}
 	expanded := sapSync.ExpandMarkers(content, []sapSync.Marker{m}, results)
 	assert.NotContains(t, expanded, "should not appear")
+}
+
+func TestFetchMarker_Success(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		for i := 0; i < 10; i++ {
+			fmt.Fprintf(w, "line %d\n", i+1)
+		}
+	}))
+	defer srv.Close()
+
+	m := sapSync.Marker{URL: srv.URL, MaxLines: 5}
+	content, err := sapSync.FetchMarker(m, srv.Client())
+	require.NoError(t, err)
+	lines := strings.Split(strings.TrimSpace(content), "\n")
+	assert.Len(t, lines, 5)
+	assert.Equal(t, "line 1", lines[0])
+}
+
+func TestFetchMarker_Non200(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+	}))
+	defer srv.Close()
+
+	m := sapSync.Marker{URL: srv.URL}
+	_, err := sapSync.FetchMarker(m, srv.Client())
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "404")
+}
+
+func TestFetchMarker_NoLimit(t *testing.T) {
+	body := "line1\nline2\nline3\n"
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		fmt.Fprint(w, body)
+	}))
+	defer srv.Close()
+
+	m := sapSync.Marker{URL: srv.URL} // no max_lines
+	content, err := sapSync.FetchMarker(m, srv.Client())
+	require.NoError(t, err)
+	assert.Equal(t, body, content)
 }

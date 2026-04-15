@@ -2,9 +2,12 @@ package sync
 
 import (
 	"fmt"
+	"io"
+	"net/http"
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // Marker represents a parsed <!-- sync:fetch ... --> directive.
@@ -138,4 +141,52 @@ func parseAttrs(s string) map[string]string {
 		attrs[m[1]] = m[2]
 	}
 	return attrs
+}
+
+// FetchMarker fetches m.URL and returns the content, truncated per m.MaxLines / m.MaxTokens.
+// client may be nil; a default 10-second timeout client is used in that case.
+func FetchMarker(m Marker, client *http.Client) (string, error) {
+	if client == nil {
+		client = &http.Client{Timeout: 10 * time.Second}
+	}
+	resp, err := client.Get(m.URL) //nolint:gosec // URL comes from pack author, not untrusted input
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return "", fmt.Errorf("HTTP %d fetching %s", resp.StatusCode, m.URL)
+	}
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+	content := string(body)
+	if m.MaxLines > 0 {
+		content = truncateLines(content, m.MaxLines)
+	} else if m.MaxTokens > 0 {
+		content = truncateTokens(content, m.MaxTokens)
+	}
+	return content, nil
+}
+
+func truncateLines(s string, max int) string {
+	lines := strings.SplitN(s, "\n", max+1)
+	if len(lines) > max {
+		lines = lines[:max]
+	}
+	return strings.Join(lines, "\n")
+}
+
+func truncateTokens(s string, max int) string {
+	// Rough approximation: 1 token ≈ 4 characters.
+	limit := max * 4
+	if len(s) <= limit {
+		return s
+	}
+	s = s[:limit]
+	if idx := strings.LastIndex(s, "\n"); idx > 0 {
+		s = s[:idx]
+	}
+	return s
 }
