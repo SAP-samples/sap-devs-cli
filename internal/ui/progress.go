@@ -2,6 +2,7 @@ package ui
 
 import (
 	"fmt"
+	"os"
 	"strings"
 	"sync"
 
@@ -55,7 +56,7 @@ func (m progressModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case MarkerDoneMsg:
 		for i, item := range m.items {
-			if item.index == msg.Index {
+			if item.packID == msg.PackID && item.index == msg.Index {
 				if msg.Err != nil {
 					m.items[i].state = "failed"
 				} else {
@@ -140,7 +141,7 @@ func RunMarkerExpansion(markers []sapSync.Marker) (map[int]string, map[int]error
 	}()
 
 	if _, err := p.Run(); err != nil {
-		fmt.Printf("progress display error: %v\n", err)
+		fmt.Fprintf(os.Stderr, "progress display error: %v\n", err)
 	}
 
 	return results, errs
