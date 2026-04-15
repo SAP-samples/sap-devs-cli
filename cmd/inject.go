@@ -72,9 +72,9 @@ into project-level files (CLAUDE.md, .cursorrules, etc.) in the current director
 			return err
 		}
 
-		// Staleness check — skip if --no-sync, run unconditionally if --sync
-		if !injectNoSync {
-			engine := sapSync.NewEngine(paths.CacheDir, 24*time.Hour, nil)
+		// Staleness check — skip if --no-sync or no packs have markers, run unconditionally if --sync
+		engine := sapSync.NewEngine(paths.CacheDir, 24*time.Hour, nil)
+		if !injectNoSync && engine.PacksBlock() != nil {
 			if injectSync || isStaleDynamicContent(engine, packs, paths) {
 				if injectSync || shouldSyncNow(cmd) {
 					if err := runSync(cmd.Context(), false, cmd.OutOrStdout()); err != nil {
@@ -162,7 +162,7 @@ func isStaleDynamicContent(engine *sapSync.Engine, packs []*content.Pack, paths 
 // shouldSyncNow prompts the user interactively. Returns true if user answers Y or is non-TTY auto-proceed.
 // Non-TTY: auto-proceeds with cached content (returns false) and warns to stderr.
 func shouldSyncNow(cmd *cobra.Command) bool {
-	if !term.IsTerminal(int(os.Stdin.Fd())) {
+	if !term.IsTerminal(int(os.Stdout.Fd())) {
 		fmt.Fprintln(os.Stderr, `sap-devs: dynamic content is stale; run "sap-devs sync" to refresh`)
 		return false
 	}
