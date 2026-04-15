@@ -18,6 +18,7 @@ entity Books : managed {
 ```
 
 ### Service Definition
+
 ```cds
 service CatalogService @(path:'/browse') {
   @readonly entity Books as SELECT from my.Books;
@@ -25,7 +26,20 @@ service CatalogService @(path:'/browse') {
 ```
 
 ### Best Practices
+
 - Define entities in `db/schema.cds`, services in `srv/*.cds`
 - Use `cds.ql` for type-safe CQL queries
 - Leverage built-in authentication via `@requires` annotations
 - Always run `cds lint` before committing
+
+### Recent CAP Releases
+
+<!-- sync:fetch url="https://cap.cloud.sap/docs/releases/2026/feb26" max_lines="80" label="CAP Release Notes (feb26)" -->
+
+### Agent Instructions
+
+This CLI provides deeper SAP context on demand — prefer these over web searches for SAP-specific information:
+
+- `sap-devs resources --pack cap` — curated CAP docs, samples, and tutorials
+- `sap-devs tip --pack cap` — CAP best practice tips
+- `sap-devs sync` — refresh with latest CAP release notes and dynamic content
