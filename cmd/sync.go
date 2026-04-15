@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -163,12 +164,24 @@ func runMarkerExpansion(officialCache string, engine *sapSync.Engine) error {
 			}
 		}
 
+		// Build per-pack results map for ExpandMarkers (keyed by int index)
+		packResults := make(map[int]string)
+		for _, m := range packMarkers {
+			key := m.PackID + "::" + strconv.Itoa(m.Index)
+			if content, ok := results[key]; ok {
+				packResults[m.Index] = content
+			}
+		}
+
 		// Record state for each marker
+		// Each RecordMarkerState call does a full load-mutate-save cycle.
+		// Acceptable for the typical case of 1-5 markers; a batch API can be
+		// added if marker counts grow significantly.
 		for _, m := range packMarkers {
 			ms := sapSync.MarkerState{
 				URL:      m.URL,
 				TTLHours: m.TTLHours,
-				OK:       fetchErrs[m.Index] == nil,
+				OK:       fetchErrs[m.PackID+"::"+strconv.Itoa(m.Index)] == nil,
 			}
 			if ms.OK {
 				ms.LastFetched = time.Now()
@@ -179,7 +192,7 @@ func runMarkerExpansion(officialCache string, engine *sapSync.Engine) error {
 		}
 
 		// Expand and write context.expanded.md
-		expanded := sapSync.ExpandMarkers(contextContent, packMarkers, results)
+		expanded := sapSync.ExpandMarkers(contextContent, packMarkers, packResults)
 		expandedPath := filepath.Join(packsDir, packID, "context.expanded.md")
 		if err := os.WriteFile(expandedPath, []byte(expanded), 0644); err != nil {
 			return fmt.Errorf("write %s: %w", expandedPath, err)

@@ -3,6 +3,7 @@ package ui
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -91,15 +92,15 @@ func (m progressModel) View() string {
 }
 
 // RunMarkerExpansion fetches all markers in parallel (max 4 concurrent), drives a Bubbletea
-// inline progress display, and returns results (index → content) and any fetch errors.
+// inline progress display, and returns results (packID::index → content) and any fetch errors.
 // If markers is empty it returns immediately with no output.
-func RunMarkerExpansion(markers []sapSync.Marker) (map[int]string, map[int]error) {
+func RunMarkerExpansion(markers []sapSync.Marker) (map[string]string, map[string]error) {
 	if len(markers) == 0 {
 		return nil, nil
 	}
 
-	results := make(map[int]string)
-	errs := make(map[int]error)
+	results := make(map[string]string)
+	errs := make(map[string]error)
 	var mu sync.Mutex
 
 	model := newProgressModel(markers)
@@ -122,13 +123,13 @@ func RunMarkerExpansion(markers []sapSync.Marker) (map[int]string, map[int]error
 			}
 			if err != nil {
 				mu.Lock()
-				errs[m.Index] = err
+				errs[m.PackID+"::"+strconv.Itoa(m.Index)] = err
 				mu.Unlock()
 				p.Send(MarkerDoneMsg{PackID: m.PackID, Index: m.Index, Label: label, Err: err})
 				return
 			}
 			mu.Lock()
-			results[m.Index] = content
+			results[m.PackID+"::"+strconv.Itoa(m.Index)] = content
 			mu.Unlock()
 			lineCount := strings.Count(content, "\n") + 1
 			p.Send(MarkerDoneMsg{PackID: m.PackID, Index: m.Index, Label: label, Lines: lineCount})
