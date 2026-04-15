@@ -111,4 +111,5 @@ func TestLoadSyncState_NewFormatRoundTrips(t *testing.T) {
 	assert.Equal(t, ms.URL, gotMS.URL)
 	assert.Equal(t, ms.TTLHours, gotMS.TTLHours)
 	assert.Equal(t, ms.OK, gotMS.OK)
+	assert.WithinDuration(t, ms.LastFetched, gotMS.LastFetched, time.Second)
 }
