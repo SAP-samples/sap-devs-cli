@@ -45,8 +45,10 @@ The marker is replaced in `context.expanded.md` (the file actually read during i
 | Attribute | Required | Default | Description |
 |---|---|---|---|
 | `url` | yes | — | URL to fetch. Must be `https://`. |
-| `max_lines` | no | — | Truncate fetched content to at most N lines. |
-| `max_tokens` | no | — | Truncate fetched content to approx N tokens (1 token ≈ 4 chars). |
+| `format` | no | `markdown` | How to process the response body: `markdown` (HTML→Markdown), `text` (strip all tags), `raw` (no processing). |
+| `selector` | no | — | CSS selector to scope the DOM before conversion (e.g. `main`, `article`, `#content`). Ignored for `format="raw"`. |
+| `max_lines` | no | — | Truncate fetched content to at most N lines. Applied after conversion. |
+| `max_tokens` | no | — | Truncate fetched content to approx N tokens (1 token ≈ 4 chars). Applied after conversion. |
 | `label` | no | URL | Display label shown in the progress UI during sync. |
 | `ttl_hours` | no | `168` (7 days) | Cache TTL in hours. Content is re-fetched after the TTL expires. |
 
@@ -55,7 +57,13 @@ The marker is replaced in `context.expanded.md` (the file actually read during i
 ```markdown
 ### Recent CAP Releases
 
-<!-- sync:fetch url="https://cap.cloud.sap/docs/releases/2026/feb26" max_lines="80" label="CAP Release Notes (feb26)" -->
+<!-- sync:fetch url="https://cap.cloud.sap/docs/releases/2026/feb26" format="markdown" selector="main" max_lines="1000" label="CAP Release Notes (feb26)" -->
+```
+
+For a plain-text or non-HTML source, use `format="raw"`:
+
+```markdown
+<!-- sync:fetch url="https://example.com/status.txt" format="raw" max_lines="20" label="Status" -->
 ```
 
 After `sap-devs sync`, the marker is expanded in `context.expanded.md` and the fetched release notes appear directly below it. The original `context.md` is never modified — only the derived `context.expanded.md` changes.
@@ -108,10 +116,10 @@ Every byte in `context.md` (including expanded marker content) is injected into 
 
 **Always set at least one truncation limit.** Omitting both `max_lines` and `max_tokens` fetches the full URL response with no truncation. For most documentation pages this is too much.
 
-**Use `max_lines` for release notes and changelogs.** Release notes are line-oriented and you usually want a fixed number of recent entries. 60–100 lines is a good starting point:
+**Use `max_lines` for release notes and changelogs.** Release notes are line-oriented and you usually want a fixed number of recent entries. 1000 lines is a safe starting point for HTML documentation pages after conversion.
 
 ```
-<!-- sync:fetch url="https://cap.cloud.sap/docs/releases/2026/feb26" max_lines="80" label="CAP Release Notes (feb26)" -->
+<!-- sync:fetch url="https://cap.cloud.sap/docs/releases/2026/feb26" format="markdown" selector="main" max_lines="1000" label="CAP Release Notes (feb26)" -->
 ```
 
 **Use `max_tokens` for prose documentation.** When the content is long-form prose and you care more about keeping the token count predictable than the line count:
@@ -126,7 +134,7 @@ At 1 token ≈ 4 chars, `max_tokens="1200"` is roughly 4 800 characters or ~80�
 
 | Content type | Recommended limit |
 |---|---|
-| Release notes / changelog | `max_lines="60"` to `max_lines="100"` |
+| Release notes / changelog | `max_lines="1000"` (HTML pages may produce many lines after conversion) |
 | API reference summary | `max_tokens="800"` to `max_tokens="1500"` |
 | Blog post / tutorial intro | `max_tokens="600"` to `max_tokens="1000"` |
 | Full reference page | `max_tokens="2000"` — use sparingly |
@@ -166,6 +174,23 @@ For a complete example see [`content/packs/cap/context.md`](../content/packs/cap
 - Prefer `--pack <id>` flags so the AI gets targeted results.
 - Include `sap-devs sync` so the AI knows how to refresh stale dynamic content.
 - Keep the section short — 3–6 bullet points is enough. Long agent instruction blocks eat into the budget for actual content.
+
+---
+
+## Pack Author Guidance
+
+`format` defaults to `"markdown"`. Both `format="markdown"` and `format="text"` pass the response through an HTML parser. **Always set `format="raw"` for any non-HTML source** — plain text files, JSON endpoints, RSS feeds. Passing non-HTML through the parser is safe (the parser is lenient) but may produce garbled or sparse output.
+
+Use `selector` to scope conversion to the main content area of a page and exclude nav bars, sidebars, and footers. Common values:
+
+| Site type | Recommended selector |
+| --- | --- |
+| Generic (try first) | `main` |
+| Article / blog | `article` |
+| VitePress docs | `main` |
+| Role-based | `[role="main"]` |
+
+If `selector` matches nothing, the full page body is used and a warning is printed to stderr. Test your selector by running `sap-devs sync --force` and inspecting the expanded file.
 
 ---
 
