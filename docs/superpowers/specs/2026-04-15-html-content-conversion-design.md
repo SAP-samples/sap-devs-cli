@@ -63,6 +63,8 @@ After reading the response body and before truncation:
 body → convertContent(body, m.Format, m.Selector) → truncate
 ```
 
+The existing truncation block in `FetchMarker` must execute on the output of `convertContent`, not on the raw body. This requires moving the `truncateLines`/`truncateTokens` calls to after the `convertContent` call.
+
 ### New dependencies
 
 - `github.com/JohannesKaufmann/html-to-markdown/v2` — HTML-to-Markdown conversion
@@ -81,6 +83,7 @@ All failures are best-effort — they log a warning to stderr and fall back grac
 | Unknown `format` value | Warn: `sync:fetch unknown format "..." — defaulting to markdown`; use `markdown` |
 | HTML parse error | `golang.org/x/net/html` is lenient; no error expected |
 | Conversion error from `html-to-markdown` | Treat as fetch failure; preserve cached expansion |
+| Non-HTML body passed to `text` or `markdown` format | `golang.org/x/net/html` is lenient and will parse it; return whatever partial output is produced with a warning |
 
 ## Content Updates
 
@@ -111,6 +114,10 @@ Unit tests in `internal/sync/marker_test.go`:
 - `convertContent` with invalid CSS selector — falls back to full body, returns warning
 - `ScanMarkers` parses `format` and `selector` attributes correctly
 - `ScanMarkers` warns on unknown `format` value and defaults to `markdown`
+
+## Pack Author Guidance
+
+Pack authors **must** set `format="raw"` for any non-HTML target (plain text files, JSON endpoints, RSS feeds). Both `format="markdown"` and `format="text"` pass the response through an HTML parser — a non-HTML body may produce garbled or empty output. The content-authoring docs must make this explicit for both formats, not just `markdown`.
 
 ## Out of Scope
 
