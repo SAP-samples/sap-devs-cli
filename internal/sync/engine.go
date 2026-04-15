@@ -1,13 +1,10 @@
 package sync
 
 import (
-	"encoding/json"
-	"os"
-	"path/filepath"
 	"time"
 )
 
-// Engine tracks per-category sync timestamps and determines staleness.
+// Engine tracks sync timestamps and marker state.
 type Engine struct {
 	stateDir   string
 	ttls       map[string]time.Duration
@@ -15,7 +12,6 @@ type Engine struct {
 }
 
 // NewEngine creates an Engine that stores state in stateDir.
-// ttls maps category name → TTL; categories not in the map use defaultTTL.
 func NewEngine(stateDir string, defaultTTL time.Duration, ttls map[string]time.Duration) *Engine {
 	return &Engine{stateDir: stateDir, defaultTTL: defaultTTL, ttls: ttls}
 }
@@ -26,8 +22,8 @@ func (e *Engine) IsStale(category string) bool {
 	if t, ok := e.ttls[category]; ok && t > 0 {
 		ttl = t
 	}
-	state := e.loadState()
-	last, ok := state[category]
+	state := loadSyncState(e.stateDir)
+	last, ok := state.Categories[category]
 	if !ok {
 		return true
 	}
@@ -36,42 +32,47 @@ func (e *Engine) IsStale(category string) bool {
 
 // MarkSynced records the current time as the last sync time for category.
 func (e *Engine) MarkSynced(category string) error {
-	state := e.loadState()
-	state[category] = time.Now()
-	return e.saveState(state)
+	state := loadSyncState(e.stateDir)
+	state.Categories[category] = time.Now()
+	return saveSyncState(e.stateDir, state)
 }
 
-// MarkAllSynced records the current time as the last sync time for all given categories in a single write.
+// MarkAllSynced records the current time for all given categories in a single write.
 func (e *Engine) MarkAllSynced(categories []string) error {
-	state := e.loadState()
+	state := loadSyncState(e.stateDir)
 	now := time.Now()
 	for _, cat := range categories {
-		state[cat] = now
+		state.Categories[cat] = now
 	}
-	return e.saveState(state)
+	return saveSyncState(e.stateDir, state)
 }
 
-func (e *Engine) loadState() map[string]time.Time {
-	state := make(map[string]time.Time)
-	data, err := os.ReadFile(filepath.Join(e.stateDir, "sync-state.json"))
-	if err != nil {
-		return state
-	}
-	if err := json.Unmarshal(data, &state); err != nil {
-		// Corrupted state file — remove it so it gets rebuilt cleanly
-		_ = os.Remove(filepath.Join(e.stateDir, "sync-state.json"))
-		return make(map[string]time.Time)
-	}
-	return state
+// SetPackHasMarkers records whether a pack contains sync:fetch markers.
+func (e *Engine) SetPackHasMarkers(packID string, hasMarkers bool) error {
+	state := loadSyncState(e.stateDir)
+	state.Packs[packID] = PackState{HasMarkers: hasMarkers}
+	return saveSyncState(e.stateDir, state)
 }
 
-func (e *Engine) saveState(state map[string]time.Time) error {
-	if err := os.MkdirAll(e.stateDir, 0755); err != nil {
-		return err
+// RecordMarkerState persists the result of a marker fetch.
+func (e *Engine) RecordMarkerState(packID string, index int, ms MarkerState) error {
+	state := loadSyncState(e.stateDir)
+	state.Markers[markerKey(packID, index)] = ms
+	return saveSyncState(e.stateDir, state)
+}
+
+// GetMarkerState retrieves the last fetch result for a marker.
+func (e *Engine) GetMarkerState(packID string, index int) (MarkerState, bool) {
+	state := loadSyncState(e.stateDir)
+	ms, ok := state.Markers[markerKey(packID, index)]
+	return ms, ok
+}
+
+// PacksBlock returns the full packs map, or nil if no packs have been recorded yet.
+func (e *Engine) PacksBlock() map[string]PackState {
+	p := loadSyncState(e.stateDir).Packs
+	if len(p) == 0 {
+		return nil
 	}
-	data, err := json.Marshal(state)
-	if err != nil {
-		return err
-	}
-	return os.WriteFile(filepath.Join(e.stateDir, "sync-state.json"), data, 0600)
+	return p
 }
