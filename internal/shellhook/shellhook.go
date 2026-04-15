@@ -112,3 +112,64 @@ func hasLine(s, line string) bool {
 	}
 	return false
 }
+
+// Remove strips every occurrence of line (full-line match) and any
+// immediately preceding line equal to comment from all existing profiles.
+// Returns one Result per candidate profile found on disk.
+func Remove(line, comment string) ([]Result, error) {
+	candidates, err := candidateProfiles()
+	if err != nil {
+		return nil, err
+	}
+	return removeFromProfiles(line, comment, candidates)
+}
+
+// removeFromProfiles is the testable core of Remove.
+// Note: splitting on "\n" and joining back on "\n" preserves CRLF files
+// naturally — lines retain their trailing \r, and comparison uses
+// strings.TrimRight to strip it before matching.
+func removeFromProfiles(line, comment string, candidates []string) ([]Result, error) {
+	var results []Result
+	var errs []error
+
+	for _, path := range candidates {
+		if _, err := os.Stat(path); os.IsNotExist(err) {
+			continue
+		}
+		data, err := os.ReadFile(path)
+		if err != nil {
+			errs = append(errs, fmt.Errorf("%s: %w", path, err))
+			results = append(results, Result{Path: path, Updated: false})
+			continue
+		}
+
+		rawLines := strings.Split(string(data), "\n")
+		out := make([]string, 0, len(rawLines))
+		changed := false
+
+		for _, l := range rawLines {
+			if strings.TrimRight(l, "\r") == line {
+				// Remove this hook line and its immediately preceding comment.
+				if len(out) > 0 && strings.TrimRight(out[len(out)-1], "\r") == comment {
+					out = out[:len(out)-1]
+				}
+				changed = true
+				continue
+			}
+			out = append(out, l)
+		}
+
+		if !changed {
+			results = append(results, Result{Path: path, Updated: false})
+			continue
+		}
+		if err := os.WriteFile(path, []byte(strings.Join(out, "\n")), 0644); err != nil {
+			errs = append(errs, fmt.Errorf("%s: %w", path, err))
+			results = append(results, Result{Path: path, Updated: false})
+			continue
+		}
+		results = append(results, Result{Path: path, Updated: true})
+	}
+
+	return results, errors.Join(errs...)
+}

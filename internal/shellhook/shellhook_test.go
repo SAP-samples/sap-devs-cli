@@ -176,3 +176,163 @@ func TestAdd_MultipleHookBlocks(t *testing.T) {
 		t.Fatalf("expected skipped (line already present), got %+v", results)
 	}
 }
+
+func TestRemove_LinePresent(t *testing.T) {
+	rc := filepath.Join(t.TempDir(), ".zshrc")
+	if err := os.WriteFile(rc, []byte("# SAP developer tips\nsap-devs tip\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	results, err := removeFromProfiles("sap-devs tip", "# SAP developer tips", []string{rc})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(results) != 1 || !results[0].Updated {
+		t.Fatalf("expected one updated result, got %+v", results)
+	}
+	data, _ := os.ReadFile(rc)
+	if strings.Contains(string(data), "sap-devs tip") {
+		t.Error("hook line should have been removed")
+	}
+	if strings.Contains(string(data), "# SAP developer tips") {
+		t.Error("comment line should have been removed along with hook")
+	}
+}
+
+func TestRemove_LineAbsent(t *testing.T) {
+	rc := filepath.Join(t.TempDir(), ".zshrc")
+	if err := os.WriteFile(rc, []byte("# existing\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	results, err := removeFromProfiles("sap-devs tip", "# SAP developer tips", []string{rc})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(results) != 1 || results[0].Updated {
+		t.Fatalf("expected one not-updated result, got %+v", results)
+	}
+}
+
+func TestRemove_SubstringNotRemoved(t *testing.T) {
+	rc := filepath.Join(t.TempDir(), ".zshrc")
+	original := "# runs sap-devs tip daily\n"
+	if err := os.WriteFile(rc, []byte(original), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	results, err := removeFromProfiles("sap-devs tip", "# SAP developer tips", []string{rc})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if results[0].Updated {
+		t.Error("substring-only line should not have been removed")
+	}
+	data, _ := os.ReadFile(rc)
+	if string(data) != original {
+		t.Error("file should be unchanged")
+	}
+}
+
+func TestRemove_MultipleProfiles(t *testing.T) {
+	dir := t.TempDir()
+	zshrc := filepath.Join(dir, ".zshrc")
+	bashrc := filepath.Join(dir, ".bashrc")
+	content := "# SAP developer tips\nsap-devs tip\n"
+	for _, rc := range []string{zshrc, bashrc} {
+		if err := os.WriteFile(rc, []byte(content), 0644); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	results, err := removeFromProfiles("sap-devs tip", "# SAP developer tips", []string{zshrc, bashrc})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	updated := 0
+	for _, r := range results {
+		if r.Updated {
+			updated++
+		}
+	}
+	if updated != 2 {
+		t.Fatalf("expected 2 profiles updated, got %d (%+v)", updated, results)
+	}
+}
+
+func TestRemove_NoProfiles(t *testing.T) {
+	results, err := removeFromProfiles("sap-devs tip", "# SAP developer tips", []string{})
+	if err != nil {
+		t.Fatalf("unexpected error for empty candidate list: %v", err)
+	}
+	if len(results) != 0 {
+		t.Fatalf("expected empty results, got %+v", results)
+	}
+}
+
+func TestRemove_OrphanedCommentPreserved(t *testing.T) {
+	rc := filepath.Join(t.TempDir(), ".zshrc")
+	// comment is present but NOT immediately followed by the hook line
+	if err := os.WriteFile(rc, []byte("# SAP developer tips\nsome-other-command\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	results, err := removeFromProfiles("sap-devs tip", "# SAP developer tips", []string{rc})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if results[0].Updated {
+		t.Error("orphaned comment should not cause a change")
+	}
+	data, _ := os.ReadFile(rc)
+	if !strings.Contains(string(data), "# SAP developer tips") {
+		t.Error("orphaned comment should be preserved")
+	}
+}
+
+func TestRemove_MultipleHookBlocks(t *testing.T) {
+	rc := filepath.Join(t.TempDir(), ".zshrc")
+	// two full comment+hook pairs in the same file
+	content := "# SAP developer tips\nsap-devs tip\n# other\n# SAP developer tips\nsap-devs tip\n"
+	if err := os.WriteFile(rc, []byte(content), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	results, err := removeFromProfiles("sap-devs tip", "# SAP developer tips", []string{rc})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !results[0].Updated {
+		t.Error("expected Updated=true")
+	}
+	data, _ := os.ReadFile(rc)
+	if strings.Contains(string(data), "sap-devs tip") {
+		t.Error("all hook lines should be removed")
+	}
+	if !strings.Contains(string(data), "# other") {
+		t.Error("unrelated lines should be preserved")
+	}
+}
+
+func TestRemove_WindowsPowerShellPath(t *testing.T) {
+	dir := t.TempDir()
+	psPath := filepath.Join(dir, "Documents", "PowerShell", "Microsoft.PowerShell_profile.ps1")
+	if err := os.MkdirAll(filepath.Dir(psPath), 0755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(psPath, []byte("# SAP developer tips\nsap-devs tip\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	results, err := removeFromProfiles("sap-devs tip", "# SAP developer tips", []string{psPath})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(results) != 1 || !results[0].Updated {
+		t.Fatalf("expected updated result, got %+v", results)
+	}
+	data, _ := os.ReadFile(psPath)
+	if strings.Contains(string(data), "sap-devs tip") {
+		t.Error("hook should be removed from PowerShell profile")
+	}
+}
