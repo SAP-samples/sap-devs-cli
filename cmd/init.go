@@ -108,15 +108,21 @@ var initCmd = &cobra.Command{
 			if err != nil && len(results) == 0 {
 				fmt.Fprintf(cmd.OutOrStdout(), "  Could not add hook: no shell profile found.\n  Add 'sap-devs tip' to your shell profile manually.\n")
 			} else {
+				anyUpdated := false
 				for _, r := range results {
 					if r.Updated {
+						anyUpdated = true
 						fmt.Fprintf(cmd.OutOrStdout(), "  ✓ Added to %s\n", r.Path)
 					}
 				}
 				if err != nil {
 					fmt.Fprintf(cmd.OutOrStdout(), "  Warning: some profiles could not be updated (%v).\n", err)
 				}
-				fmt.Fprintln(cmd.OutOrStdout(), "  Restart your terminal to see your first tip.")
+				if anyUpdated {
+					fmt.Fprintln(cmd.OutOrStdout(), "  Restart your terminal to see your first tip.")
+				} else if err == nil {
+					fmt.Fprintln(cmd.OutOrStdout(), "  Hook already present in your shell profile(s).")
+				}
 			}
 		}
 
