@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -178,7 +179,19 @@ func FetchMarker(m Marker, client *http.Client) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	content := string(body)
+	format := m.Format
+	if format == "" {
+		format = "markdown"
+	}
+
+	content, warns, err := convertContent(string(body), format, m.Selector)
+	for _, w := range warns {
+		fmt.Fprintf(os.Stderr, "WARN  sync:fetch %s\n", w)
+	}
+	if err != nil {
+		return "", err
+	}
+
 	if m.MaxLines > 0 {
 		content = truncateLines(content, m.MaxLines)
 	} else if m.MaxTokens > 0 {
