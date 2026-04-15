@@ -31,7 +31,8 @@ builds:
       - -X github.tools.sap/developer-relations/sap-devs-cli/cmd.Version={{ .Version }}
 
 archives:
-  - formats:
+  - id: archives
+    formats:
       - tar.gz
     format_overrides:
       - goos: windows
@@ -41,6 +42,10 @@ archives:
     wrap_in_directory: false
     files:
       - none*
+  - id: binaries
+    formats:
+      - binary
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
 
 checksum:
   name_template: checksums.txt
