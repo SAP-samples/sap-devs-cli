@@ -157,7 +157,8 @@ func FetchMarker(m Marker, client *http.Client) (string, error) {
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		return "", fmt.Errorf("HTTP %d fetching %s", resp.StatusCode, m.URL)
 	}
-	body, err := io.ReadAll(resp.Body)
+	const maxBodyBytes = 1 << 20 // 1 MiB
+	body, err := io.ReadAll(io.LimitReader(resp.Body, maxBodyBytes))
 	if err != nil {
 		return "", err
 	}
@@ -185,7 +186,7 @@ func truncateTokens(s string, max int) string {
 		return s
 	}
 	s = s[:limit]
-	if idx := strings.LastIndex(s, "\n"); idx > 0 {
+	if idx := strings.LastIndex(s, "\n"); idx >= 0 {
 		s = s[:idx]
 	}
 	return s

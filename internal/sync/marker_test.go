@@ -131,3 +131,35 @@ func TestFetchMarker_NoLimit(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, body, content)
 }
+
+func TestTruncateLines_ExactBoundary(t *testing.T) {
+	// Content with exactly max lines — should be returned unchanged.
+	content := "a\nb\nc"
+	markers, _ := sapSync.ScanMarkers("cap", "<!-- sync:fetch url=\"https://x.com\" max_lines=\"3\" -->\n")
+	require.Len(t, markers, 1)
+	assert.Equal(t, 3, markers[0].MaxLines)
+	// Verify via FetchMarker with a test server returning exactly 3 lines.
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		fmt.Fprint(w, content)
+	}))
+	defer srv.Close()
+	m := sapSync.Marker{URL: srv.URL, MaxLines: 3}
+	got, err := sapSync.FetchMarker(m, srv.Client())
+	require.NoError(t, err)
+	assert.Equal(t, content, got)
+}
+
+func TestTruncateTokens_NoNewlines(t *testing.T) {
+	// Content with no newlines that exceeds the token budget.
+	// Should return a character-cut slice (no newline to snap back to).
+	longLine := strings.Repeat("x", 200)
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		fmt.Fprint(w, longLine)
+	}))
+	defer srv.Close()
+	m := sapSync.Marker{URL: srv.URL, MaxTokens: 10} // budget = 40 chars
+	got, err := sapSync.FetchMarker(m, srv.Client())
+	require.NoError(t, err)
+	assert.LessOrEqual(t, len(got), 40)
+	assert.Greater(t, len(got), 0)
+}
