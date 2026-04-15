@@ -108,7 +108,7 @@ var tipUninstallCmd = &cobra.Command{
 				fmt.Fprintf(cmd.OutOrStdout(), "  %s — not configured\n", r.Path)
 			}
 		}
-		if !anyRemoved && len(results) > 0 {
+		if !anyRemoved {
 			fmt.Fprintln(cmd.OutOrStdout(), "'sap-devs tip' was not found in any shell profile.")
 		}
 		return err
