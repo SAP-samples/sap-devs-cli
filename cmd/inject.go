@@ -1,9 +1,11 @@
 package cmd
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -74,7 +76,7 @@ into project-level files (CLAUDE.md, .cursorrules, etc.) in the current director
 
 		// Staleness check — skip if --no-sync or no packs have markers, run unconditionally if --sync
 		engine := sapSync.NewEngine(paths.CacheDir, 24*time.Hour, nil)
-		if !injectNoSync && engine.PacksBlock() != nil {
+		if !injectNoSync {
 			if injectSync || isStaleDynamicContent(engine, packs, paths) {
 				if injectSync || shouldSyncNow(cmd) {
 					if err := runSync(cmd.Context(), false, cmd.OutOrStdout()); err != nil {
@@ -167,8 +169,9 @@ func shouldSyncNow(cmd *cobra.Command) bool {
 		return false
 	}
 	fmt.Fprint(cmd.OutOrStdout(), "  Dynamic content may be stale. Sync now for latest content? [Y/n] ")
-	var answer string
-	fmt.Fscan(os.Stdin, &answer)
+	reader := bufio.NewReader(os.Stdin)
+	line, _ := reader.ReadString('\n')
+	answer := strings.TrimSpace(line)
 	return answer == "" || answer == "Y" || answer == "y"
 }
 
