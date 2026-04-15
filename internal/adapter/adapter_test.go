@@ -156,3 +156,40 @@ func TestEngine_ClipboardSkippedForProject(t *testing.T) {
 	// Should run without error (skipped, not attempted)
 	require.NoError(t, engine.Run())
 }
+
+func TestLoadAdapters_MaxTokens(t *testing.T) {
+	dir := t.TempDir()
+	writeYAML(t, filepath.Join(dir, "cursor.yaml"), `
+id: cursor
+name: Cursor
+type: file-inject
+max_tokens: 2000
+targets:
+  - scope: global
+    path: "~/.cursor/rules/sap.mdc"
+    mode: replace-section
+    section: "SAP Developer Context"
+`)
+	adapters, err := adapter.LoadAdapters(dir)
+	require.NoError(t, err)
+	require.Len(t, adapters, 1)
+	assert.Equal(t, 2000, adapters[0].MaxTokens)
+}
+
+func TestLoadAdapters_MaxTokensDefaultsToZero(t *testing.T) {
+	dir := t.TempDir()
+	writeYAML(t, filepath.Join(dir, "claude-code.yaml"), `
+id: claude-code
+name: Claude Code
+type: file-inject
+targets:
+  - scope: global
+    path: "~/.claude/CLAUDE.md"
+    mode: replace-section
+    section: "SAP Developer Context"
+`)
+	adapters, err := adapter.LoadAdapters(dir)
+	require.NoError(t, err)
+	require.Len(t, adapters, 1)
+	assert.Equal(t, 0, adapters[0].MaxTokens)
+}

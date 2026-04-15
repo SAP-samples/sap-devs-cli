@@ -16,6 +16,7 @@ type Adapter struct {
 	ClipFormat   string       `yaml:"format"`
 	Template     string       `yaml:"template"`
 	Instructions string       `yaml:"instructions"`
+	MaxTokens    int          `yaml:"max_tokens,omitempty"` // 0 = unconstrained
 	MCPConfig    *MCPConfig   `yaml:"mcp_config,omitempty"`
 	Detect       []DetectRule `yaml:"detect"`
 }
