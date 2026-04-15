@@ -1,6 +1,7 @@
 package sync
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -74,8 +75,7 @@ func TestConvertContent_UnknownFormatWarnsAndConverts(t *testing.T) {
 	body := "<p>Hello</p>"
 	result, warns, err := convertContent(body, "xml", "")
 	require.NoError(t, err)
-	assert.NotEmpty(t, warns)
-	assert.Contains(t, warns[0], "unknown format")
+	assert.Empty(t, warns) // ScanMarkers warns at parse time; convertContent does not re-warn
 	assert.Contains(t, result, "Hello")
 }
 
@@ -92,7 +92,7 @@ func TestConvertContent_EmptyBody(t *testing.T) {
 	result, warns, err := convertContent("", "markdown", "")
 	require.NoError(t, err)
 	assert.Empty(t, warns)
-	_ = result // empty or whitespace is fine
+	assert.Empty(t, strings.TrimSpace(result))
 }
 
 func TestExtractText_StripsAllTags(t *testing.T) {

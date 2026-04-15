@@ -62,13 +62,21 @@ func convertContent(body, format, selector string) (string, []string, error) {
 	default:
 		// Unknown format — ScanMarkers already warned at parse time.
 		// Fall back to markdown so the content is still useful.
-		warns = append(warns, fmt.Sprintf("unknown format %q — defaulting to markdown", format))
-		md, moreWarns, err := convertContent(body, "markdown", selector)
-		return md, append(warns, moreWarns...), err
+		var buf strings.Builder
+		if err := html.Render(&buf, root); err != nil {
+			return "", warns, fmt.Errorf("render selected node: %w", err)
+		}
+		md, err := htmltomarkdown.ConvertString(buf.String())
+		if err != nil {
+			return "", warns, fmt.Errorf("html-to-markdown conversion: %w", err)
+		}
+		return md, warns, nil
 	}
 }
 
 // extractText recursively walks an HTML node tree and returns all text node content.
+// Note: no whitespace is inserted between block elements — adjacent text from
+// <p>First</p><p>Second</p> will be concatenated as "FirstSecond".
 func extractText(n *html.Node) string {
 	var buf strings.Builder
 	var walk func(*html.Node)
