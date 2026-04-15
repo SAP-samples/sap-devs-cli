@@ -23,5 +23,5 @@ jobs:
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GORELEASER_CURRENT_TAG: ${{ github.ref_name }}
-          GITHUB_API_URL: ${{ github.api_url }}
+          GITHUB_API_URL: https://github.tools.sap/api/v3
+          GITHUB_GRAPHQL_URL: https://github.tools.sap/api/graphql
