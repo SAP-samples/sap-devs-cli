@@ -10,6 +10,7 @@ import (
 	"golang.org/x/term"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/config"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/credentials"
+	"github.tools.sap/developer-relations/sap-devs-cli/internal/shellhook"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/xdg"
 )
 
@@ -103,10 +104,19 @@ var initCmd = &cobra.Command{
 		fmt.Fprintln(cmd.OutOrStdout(), "  This adds 'sap-devs tip' to your shell profile so you see a tip each time you open a terminal.")
 		fmt.Fprint(cmd.OutOrStdout(), "  Add it? [y/N]: ")
 		if strings.ToLower(strings.TrimSpace(readLine())) == "y" {
-			if err := addShellHook(); err != nil {
-				fmt.Fprintf(cmd.OutOrStdout(), "  Could not auto-add hook: %v\n  Add 'sap-devs tip' to your shell profile manually.\n", err)
+			results, err := shellhook.Add("sap-devs tip", "# SAP developer tips")
+			if err != nil && len(results) == 0 {
+				fmt.Fprintf(cmd.OutOrStdout(), "  Could not add hook: no shell profile found.\n  Add 'sap-devs tip' to your shell profile manually.\n")
 			} else {
-				fmt.Fprintln(cmd.OutOrStdout(), "  Added. Restart your terminal to see your first tip.")
+				for _, r := range results {
+					if r.Updated {
+						fmt.Fprintf(cmd.OutOrStdout(), "  ✓ Added to %s\n", r.Path)
+					}
+				}
+				if err != nil {
+					fmt.Fprintf(cmd.OutOrStdout(), "  Warning: some profiles could not be updated (%v).\n", err)
+				}
+				fmt.Fprintln(cmd.OutOrStdout(), "  Restart your terminal to see your first tip.")
 			}
 		}
 
@@ -126,27 +136,6 @@ func readLine() string {
 	scanner := bufio.NewScanner(os.Stdin)
 	scanner.Scan()
 	return strings.TrimSpace(scanner.Text())
-}
-
-func addShellHook() error {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return err
-	}
-	candidates := []string{".zshrc", ".bashrc", ".bash_profile"}
-	for _, rc := range candidates {
-		path := home + "/" + rc
-		if _, err := os.Stat(path); err == nil {
-			f, err := os.OpenFile(path, os.O_APPEND|os.O_WRONLY, 0644)
-			if err != nil {
-				return err
-			}
-			_, err = f.WriteString("\n# SAP developer tips\nsap-devs tip\n")
-			f.Close()
-			return err
-		}
-	}
-	return fmt.Errorf("no shell rc file found (.zshrc, .bashrc, .bash_profile)")
 }
 
 func runInjectGlobal() error {
