@@ -161,3 +161,18 @@ func TestAdd_WindowsPowerShellPath(t *testing.T) {
 	}
 }
 
+func TestAdd_MultipleHookBlocks(t *testing.T) {
+	rc := filepath.Join(t.TempDir(), ".zshrc")
+	content := "# SAP developer tips\nsap-devs tip\n# other\n# SAP developer tips\nsap-devs tip\n"
+	if err := os.WriteFile(rc, []byte(content), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	results, err := addToProfiles("sap-devs tip", "# SAP developer tips", []string{rc})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(results) != 1 || results[0].Updated {
+		t.Fatalf("expected skipped (line already present), got %+v", results)
+	}
+}
