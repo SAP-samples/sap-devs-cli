@@ -61,10 +61,24 @@ func ScanMarkers(packID, content string) ([]Marker, []string) {
 			LineNum: lineNum + 1,
 		}
 		if v := attrs["max_lines"]; v != "" {
-			m.MaxLines, _ = strconv.Atoi(v)
+			n, err := strconv.Atoi(v)
+			if err != nil {
+				warnings = append(warnings, fmt.Sprintf(
+					"%s: line %d: max_lines %q is not a valid integer, ignoring", packID, lineNum+1, v,
+				))
+			} else {
+				m.MaxLines = n
+			}
 		}
 		if v := attrs["max_tokens"]; v != "" {
-			m.MaxTokens, _ = strconv.Atoi(v)
+			n, err := strconv.Atoi(v)
+			if err != nil {
+				warnings = append(warnings, fmt.Sprintf(
+					"%s: line %d: max_tokens %q is not a valid integer, ignoring", packID, lineNum+1, v,
+				))
+			} else {
+				m.MaxTokens = n
+			}
 		}
 		if m.MaxLines > 0 && m.MaxTokens > 0 {
 			warnings = append(warnings, fmt.Sprintf(
@@ -72,7 +86,14 @@ func ScanMarkers(packID, content string) ([]Marker, []string) {
 			))
 		}
 		if v := attrs["ttl_hours"]; v != "" {
-			m.TTLHours, _ = strconv.Atoi(v)
+			n, err := strconv.Atoi(v)
+			if err != nil {
+				warnings = append(warnings, fmt.Sprintf(
+					"%s: line %d: ttl_hours %q is not a valid integer, ignoring", packID, lineNum+1, v,
+				))
+			} else {
+				m.TTLHours = n
+			}
 		}
 		markers = append(markers, m)
 		index++

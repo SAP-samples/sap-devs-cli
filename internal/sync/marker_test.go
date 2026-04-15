@@ -77,3 +77,12 @@ func TestExpandMarkers_SkipsInsideCodeFence(t *testing.T) {
 	// No markers found (inside fence) → no substitution
 	assert.NotContains(t, expanded, "should not appear")
 }
+
+func TestExpandMarkers_FenceSkipDirect(t *testing.T) {
+	content := "```\n<!-- sync:fetch url=\"https://x.com\" -->\n```\n"
+	// Construct a marker manually — LineNum 2 points to the marker line inside the fence
+	m := sapSync.Marker{PackID: "cap", Index: 0, URL: "https://x.com", LineNum: 2}
+	results := map[int]string{0: "should not appear"}
+	expanded := sapSync.ExpandMarkers(content, []sapSync.Marker{m}, results)
+	assert.NotContains(t, expanded, "should not appear")
+}
