@@ -9,6 +9,7 @@ import (
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/config"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/i18n"
+	"github.tools.sap/developer-relations/sap-devs-cli/internal/shellhook"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/xdg"
 )
 
@@ -71,6 +72,51 @@ var tipCmd = &cobra.Command{
 	},
 }
 
+var tipInstallCmd = &cobra.Command{
+	Use:   "install",
+	Short: "Add sap-devs tip to your shell profile",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		results, err := shellhook.Add("sap-devs tip", "# SAP developer tips")
+		if err != nil && len(results) == 0 {
+			// No profiles found — print manual fallback, not an error exit.
+			fmt.Fprintln(cmd.OutOrStdout(), "No shell profile found. Add this line to your shell profile manually:")
+			fmt.Fprintln(cmd.OutOrStdout(), "  sap-devs tip")
+			return nil
+		}
+		for _, r := range results {
+			if r.Updated {
+				fmt.Fprintf(cmd.OutOrStdout(), "✓ Updated %s\n", r.Path)
+			} else {
+				fmt.Fprintf(cmd.OutOrStdout(), "  %s — already configured\n", r.Path)
+			}
+		}
+		return err
+	},
+}
+
+var tipUninstallCmd = &cobra.Command{
+	Use:   "uninstall",
+	Short: "Remove sap-devs tip from your shell profile",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		results, err := shellhook.Remove("sap-devs tip", "# SAP developer tips")
+		anyRemoved := false
+		for _, r := range results {
+			if r.Updated {
+				fmt.Fprintf(cmd.OutOrStdout(), "✓ Removed from %s\n", r.Path)
+				anyRemoved = true
+			} else {
+				fmt.Fprintf(cmd.OutOrStdout(), "  %s — not configured\n", r.Path)
+			}
+		}
+		if !anyRemoved && len(results) > 0 {
+			fmt.Fprintln(cmd.OutOrStdout(), "'sap-devs tip' was not found in any shell profile.")
+		}
+		return err
+	},
+}
+
 func init() {
+	tipCmd.AddCommand(tipInstallCmd)
+	tipCmd.AddCommand(tipUninstallCmd)
 	rootCmd.AddCommand(tipCmd)
 }
