@@ -8,4 +8,4 @@ packs:
     weight: 80
   - id: abap
     weight: 10
-tip_tags: [cap, nodejs, odata, cds, btp]
+tip_tags: [cap, nodejs, odata, cds]
