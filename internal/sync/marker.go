@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -20,6 +21,8 @@ type Marker struct {
 	Label     string
 	TTLHours  int    // 0 = use pack/engine default
 	LineNum   int
+	Format    string // "raw" | "text" | "markdown"; empty string treated as "markdown" by FetchMarker
+	Selector  string // CSS selector for DOM scoping; empty = whole body; ignored for "raw"
 }
 
 var markerRE = regexp.MustCompile(`<!--\s*sync:fetch\s+(.*?)\s*-->`)
@@ -98,6 +101,20 @@ func ScanMarkers(packID, content string) ([]Marker, []string) {
 				m.TTLHours = n
 			}
 		}
+		m.Format = "markdown" // default
+		if v := attrs["format"]; v != "" {
+			switch v {
+			case "raw", "text", "markdown":
+				m.Format = v
+			default:
+				warnings = append(warnings, fmt.Sprintf(
+					"%s: line %d: unknown format %q — defaulting to markdown", packID, lineNum+1, v,
+				))
+			}
+		}
+		if v := attrs["selector"]; v != "" {
+			m.Selector = v
+		}
 		markers = append(markers, m)
 		index++
 	}
@@ -162,7 +179,19 @@ func FetchMarker(m Marker, client *http.Client) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	content := string(body)
+	format := m.Format
+	if format == "" {
+		format = "markdown"
+	}
+
+	content, warns, err := convertContent(string(body), format, m.Selector)
+	for _, w := range warns {
+		fmt.Fprintf(os.Stderr, "WARN  sync:fetch %s\n", w)
+	}
+	if err != nil {
+		return "", err
+	}
+
 	if m.MaxLines > 0 {
 		content = truncateLines(content, m.MaxLines)
 	} else if m.MaxTokens > 0 {

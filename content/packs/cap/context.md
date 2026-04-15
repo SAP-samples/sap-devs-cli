@@ -34,7 +34,7 @@ service CatalogService @(path:'/browse') {
 
 ### Recent CAP Releases
 
-<!-- sync:fetch url="https://cap.cloud.sap/docs/releases/2026/feb26" max_lines="80" label="CAP Release Notes (feb26)" -->
+<!-- sync:fetch url="https://cap.cloud.sap/docs/releases/2026/feb26" format="markdown" selector="main" max_lines="1000" label="CAP Release Notes (feb26)" -->
 
 ### Agent Instructions
 

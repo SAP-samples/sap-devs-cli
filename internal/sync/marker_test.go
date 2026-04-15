@@ -99,7 +99,7 @@ func TestFetchMarker_Success(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	m := sapSync.Marker{URL: srv.URL, MaxLines: 5}
+	m := sapSync.Marker{URL: srv.URL, MaxLines: 5, Format: "raw"}
 	content, err := sapSync.FetchMarker(m, srv.Client())
 	require.NoError(t, err)
 	lines := strings.Split(strings.TrimSpace(content), "\n")
@@ -126,7 +126,7 @@ func TestFetchMarker_NoLimit(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	m := sapSync.Marker{URL: srv.URL} // no max_lines
+	m := sapSync.Marker{URL: srv.URL, Format: "raw"} // no max_lines
 	content, err := sapSync.FetchMarker(m, srv.Client())
 	require.NoError(t, err)
 	assert.Equal(t, body, content)
@@ -143,7 +143,7 @@ func TestTruncateLines_ExactBoundary(t *testing.T) {
 		fmt.Fprint(w, content)
 	}))
 	defer srv.Close()
-	m := sapSync.Marker{URL: srv.URL, MaxLines: 3}
+	m := sapSync.Marker{URL: srv.URL, MaxLines: 3, Format: "raw"}
 	got, err := sapSync.FetchMarker(m, srv.Client())
 	require.NoError(t, err)
 	assert.Equal(t, content, got)
@@ -157,9 +157,96 @@ func TestTruncateTokens_NoNewlines(t *testing.T) {
 		fmt.Fprint(w, longLine)
 	}))
 	defer srv.Close()
-	m := sapSync.Marker{URL: srv.URL, MaxTokens: 10} // budget = 40 chars
+	m := sapSync.Marker{URL: srv.URL, MaxTokens: 10, Format: "raw"} // budget = 40 chars
 	got, err := sapSync.FetchMarker(m, srv.Client())
 	require.NoError(t, err)
 	assert.LessOrEqual(t, len(got), 40)
 	assert.Greater(t, len(got), 0)
+}
+
+func TestScanMarkers_DefaultFormatIsMarkdown(t *testing.T) {
+	content := "<!-- sync:fetch url=\"https://x.com\" -->\n"
+	markers, warns := sapSync.ScanMarkers("cap", content)
+	assert.Empty(t, warns)
+	require.Len(t, markers, 1)
+	assert.Equal(t, "markdown", markers[0].Format)
+}
+
+func TestScanMarkers_FormatRaw(t *testing.T) {
+	content := "<!-- sync:fetch url=\"https://x.com\" format=\"raw\" -->\n"
+	markers, warns := sapSync.ScanMarkers("cap", content)
+	assert.Empty(t, warns)
+	require.Len(t, markers, 1)
+	assert.Equal(t, "raw", markers[0].Format)
+}
+
+func TestScanMarkers_Selector(t *testing.T) {
+	content := "<!-- sync:fetch url=\"https://x.com\" selector=\"main\" -->\n"
+	markers, warns := sapSync.ScanMarkers("cap", content)
+	assert.Empty(t, warns)
+	require.Len(t, markers, 1)
+	assert.Equal(t, "main", markers[0].Selector)
+}
+
+func TestScanMarkers_UnknownFormatWarnsAndDefaultsToMarkdown(t *testing.T) {
+	content := "<!-- sync:fetch url=\"https://x.com\" format=\"pdf\" -->\n"
+	markers, warns := sapSync.ScanMarkers("cap", content)
+	require.Len(t, markers, 1)
+	assert.Equal(t, "markdown", markers[0].Format)
+	require.Len(t, warns, 1)
+	assert.Contains(t, warns[0], "unknown format")
+}
+
+func TestFetchMarker_DefaultFormatIsMarkdown(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		fmt.Fprint(w, "<h1>Hello</h1>")
+	}))
+	defer srv.Close()
+
+	m := sapSync.Marker{URL: srv.URL} // Format not set — defaults to markdown
+	content, err := sapSync.FetchMarker(m, srv.Client())
+	require.NoError(t, err)
+	assert.Contains(t, content, "# Hello")
+}
+
+func TestFetchMarker_MarkdownFormat(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		fmt.Fprint(w, "<h1>Hello</h1><p>World</p>")
+	}))
+	defer srv.Close()
+
+	m := sapSync.Marker{URL: srv.URL, Format: "markdown"}
+	content, err := sapSync.FetchMarker(m, srv.Client())
+	require.NoError(t, err)
+	assert.Contains(t, content, "# Hello")
+	assert.Contains(t, content, "World")
+}
+
+func TestFetchMarker_TruncationAppliedAfterConversion(t *testing.T) {
+	// Serve 10 HTML paragraphs; truncate to 3 lines of converted markdown.
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		for i := 1; i <= 10; i++ {
+			fmt.Fprintf(w, "<p>paragraph %d</p>", i)
+		}
+	}))
+	defer srv.Close()
+
+	m := sapSync.Marker{URL: srv.URL, Format: "markdown", MaxLines: 3}
+	content, err := sapSync.FetchMarker(m, srv.Client())
+	require.NoError(t, err)
+	lines := strings.Split(strings.TrimSpace(content), "\n")
+	assert.Equal(t, 3, len(lines))
+}
+
+func TestFetchMarker_SelectorScopesContent(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		fmt.Fprint(w, `<html><body><nav>skip</nav><main><h1>Keep</h1></main></body></html>`)
+	}))
+	defer srv.Close()
+
+	m := sapSync.Marker{URL: srv.URL, Format: "markdown", Selector: "main"}
+	content, err := sapSync.FetchMarker(m, srv.Client())
+	require.NoError(t, err)
+	assert.Contains(t, content, "Keep")
+	assert.NotContains(t, content, "skip")
 }
