@@ -92,9 +92,9 @@ WARN  sync:fetch both max_lines and max_tokens set — max_lines takes precedenc
 
 Dynamic markers are best-effort. The sync engine is designed so a failed fetch never blocks the rest of the pipeline.
 
-**Non-2xx or network error.** If a fetch returns a non-2xx status code, or the request fails (DNS, timeout, TLS), the marker comment is left unchanged in `context.expanded.md`. The pack is still usable; it just shows the raw marker rather than the fetched content.
+**Non-2xx or network error.** If a fetch returns a non-2xx status code, or the request fails (DNS, timeout, TLS), the previously cached expansion for that marker is preserved. On a first-ever fetch failure with no cached content, the raw marker comment is kept at that position in `context.expanded.md`. The pack is still usable; it just shows stale cached content (or the raw marker if there is none) rather than the newly fetched content.
 
-**Previous expanded file is preserved.** If every marker in a pack fails, the previous `context.expanded.md` is kept. Stale content is preferred over an empty file.
+**Previous expanded file is preserved.** If every marker in a pack fails and there is no cached expansion for any marker, the previous `context.expanded.md` (if it exists) is kept. Stale content is preferred over an empty file.
 
 **Sync continues after individual failures.** A failed marker in one pack does not abort sync for other packs. Each marker is fetched independently.
 
