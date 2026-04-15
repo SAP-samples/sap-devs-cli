@@ -22,8 +22,9 @@ type Release struct {
 
 // CheckLatest fetches the latest GitHub release and returns it along with
 // whether it is newer than currentVersion.
+// token is an optional Bearer token for GitHub Enterprise authentication; pass "" if not needed.
 // Returns a real error on failure — callers decide whether to surface or swallow it.
-func CheckLatest(repoURL, currentVersion string) (*Release, bool, error) {
+func CheckLatest(repoURL, currentVersion, token string) (*Release, bool, error) {
 	apiURL, err := buildAPIURL(repoURL)
 	if err != nil {
 		return nil, false, fmt.Errorf("invalid repo URL: %w", err)
@@ -34,6 +35,9 @@ func CheckLatest(repoURL, currentVersion string) (*Release, bool, error) {
 		return nil, false, err
 	}
 	req.Header.Set("Accept", "application/vnd.github+json")
+	if token != "" {
+		req.Header.Set("Authorization", "Bearer "+token)
+	}
 
 	client := &http.Client{Timeout: 5 * time.Second}
 	resp, err := client.Do(req)

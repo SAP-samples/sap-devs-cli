@@ -89,7 +89,7 @@ func TestInstall_Success(t *testing.T) {
 	t.Cleanup(func() { executableFn = os.Executable; downloadBase = "" })
 
 	rel := &Release{Version: version, TagName: "v" + version}
-	if err := Install("https://example.com/owner/repo", rel); err != nil {
+	if err := Install("https://example.com/owner/repo", rel, ""); err != nil {
 		t.Fatalf("Install failed: %v", err)
 	}
 	got, _ := os.ReadFile(fakeBin)
@@ -129,7 +129,7 @@ func TestInstall_ChecksumMismatch(t *testing.T) {
 	t.Cleanup(func() { executableFn = os.Executable; downloadBase = "" })
 
 	rel := &Release{Version: version, TagName: "v" + version}
-	err := Install("https://example.com/owner/repo", rel)
+	err := Install("https://example.com/owner/repo", rel, "")
 	if err == nil || !strings.Contains(err.Error(), "checksum mismatch") {
 		t.Fatalf("expected checksum mismatch error, got: %v", err)
 	}
@@ -155,7 +155,7 @@ func TestInstall_UnsupportedPlatform(t *testing.T) {
 	t.Cleanup(func() { executableFn = os.Executable; downloadBase = "" })
 
 	rel := &Release{Version: version, TagName: "v" + version}
-	err := Install("https://example.com/owner/repo", rel)
+	err := Install("https://example.com/owner/repo", rel, "")
 	if err == nil || !strings.Contains(err.Error(), "no release asset found") {
 		t.Fatalf("expected 'no release asset found' error, got: %v", err)
 	}

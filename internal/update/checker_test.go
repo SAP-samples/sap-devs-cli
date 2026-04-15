@@ -15,7 +15,7 @@ func TestCheckLatest_NewerAvailable(t *testing.T) {
 	apiBase = srv.URL
 	t.Cleanup(func() { apiBase = "" })
 
-	rel, newer, err := CheckLatest("https://example.com/owner/repo", "1.0.0")
+	rel, newer, err := CheckLatest("https://example.com/owner/repo", "1.0.0", "")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -38,7 +38,7 @@ func TestCheckLatest_AlreadyLatest(t *testing.T) {
 	apiBase = srv.URL
 	t.Cleanup(func() { apiBase = "" })
 
-	_, newer, err := CheckLatest("https://example.com/owner/repo", "1.0.0")
+	_, newer, err := CheckLatest("https://example.com/owner/repo", "1.0.0", "")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -51,7 +51,7 @@ func TestCheckLatest_NetworkError(t *testing.T) {
 	apiBase = "http://127.0.0.1:1" // nothing listening
 	t.Cleanup(func() { apiBase = "" })
 
-	_, _, err := CheckLatest("https://example.com/owner/repo", "1.0.0")
+	_, _, err := CheckLatest("https://example.com/owner/repo", "1.0.0", "")
 	if err == nil {
 		t.Fatal("expected error on network failure")
 	}
@@ -65,7 +65,7 @@ func TestCheckLatest_MalformedJSON(t *testing.T) {
 	apiBase = srv.URL
 	t.Cleanup(func() { apiBase = "" })
 
-	_, _, err := CheckLatest("https://example.com/owner/repo", "1.0.0")
+	_, _, err := CheckLatest("https://example.com/owner/repo", "1.0.0", "")
 	if err == nil {
 		t.Fatal("expected error on malformed JSON")
 	}

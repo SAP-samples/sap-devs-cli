@@ -5,7 +5,9 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
+	"github.tools.sap/developer-relations/sap-devs-cli/internal/credentials"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/update"
+	"github.tools.sap/developer-relations/sap-devs-cli/internal/xdg"
 )
 
 // repoURL is the canonical repository URL used for update checks and downloads.
@@ -24,7 +26,13 @@ var updateCmd = &cobra.Command{
 
 		fmt.Println("Checking for updates...")
 
-		rel, newer, err := update.CheckLatest(repoURL, Version)
+		paths, err := xdg.New()
+		if err != nil {
+			return err
+		}
+		token := credentials.Resolve(paths.ConfigDir)
+
+		rel, newer, err := update.CheckLatest(repoURL, Version, token)
 		if err != nil {
 			return err
 		}
@@ -35,7 +43,7 @@ var updateCmd = &cobra.Command{
 		}
 
 		fmt.Printf("Updating sap-devs v%s → %s...\n", Version, rel.TagName)
-		if err := update.Install(repoURL, rel); err != nil {
+		if err := update.Install(repoURL, rel, token); err != nil {
 			return err
 		}
 

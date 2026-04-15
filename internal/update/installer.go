@@ -28,7 +28,8 @@ var executableFn = os.Executable
 
 // Install downloads the release asset for the current OS/arch, verifies its
 // SHA256 checksum against checksums.txt, and replaces the running binary.
-func Install(repoURL string, release *Release) error {
+// token is an optional Bearer token for GitHub Enterprise authentication; pass "" if not needed.
+func Install(repoURL string, release *Release, token string) error {
 	currentPath, err := executableFn()
 	if err != nil {
 		return fmt.Errorf("could not determine binary path: %w", err)
@@ -47,7 +48,7 @@ func Install(repoURL string, release *Release) error {
 	downloadURL := base + "/releases/download/" + release.TagName + "/"
 
 	// Download checksums first to verify platform support before downloading archive
-	checksumData, err := httpGet(downloadURL + "checksums.txt")
+	checksumData, err := httpGet(downloadURL+"checksums.txt", token)
 	if err != nil {
 		return fmt.Errorf("could not download checksums.txt: %w", err)
 	}
@@ -59,7 +60,7 @@ func Install(repoURL string, release *Release) error {
 	}
 
 	// Download archive
-	archive, err := httpGet(downloadURL + assetName)
+	archive, err := httpGet(downloadURL+assetName, token)
 	if err != nil {
 		return fmt.Errorf("could not download %s: %w", assetName, err)
 	}
@@ -110,9 +111,16 @@ func Install(repoURL string, release *Release) error {
 	return nil
 }
 
-func httpGet(url string) ([]byte, error) {
+func httpGet(url, token string) ([]byte, error) {
 	client := &http.Client{Timeout: 300 * time.Second}
-	resp, err := client.Get(url) //nolint:noctx
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+	if token != "" {
+		req.Header.Set("Authorization", "Bearer "+token)
+	}
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}

@@ -11,6 +11,7 @@ import (
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/adapter"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/config"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
+	"github.tools.sap/developer-relations/sap-devs-cli/internal/credentials"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/i18n"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/update"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/xdg"
@@ -53,7 +54,11 @@ var rootCmd = &cobra.Command{
 		}
 		updateHintCh = make(chan string, 1)
 		go func() {
-			rel, newer, err := update.CheckLatest(repoURL, Version)
+			var token string
+			if paths, err := xdg.New(); err == nil {
+				token = credentials.Resolve(paths.ConfigDir)
+			}
+			rel, newer, err := update.CheckLatest(repoURL, Version, token)
 			if err == nil {
 				update.RecordCheck(cacheDir)
 				if newer {
