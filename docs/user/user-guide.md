@@ -250,11 +250,118 @@ sap-devs config company <git-url>
 
 ### `tip`
 
-Print a SAP developer tip from your active profile's packs. The tip rotates daily. Add to your shell profile for a tip on every new terminal:
+Print a SAP developer tip from your active profile's packs. The tip rotates daily.
 
 ```bash
-# ~/.bashrc or ~/.zshrc
 sap-devs tip
+```
+
+#### `tip install`
+
+Add `sap-devs tip` to your shell profile(s).
+
+```bash
+sap-devs tip install
+```
+
+#### `tip uninstall`
+
+Remove `sap-devs tip` from your shell profile(s).
+
+```bash
+sap-devs tip uninstall
+```
+
+#### Adding a daily tip to your terminal startup
+
+During `sap-devs init` you can opt in to this automatically. If you skipped it, run:
+
+```bash
+sap-devs tip install
+```
+
+This adds `sap-devs tip` to every shell profile found on your system (`.zshrc`, `.bashrc`, `.bash_profile`, `.zprofile` on Linux/macOS; PowerShell profile and Git Bash profiles on Windows).
+
+To remove it:
+
+```bash
+sap-devs tip uninstall
+```
+
+Open a new terminal and you will see a tip on startup.
+
+**Manual setup (if `tip install` doesn't find your profile):**
+
+```bash
+# bash — ~/.bashrc or ~/.bash_profile
+echo -e '\n# SAP developer tips\nsap-devs tip' >> ~/.bashrc
+
+# zsh — ~/.zshrc
+echo -e '\n# SAP developer tips\nsap-devs tip' >> ~/.zshrc
+```
+
+PowerShell — add to your `$PROFILE`:
+
+```powershell
+Add-Content $PROFILE "`n# SAP developer tips`nsap-devs tip"
+```
+
+---
+
+### `completion`
+
+Generate shell completion scripts so you can tab-complete `sap-devs` commands and flags in your terminal. The completion script is printed to stdout — you need to source or install it yourself.
+
+```
+sap-devs completion <shell>
+```
+
+Supported shells: `bash`, `zsh`, `fish`, `powershell`
+
+#### bash
+
+```bash
+# Current session only
+source <(sap-devs completion bash)
+
+# Permanent — add to your ~/.bashrc or ~/.bash_profile
+echo 'source <(sap-devs completion bash)' >> ~/.bashrc
+source ~/.bashrc
+```
+
+#### zsh
+
+```zsh
+# Current session only
+source <(sap-devs completion zsh)
+
+# Permanent — write to a file on your $fpath
+sap-devs completion zsh > "${fpath[1]}/_sap-devs"
+```
+
+If you see `command not found: compdef`, enable completions first:
+
+```zsh
+echo 'autoload -U compinit; compinit' >> ~/.zshrc
+```
+
+#### fish
+
+```fish
+sap-devs completion fish | source
+
+# Permanent
+sap-devs completion fish > ~/.config/fish/completions/sap-devs.fish
+```
+
+#### PowerShell
+
+```powershell
+# Current session only
+sap-devs completion powershell | Out-String | Invoke-Expression
+
+# Permanent — add to your $PROFILE
+Add-Content $PROFILE "`nsap-devs completion powershell | Out-String | Invoke-Expression"
 ```
 
 ---
