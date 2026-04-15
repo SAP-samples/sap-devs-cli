@@ -29,7 +29,10 @@ func TestLoadSyncState_OldFlatFormat_Resets(t *testing.T) {
 	require.NoError(t, os.WriteFile(filepath.Join(dir, "sync-state.json"), data, 0600))
 
 	state := sapSync.LoadSyncStateForTest(dir)
-	// Old format cannot unmarshal into SyncState → reset
+	// Old format deserialises with Version==0, triggering the Version<1 reset path
 	assert.Equal(t, 1, state.Version)
 	assert.Empty(t, state.Categories)
+
+	_, statErr := os.Stat(filepath.Join(dir, "sync-state.json"))
+	assert.True(t, os.IsNotExist(statErr), "sync-state.json should be deleted on reset")
 }
