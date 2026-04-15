@@ -174,6 +174,11 @@ func TestLoadPack_LocaleBeatsExpanded(t *testing.T) {
 	p, err = content.LoadPack(dir, "")
 	require.NoError(t, err)
 	assert.Equal(t, "expanded", p.ContextMD)
+
+	// "en" also skips locale branch → expanded wins
+	p, err = content.LoadPack(dir, "en")
+	require.NoError(t, err)
+	assert.Equal(t, "expanded", p.ContextMD)
 }
 
 func makeTempPack(t *testing.T, id, packYAML, contextMD, resourcesYAML, tipsMD string) string {
