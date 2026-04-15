@@ -37,7 +37,7 @@ var updateCmd = &cobra.Command{
 			return err
 		}
 
-		if !newer {
+		if rel == nil || !newer {
 			fmt.Printf("sap-devs v%s is already up to date.\n", Version)
 			return nil
 		}

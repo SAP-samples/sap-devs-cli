@@ -46,8 +46,12 @@ func CheckLatest(repoURL, currentVersion, token string) (*Release, bool, error) 
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode == http.StatusNotFound {
+		// No published releases yet (or all releases are drafts/pre-releases).
+		return nil, false, nil
+	}
 	if resp.StatusCode != http.StatusOK {
-		return nil, false, fmt.Errorf("GitHub API returned HTTP %d", resp.StatusCode)
+		return nil, false, fmt.Errorf("GitHub API returned HTTP %d fetching %s", resp.StatusCode, apiURL)
 	}
 
 	var result struct {
