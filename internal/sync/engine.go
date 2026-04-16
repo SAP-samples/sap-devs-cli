@@ -76,3 +76,19 @@ func (e *Engine) PacksBlock() map[string]PackState {
 	}
 	return p
 }
+
+// MostRecentSync returns a pointer to the most recent non-zero category sync time
+// recorded in stateDir, or nil if no syncs have been recorded.
+func MostRecentSync(stateDir string) *time.Time {
+	state := loadSyncState(stateDir)
+	var most time.Time
+	for _, ts := range state.Categories {
+		if ts.After(most) {
+			most = ts
+		}
+	}
+	if most.IsZero() {
+		return nil
+	}
+	return &most
+}

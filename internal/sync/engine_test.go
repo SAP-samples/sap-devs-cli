@@ -113,3 +113,22 @@ func TestLoadSyncState_NewFormatRoundTrips(t *testing.T) {
 	assert.Equal(t, ms.OK, gotMS.OK)
 	assert.WithinDuration(t, ms.LastFetched, gotMS.LastFetched, time.Second)
 }
+
+func TestMostRecentSync_ReturnsNilWhenNoState(t *testing.T) {
+	dir := t.TempDir()
+	result := sapSync.MostRecentSync(dir)
+	assert.Nil(t, result)
+}
+
+func TestMostRecentSync_ReturnsMostRecentCategory(t *testing.T) {
+	dir := t.TempDir()
+	older := time.Now().Add(-2 * time.Hour).Truncate(time.Second)
+	newer := time.Now().Add(-1 * time.Hour).Truncate(time.Second)
+	writeCategoryTimestamps(t, dir, map[string]time.Time{
+		"tips":    older,
+		"context": newer,
+	})
+	result := sapSync.MostRecentSync(dir)
+	require.NotNil(t, result)
+	assert.Equal(t, newer, result.Truncate(time.Second))
+}
