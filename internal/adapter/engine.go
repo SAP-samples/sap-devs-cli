@@ -123,9 +123,9 @@ func (e *Engine) Run() error {
 				BudgetBytes:  maxBytes, // resolved value (MaxBytes or MaxTokens*4)
 				Format:       a.Format,
 				// Trimmed is true when any pack was dropped. With base packs always
-			// surviving TrimPacks, this correctly reflects whether non-base packs
-			// were dropped by budget or deduplication.
-			Trimmed:      len(trimmed) < len(e.packs),
+				// surviving TrimPacks, this correctly reflects whether non-base packs
+				// were dropped by budget or deduplication.
+				Trimmed:      len(trimmed) < len(e.packs),
 			})
 		}
 	}
