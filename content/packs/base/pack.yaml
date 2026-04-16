@@ -1,0 +1,6 @@
+id: base
+name: SAP Developer Base
+description: Shared SAP developer resources — ecosystem entry points injected into every profile
+tags: [sap, btp, developers, community]
+weight: 0
+base: true
