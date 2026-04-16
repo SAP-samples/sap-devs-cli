@@ -72,7 +72,7 @@ func TestGatherDynamic_ProjectType_EmptyWhenNoFiles(t *testing.T) {
 	assert.Empty(t, ctx.ProjectType)
 }
 
-func TestGatherDynamic_ProjectType_CdsrcTakesPriorityOverPackageJson(t *testing.T) {
+func TestGatherDynamic_ProjectType_CdsrcTakesPriorityOverMtaYaml(t *testing.T) {
 	dir := t.TempDir()
 	require.NoError(t, os.WriteFile(filepath.Join(dir, ".cdsrc.json"), []byte(`{}`), 0600))
 	require.NoError(t, os.WriteFile(filepath.Join(dir, "mta.yaml"), []byte(`ID: myapp`), 0600))
@@ -174,15 +174,18 @@ func TestGatherDynamic_WiredMCP_OnlySAPServersReturned(t *testing.T) {
 }
 
 func TestGatherDynamic_WiredMCP_EmptyWhenConfigFileMissing(t *testing.T) {
-	adapters := []adapter.Adapter{{
-		ID:   "claude-code",
+	a := adapter.Adapter{
 		Name: "Claude Code",
 		MCPConfig: &adapter.MCPConfig{
-			Path: "/nonexistent/settings.json",
+			Path: "/nonexistent/path/mcp.json",
 			Key:  "mcpServers",
 		},
+	}
+	packs := []*content.Pack{{
+		ID:         "cap",
+		MCPServers: []content.MCPServer{{ID: "sap-cap-mcp"}},
 	}}
-	ctx := dynamic.GatherDynamic(dynamic.GatherOpts{Adapters: adapters})
+	ctx := dynamic.GatherDynamic(dynamic.GatherOpts{Adapters: []adapter.Adapter{a}, Packs: packs})
 	assert.Empty(t, ctx.WiredMCPServers)
 }
 
