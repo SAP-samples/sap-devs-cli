@@ -39,6 +39,8 @@ func mergeResources(base, additive []Resource, packID string) []Resource {
 			result = append(result, a)
 		}
 	}
+	// Re-stamp all entries: base entries are already stamped correctly by LoadPack,
+	// but replaced/new additive entries carry the additive layer's ID — normalise all.
 	for i := range result {
 		result[i].PackID = packID
 	}
@@ -85,6 +87,7 @@ func mergeMCPServers(base, additive []MCPServer, packID string) []MCPServer {
 			result = append(result, a)
 		}
 	}
+	// Re-stamp all entries: same rationale as mergeResources.
 	for i := range result {
 		result[i].PackID = packID
 	}

@@ -78,3 +78,13 @@ func TestMergeMCPServers_ReplacesOnMatchingIDAndRestampsPackID(t *testing.T) {
 	assert.Equal(t, "New", got[0].Name)
 	assert.Equal(t, "cap", got[0].PackID)
 }
+
+func TestMergeMCPServers_AppendsNewIDs(t *testing.T) {
+	base := []content.MCPServer{{ID: "cap-mcp", Name: "CAP MCP", PackID: "cap"}}
+	additive := []content.MCPServer{{ID: "new-mcp", Name: "New MCP", PackID: "company"}}
+	got := content.MergeMCPServers(base, additive, "cap")
+	assert.Len(t, got, 2)
+	assert.Equal(t, "new-mcp", got[1].ID)
+	// PackID re-stamped to base pack ID on new entries too
+	assert.Equal(t, "cap", got[1].PackID)
+}
