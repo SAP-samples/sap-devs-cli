@@ -8,6 +8,16 @@ import (
 	"unicode/utf8"
 )
 
+var (
+	reCodeBlock   = regexp.MustCompile("(?m)^```[^\n]*\n((?:[^`]|`[^`]|``[^`])*?)^```")
+	reATXHeader   = regexp.MustCompile(`(?m)^#{1,6}\s+`)
+	reBold        = regexp.MustCompile(`\*\*([^*]+)\*\*`)
+	reItalic      = regexp.MustCompile(`\*([^*\n]+)\*`)
+	reInlineCode  = regexp.MustCompile("`([^`\n]+)`")
+	reHTMLComment = regexp.MustCompile(`(?s)<!--.*?-->`)
+	reBlankLines  = regexp.MustCompile(`\n{3,}`)
+)
+
 // RenderContext builds the Markdown string injected into AI tool configuration.
 // Packs are rendered in the order provided (caller applies profile weights first).
 // dynamic may be nil; when non-nil a runtime context section is prepended.
@@ -132,37 +142,36 @@ func TrimPacks(packs []*Pack, maxBytes int) []*Pack {
 	return result
 }
 
-// FormatOutput converts content to the target format.
-// format == "markdown" (or empty): returns content unchanged.
+// FormatOutput converts text to the target format.
+// format == "markdown" (or empty): returns text unchanged.
 // format == "plain-prose": strips Markdown syntax for plain-text UI fields.
-func FormatOutput(content, format string) string {
+func FormatOutput(text, format string) string {
 	if format != "plain-prose" {
-		return content
+		return text
 	}
-	s := content
+	s := text
 
 	// Strip fenced code blocks — keep body, remove fences.
 	// Pattern anchors both ``` fences to line starts to avoid merging adjacent blocks.
-	codeBlock := regexp.MustCompile("(?m)^```[^\n]*\n((?:[^`]|`[^`]|``[^`])*?)^```")
-	s = codeBlock.ReplaceAllString(s, "$1")
+	s = reCodeBlock.ReplaceAllString(s, "$1")
 
 	// Strip ATX headers (# through ######)
-	s = regexp.MustCompile(`(?m)^#{1,6}\s+`).ReplaceAllString(s, "")
+	s = reATXHeader.ReplaceAllString(s, "")
 
 	// Strip bold (**text**)
-	s = regexp.MustCompile(`\*\*([^*]+)\*\*`).ReplaceAllString(s, "$1")
+	s = reBold.ReplaceAllString(s, "$1")
 
 	// Strip italic (*text*)
-	s = regexp.MustCompile(`\*([^*\n]+)\*`).ReplaceAllString(s, "$1")
+	s = reItalic.ReplaceAllString(s, "$1")
 
 	// Strip inline code (`text`)
-	s = regexp.MustCompile("`([^`\n]+)`").ReplaceAllString(s, "$1")
+	s = reInlineCode.ReplaceAllString(s, "$1")
 
 	// Strip HTML comments
-	s = regexp.MustCompile(`(?s)<!--.*?-->`).ReplaceAllString(s, "")
+	s = reHTMLComment.ReplaceAllString(s, "")
 
 	// Normalize 3+ consecutive blank lines to 2
-	s = regexp.MustCompile(`\n{3,}`).ReplaceAllString(s, "\n\n")
+	s = reBlankLines.ReplaceAllString(s, "\n\n")
 
 	return s
 }
