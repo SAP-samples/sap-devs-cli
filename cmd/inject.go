@@ -13,6 +13,7 @@ import (
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/adapter"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/config"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
+	"github.tools.sap/developer-relations/sap-devs-cli/internal/dynamic"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/i18n"
 	sapSync "github.tools.sap/developer-relations/sap-devs-cli/internal/sync"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/xdg"
@@ -94,12 +95,39 @@ into project-level files (CLAUDE.md, .cursorrules, etc.) in the current director
 			}
 		}
 
+		// Gather current working directory for project type detection.
+		cwd, _ := os.Getwd() // silently ignore error; GatherDynamic handles empty CWD
+
+		// Build command list from cobra for CLI self-awareness.
+		var cmdInfos []content.CommandInfo
+		for _, c := range rootCmd.Commands() {
+			if !c.Hidden {
+				cmdInfos = append(cmdInfos, content.CommandInfo{
+					Name:  strings.SplitN(c.Use, " ", 2)[0],
+					Short: c.Short,
+				})
+			}
+		}
+
+		gatheredAdapters, _ := loadAdapters()
+
+		dynCtx := dynamic.GatherDynamic(dynamic.GatherOpts{
+			CWD:          cwd,
+			CLIVersion:   Version,
+			Profile:      activeProfile,
+			Packs:        packs,
+			SyncStateDir: paths.CacheDir,
+			Adapters:     gatheredAdapters,
+			Commands:     cmdInfos,
+		})
+
 		opts := adapter.Options{
 			Scope:      scope,
 			ToolFilter: injectTool,
 			DryRun:     injectDryRun,
 			Stats:      injectStats,
 			Out:        cmd.OutOrStdout(),
+			Dynamic:    dynCtx,
 		}
 		eng, err := newAdapterEngine(packs, activeProfile, opts)
 		if err != nil {
