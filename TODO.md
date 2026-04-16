@@ -268,12 +268,6 @@ A persistent system-tray (or menu-bar) icon that surfaces tool status, triggers 
 
 Research and implement optimisations to the `inject` pipeline and support for runtime-generated content that can't live in static pack files.
 
-**Research areas:**
-
-**Adapter-specific rendering**
-- Adapters declare `max_tokens` / `max_bytes` in their YAML; `RenderContext` trims accordingly
-- Different adapters may want different formats (Markdown, XML system prompt tags, JSON)
-
 ---
 
 ## Data Sources
