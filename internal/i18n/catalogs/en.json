@@ -56,6 +56,7 @@
   "profile.show.not_found": "Profile: {{.ID}} (definition not found in content)",
   "profile.show.header": "Profile: {{.Name}} — {{.Description}}\n",
   "profile.show.pack_weights": "Pack weights:",
+  "profile.show.builtin_note": "Built-in profile — pack selection is determined at runtime, not by a fixed list.",
 
   "config.short": "Manage sap-devs configuration",
   "config.show.short": "Display current configuration",
