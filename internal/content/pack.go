@@ -16,6 +16,7 @@ type Pack struct {
 	Tags        []string
 	Profiles    []string
 	Weight      int
+	Overlaps    []string
 	ContextMD   string
 	Resources   []Resource
 	Tools       []ToolDef
@@ -85,6 +86,7 @@ type packMeta struct {
 	Tags        []string                  `yaml:"tags"`
 	Profiles    []string                  `yaml:"profiles"`
 	Weight      int                       `yaml:"weight"`
+	Overlaps    []string                  `yaml:"overlaps,omitempty"`
 	Locales     map[string]packMetaLocale `yaml:"locales,omitempty"`
 }
 
@@ -108,6 +110,7 @@ func LoadPack(packDir string, lang string) (*Pack, error) {
 		Tags:        meta.Tags,
 		Profiles:    meta.Profiles,
 		Weight:      meta.Weight,
+		Overlaps:    meta.Overlaps,
 	}
 
 	if lang != "" && lang != "en" {

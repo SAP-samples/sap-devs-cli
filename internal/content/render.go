@@ -27,3 +27,42 @@ func RenderContext(packs []*Pack, profile *Profile) string {
 
 	return strings.TrimRight(b.String(), "\n") + "\n"
 }
+
+// TrimPacks filters packs to fit within maxBytes, applying overlap deduplication
+// and pack-level budget enforcement. Pass maxBytes=0 for unconstrained.
+// Packs must already be sorted by weight descending (LoadPacks guarantees this).
+func TrimPacks(packs []*Pack, maxBytes int) []*Pack {
+	// Pass 1 — deduplication
+	// A pack is dropped if a higher-weight pack it overlaps with is already included.
+	included := make(map[string]bool)
+	var deduped []*Pack
+	for _, p := range packs {
+		dominated := false
+		for _, overlapID := range p.Overlaps {
+			if included[overlapID] {
+				dominated = true
+				break
+			}
+		}
+		if !dominated {
+			deduped = append(deduped, p)
+			included[p.ID] = true
+		}
+	}
+
+	// Pass 2 — budget enforcement
+	if maxBytes <= 0 {
+		return deduped
+	}
+	var result []*Pack
+	used := 0
+	for _, p := range deduped {
+		size := len(p.ContextMD)
+		if used+size > maxBytes {
+			break
+		}
+		result = append(result, p)
+		used += size
+	}
+	return result
+}

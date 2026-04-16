@@ -166,12 +166,12 @@ func loadAdapters() ([]adapter.Adapter, error) {
 }
 
 // newAdapterEngine constructs an adapter engine from all configured adapter layers.
-func newAdapterEngine(renderedContext string, opts adapter.Options) (*adapter.Engine, error) {
+func newAdapterEngine(packs []*content.Pack, profile *content.Profile, opts adapter.Options) (*adapter.Engine, error) {
 	allAdapters, err := loadAdapters()
 	if err != nil {
 		return nil, err
 	}
-	return adapter.NewEngine(allAdapters, renderedContext, opts), nil
+	return adapter.NewEngine(allAdapters, packs, profile, opts), nil
 }
 
 // mergeAdapters merges src into dst, overriding by adapter ID.

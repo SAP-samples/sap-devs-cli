@@ -44,6 +44,7 @@ description: Node.js and Java framework for building cloud-native business appli
 tags: [cloud, btp, nodejs, java, odata, cds]
 profiles: [cap-developer, btp-developer]   # informational metadata only — see note below
 weight: 100                      # default weight; profiles can override this per-pack
+overlaps: []                     # optional — see note below
 locales:
   de:
     name: SAP Cloud Application Programming Model
@@ -53,6 +54,8 @@ locales:
 > **Note:** `weight` sets the default priority for this pack. Individual profiles can override it in their `packs` list (see [Profiles](#profiles) below).
 >
 > **Note:** The `profiles` field is informational metadata only. A pack is only active when it is explicitly listed in a profile's `packs` list. Adding a pack id to `profiles` here does not automatically include it in that profile.
+>
+> **Note:** `overlaps` is a list of pack IDs whose content subsumes this pack's content. If any listed pack is present at a higher weight during injection, this pack is automatically dropped to avoid redundant context. Semantics: "if `cap` is already included, my content adds nothing new — drop me." Only the lower-weight pack carries the declaration. Omit the field (or leave it empty) if no overlap exists.
 
 ### `context.md`
 
@@ -155,6 +158,7 @@ Adapters define how to push content into a specific AI tool. Files live in `cont
 id: claude-code
 name: Claude Code
 type: file-inject                 # file-inject | clipboard-export | mcp-wire
+max_tokens: 0                     # optional — token budget for this adapter; 0 = unconstrained
 targets:
   - scope: global                 # global (user-level) or project (current dir)
     path: "~/.claude/CLAUDE.md"
@@ -181,6 +185,8 @@ mcp_config:
 - `file-inject` — writes context to a config file. Used by `sap-devs inject`.
 - `clipboard-export` — copies context to clipboard (global scope only).
 - `mcp-wire` — registers MCP servers in the tool's JSON config. Used by `sap-devs mcp install`, not `inject`.
+
+**`max_tokens`:** When set to a positive integer, the inject engine trims packs to fit within approximately `max_tokens × 4` bytes of rendered context before writing to this adapter. Higher-weight packs are always included first; the engine stops at the first pack that would exceed the budget. Zero (the default) means unconstrained — all packs are included. Use `sap-devs inject --stats --dry-run` to see how many tokens each adapter is currently using.
 
 ---
 

@@ -130,10 +130,22 @@ sap-devs inject [flags]
 | `--project` | Inject at project scope (writes to project config files in the current directory) |
 | `--tool <id>` | Inject into a specific tool only (e.g. `claude-code`, `cursor`) |
 | `--dry-run` | Preview changes without writing files |
+| `--stats` | Show a per-adapter table of packs included, approximate token count, and budget status |
+| `--sync` | Force a content sync before injecting (no prompt) |
+| `--no-sync` | Skip the freshness check; use cached content as-is |
 
 **Example:**
 ```bash
 sap-devs inject --tool claude-code --dry-run
+sap-devs inject --stats --dry-run
+```
+
+**`--stats` output example:**
+
+```text
+Adapter       Packs included          Tokens (approx)   Budget         Status
+claude-code   cap, btp-core, abap     ~750              unconstrained
+cursor        cap, btp-core           ~500              2000 tokens    trimmed
 ```
 
 ---

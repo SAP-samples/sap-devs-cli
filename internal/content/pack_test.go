@@ -181,6 +181,34 @@ func TestLoadPack_LocaleBeatsExpanded(t *testing.T) {
 	assert.Equal(t, "expanded", p.ContextMD)
 }
 
+func TestLoadPack_OverlapsField(t *testing.T) {
+	dir := t.TempDir()
+	yaml := `id: btp-core
+name: BTP Core
+description: BTP basics
+tags: []
+profiles: []
+weight: 80
+overlaps:
+  - cap
+`
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "pack.yaml"), []byte(yaml), 0644))
+
+	p, err := content.LoadPack(dir, "")
+	require.NoError(t, err)
+	assert.Equal(t, []string{"cap"}, p.Overlaps)
+}
+
+func TestLoadPack_NoOverlaps(t *testing.T) {
+	dir := t.TempDir()
+	yaml := "id: cap\nname: CAP\ndescription: CAP\ntags: []\nprofiles: []\nweight: 100\n"
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "pack.yaml"), []byte(yaml), 0644))
+
+	p, err := content.LoadPack(dir, "")
+	require.NoError(t, err)
+	assert.Empty(t, p.Overlaps)
+}
+
 func makeTempPack(t *testing.T, id, packYAML, contextMD, resourcesYAML, tipsMD string) string {
 	t.Helper()
 	dir := t.TempDir()

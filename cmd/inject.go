@@ -24,6 +24,7 @@ var (
 	injectDryRun  bool
 	injectSync    bool
 	injectNoSync  bool
+	injectStats   bool
 )
 
 var injectCmd = &cobra.Command{
@@ -93,14 +94,14 @@ into project-level files (CLAUDE.md, .cursorrules, etc.) in the current director
 			}
 		}
 
-		rendered := content.RenderContext(packs, activeProfile)
-
 		opts := adapter.Options{
 			Scope:      scope,
 			ToolFilter: injectTool,
 			DryRun:     injectDryRun,
+			Stats:      injectStats,
+			Out:        cmd.OutOrStdout(),
 		}
-		eng, err := newAdapterEngine(rendered, opts)
+		eng, err := newAdapterEngine(packs, activeProfile, opts)
 		if err != nil {
 			return err
 		}
@@ -182,5 +183,6 @@ func init() {
 	injectCmd.Flags().BoolVar(&injectDryRun, "dry-run", false, "preview changes without writing files")
 	injectCmd.Flags().BoolVar(&injectSync, "sync", false, "sync dynamic content before injecting (no prompt)")
 	injectCmd.Flags().BoolVar(&injectNoSync, "no-sync", false, "skip freshness check; use cached content as-is")
+	injectCmd.Flags().BoolVar(&injectStats, "stats", false, "show injection stats per adapter")
 	rootCmd.AddCommand(injectCmd)
 }

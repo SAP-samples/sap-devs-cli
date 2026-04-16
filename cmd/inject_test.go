@@ -22,11 +22,10 @@ func TestInjectEndToEnd(t *testing.T) {
 	// Simulate existing CLAUDE.md
 	require.NoError(t, os.WriteFile(claudeMD, []byte("# My Project\n\nMy notes.\n"), 0644))
 
-	// Build packs and render context
+	// Build packs and run engine with a file-inject adapter targeting our temp file
 	packs := []*content.Pack{
 		{ID: "cap", Name: "CAP", ContextMD: "## SAP CAP\n\nUse @sap/cds for data models."},
 	}
-	rendered := content.RenderContext(packs, nil)
 
 	// Run engine with a file-inject adapter targeting our temp file
 	adapters := []adapter.Adapter{
@@ -38,7 +37,7 @@ func TestInjectEndToEnd(t *testing.T) {
 			},
 		},
 	}
-	engine := adapter.NewEngine(adapters, rendered, adapter.Options{Scope: "global"})
+	engine := adapter.NewEngine(adapters, packs, nil, adapter.Options{Scope: "global"})
 	require.NoError(t, engine.Run())
 
 	// Verify output

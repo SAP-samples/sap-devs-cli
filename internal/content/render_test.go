@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
 )
 
@@ -68,4 +69,87 @@ func TestRenderContext_SingleTrailingNewline(t *testing.T) {
 	out := content.RenderContext(packs, nil)
 	assert.True(t, strings.HasSuffix(out, "\n"), "output should end with a newline")
 	assert.False(t, strings.HasSuffix(out, "\n\n"), "output should not end with double newline")
+}
+
+func TestTrimPacks_Unconstrained(t *testing.T) {
+	packs := []*content.Pack{
+		{ID: "cap", ContextMD: "CAP content"},
+		{ID: "btp-core", ContextMD: "BTP content"},
+	}
+	result := content.TrimPacks(packs, 0)
+	require.Len(t, result, 2)
+	assert.Equal(t, "cap", result[0].ID)
+	assert.Equal(t, "btp-core", result[1].ID)
+}
+
+func TestTrimPacks_EmptyInput(t *testing.T) {
+	result := content.TrimPacks(nil, 0)
+	assert.Empty(t, result)
+}
+
+func TestTrimPacks_DeduplicatesOverlappingPack(t *testing.T) {
+	// cap (high weight) is already included; btp-core declares it overlaps cap → dropped
+	packs := []*content.Pack{
+		{ID: "cap", ContextMD: "CAP content"},
+		{ID: "btp-core", ContextMD: "BTP content", Overlaps: []string{"cap"}},
+	}
+	result := content.TrimPacks(packs, 0)
+	assert.Len(t, result, 1)
+	assert.Equal(t, "cap", result[0].ID)
+}
+
+func TestTrimPacks_DeduplicatesOnlyWhenHigherWeightPresent(t *testing.T) {
+	// btp-core declares overlaps: [cap], but cap is not loaded — btp-core is kept
+	packs := []*content.Pack{
+		{ID: "btp-core", ContextMD: "BTP content", Overlaps: []string{"cap"}},
+	}
+	result := content.TrimPacks(packs, 0)
+	assert.Len(t, result, 1)
+	assert.Equal(t, "btp-core", result[0].ID)
+}
+
+func TestTrimPacks_BudgetDropsPackThatDoesNotFit(t *testing.T) {
+	// cap (14 bytes) exceeds 10-byte budget → break; btp-core never reached → result is empty
+	packs := []*content.Pack{
+		{ID: "cap", ContextMD: "12 chars long!"},
+		{ID: "btp-core", ContextMD: "short"},
+	}
+	result := content.TrimPacks(packs, 10)
+	assert.Empty(t, result)
+}
+
+func TestTrimPacks_BudgetIncludesFittingPacksInOrder(t *testing.T) {
+	// cap (12 bytes) fits in 20-byte budget; big (28 bytes) doesn't fit → break
+	packs := []*content.Pack{
+		{ID: "cap", ContextMD: "11 chars ok!"},   // 12 bytes
+		{ID: "big", ContextMD: "this is too large for budget"}, // 28 bytes — doesn't fit → break
+		{ID: "abap", ContextMD: "small"},           // never reached
+	}
+	result := content.TrimPacks(packs, 20)
+	assert.Len(t, result, 1)
+	assert.Equal(t, "cap", result[0].ID)
+}
+
+func TestTrimPacks_EmptyContextMDAlwaysFits(t *testing.T) {
+	// Pack with no context file (size 0) fits any budget
+	packs := []*content.Pack{
+		{ID: "meta", ContextMD: ""},
+		{ID: "cap", ContextMD: "some content here"},
+	}
+	result := content.TrimPacks(packs, 5)
+	// meta fits (0 bytes), cap doesn't fit (17 bytes > 5), breaks after cap
+	assert.Len(t, result, 1)
+	assert.Equal(t, "meta", result[0].ID)
+}
+
+func TestTrimPacks_DeduplicateAndBudgetCombined(t *testing.T) {
+	packs := []*content.Pack{
+		{ID: "cap", ContextMD: "cap content here"},             // 16 bytes, included
+		{ID: "btp-core", ContextMD: "btp", Overlaps: []string{"cap"}}, // deduped out
+		{ID: "abap", ContextMD: "abap content"},                // 12 bytes, fits
+	}
+	result := content.TrimPacks(packs, 100)
+	require.Len(t, result, 2)
+	assert.Equal(t, "cap", result[0].ID)
+	assert.Equal(t, "abap", result[1].ID)
 }
