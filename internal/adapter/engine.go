@@ -18,6 +18,7 @@ type Options struct {
 	DryRun     bool
 	Stats      bool
 	Out        io.Writer // for stats/warning output; nil → io.Discard
+	Dynamic    *content.DynamicContext // nil = no dynamic section
 }
 
 // Engine runs injection for a set of adapters, rendering per-adapter with its own budget.
@@ -68,7 +69,7 @@ func (e *Engine) Run() error {
 			}
 			continue
 		}
-		ctx := content.RenderContext(trimmed, e.profile, nil)
+		ctx := content.RenderContext(trimmed, e.profile, e.opts.Dynamic)
 
 		if e.opts.Stats {
 			packIDs := make([]string, len(trimmed))
