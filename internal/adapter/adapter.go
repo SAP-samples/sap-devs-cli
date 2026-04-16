@@ -25,10 +25,10 @@ type Adapter struct {
 
 // Target is a single file injection target.
 type Target struct {
-	Scope   string `yaml:"scope"`             // global | project
-	Path    string `yaml:"path"`
-	Mode    string `yaml:"mode"`              // replace-section | append | replace-file
-	Section string `yaml:"section"`
+	Scope    string `yaml:"scope"`              // global | project
+	Path     string `yaml:"path"`
+	Mode     string `yaml:"mode"`               // replace-section | append | replace-file
+	Section  string `yaml:"section"`
 	Preamble string `yaml:"preamble,omitempty"` // prepended before content; replace-file only
 }
 
