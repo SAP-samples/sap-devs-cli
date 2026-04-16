@@ -36,7 +36,19 @@ func (cl *ContentLoader) LoadPacks(profile *Profile, lang string) ([]*Pack, erro
 			if err != nil {
 				return nil, err
 			}
-			packMap[pack.ID] = pack // later layers override
+			if pack.Additive {
+				if existing, ok := packMap[pack.ID]; ok {
+					// pack (receiver) is the additive layer; existing (argument) is the accumulated base.
+					packMap[pack.ID] = pack.MergeWith(existing)
+				} else {
+					// No base found — treat additive pack as the base, but clear Additive
+					// so runtime inspectors and subsequent layers do not see it as additive.
+					pack.Additive = false
+					packMap[pack.ID] = pack
+				}
+			} else {
+				packMap[pack.ID] = pack // existing replace behaviour unchanged
+			}
 		}
 	}
 

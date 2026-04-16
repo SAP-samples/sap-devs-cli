@@ -1,0 +1,40 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Pack Tools",
+  "description": "Schema for sap-devs tools.yaml files (top-level array)",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": ["id", "name", "required", "detect", "install", "docs"],
+    "additionalProperties": false,
+    "properties": {
+      "id": { "type": "string", "description": "Unique tool identifier, e.g. nodejs, cds-dk" },
+      "name": { "type": "string", "description": "Human-readable tool name" },
+      "required": {
+        "type": "string",
+        "description": "Semver constraint, e.g. >=18.0.0 or latest"
+      },
+      "detect": {
+        "type": "object",
+        "required": ["command", "pattern"],
+        "additionalProperties": false,
+        "properties": {
+          "command": { "type": "string", "description": "Shell command to detect installed version" },
+          "pattern": { "type": "string", "description": "Regex with one capture group to extract version string" }
+        }
+      },
+      "install": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "windows": { "type": "string" },
+          "macos": { "type": "string" },
+          "linux": { "type": "string" },
+          "all": { "type": "string" }
+        },
+        "description": "Platform-specific install commands"
+      },
+      "docs": { "type": "string", "format": "uri", "description": "URL to tool documentation" }
+    }
+  }
+}

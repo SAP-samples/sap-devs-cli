@@ -10,20 +10,22 @@ import (
 
 // Pack is a named bundle of SAP knowledge for a specific domain.
 type Pack struct {
-	ID          string
-	Name        string
-	Description string
-	Tags        []string
-	Profiles    []string
-	Weight      int
-	Overlaps    []string
-	Base        bool
+	ID               string
+	Name             string
+	Description      string
+	Tags             []string
+	Profiles         []string
+	Weight           int
+	Overlaps         []string
+	Base             bool
+	Additive         bool
+	AdditivePosition string // "before" | "after"; normalised to "after" if empty
 
-	ContextMD   string
-	Resources   []Resource
-	Tools       []ToolDef
-	MCPServers  []MCPServer
-	Tips        []Tip
+	ContextMD  string
+	Resources  []Resource
+	Tools      []ToolDef
+	MCPServers []MCPServer
+	Tips       []Tip
 }
 
 // Resource is a curated link within a pack.
@@ -82,15 +84,17 @@ type packMetaLocale struct {
 }
 
 type packMeta struct {
-	ID          string                    `yaml:"id"`
-	Name        string                    `yaml:"name"`
-	Description string                    `yaml:"description"`
-	Tags        []string                  `yaml:"tags"`
-	Profiles    []string                  `yaml:"profiles"`
-	Weight      int                       `yaml:"weight"`
-	Overlaps    []string                  `yaml:"overlaps,omitempty"`
-	Base        bool                      `yaml:"base,omitempty"`
-	Locales     map[string]packMetaLocale `yaml:"locales,omitempty"`
+	ID               string                    `yaml:"id"`
+	Name             string                    `yaml:"name"`
+	Description      string                    `yaml:"description"`
+	Tags             []string                  `yaml:"tags"`
+	Profiles         []string                  `yaml:"profiles"`
+	Weight           int                       `yaml:"weight"`
+	Overlaps         []string                  `yaml:"overlaps,omitempty"`
+	Base             bool                      `yaml:"base,omitempty"`
+	Additive         bool                      `yaml:"additive,omitempty"`
+	AdditivePosition string                    `yaml:"additive_position,omitempty"`
+	Locales          map[string]packMetaLocale `yaml:"locales,omitempty"`
 }
 
 // LoadPack reads all files from packDir and returns a populated Pack.
@@ -107,14 +111,20 @@ func LoadPack(packDir string, lang string) (*Pack, error) {
 	}
 
 	pack := &Pack{
-		ID:          meta.ID,
-		Name:        meta.Name,
-		Description: meta.Description,
-		Tags:        meta.Tags,
-		Profiles:    meta.Profiles,
-		Weight:      meta.Weight,
-		Overlaps:    meta.Overlaps,
-		Base:        meta.Base,
+		ID:               meta.ID,
+		Name:             meta.Name,
+		Description:      meta.Description,
+		Tags:             meta.Tags,
+		Profiles:         meta.Profiles,
+		Weight:           meta.Weight,
+		Overlaps:         meta.Overlaps,
+		Base:             meta.Base,
+		Additive:         meta.Additive,
+		AdditivePosition: meta.AdditivePosition,
+	}
+
+	if pack.Additive && pack.AdditivePosition != "before" {
+		pack.AdditivePosition = "after"
 	}
 
 	if lang != "" && lang != "en" {

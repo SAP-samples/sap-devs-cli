@@ -1,0 +1,9 @@
+{
+  "yaml.schemas": {
+    "./content/schemas/pack.schema.json":      "**/packs/*/pack.yaml",
+    "./content/schemas/resources.schema.json": "**/packs/*/resources.yaml",
+    "./content/schemas/tools.schema.json":     "**/packs/*/tools.yaml",
+    "./content/schemas/mcp.schema.json":       "**/packs/*/mcp.yaml",
+    "./content/schemas/profile.schema.json":   "**/profiles/*.yaml"
+  }
+}
