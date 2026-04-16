@@ -2,8 +2,10 @@ package content
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 	"time"
+	"unicode/utf8"
 )
 
 // RenderContext builds the Markdown string injected into AI tool configuration.
@@ -128,4 +130,53 @@ func TrimPacks(packs []*Pack, maxBytes int) []*Pack {
 		used += size
 	}
 	return result
+}
+
+// FormatOutput converts content to the target format.
+// format == "markdown" (or empty): returns content unchanged.
+// format == "plain-prose": strips Markdown syntax for plain-text UI fields.
+func FormatOutput(content, format string) string {
+	if format != "plain-prose" {
+		return content
+	}
+	s := content
+
+	// Strip fenced code blocks — keep body, remove fences.
+	// Pattern anchors both ``` fences to line starts to avoid merging adjacent blocks.
+	codeBlock := regexp.MustCompile("(?m)^```[^\n]*\n((?:[^`]|`[^`]|``[^`])*?)^```")
+	s = codeBlock.ReplaceAllString(s, "$1")
+
+	// Strip ATX headers (# through ######)
+	s = regexp.MustCompile(`(?m)^#{1,6}\s+`).ReplaceAllString(s, "")
+
+	// Strip bold (**text**)
+	s = regexp.MustCompile(`\*\*([^*]+)\*\*`).ReplaceAllString(s, "$1")
+
+	// Strip italic (*text*)
+	s = regexp.MustCompile(`\*([^*\n]+)\*`).ReplaceAllString(s, "$1")
+
+	// Strip inline code (`text`)
+	s = regexp.MustCompile("`([^`\n]+)`").ReplaceAllString(s, "$1")
+
+	// Strip HTML comments
+	s = regexp.MustCompile(`(?s)<!--.*?-->`).ReplaceAllString(s, "")
+
+	// Normalize 3+ consecutive blank lines to 2
+	s = regexp.MustCompile(`\n{3,}`).ReplaceAllString(s, "\n\n")
+
+	return s
+}
+
+// TrimToBytes truncates s to at most maxBytes bytes, cutting at the last
+// complete UTF-8 rune boundary. Returns s unchanged if maxBytes <= 0 or
+// len(s) <= maxBytes.
+func TrimToBytes(s string, maxBytes int) string {
+	if maxBytes <= 0 || len(s) <= maxBytes {
+		return s
+	}
+	i := maxBytes
+	for i > 0 && !utf8.RuneStart(s[i]) {
+		i--
+	}
+	return s[:i]
 }

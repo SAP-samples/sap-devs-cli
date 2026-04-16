@@ -242,3 +242,89 @@ func TestRenderContext_DynamicSection_CommandsListed(t *testing.T) {
 	assert.Contains(t, out, "Push SAP context to your AI tools")
 	assert.Contains(t, out, "`sync`")
 }
+
+func TestFormatOutput_Markdown_NoOp(t *testing.T) {
+	input := "## Section\n\n**bold** and *italic*\n"
+	assert.Equal(t, input, content.FormatOutput(input, "markdown"))
+	assert.Equal(t, input, content.FormatOutput(input, ""))
+}
+
+func TestFormatOutput_PlainProse_Headers(t *testing.T) {
+	assert.Equal(t, "Title\n", content.FormatOutput("# Title\n", "plain-prose"))
+	assert.Equal(t, "Section\n", content.FormatOutput("## Section\n", "plain-prose"))
+	assert.Equal(t, "Deep\n", content.FormatOutput("### Deep\n", "plain-prose"))
+}
+
+func TestFormatOutput_PlainProse_Bold(t *testing.T) {
+	assert.Equal(t, "bold text here\n", content.FormatOutput("**bold text** here\n", "plain-prose"))
+}
+
+func TestFormatOutput_PlainProse_Italic(t *testing.T) {
+	assert.Equal(t, "italic text here\n", content.FormatOutput("*italic text* here\n", "plain-prose"))
+}
+
+func TestFormatOutput_PlainProse_InlineCode(t *testing.T) {
+	assert.Equal(t, "run cds watch now\n", content.FormatOutput("run `cds watch` now\n", "plain-prose"))
+}
+
+func TestFormatOutput_PlainProse_CodeBlock(t *testing.T) {
+	input := "```bash\ncds watch\n```\n"
+	out := content.FormatOutput(input, "plain-prose")
+	assert.NotContains(t, out, "```")
+	assert.Contains(t, out, "cds watch")
+}
+
+func TestFormatOutput_PlainProse_MultipleCodeBlocks(t *testing.T) {
+	input := "```\nblock one\n```\n\n```\nblock two\n```\n"
+	out := content.FormatOutput(input, "plain-prose")
+	assert.NotContains(t, out, "```")
+	assert.Contains(t, out, "block one")
+	assert.Contains(t, out, "block two")
+}
+
+func TestFormatOutput_PlainProse_HTMLComments(t *testing.T) {
+	input := "<!-- sap-devs:start:X -->\ncontent\n<!-- sap-devs:end:X -->\n"
+	out := content.FormatOutput(input, "plain-prose")
+	assert.NotContains(t, out, "<!--")
+	assert.Contains(t, out, "content")
+}
+
+func TestFormatOutput_PlainProse_NormalizesBlankLines(t *testing.T) {
+	input := "a\n\n\n\nb\n"
+	out := content.FormatOutput(input, "plain-prose")
+	assert.NotContains(t, out, "\n\n\n")
+	assert.Contains(t, out, "a")
+	assert.Contains(t, out, "b")
+}
+
+func TestTrimToBytes_UnderLimit(t *testing.T) {
+	s := "hello"
+	assert.Equal(t, s, content.TrimToBytes(s, 100))
+}
+
+func TestTrimToBytes_ExactLimit(t *testing.T) {
+	s := "hello"
+	assert.Equal(t, s, content.TrimToBytes(s, 5))
+}
+
+func TestTrimToBytes_OverLimit(t *testing.T) {
+	s := "hello world"
+	out := content.TrimToBytes(s, 5)
+	assert.Equal(t, "hello", out)
+	assert.LessOrEqual(t, len(out), 5)
+}
+
+func TestTrimToBytes_Zero(t *testing.T) {
+	// maxBytes <= 0 returns unchanged
+	assert.Equal(t, "hello", content.TrimToBytes("hello", 0))
+	assert.Equal(t, "hello", content.TrimToBytes("hello", -1))
+}
+
+func TestTrimToBytes_UTF8Boundary(t *testing.T) {
+	// "café!" = c(1) a(1) f(1) é(2) !(1) = 6 bytes total
+	// Cutting at maxBytes=4 falls in the middle of the 2-byte é rune (bytes 3–4)
+	// Must return "caf" (3 bytes) — not include the orphaned leading byte of é
+	out := content.TrimToBytes("café!", 4)
+	assert.Equal(t, "caf", out, "must cut before the straddled rune, not after its leading byte")
+	assert.LessOrEqual(t, len(out), 4, "must not exceed maxBytes")
+}
