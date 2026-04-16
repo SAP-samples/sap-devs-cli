@@ -91,7 +91,6 @@ func renderDynamic(d *DynamicContext) string {
 	return b.String()
 }
 
-
 // TrimPacks filters packs to fit within maxBytes, applying overlap deduplication
 // and pack-level budget enforcement. Pass maxBytes=0 for unconstrained.
 // Packs must already be sorted by weight descending (LoadPacks guarantees this).
