@@ -18,6 +18,7 @@ type Pack struct {
 	Weight      int
 	Overlaps    []string
 	Base        bool
+
 	ContextMD   string
 	Resources   []Resource
 	Tools       []ToolDef
