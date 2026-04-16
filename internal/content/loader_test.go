@@ -219,6 +219,48 @@ func TestContentLoader_LoadPacks_AdditiveNoBase(t *testing.T) {
 	assert.False(t, p.Additive, "Additive flag must be cleared in no-base path")
 }
 
+func TestContentLoader_LoadPacks_NonAdditiveOverridesAdditiveResult(t *testing.T) {
+	// A non-additive pack in a later layer fully replaces an earlier additive-merged result.
+	// This tests the design intent: additive accumulation can be "reset" by a plain replace.
+	official := makeLayerDir(t, map[string]packFixture{
+		"cap": {
+			yaml:    "id: cap\nname: CAP Official\ntags: [official]\nweight: 100\n",
+			context: "Official context",
+		},
+	})
+	company := makeLayerDir(t, map[string]packFixture{
+		"cap": {
+			yaml:    "id: cap\nname: \ntags: [company]\nweight: 0\nadditive: true\nadditive_position: after\n",
+			context: "Company context",
+		},
+	})
+	// Project pack is non-additive — fully replaces the official+company merged result
+	project := makeLayerDir(t, map[string]packFixture{
+		"cap": {
+			yaml:    "id: cap\nname: CAP Project Override\ntags: [project]\nweight: 0\n",
+			context: "Project only context",
+		},
+	})
+
+	loader := &content.ContentLoader{
+		OfficialDir: official,
+		CompanyDir:  company,
+		ProjectDir:  project,
+	}
+	packs, err := loader.LoadPacks(nil, "")
+	require.NoError(t, err)
+
+	cap := findPack(packs, "cap")
+	require.NotNil(t, cap)
+
+	// Non-additive project layer wins — none of official or company content
+	assert.Equal(t, "CAP Project Override", cap.Name)
+	assert.Equal(t, "Project only context", cap.ContextMD)
+	assert.NotContains(t, cap.Tags, "official")
+	assert.NotContains(t, cap.Tags, "company")
+	assert.Contains(t, cap.Tags, "project")
+}
+
 // packFixture holds optional file content for makeLayerDir.
 type packFixture struct {
 	yaml      string

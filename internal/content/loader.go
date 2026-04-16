@@ -38,6 +38,7 @@ func (cl *ContentLoader) LoadPacks(profile *Profile, lang string) ([]*Pack, erro
 			}
 			if pack.Additive {
 				if existing, ok := packMap[pack.ID]; ok {
+					// pack (receiver) is the additive layer; existing (argument) is the accumulated base.
 					packMap[pack.ID] = pack.MergeWith(existing)
 				} else {
 					// No base found — treat additive pack as the base, but clear Additive
