@@ -1,5 +1,57 @@
 package content
 
+// MergeWith returns a new *Pack that augments base with the content of a.
+// If a.Additive is false, MergeWith is a no-op and returns base unchanged.
+func (a *Pack) MergeWith(base *Pack) *Pack {
+	if !a.Additive {
+		return base
+	}
+	merged := *base // shallow copy of scalar fields; slices replaced below
+
+	// Metadata: override on non-empty / non-zero only.
+	if a.Name != "" {
+		merged.Name = a.Name
+	}
+	if a.Description != "" {
+		merged.Description = a.Description
+	}
+	if a.Weight != 0 {
+		merged.Weight = a.Weight
+	}
+	merged.Tags = unionStrings(base.Tags, a.Tags)
+	// Profiles and Overlaps always come from base; produce fresh slices to avoid
+	// aliasing base's backing arrays if callers ever append to the result.
+	merged.Profiles = append([]string(nil), base.Profiles...)
+	merged.Overlaps = append([]string(nil), base.Overlaps...)
+
+	// Context: position controls order. Empty additive ContextMD preserves base unchanged.
+	if a.ContextMD != "" {
+		if a.AdditivePosition == "before" {
+			merged.ContextMD = a.ContextMD + "\n\n" + base.ContextMD
+		} else {
+			merged.ContextMD = base.ContextMD + "\n\n" + a.ContextMD
+		}
+	}
+
+	// Tips: both sets kept; position controls order. Always fresh slice.
+	if a.AdditivePosition == "before" {
+		merged.Tips = append(append([]Tip(nil), a.Tips...), base.Tips...)
+	} else {
+		merged.Tips = append(append([]Tip(nil), base.Tips...), a.Tips...)
+	}
+
+	// Structured lists: additive replaces on matching ID, appends new entries.
+	// PackID re-stamped to base pack's ID on Resources and MCPServers.
+	merged.Resources = mergeResources(base.Resources, a.Resources, base.ID)
+	merged.Tools = mergeTools(base.Tools, a.Tools)
+	merged.MCPServers = mergeMCPServers(base.MCPServers, a.MCPServers, base.ID)
+
+	// Merged result is not itself additive; a subsequent additive layer will
+	// merge into this result rather than treating it as an additive pack.
+	merged.Additive = false
+	return &merged
+}
+
 // unionStrings returns a fresh deduplicated slice: all elements of a,
 // then elements of b not already present in a. Order is preserved.
 func unionStrings(a, b []string) []string {

@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
 )
 
@@ -87,4 +88,132 @@ func TestMergeMCPServers_AppendsNewIDs(t *testing.T) {
 	assert.Equal(t, "new-mcp", got[1].ID)
 	// PackID re-stamped to base pack ID on new entries too
 	assert.Equal(t, "cap", got[1].PackID)
+}
+
+func makePack(id, name, context string, tips []content.Tip, resources []content.Resource) *content.Pack {
+	return &content.Pack{
+		ID:        id,
+		Name:      name,
+		ContextMD: context,
+		Tips:      tips,
+		Resources: resources,
+		Tags:      []string{"base-tag"},
+		Profiles:  []string{"cap-developer"},
+		Overlaps:  []string{},
+	}
+}
+
+func TestMergeWith_GuardReturnBaseWhenNotAdditive(t *testing.T) {
+	base := makePack("cap", "CAP Official", "base context", nil, nil)
+	notAdditive := &content.Pack{ID: "cap", Name: "Override", Additive: false}
+	result := notAdditive.MergeWith(base)
+	assert.Equal(t, base, result, "non-additive MergeWith must return base unchanged")
+}
+
+func TestMergeWith_ContextAfter(t *testing.T) {
+	base := makePack("cap", "CAP", "base context", nil, nil)
+	additive := &content.Pack{ID: "cap", ContextMD: "extra context", Additive: true, AdditivePosition: "after"}
+	result := additive.MergeWith(base)
+	assert.Equal(t, "base context\n\nextra context", result.ContextMD)
+}
+
+func TestMergeWith_ContextBefore(t *testing.T) {
+	base := makePack("cap", "CAP", "base context", nil, nil)
+	additive := &content.Pack{ID: "cap", ContextMD: "extra context", Additive: true, AdditivePosition: "before"}
+	result := additive.MergeWith(base)
+	assert.Equal(t, "extra context\n\nbase context", result.ContextMD)
+}
+
+func TestMergeWith_EmptyContextPreservesBase(t *testing.T) {
+	base := makePack("cap", "CAP", "base context", nil, nil)
+	additive := &content.Pack{ID: "cap", ContextMD: "", Additive: true, AdditivePosition: "after"}
+	result := additive.MergeWith(base)
+	assert.Equal(t, "base context", result.ContextMD)
+}
+
+func TestMergeWith_TipsAfter(t *testing.T) {
+	baseTips := []content.Tip{{Title: "Base Tip"}}
+	addTips := []content.Tip{{Title: "Additive Tip"}}
+	base := makePack("cap", "CAP", "", baseTips, nil)
+	additive := &content.Pack{ID: "cap", Tips: addTips, Additive: true, AdditivePosition: "after"}
+	result := additive.MergeWith(base)
+	require.Len(t, result.Tips, 2)
+	assert.Equal(t, "Base Tip", result.Tips[0].Title)
+	assert.Equal(t, "Additive Tip", result.Tips[1].Title)
+}
+
+func TestMergeWith_TipsBefore(t *testing.T) {
+	baseTips := []content.Tip{{Title: "Base Tip"}}
+	addTips := []content.Tip{{Title: "Additive Tip"}}
+	base := makePack("cap", "CAP", "", baseTips, nil)
+	additive := &content.Pack{ID: "cap", Tips: addTips, Additive: true, AdditivePosition: "before"}
+	result := additive.MergeWith(base)
+	require.Len(t, result.Tips, 2)
+	assert.Equal(t, "Additive Tip", result.Tips[0].Title)
+	assert.Equal(t, "Base Tip", result.Tips[1].Title)
+}
+
+func TestMergeWith_TipsNoAliasing(t *testing.T) {
+	baseTips := []content.Tip{{Title: "Base Tip"}}
+	base := makePack("cap", "CAP", "", baseTips, nil)
+	additive := &content.Pack{ID: "cap", Additive: true, AdditivePosition: "after"}
+	result := additive.MergeWith(base)
+	result.Tips[0].Title = "mutated"
+	assert.Equal(t, "Base Tip", base.Tips[0].Title, "mutation must not affect base tips")
+}
+
+func TestMergeWith_MetadataOverrideOnNonEmpty(t *testing.T) {
+	base := makePack("cap", "CAP Official", "", nil, nil)
+	base.Description = "Official description"
+	base.Weight = 100
+	additive := &content.Pack{
+		ID: "cap", Name: "CAP Company", Description: "Company description",
+		Weight: 150, Tags: []string{"extra"}, Additive: true, AdditivePosition: "after",
+	}
+	result := additive.MergeWith(base)
+	assert.Equal(t, "CAP Company", result.Name)
+	assert.Equal(t, "Company description", result.Description)
+	assert.Equal(t, 150, result.Weight)
+	assert.Contains(t, result.Tags, "base-tag")
+	assert.Contains(t, result.Tags, "extra")
+}
+
+func TestMergeWith_MetadataEmptyFieldsPreserveBase(t *testing.T) {
+	base := makePack("cap", "CAP Official", "", nil, nil)
+	base.Description = "Official description"
+	base.Weight = 100
+	additive := &content.Pack{ID: "cap", Name: "", Description: "", Weight: 0, Additive: true, AdditivePosition: "after"}
+	result := additive.MergeWith(base)
+	assert.Equal(t, "CAP Official", result.Name)
+	assert.Equal(t, "Official description", result.Description)
+	assert.Equal(t, 100, result.Weight)
+}
+
+func TestMergeWith_ProfilesAndOverlapsTakenFromBase(t *testing.T) {
+	base := makePack("cap", "CAP", "", nil, nil)
+	base.Profiles = []string{"cap-developer"}
+	base.Overlaps = []string{"btp-core"}
+	additive := &content.Pack{
+		ID: "cap", Additive: true, AdditivePosition: "after",
+		Profiles: []string{"company-profile"}, Overlaps: []string{"other"},
+	}
+	result := additive.MergeWith(base)
+	assert.Equal(t, []string{"cap-developer"}, result.Profiles)
+	assert.Equal(t, []string{"btp-core"}, result.Overlaps)
+}
+
+func TestMergeWith_ProfilesNoAliasing(t *testing.T) {
+	base := makePack("cap", "CAP", "", nil, nil)
+	base.Profiles = []string{"cap-developer"}
+	additive := &content.Pack{ID: "cap", Additive: true, AdditivePosition: "after"}
+	result := additive.MergeWith(base)
+	result.Profiles[0] = "mutated"
+	assert.Equal(t, "cap-developer", base.Profiles[0])
+}
+
+func TestMergeWith_AdditiveIsFalseOnResult(t *testing.T) {
+	base := makePack("cap", "CAP", "", nil, nil)
+	additive := &content.Pack{ID: "cap", Additive: true, AdditivePosition: "after"}
+	result := additive.MergeWith(base)
+	assert.False(t, result.Additive)
 }
