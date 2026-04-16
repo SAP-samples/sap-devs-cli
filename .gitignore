@@ -1,5 +1,6 @@
 .worktrees/
 .superpowers/
+.playwright-mcp/
 sap-devs
 sap-devs.exe
 *.test.exe
