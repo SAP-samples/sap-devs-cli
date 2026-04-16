@@ -4,12 +4,12 @@ type: file-inject
 targets:
   - scope: global
     path: "~/.cursor/rules/sap-developer-context.mdc"
-    mode: replace-section
-    section: "SAP Developer Context"
+    mode: replace-file
+    preamble: "---\ndescription: SAP developer context — CAP, BTP, ABAP Cloud\nalwaysApply: true\n---"
   - scope: project
     path: ".cursor/rules/sap-developer-context.mdc"
-    mode: replace-section
-    section: "SAP Developer Context"
+    mode: replace-file
+    preamble: "---\ndescription: SAP developer context — CAP, BTP, ABAP Cloud\nalwaysApply: true\n---"
 detect:
   - path: "~/.cursor"
   - command: "cursor --version"

@@ -3,8 +3,8 @@ name: JetBrains AI Assistant
 type: file-inject
 targets:
   - scope: project
-    path: ".idea/ai-context.md"
-    mode: replace-section
-    section: "SAP Developer Context"
+    path: ".aiassistant/rules/sap-developer-context.md"
+    mode: replace-file
+    # no preamble — rule type (always/conditional) is configured in IDE settings
 detect:
   - path: "~/.config/JetBrains"

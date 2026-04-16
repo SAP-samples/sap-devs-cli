@@ -1,5 +1,7 @@
 id: chatgpt
 name: ChatGPT
-type: clipboard-export
-format: markdown
-instructions: "Paste this into ChatGPT → Settings → Custom Instructions → 'What would you like ChatGPT to know about you?'"
+type: file-export
+export_path: "~/sap-devs-chatgpt-context.md"
+max_bytes: 1400
+format: plain-prose
+instructions: "Paste into ChatGPT → Settings → Custom Instructions → 'What would you like ChatGPT to know about you?'"

@@ -3,16 +3,16 @@ name: Continue.dev
 type: file-inject
 targets:
   - scope: global
-    path: "~/.continue/sap-context.md"
-    mode: replace-section
-    section: "SAP Developer Context"
+    path: "~/.continue/rules/sap-developer-context.md"
+    mode: replace-file
+    preamble: "---\nname: SAP Developer Context\nalwaysApply: true\n---"
   - scope: project
-    path: ".continue/sap-context.md"
-    mode: replace-section
-    section: "SAP Developer Context"
+    path: ".continue/rules/sap-developer-context.md"
+    mode: replace-file
+    preamble: "---\nname: SAP Developer Context\nalwaysApply: true\n---"
 detect:
   - path: "~/.continue"
 mcp_config:
   path: "~/.continue/config.yaml"
-  format: json
+  format: yaml
   key: "mcpServers"
