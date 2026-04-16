@@ -135,25 +135,9 @@ Research and implement optimisations to the `inject` pipeline and support for ru
 
 **Research areas:**
 
-**Token / size optimisation**
-- Profile current output size; establish per-adapter budgets (Claude Code CLAUDE.md vs Cursor `.cursorrules`, etc.)
-- Per-adapter truncation: ranked sections, profile-weighted trimming, summary vs full detail modes
-- Deduplication: strip content from lower-weight packs already covered by higher-weight packs
-
-**Dynamic injection** (generated at inject time, not from pack files)
-- Installed tool versions — run `doctor` checks and inject actual versions so the AI knows what's available
-- Active BTP context — detect `~/.cf/config.json`, `~/.btp/config.json` for current org/space/subaccount
-- Project type — detect `package.json`, `mta.yaml`, `.cdsrc.json` in CWD and inject a project-type summary
-- Wired MCP servers — surface which SAP MCP servers are active
-- Pack freshness — inject last-sync date so the AI knows how current the context is
-
 **Adapter-specific rendering**
 - Adapters declare `max_tokens` / `max_bytes` in their YAML; `RenderContext` trims accordingly
 - Different adapters may want different formats (Markdown, XML system prompt tags, JSON)
-
-**Incremental inject**
-- Skip re-injection when content hash is unchanged (track in a state file)
-- `--watch` mode for live reload during content development
 
 ---
 
