@@ -13,11 +13,11 @@ import (
 
 // Options controls inject scope, filtering, dry-run, and stats behaviour.
 type Options struct {
-	Scope      string    // "global" | "project"
-	ToolFilter string    // if non-empty, only run this adapter ID
+	Scope      string                 // "global" | "project"
+	ToolFilter string                 // if non-empty, only run this adapter ID
 	DryRun     bool
 	Stats      bool
-	Out        io.Writer // for stats/warning output; nil → io.Discard
+	Out        io.Writer              // for stats/warning output; nil → io.Discard
 	Dynamic    *content.DynamicContext // nil = no dynamic section
 }
 
@@ -34,7 +34,8 @@ type adapterStats struct {
 	AdapterID    string
 	PackIDs      []string // IDs of packs included after TrimPacks
 	ApproxTokens int      // len(rendered) / 4
-	BudgetTokens int      // adapter.MaxTokens; 0 = unconstrained
+	BudgetBytes  int      // effective budget in bytes; 0 = unconstrained
+	Format       string   // "markdown" | "plain-prose" | ""
 	Trimmed      bool     // true if any packs were dropped by TrimPacks
 }
 
@@ -54,22 +55,33 @@ func (e *Engine) Run() error {
 		if e.opts.ToolFilter != "" && a.ID != e.opts.ToolFilter {
 			continue
 		}
-		maxBytes := a.MaxTokens * 4
+		maxBytes := a.MaxBytes
+		if maxBytes == 0 && a.MaxTokens > 0 {
+			maxBytes = a.MaxTokens * 4
+		}
 		trimmed := content.TrimPacks(e.packs, maxBytes)
 		if len(trimmed) == 0 && maxBytes > 0 {
 			fmt.Fprintf(os.Stderr, "sap-devs: adapter %s: budget too small to include any pack content\n", a.ID)
 			if e.opts.Stats {
 				stats = append(stats, adapterStats{
-					AdapterID:    a.ID,
-					PackIDs:      nil,
-					ApproxTokens: 0,
-					BudgetTokens: a.MaxTokens,
-					Trimmed:      true,
+					AdapterID:   a.ID,
+					PackIDs:     nil,
+					BudgetBytes: maxBytes, // resolved value
+					Format:      a.Format,
+					Trimmed:     true,
 				})
 			}
 			continue
 		}
 		ctx := content.RenderContext(trimmed, e.profile, e.opts.Dynamic)
+
+		// Apply format transform (skipped for file-export — ExportFileAndClip handles it internally)
+		var formattedCtx string
+		if a.Type != "file-export" {
+			formattedCtx = content.FormatOutput(ctx, a.Format)
+		} else {
+			formattedCtx = ctx // raw Markdown passed to ExportFileAndClip
+		}
 
 		if e.opts.Stats {
 			packIDs := make([]string, len(trimmed))
@@ -79,15 +91,16 @@ func (e *Engine) Run() error {
 			stats = append(stats, adapterStats{
 				AdapterID:    a.ID,
 				PackIDs:      packIDs,
-				ApproxTokens: len(ctx) / 4,
-				BudgetTokens: a.MaxTokens,
+				ApproxTokens: len(formattedCtx) / 4,
+				BudgetBytes:  maxBytes, // resolved value (MaxBytes or MaxTokens*4)
+				Format:       a.Format,
 				Trimmed:      len(trimmed) < len(e.packs),
 			})
 		}
 
 		switch a.Type {
 		case "file-inject":
-			if err := e.runFileInject(a, ctx); err != nil {
+			if err := e.runFileInject(a, formattedCtx); err != nil {
 				return fmt.Errorf("adapter %s: %w", a.ID, err)
 			}
 		case "clipboard-export":
@@ -95,7 +108,14 @@ func (e *Engine) Run() error {
 			if e.opts.Scope == "project" {
 				continue
 			}
-			if err := ExportToClipboard(ctx, a.Instructions, e.opts.DryRun); err != nil {
+			if err := ExportToClipboard(formattedCtx, a.Instructions, e.opts.DryRun); err != nil {
+				return fmt.Errorf("adapter %s: %w", a.ID, err)
+			}
+		case "file-export":
+			if e.opts.Scope == "project" {
+				continue
+			}
+			if err := ExportFileAndClip(a, formattedCtx, e.opts); err != nil {
 				return fmt.Errorf("adapter %s: %w", a.ID, err)
 			}
 		case "mcp-wire":
@@ -136,21 +156,26 @@ func (e *Engine) runFileInject(a Adapter, ctx string) error {
 
 func printStats(w io.Writer, stats []adapterStats) {
 	tw := tabwriter.NewWriter(w, 0, 0, 3, ' ', 0)
-	fmt.Fprintln(tw, "Adapter\tPacks included\tTokens (approx)\tBudget\tStatus")
+	fmt.Fprintln(tw, "Adapter\tPacks included\tTokens (approx)\tBudget (bytes)\tFormat\tStatus")
 	for _, s := range stats {
 		budget := "unconstrained"
-		if s.BudgetTokens > 0 {
-			budget = fmt.Sprintf("%d tokens", s.BudgetTokens)
+		if s.BudgetBytes > 0 {
+			budget = fmt.Sprintf("%d bytes", s.BudgetBytes)
 		}
 		packs := strings.Join(s.PackIDs, ", ")
 		if packs == "" {
 			packs = "(none)"
 		}
+		format := s.Format
+		if format == "" {
+			format = "markdown"
+		}
 		status := ""
 		if s.Trimmed {
 			status = "trimmed"
 		}
-		fmt.Fprintf(tw, "%s\t%s\t~%d\t%s\t%s\n", s.AdapterID, packs, s.ApproxTokens, budget, status)
+		fmt.Fprintf(tw, "%s\t%s\t~%d\t%s\t%s\t%s\n",
+			s.AdapterID, packs, s.ApproxTokens, budget, format, status)
 	}
 	tw.Flush()
 }

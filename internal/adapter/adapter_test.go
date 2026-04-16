@@ -347,3 +347,132 @@ instructions: "Paste into Gemini"
 	require.Len(t, adapters, 1)
 	assert.Equal(t, "plain-prose", adapters[0].Format)
 }
+
+func TestEngine_MaxBytesOverridesMaxTokens(t *testing.T) {
+	dir := t.TempDir()
+	targetFile := filepath.Join(dir, "out.md")
+
+	// Pack is 100 bytes. MaxBytes=50 should trim it out; MaxTokens=1000 (=4000 bytes) would not.
+	packs := []*content.Pack{
+		{ID: "big", ContextMD: strings.Repeat("x", 100)},
+	}
+	adapters := []adapter.Adapter{
+		{
+			ID:        "tight",
+			Type:      "file-inject",
+			MaxBytes:  50,   // hard limit — takes precedence
+			MaxTokens: 1000, // would allow 4000 bytes, but MaxBytes wins
+			Targets:   []adapter.Target{{Scope: "global", Path: targetFile, Mode: "replace-section", Section: "S"}},
+		},
+	}
+
+	var buf bytes.Buffer
+	engine := adapter.NewEngine(adapters, packs, nil, adapter.Options{Scope: "global", Out: &buf})
+	require.NoError(t, engine.Run())
+
+	// Budget was 50 bytes — pack (100 bytes) didn't fit → file should not contain pack content
+	data, _ := os.ReadFile(targetFile)
+	assert.NotContains(t, string(data), strings.Repeat("x", 100))
+}
+
+func TestEngine_FormatApplied(t *testing.T) {
+	dir := t.TempDir()
+	targetFile := filepath.Join(dir, "out.md")
+
+	packs := []*content.Pack{
+		{ID: "cap", ContextMD: "## CAP Section\n\n**Use** `cds watch`.\n"},
+	}
+	adapters := []adapter.Adapter{
+		{
+			ID:     "plain-tool",
+			Type:   "file-inject",
+			Format: "plain-prose",
+			Targets: []adapter.Target{
+				{Scope: "global", Path: targetFile, Mode: "replace-section", Section: "S"},
+			},
+		},
+	}
+
+	engine := adapter.NewEngine(adapters, packs, nil, adapter.Options{Scope: "global"})
+	require.NoError(t, engine.Run())
+
+	data, err := os.ReadFile(targetFile)
+	require.NoError(t, err)
+	// Markdown stripped
+	assert.NotContains(t, string(data), "##")
+	assert.NotContains(t, string(data), "**")
+	assert.NotContains(t, string(data), "`")
+	// Text preserved
+	assert.Contains(t, string(data), "CAP Section")
+	assert.Contains(t, string(data), "Use")
+	assert.Contains(t, string(data), "cds watch")
+}
+
+func TestEngine_FileExportType(t *testing.T) {
+	dir := t.TempDir()
+	exportPath := filepath.Join(dir, "ctx.md")
+
+	packs := []*content.Pack{{ID: "cap", ContextMD: "CAP content"}}
+	adapters := []adapter.Adapter{
+		{
+			ID:         "chatgpt",
+			Type:       "file-export",
+			ExportPath: exportPath,
+			MaxBytes:   1400,
+			Format:     "plain-prose",
+		},
+	}
+
+	engine := adapter.NewEngine(adapters, packs, nil, adapter.Options{Scope: "global", DryRun: true})
+	require.NoError(t, engine.Run())
+	// DryRun=true: no file written, no error
+}
+
+func TestEngine_FileExportSkippedForProjectScope(t *testing.T) {
+	dir := t.TempDir()
+	exportPath := filepath.Join(dir, "ctx.md")
+
+	packs := []*content.Pack{{ID: "cap", ContextMD: "CAP content"}}
+	adapters := []adapter.Adapter{
+		{
+			ID:         "chatgpt",
+			Type:       "file-export",
+			ExportPath: exportPath,
+			MaxBytes:   1400,
+		},
+	}
+
+	engine := adapter.NewEngine(adapters, packs, nil, adapter.Options{Scope: "project"})
+	require.NoError(t, engine.Run())
+
+	// file-export must be skipped for project scope — export file not created
+	_, err := os.Stat(exportPath)
+	assert.True(t, os.IsNotExist(err), "file-export must be skipped for project scope")
+}
+
+func TestEngine_FileExportWritesRawMarkdown(t *testing.T) {
+	dir := t.TempDir()
+	exportPath := filepath.Join(dir, "ctx.md")
+
+	packs := []*content.Pack{
+		{ID: "cap", ContextMD: "## CAP Section\n\n**bold** content\n"},
+	}
+	adapters := []adapter.Adapter{
+		{
+			ID:         "chatgpt",
+			Type:       "file-export",
+			ExportPath: exportPath,
+			MaxBytes:   10000,
+			Format:     "plain-prose", // format applies to clipboard only
+		},
+	}
+
+	engine := adapter.NewEngine(adapters, packs, nil, adapter.Options{Scope: "global"})
+	require.NoError(t, engine.Run())
+
+	data, err := os.ReadFile(exportPath)
+	require.NoError(t, err)
+	// File must contain raw Markdown — ## and ** must NOT be stripped
+	assert.Contains(t, string(data), "##", "export file must preserve Markdown headers")
+	assert.Contains(t, string(data), "**", "export file must preserve Markdown bold")
+}
