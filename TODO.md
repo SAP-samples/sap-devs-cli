@@ -262,13 +262,7 @@ A persistent system-tray (or menu-bar) icon that surfaces tool status, triggers 
 
 ---
 
-## Inject Enhancements
-
-### Inject optimisation and dynamic content
-
-Research and implement optimisations to the `inject` pipeline and support for runtime-generated content that can't live in static pack files.
-
----
+## Inject Enhancements - DONE ✔️
 
 ## Data Sources
 
