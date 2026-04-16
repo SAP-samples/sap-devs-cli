@@ -1,0 +1,34 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Developer Profile",
+  "description": "Schema for sap-devs profile YAML files",
+  "type": "object",
+  "required": ["id", "name", "description", "packs"],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique profile slug, e.g. cap-developer. Reserved: all, minimal"
+    },
+    "name": { "type": "string", "description": "Human-readable profile name" },
+    "description": { "type": "string", "description": "Profile description" },
+    "packs": {
+      "type": "array",
+      "description": "Ordered list of pack IDs and their weights for this profile",
+      "items": {
+        "type": "object",
+        "required": ["id", "weight"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "description": "Pack ID" },
+          "weight": { "type": "integer", "description": "Sort priority within this profile; higher = earlier" }
+        }
+      }
+    },
+    "tip_tags": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Preferred tip tags for this profile (used by sap-devs tip)"
+    }
+  }
+}

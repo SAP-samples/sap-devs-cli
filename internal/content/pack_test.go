@@ -209,6 +209,28 @@ func TestLoadPack_NoOverlaps(t *testing.T) {
 	assert.Empty(t, p.Overlaps)
 }
 
+func TestLoadPack_AdditiveFields(t *testing.T) {
+	dir := t.TempDir()
+	yaml := "id: cap\nname: CAP\ndescription: desc\ntags: []\nprofiles: []\nweight: 0\nadditive: true\nadditive_position: before\n"
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "pack.yaml"), []byte(yaml), 0644))
+
+	pack, err := content.LoadPack(dir, "")
+	require.NoError(t, err)
+	assert.True(t, pack.Additive)
+	assert.Equal(t, "before", pack.AdditivePosition)
+}
+
+func TestLoadPack_AdditiveDefaults(t *testing.T) {
+	dir := t.TempDir()
+	yaml := "id: cap\nname: CAP\ndescription: desc\ntags: []\nprofiles: []\nweight: 0\n"
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "pack.yaml"), []byte(yaml), 0644))
+
+	pack, err := content.LoadPack(dir, "")
+	require.NoError(t, err)
+	assert.False(t, pack.Additive)
+	assert.Equal(t, "", pack.AdditivePosition)
+}
+
 func makeTempPack(t *testing.T, id, packYAML, contextMD, resourcesYAML, tipsMD string) string {
 	t.Helper()
 	dir := t.TempDir()

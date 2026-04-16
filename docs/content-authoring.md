@@ -62,6 +62,99 @@ base: true
 
 ---
 
+## Editor Setup
+
+For inline validation and autocomplete when editing pack YAML files, install the [YAML extension by Red Hat](https://marketplace.visualstudio.com/items?itemName=redhat.vscode-yaml) in VS Code. Schema wiring is already configured in `.vscode/settings.json` — open any `pack.yaml`, `resources.yaml`, `tools.yaml`, `mcp.yaml`, or profile YAML file and you'll get field suggestions and error highlighting automatically.
+
+---
+
+## Additive Layers
+
+By default, a pack in a higher layer (company, user, project) with the same `id` as an official pack **replaces** it entirely. This is fine when you want to fully customise a pack, but it means you must copy and maintain the whole official pack just to add a few tips or resources.
+
+**Additive mode** lets you augment a lower-layer pack without copying it. Set `additive: true` in `pack.yaml` — your pack's content is merged on top of the official pack's content.
+
+### When to use additive mode
+
+- You want to add company-specific tips to an official pack without copying its context or tools
+- You want to add internal resource links to an official pack's `resources.yaml`
+- You want to update a tool's required version in your project without maintaining the full `tools.yaml`
+
+### Position
+
+`additive_position: after` (default) — your content appears after the official content.
+`additive_position: before` — your content appears before the official content.
+
+Use `before` for high-priority notes (e.g., "company policy requires X") that should precede the official guidance.
+
+### Merge behaviour
+
+| File | What happens |
+| --- | --- |
+| `context.md` | Your content is appended or prepended to the official context |
+| `tips.md` | Both sets of tips are kept; yours are added in the configured position |
+| `resources.yaml` | Entries with matching `id` replace the official entry; new IDs are appended |
+| `tools.yaml` | Entries with matching `id` replace the official entry; new IDs are appended |
+| `mcp.yaml` | Entries with matching `id` replace the official entry; new IDs are appended |
+| `pack.yaml` metadata | `name`/`description` override if non-empty; `weight` overrides if non-zero; `tags` union-merged; `profiles`/`base`/`overlaps` always come from the official pack |
+
+### No-base fallback
+
+If no lower-layer pack with the same `id` exists, the additive pack is treated as the base pack. This lets you write additive packs defensively — they work correctly whether or not the official pack is present.
+
+### Example: company additions to the CAP pack
+
+```
+.sap-devs/packs/cap/
+├── pack.yaml       # additive: true
+├── tips.md         # company-specific CAP tips
+└── resources.yaml  # internal CAP reference links
+```
+
+`pack.yaml`:
+
+```yaml
+id: cap
+name: ""            # empty — base name preserved
+description: ""     # empty — base description preserved
+tags: [internal]
+weight: 0
+additive: true
+additive_position: after
+```
+
+`tips.md`:
+
+```markdown
+## Internal CAP Deployment Guide
+Tags: cap,internal
+Use our internal pipeline at https://pipeline.example.com/cap to deploy CAP apps to BTP.
+
+## Company HANA Cloud Instance
+Tags: cap,hana
+Connect to the shared HANA Cloud instance at hana.internal for dev/test. See the wiki for credentials.
+```
+
+`resources.yaml`:
+
+```yaml
+- id: cap/internal-pipeline
+  title: Internal CAP Deployment Pipeline
+  url: https://pipeline.example.com/cap
+  type: official-docs
+  tags: [deployment, internal]
+```
+
+The final injected context will contain all official CAP content plus your company tips and resources.
+
+### Limitations
+
+- **Tips cannot be replaced by title.** Tips have no stable `id` field; additive tips are always appended or prepended. To replace an official tip, use a full replace-mode pack (omit `additive: true`).
+- **`additive_position` applies globally** to the whole pack — you cannot mix before/after positions for different content types in the same pack.
+- **Do not set `base: true`** in an additive pack. In merge mode, `base` is always taken from the official pack; in no-base mode it would make your pack inject into every profile, which is rarely what you want.
+
+---
+
 ## Marker Syntax
 
 `context.md` supports a single-line HTML comment marker that fetches live content at sync time and caches it alongside the pack:
