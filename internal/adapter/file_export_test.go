@@ -54,27 +54,41 @@ func TestExportFileAndClip_ClipsShortVersion(t *testing.T) {
 		Instructions: "Paste me",
 	}
 
-	// Content longer than max_bytes — clipboard payload must be trimmed
+	// Content longer than max_bytes — export file receives full content; clipboard payload is trimmed.
+	// We assert the export file holds all 200 bytes, confirming file == full and clip == trimmed.
 	fullCtx := strings.Repeat("a", 200)
-	// DryRun = true so we don't need clipboard hardware
-	err := adapter.ExportFileAndClip(a, fullCtx, adapter.Options{DryRun: true})
+	err := adapter.ExportFileAndClip(a, fullCtx, adapter.Options{DryRun: false})
 	require.NoError(t, err)
+
+	data, err := os.ReadFile(exportPath)
+	require.NoError(t, err)
+	assert.Equal(t, fullCtx, string(data), "export file must hold full unclipped context")
 }
 
 func TestExportFileAndClip_AppendedGuidanceLine(t *testing.T) {
-	// Guidance line references export_path and mentions ChatGPT Project
-	// We verify this via dry-run (file not written, but no error)
+	// Verify that ExportFileAndClip writes the full context to the export file and
+	// does not truncate it with the guidance line. The clipboard payload (not directly
+	// observable) appends a guidance line containing the export_path; we confirm the
+	// export file itself holds only the raw context (no guidance line appended to file).
 	dir := t.TempDir()
+	exportPath := filepath.Join(dir, "ctx.md")
 	a := adapter.Adapter{
 		ID:           "chatgpt",
 		Type:         "file-export",
-		ExportPath:   filepath.Join(dir, "ctx.md"),
+		ExportPath:   exportPath,
 		MaxBytes:     1400,
 		Format:       "plain-prose",
 		Instructions: "Paste",
 	}
-	err := adapter.ExportFileAndClip(a, "SAP context here", adapter.Options{DryRun: true})
+
+	ctx := "SAP context here"
+	err := adapter.ExportFileAndClip(a, ctx, adapter.Options{DryRun: false})
 	require.NoError(t, err)
+
+	data, err := os.ReadFile(exportPath)
+	require.NoError(t, err)
+	// Export file contains raw context exactly — guidance line goes to clipboard only
+	assert.Equal(t, ctx, string(data), "export file must hold raw context without guidance line")
 }
 
 func TestExportFileAndClip_DryRun(t *testing.T) {
