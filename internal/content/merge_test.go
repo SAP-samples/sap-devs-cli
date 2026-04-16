@@ -216,4 +216,5 @@ func TestMergeWith_AdditiveIsFalseOnResult(t *testing.T) {
 	additive := &content.Pack{ID: "cap", Additive: true, AdditivePosition: "after"}
 	result := additive.MergeWith(base)
 	assert.False(t, result.Additive)
+	assert.Equal(t, "", result.AdditivePosition, "AdditivePosition must be cleared on merged result")
 }

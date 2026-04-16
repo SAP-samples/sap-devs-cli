@@ -261,6 +261,39 @@ func TestContentLoader_LoadPacks_NonAdditiveOverridesAdditiveResult(t *testing.T
 	assert.Contains(t, cap.Tags, "project")
 }
 
+func TestContentLoader_LoadPacks_AdditivePositionBefore(t *testing.T) {
+	// Verify additive_position: before prepends content rather than appending.
+	official := makeLayerDir(t, map[string]packFixture{
+		"cap": {
+			yaml:    "id: cap\nname: CAP\ntags: []\nweight: 100\n",
+			context: "Official context",
+			tips:    "## Official Tip\nOfficial tip content",
+		},
+	})
+	company := makeLayerDir(t, map[string]packFixture{
+		"cap": {
+			yaml:    "id: cap\nname: \ntags: []\nweight: 0\nadditive: true\nadditive_position: before\n",
+			context: "Company context",
+			tips:    "## Company Tip\nCompany tip content",
+		},
+	})
+
+	loader := &content.ContentLoader{OfficialDir: official, CompanyDir: company}
+	packs, err := loader.LoadPacks(nil, "")
+	require.NoError(t, err)
+
+	cap := findPack(packs, "cap")
+	require.NotNil(t, cap)
+
+	// Context: company prepended before official
+	assert.Equal(t, "Company context\n\nOfficial context", cap.ContextMD)
+
+	// Tips: company tip first, then official
+	require.Len(t, cap.Tips, 2)
+	assert.Equal(t, "Company Tip", cap.Tips[0].Title)
+	assert.Equal(t, "Official Tip", cap.Tips[1].Title)
+}
+
 // packFixture holds optional file content for makeLayerDir.
 type packFixture struct {
 	yaml      string

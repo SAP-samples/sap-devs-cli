@@ -49,6 +49,7 @@ func (a *Pack) MergeWith(base *Pack) *Pack {
 	// Merged result is not itself additive; a subsequent additive layer will
 	// merge into this result rather than treating it as an additive pack.
 	merged.Additive = false
+	merged.AdditivePosition = "" // no position on a non-additive pack
 	return &merged
 }
 
