@@ -10,22 +10,22 @@ import (
 
 // Pack is a named bundle of SAP knowledge for a specific domain.
 type Pack struct {
-	ID          string
-	Name        string
-	Description string
-	Tags        []string
-	Profiles    []string
-	Weight      int
-	Overlaps    []string
-	Base        bool
-	Additive    bool
+	ID               string
+	Name             string
+	Description      string
+	Tags             []string
+	Profiles         []string
+	Weight           int
+	Overlaps         []string
+	Base             bool
+	Additive         bool
 	AdditivePosition string // "before" | "after"; normalised to "after" if empty
 
-	ContextMD   string
-	Resources   []Resource
-	Tools       []ToolDef
-	MCPServers  []MCPServer
-	Tips        []Tip
+	ContextMD  string
+	Resources  []Resource
+	Tools      []ToolDef
+	MCPServers []MCPServer
+	Tips       []Tip
 }
 
 // Resource is a curated link within a pack.
@@ -111,15 +111,15 @@ func LoadPack(packDir string, lang string) (*Pack, error) {
 	}
 
 	pack := &Pack{
-		ID:          meta.ID,
-		Name:        meta.Name,
-		Description: meta.Description,
-		Tags:        meta.Tags,
-		Profiles:    meta.Profiles,
-		Weight:      meta.Weight,
-		Overlaps:    meta.Overlaps,
-		Base:        meta.Base,
-		Additive:    meta.Additive,
+		ID:               meta.ID,
+		Name:             meta.Name,
+		Description:      meta.Description,
+		Tags:             meta.Tags,
+		Profiles:         meta.Profiles,
+		Weight:           meta.Weight,
+		Overlaps:         meta.Overlaps,
+		Base:             meta.Base,
+		Additive:         meta.Additive,
 		AdditivePosition: meta.AdditivePosition,
 	}
 
