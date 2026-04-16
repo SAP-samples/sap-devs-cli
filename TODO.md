@@ -54,7 +54,9 @@ Unsigned `.exe` files downloaded from the internet are blocked or warned about b
 
 ## Profiles
 
-### "All" profile — dynamic catch-all
+### Built-in profiles
+
+#### `all` — dynamic catch-all
 
 Add a built-in `all` profile that automatically includes every pack available in the content layers, without needing a static `profiles/all.yaml` that must be kept in sync.
 
@@ -66,6 +68,38 @@ Add a built-in `all` profile that automatically includes every pack available in
 - `sap-devs profile set all` selects it; `sap-devs profile list` shows it as a built-in entry (not from a file)
 - No `profiles/all.yaml` on disk — the behaviour is hardcoded so it never drifts out of sync
 - Weight order for `all`: official packs first, then company, then user, then project (same as the content-layer merge order)
+
+#### `minimal` — cost-conscious, ecosystem-only
+
+A counterpart to `all` for users who want a lightweight context window footprint. Injects only general SAP ecosystem awareness — no technology-specific pack content (no CAP, no ABAP, no Fiori, etc.).
+
+Content scope:
+
+- SAP BTP overview (platform concepts, key services — no deep-dive)
+- SAP developer portals and documentation entry points
+- SAP Developer News / YouTube / community channels
+- General contribution and support guidance
+
+Like `all`, this is a hardcoded built-in — no `profiles/minimal.yaml` on disk. Reserved profile ID: `minimal`. In practice, `minimal` = base layer only (see below).
+
+### Shared base layer (auto-injected into every profile)
+
+Introduce a special `base` pack (or a `base` section in `pack.yaml`) that is automatically included regardless of the active profile. This is where shared, non-duplicated content lives:
+
+- developers.sap.com, help.sap.com, community.sap.com links
+- SAP Developer YouTube channel
+- SAP Developer News show
+- BTP cockpit and global account entry points
+- General API / SDK discovery links
+
+**Problem:** Today, every pack that wants to reference the SAP Developer YouTube channel or help.sap.com must duplicate those links. A base layer writes them once. The `minimal` profile becomes essentially just the base layer with no technology packs on top.
+
+**Design notes:**
+
+- The base layer must be injected first so technology-specific pack content can override or extend it
+- `ApplyWeights()` should always place the base pack at position 0, regardless of profile
+- `minimal` = base layer only (no additional packs); `all` = base layer + every available pack
+- Consider whether `base` is a reserved pack ID in each content layer or a first-class concept in `ContentLoader`
 
 ---
 
@@ -172,6 +206,59 @@ Let users control how often the tip changes. Current behaviour: once per calenda
 | `session` | New tip every terminal session |
 
 Also add `sap-devs tip --new` flag for a one-off fresh tip without changing config.
+
+---
+
+## Background Automation & System Tray
+
+### Scheduled background sync and inject
+
+Run `sync` and `inject` automatically on a schedule, without any user interaction, so content stays up to date silently in the background.
+
+**Problem:** Users must remember to run `sap-devs sync` and `sap-devs inject` to keep AI tools current. Most won't. The tool should do this for them.
+
+**Proposed approach:**
+
+- **Daemon / background service** — a long-running process (or OS-scheduled task) that wakes on a configurable interval (e.g. every 6h), runs `sync` if the cache is stale, then `inject` if anything changed
+- **Platform integration options:**
+  - **Linux/macOS:** `systemd` user unit or `launchd` plist; `sap-devs service install/uninstall` writes the unit file and enables it
+  - **Windows:** Windows Task Scheduler entry; `sap-devs service install` registers a scheduled task that runs at login and every N hours
+- **Silent by default** — no terminal output; errors written to a rotating log in the cache directory (`~/.cache/sap-devs/daemon.log`)
+- **`sap-devs service status`** — show last-run time, next-run time, and whether the service is registered
+- **Change detection** — skip `inject` if pack hashes are unchanged since last run, to avoid unnecessary file writes and CLAUDE.md noise
+- **Config keys:** `background_sync_interval` (default `6h`), `background_sync_enabled` (default `true` once service is installed)
+
+**Dependency:** Closely coupled with the system tray feature below — the tray app is the natural host for the daemon on desktop platforms.
+
+---
+
+### System tray icon (OS-appropriate visual interaction)
+
+A persistent system-tray (or menu-bar) icon that surfaces tool status, triggers sync/inject on demand, and can start with OS login — making `sap-devs` a first-class background companion rather than a one-shot CLI.
+
+**Problem:** Background automation is invisible. Users have no way to know whether content is current, whether sync failed, or what profile is active — without opening a terminal. A tray icon gives them a glanceable status and a right-click menu for common actions.
+
+**Proposed approach:**
+
+- **Host process:** a small GUI binary (`sap-devs-tray` or a sub-command `sap-devs tray`) that embeds the tray icon and drives the background scheduler
+- **Cross-platform tray library options (Go):**
+  - [`getlantern/systray`](https://github.com/getlantern/systray) — widely used, supports Windows, macOS, Linux (via AppIndicator)
+  - [`fyne-io/fyne`](https://github.com/fyne-io/fyne) — heavier but full GUI toolkit if richer UI is needed later
+- **Tray menu (v1 scope):**
+  - Status line: "Last synced: 2h ago" / "Up to date" / "Sync failed"
+  - Active profile name
+  - Actions: **Sync now**, **Inject now**, **Open terminal**, **Settings**
+  - **Quit**
+- **Icon states:** idle (colour), syncing (animated or alternate icon), error (red badge)
+- **OS startup:** `sap-devs tray --install-startup` writes the appropriate autostart entry (macOS `LaunchAgents`, Windows `HKCU\...\Run`, Linux `~/.config/autostart/`)
+- **Notifications:** optional desktop notifications on sync completion or error (OS notification API via `gen2brain/beeep` or similar)
+- **Architecture note:** This takes `sap-devs` into GUI / CGO territory for the first time. The tray binary should be a separate build target in GoReleaser to keep the main CLI binary free of CGO dependencies.
+
+**Open questions:**
+
+- Separate binary vs. sub-command (`sap-devs tray`)? Separate binary is cleaner for CGO isolation but adds distribution complexity.
+- Should the tray host the scheduler, or should it be a thin UI on top of an OS service (systemd/launchd/Task Scheduler)?
+- What richer UI surfaces are worth adding later — a mini dashboard, pack browser, tip popover?
 
 ---
 
