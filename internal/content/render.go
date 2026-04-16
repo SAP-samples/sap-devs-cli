@@ -106,7 +106,23 @@ func renderDynamic(d *DynamicContext) string {
 // TrimPacks filters packs to fit within maxBytes, applying overlap deduplication
 // and pack-level budget enforcement. Pass maxBytes=0 for unconstrained.
 // Packs must already be sorted by weight descending (LoadPacks guarantees this).
+// Base packs (Pack.Base == true) are exempt from both trimming passes and always
+// appear first in the returned slice.
 func TrimPacks(packs []*Pack, maxBytes int) []*Pack {
+	// Separate base packs — always included, never trimmed, always first.
+	var base, nonBase []*Pack
+	for _, p := range packs {
+		if p.Base {
+			base = append(base, p)
+		} else {
+			nonBase = append(nonBase, p)
+		}
+	}
+	return append(base, trimNonBase(nonBase, maxBytes)...)
+}
+
+// trimNonBase applies deduplication and byte-budget enforcement to non-base packs.
+func trimNonBase(packs []*Pack, maxBytes int) []*Pack {
 	// Pass 1 — deduplication
 	// A pack is dropped if a higher-weight pack it overlaps with is already included.
 	included := make(map[string]bool)
