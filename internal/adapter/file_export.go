@@ -35,10 +35,19 @@ func ExportFileAndClip(a Adapter, fullCtx string, opts Options) error {
 		}
 	}
 
-	// Build short clipboard payload: trim → format → append guidance
-	short := content.TrimToBytes(fullCtx, a.MaxBytes)
-	short = content.FormatOutput(short, a.Format)
-	short = short + "\n" + fmt.Sprintf(exportGuidanceFmt, a.ExportPath)
+	// Build short clipboard payload: format → trim (accounting for guidance line) → append guidance.
+	// The guidance line is appended after trimming, so we reserve space for it to ensure
+	// the total payload stays within MaxBytes.
+	guidance := "\n" + fmt.Sprintf(exportGuidanceFmt, a.ExportPath)
+	formatted := content.FormatOutput(fullCtx, a.Format)
+	contextBudget := a.MaxBytes
+	if contextBudget > 0 {
+		contextBudget -= len(guidance)
+		if contextBudget < 0 {
+			contextBudget = 0
+		}
+	}
+	short := content.TrimToBytes(formatted, contextBudget) + guidance
 
 	return ExportToClipboard(short, a.Instructions, opts.DryRun)
 }
