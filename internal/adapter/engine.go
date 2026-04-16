@@ -68,7 +68,7 @@ func (e *Engine) Run() error {
 			}
 			continue
 		}
-		ctx := content.RenderContext(trimmed, e.profile)
+		ctx := content.RenderContext(trimmed, e.profile, nil)
 
 		if e.opts.Stats {
 			packIDs := make([]string, len(trimmed))

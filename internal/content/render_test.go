@@ -3,6 +3,7 @@ package content_test
 import (
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -15,7 +16,7 @@ func TestRenderContext_BasicPacks(t *testing.T) {
 		{ID: "btp-core", Name: "BTP Core", ContextMD: "## BTP Core\n\nDeploy to Cloud Foundry."},
 	}
 
-	out := content.RenderContext(packs, nil)
+	out := content.RenderContext(packs, nil, nil)
 
 	assert.Contains(t, out, "Use @sap/cds.")
 	assert.Contains(t, out, "Deploy to Cloud Foundry.")
@@ -33,7 +34,7 @@ func TestRenderContext_WithProfile(t *testing.T) {
 		Description: "Building cloud-native apps with SAP CAP on BTP",
 	}
 
-	out := content.RenderContext(packs, profile)
+	out := content.RenderContext(packs, profile, nil)
 
 	// Exact format check
 	assert.Contains(t, out, "**Developer Profile:** CAP Developer — Building cloud-native apps with SAP CAP on BTP")
@@ -45,7 +46,7 @@ func TestRenderContext_WithProfile(t *testing.T) {
 }
 
 func TestRenderContext_EmptyPacks(t *testing.T) {
-	out := content.RenderContext(nil, nil)
+	out := content.RenderContext(nil, nil, nil)
 	assert.True(t, strings.HasPrefix(out, "# SAP Developer Context\n"))
 	assert.True(t, strings.HasSuffix(out, "\n") && !strings.HasSuffix(out, "\n\n"),
 		"output should end with exactly one newline")
@@ -58,7 +59,7 @@ func TestRenderContext_SkipsEmptyContext(t *testing.T) {
 		{ID: "btp", Name: "BTP", ContextMD: "BTP content."},
 	}
 
-	out := content.RenderContext(packs, nil)
+	out := content.RenderContext(packs, nil, nil)
 	assert.Contains(t, out, "BTP content.")
 	// The empty pack should not add extra blank lines
 	assert.NotContains(t, out, "\n\n\n")
@@ -66,7 +67,7 @@ func TestRenderContext_SkipsEmptyContext(t *testing.T) {
 
 func TestRenderContext_SingleTrailingNewline(t *testing.T) {
 	packs := []*content.Pack{{ID: "cap", ContextMD: "## CAP\n\nContent.\n\n\n"}}
-	out := content.RenderContext(packs, nil)
+	out := content.RenderContext(packs, nil, nil)
 	assert.True(t, strings.HasSuffix(out, "\n"), "output should end with a newline")
 	assert.False(t, strings.HasSuffix(out, "\n\n"), "output should not end with double newline")
 }
@@ -152,4 +153,92 @@ func TestTrimPacks_DeduplicateAndBudgetCombined(t *testing.T) {
 	require.Len(t, result, 2)
 	assert.Equal(t, "cap", result[0].ID)
 	assert.Equal(t, "abap", result[1].ID)
+}
+
+func TestRenderContext_DynamicSection_NilIsBackwardCompatible(t *testing.T) {
+	packs := []*content.Pack{{ID: "cap", ContextMD: "CAP content."}}
+	out := content.RenderContext(packs, nil, nil)
+	assert.Contains(t, out, "CAP content.")
+	assert.NotContains(t, out, "sap-devs Runtime Context")
+}
+
+func TestRenderContext_DynamicSection_AppearsBeforePackContent(t *testing.T) {
+	packs := []*content.Pack{{ID: "cap", ContextMD: "CAP content."}}
+	dyn := &content.DynamicContext{
+		CLIVersion:    "1.2.3",
+		ActiveProfile: "CAP Developer",
+		LoadedPackIDs: []string{"cap"},
+	}
+	out := content.RenderContext(packs, nil, dyn)
+	dynIdx := strings.Index(out, "sap-devs Runtime Context")
+	packIdx := strings.Index(out, "CAP content.")
+	assert.Greater(t, packIdx, dynIdx, "runtime section must appear before pack content")
+}
+
+func TestRenderContext_DynamicSection_VersionAndProfile(t *testing.T) {
+	dyn := &content.DynamicContext{
+		CLIVersion:    "1.2.3",
+		ActiveProfile: "CAP Developer",
+		LoadedPackIDs: []string{"cap", "btp"},
+	}
+	out := content.RenderContext(nil, nil, dyn)
+	assert.Contains(t, out, "sap-devs v1.2.3")
+	assert.Contains(t, out, "CAP Developer")
+	assert.Contains(t, out, "cap, btp")
+}
+
+func TestRenderContext_DynamicSection_LastSyncedShown(t *testing.T) {
+	synced := time.Now().Add(-2 * time.Hour)
+	dyn := &content.DynamicContext{LastSynced: &synced}
+	out := content.RenderContext(nil, nil, dyn)
+	assert.Contains(t, out, "Last synced:")
+	assert.NotContains(t, out, "never")
+}
+
+func TestRenderContext_DynamicSection_NeverSyncedWhenNil(t *testing.T) {
+	dyn := &content.DynamicContext{}
+	out := content.RenderContext(nil, nil, dyn)
+	assert.Contains(t, out, "never")
+}
+
+func TestRenderContext_DynamicSection_ProjectTypeShownWhenSet(t *testing.T) {
+	dyn := &content.DynamicContext{ProjectType: "CAP (Node.js)"}
+	out := content.RenderContext(nil, nil, dyn)
+	assert.Contains(t, out, "**Project type:** CAP (Node.js)")
+}
+
+func TestRenderContext_DynamicSection_ProjectTypeOmittedWhenEmpty(t *testing.T) {
+	dyn := &content.DynamicContext{ProjectType: ""}
+	out := content.RenderContext(nil, nil, dyn)
+	assert.NotContains(t, out, "Project type")
+}
+
+func TestRenderContext_DynamicSection_MCPServersShown(t *testing.T) {
+	dyn := &content.DynamicContext{
+		WiredMCPServers: []content.WiredMCPEntry{
+			{AdapterName: "Claude Code", ServerIDs: []string{"sap-cap-mcp"}},
+		},
+	}
+	out := content.RenderContext(nil, nil, dyn)
+	assert.Contains(t, out, "Claude Code")
+	assert.Contains(t, out, "sap-cap-mcp")
+}
+
+func TestRenderContext_DynamicSection_MCPServersOmittedWhenNone(t *testing.T) {
+	dyn := &content.DynamicContext{}
+	out := content.RenderContext(nil, nil, dyn)
+	assert.NotContains(t, out, "Wired SAP MCP servers")
+}
+
+func TestRenderContext_DynamicSection_CommandsListed(t *testing.T) {
+	dyn := &content.DynamicContext{
+		Commands: []content.CommandInfo{
+			{Name: "inject", Short: "Push SAP context to your AI tools"},
+			{Name: "sync", Short: "Pull latest SAP developer content"},
+		},
+	}
+	out := content.RenderContext(nil, nil, dyn)
+	assert.Contains(t, out, "`inject`")
+	assert.Contains(t, out, "Push SAP context to your AI tools")
+	assert.Contains(t, out, "`sync`")
 }
