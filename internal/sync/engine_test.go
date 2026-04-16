@@ -122,8 +122,8 @@ func TestMostRecentSync_ReturnsNilWhenNoState(t *testing.T) {
 
 func TestMostRecentSync_ReturnsMostRecentCategory(t *testing.T) {
 	dir := t.TempDir()
-	older := time.Now().Add(-2 * time.Hour).Truncate(time.Second)
-	newer := time.Now().Add(-1 * time.Hour).Truncate(time.Second)
+	older := time.Now().UTC().Add(-2 * time.Hour).Truncate(time.Second)
+	newer := time.Now().UTC().Add(-1 * time.Hour).Truncate(time.Second)
 	writeCategoryTimestamps(t, dir, map[string]time.Time{
 		"tips":    older,
 		"context": newer,
