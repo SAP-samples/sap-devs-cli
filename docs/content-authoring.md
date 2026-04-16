@@ -58,6 +58,8 @@ base: true
 
 **Authoring contract:** Keep base pack content minimal. Every byte in a base pack is consumed in every inject, for every user, regardless of their configured token budget.
 
+> **`minimal` profile and base packs:** The `minimal` built-in profile includes base packs only. Keeping base pack content lean is therefore a direct budget lever for users who select `minimal` — every extra byte in a base pack is added to the `minimal` profile footprint.
+
 ---
 
 ## Marker Syntax

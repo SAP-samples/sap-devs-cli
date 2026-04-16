@@ -212,6 +212,19 @@ tip_tags: [cap, nodejs, odata, cds, btp]   # tips with these tags are preferred 
 
 `ApplyWeights()` reorders packs so higher-weight packs appear first in the rendered context injected into AI tools.
 
+### Built-in Profiles
+
+Two profiles are built into the CLI and require no YAML file on disk:
+
+| Profile | Behaviour |
+| --- | --- |
+| `all` | Includes every pack from every content layer, sorted by pack weight. Use for development or when working across multiple SAP domains. |
+| `minimal` | Includes base packs only — no technology-specific content. Use for cost-conscious setups or AI tools with tight token budgets. |
+
+Both profiles appear in `sap-devs profile list` and can be set with `sap-devs profile set all` or `sap-devs profile set minimal`.
+
+**Reserved IDs:** The IDs `all` and `minimal` are reserved. Any file named `all.yaml` or `minimal.yaml` in a content layer is silently ignored — the built-in definition always takes precedence.
+
 ---
 
 ## Creating a New Pack
