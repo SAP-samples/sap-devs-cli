@@ -50,3 +50,23 @@ func writeFile(t *testing.T, path, data string) {
 	t.Helper()
 	require.NoError(t, os.WriteFile(path, []byte(data), 0644))
 }
+
+func TestBuiltinProfiles_ContainsAllAndMinimal(t *testing.T) {
+	profiles := content.BuiltinProfiles()
+	require.Len(t, profiles, 2)
+	ids := map[string]bool{}
+	for _, p := range profiles {
+		ids[p.ID] = true
+		assert.NotEmpty(t, p.Name, "built-in profile %s must have a Name", p.ID)
+		assert.NotEmpty(t, p.Description, "built-in profile %s must have a Description", p.ID)
+	}
+	assert.True(t, ids["all"], "built-in profiles must include 'all'")
+	assert.True(t, ids["minimal"], "built-in profiles must include 'minimal'")
+}
+
+func TestIsBuiltinProfile_ReturnsTrueForReservedIDs(t *testing.T) {
+	assert.True(t, content.IsBuiltinProfile("all"))
+	assert.True(t, content.IsBuiltinProfile("minimal"))
+	assert.False(t, content.IsBuiltinProfile("cap-developer"))
+	assert.False(t, content.IsBuiltinProfile(""))
+}
