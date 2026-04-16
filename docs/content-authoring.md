@@ -139,7 +139,21 @@ At 1 token ≈ 4 chars, `max_tokens="1200"` is roughly 4 800 characters or ~80�
 | Blog post / tutorial intro | `max_tokens="600"` to `max_tokens="1000"` |
 | Full reference page | `max_tokens="2000"` — use sparingly |
 
-**Budget across the whole profile.** The AI receives context from every pack in the active profile. A CAP developer profile with three packs each fetching 2 000 tokens of dynamic content adds 6 000 tokens before any static text. Check the full rendered output with `--dry-run` after adding a new marker.
+**Budget across the whole profile.** The AI receives context from every pack in the active profile. A CAP developer profile with three packs each fetching 2 000 tokens of dynamic content adds 6 000 tokens before any static text. Check the full rendered output with `--dry-run` after adding a new marker:
+
+```bash
+SAP_DEVS_DEV=1 go run . inject --dry-run --no-sync --stats
+```
+
+The `--stats` flag prints a per-adapter table showing packs included, approximate token count, configured budget, and whether any packs were trimmed:
+
+```text
+Adapter       Packs included      Tokens (approx)   Budget         Status
+claude-code   cap, btp-core       ~480              unconstrained
+cursor        cap                 ~250              500 tokens     trimmed
+```
+
+Adapter-level budgets are set in the adapter YAML via `max_tokens`. When a budget is configured, the engine includes packs in weight order until the next pack would exceed the budget — that pack and everything after it are excluded. Use `--stats` to verify how your content changes affect each adapter before committing.
 
 ---
 
@@ -210,6 +224,9 @@ SAP_DEVS_DEV=1 go run . sync --force
 
 # Dry-run inject to see what would be written to AI tool configs
 SAP_DEVS_DEV=1 go run . inject --dry-run --no-sync
+
+# Dry-run inject with per-adapter token stats
+SAP_DEVS_DEV=1 go run . inject --dry-run --no-sync --stats
 ```
 
 ### Typical iteration loop
@@ -217,7 +234,7 @@ SAP_DEVS_DEV=1 go run . inject --dry-run --no-sync
 1. Edit `context.md` to add or adjust a marker.
 2. Run `SAP_DEVS_DEV=1 go run . sync --force` to expand the marker.
 3. Open `context.expanded.md` in the cache and verify the fetched content looks right.
-4. Run `SAP_DEVS_DEV=1 go run . inject --dry-run --no-sync` to confirm the expanded content appears in the rendered output at a sensible length.
+4. Run `SAP_DEVS_DEV=1 go run . inject --dry-run --no-sync --stats` to confirm the expanded content appears in the rendered output at a sensible length and check the per-adapter token count.
 5. Adjust `max_lines` or `max_tokens` and repeat from step 2 if the content is too long or too short.
 
 ### Checking for warnings
