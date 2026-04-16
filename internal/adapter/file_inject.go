@@ -66,6 +66,29 @@ func ReplaceSection(filePath, section, content string, dryRun bool) error {
 	return os.WriteFile(filePath, []byte(result), 0644)
 }
 
+// ReplaceFile writes preamble + "\n" + content to filePath, overwriting any
+// existing content. If preamble is empty, only content is written (no leading newline).
+// Parent directories are created as needed.
+// When dryRun is true the function prints what it would do but writes nothing.
+func ReplaceFile(filePath, preamble, content string, dryRun bool) error {
+	var data string
+	if preamble != "" {
+		data = preamble + "\n" + content
+	} else {
+		data = content
+	}
+
+	if dryRun {
+		fmt.Printf("[dry-run] would write file %s (%d bytes)\n", filePath, len(data))
+		return nil
+	}
+
+	if err := os.MkdirAll(filepath.Dir(filePath), 0755); err != nil {
+		return err
+	}
+	return os.WriteFile(filePath, []byte(data), 0644)
+}
+
 // ExpandHome replaces a leading ~ with the user's home directory.
 func ExpandHome(path string) (string, error) {
 	if !strings.HasPrefix(path, "~/") && path != "~" {

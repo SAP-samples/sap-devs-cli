@@ -73,6 +73,56 @@ func TestReplaceSection_DryRun(t *testing.T) {
 	assert.True(t, os.IsNotExist(err))
 }
 
+func TestReplaceFile_CreatesFile(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "rules", "sap.mdc")
+
+	err := adapter.ReplaceFile(path, "", "content here", false)
+	require.NoError(t, err)
+
+	data, err := os.ReadFile(path)
+	require.NoError(t, err)
+	assert.Equal(t, "content here", string(data))
+}
+
+func TestReplaceFile_WithPreamble(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "sap.mdc")
+	preamble := "---\nalwaysApply: true\n---"
+
+	err := adapter.ReplaceFile(path, preamble, "the content", false)
+	require.NoError(t, err)
+
+	data, err := os.ReadFile(path)
+	require.NoError(t, err)
+	assert.Equal(t, preamble+"\nthe content", string(data))
+}
+
+func TestReplaceFile_OverwritesOnReInject(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "sap.mdc")
+
+	require.NoError(t, adapter.ReplaceFile(path, "", "first run", false))
+	require.NoError(t, adapter.ReplaceFile(path, "", "second run", false))
+
+	data, err := os.ReadFile(path)
+	require.NoError(t, err)
+	assert.Equal(t, "second run", string(data))
+	assert.NotContains(t, string(data), "first run")
+}
+
+func TestReplaceFile_DryRun(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "sap.mdc")
+
+	err := adapter.ReplaceFile(path, "preamble", "content", true)
+	require.NoError(t, err)
+
+	// File must not be created in dry-run mode
+	_, statErr := os.Stat(path)
+	assert.True(t, os.IsNotExist(statErr), "dry-run must not write file")
+}
+
 func TestExpandHome_TildeSlash(t *testing.T) {
 	result, err := adapter.ExpandHome("~/foo/bar")
 	require.NoError(t, err)

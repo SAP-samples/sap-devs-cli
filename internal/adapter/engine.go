@@ -123,6 +123,10 @@ func (e *Engine) runFileInject(a Adapter, ctx string) error {
 			if err := ReplaceSection(path, target.Section, ctx, e.opts.DryRun); err != nil {
 				return fmt.Errorf("target %s: %w", target.Path, err)
 			}
+		case "replace-file":
+			if err := ReplaceFile(path, target.Preamble, ctx, e.opts.DryRun); err != nil {
+				return fmt.Errorf("target %s: %w", target.Path, err)
+			}
 		default:
 			return fmt.Errorf("target %s: unknown mode %q", target.Path, target.Mode)
 		}
