@@ -60,10 +60,16 @@ func (cl *ContentLoader) LoadPacks(profile *Profile, lang string) ([]*Pack, erro
 			nonBase = append(nonBase, p)
 		}
 	}
+	// minimal profile: base packs only — no technology-specific content.
+	if profile != nil && profile.ID == "minimal" {
+		return base, nil
+	}
 	return append(base, nonBase...), nil
 }
 
 // LoadProfiles loads profiles from all configured layers (later layers override).
+// Built-in profiles (all, minimal) are always appended last and cannot be
+// shadowed by file-backed profiles with the same ID.
 func (cl *ContentLoader) LoadProfiles() ([]*Profile, error) {
 	profileMap := make(map[string]*Profile)
 	for _, dir := range cl.activeDirs() {
@@ -79,15 +85,27 @@ func (cl *ContentLoader) LoadProfiles() ([]*Profile, error) {
 			profileMap[p.ID] = p
 		}
 	}
+	// Drop any file-backed profile whose ID is reserved for a built-in.
 	result := make([]*Profile, 0, len(profileMap))
 	for _, p := range profileMap {
-		result = append(result, p)
+		if !reservedProfileIDs[p.ID] {
+			result = append(result, p)
+		}
 	}
-	return result, nil
+	// Append built-ins last so file-backed profiles appear first in list output.
+	return append(result, BuiltinProfiles()...), nil
 }
 
 // FindProfile returns a profile by ID from all layers, or nil if not found.
+// Built-in profile IDs (all, minimal) are returned directly without file I/O.
 func (cl *ContentLoader) FindProfile(id string) (*Profile, error) {
+	if reservedProfileIDs[id] {
+		for _, p := range BuiltinProfiles() {
+			if p.ID == id {
+				return p, nil
+			}
+		}
+	}
 	profiles, err := cl.LoadProfiles()
 	if err != nil {
 		return nil, err

@@ -53,6 +53,35 @@ func LoadProfiles(profilesDir string) ([]*Profile, error) {
 	return profiles, nil
 }
 
+// reservedProfileIDs is the set of IDs reserved for built-in profiles.
+// File-backed profiles with these IDs are silently dropped by ContentLoader.
+var reservedProfileIDs = map[string]bool{
+	"all":     true,
+	"minimal": true,
+}
+
+// BuiltinProfiles returns the two hardcoded built-in profiles.
+// These profiles require no YAML file on disk.
+func BuiltinProfiles() []*Profile {
+	return []*Profile{
+		{
+			ID:          "all",
+			Name:        "All Packs",
+			Description: "All available packs across every content layer",
+		},
+		{
+			ID:          "minimal",
+			Name:        "Minimal",
+			Description: "Base layer only — shared SAP ecosystem entry points, no technology-specific packs",
+		},
+	}
+}
+
+// IsBuiltinProfile reports whether id is a reserved built-in profile ID.
+func IsBuiltinProfile(id string) bool {
+	return reservedProfileIDs[id]
+}
+
 // ApplyWeights returns packs sorted by the profile's weight declarations.
 // Packs not mentioned by the profile retain their base weight.
 func ApplyWeights(packs []*Pack, profile *Profile) []*Pack {

@@ -50,3 +50,85 @@ func writeFile(t *testing.T, path, data string) {
 	t.Helper()
 	require.NoError(t, os.WriteFile(path, []byte(data), 0644))
 }
+
+func TestBuiltinProfiles_ContainsAllAndMinimal(t *testing.T) {
+	profiles := content.BuiltinProfiles()
+	require.Len(t, profiles, 2)
+	ids := map[string]bool{}
+	for _, p := range profiles {
+		ids[p.ID] = true
+		assert.NotEmpty(t, p.Name, "built-in profile %s must have a Name", p.ID)
+		assert.NotEmpty(t, p.Description, "built-in profile %s must have a Description", p.ID)
+	}
+	assert.True(t, ids["all"], "built-in profiles must include 'all'")
+	assert.True(t, ids["minimal"], "built-in profiles must include 'minimal'")
+}
+
+func TestIsBuiltinProfile_ReturnsTrueForReservedIDs(t *testing.T) {
+	assert.True(t, content.IsBuiltinProfile("all"))
+	assert.True(t, content.IsBuiltinProfile("minimal"))
+	assert.False(t, content.IsBuiltinProfile("cap-developer"))
+	assert.False(t, content.IsBuiltinProfile(""))
+}
+
+func TestContentLoaderLoadProfiles_IncludesBuiltins(t *testing.T) {
+	// A loader with one official dir that has one file-backed profile.
+	dir := t.TempDir()
+	profilesDir := filepath.Join(dir, "profiles")
+	require.NoError(t, os.MkdirAll(profilesDir, 0755))
+	writeFile(t, filepath.Join(profilesDir, "cap-developer.yaml"),
+		"id: cap-developer\nname: CAP Developer\npacks:\n  - id: cap\n    weight: 100\n")
+
+	loader := &content.ContentLoader{OfficialDir: dir}
+	profiles, err := loader.LoadProfiles()
+	require.NoError(t, err)
+	// 1 file-backed + 2 built-ins = 3 total
+	assert.Len(t, profiles, 3)
+	ids := map[string]bool{}
+	for _, p := range profiles {
+		ids[p.ID] = true
+	}
+	assert.True(t, ids["all"])
+	assert.True(t, ids["minimal"])
+	assert.True(t, ids["cap-developer"])
+}
+
+func TestContentLoaderFindProfile_ReturnsBuiltinForAll(t *testing.T) {
+	// No files anywhere — built-in must be found regardless.
+	loader := &content.ContentLoader{OfficialDir: t.TempDir()}
+	p, err := loader.FindProfile("all")
+	require.NoError(t, err)
+	require.NotNil(t, p, "FindProfile('all') must return non-nil")
+	assert.Equal(t, "all", p.ID)
+}
+
+func TestContentLoaderFindProfile_ReturnsBuiltinForMinimal(t *testing.T) {
+	loader := &content.ContentLoader{OfficialDir: t.TempDir()}
+	p, err := loader.FindProfile("minimal")
+	require.NoError(t, err)
+	require.NotNil(t, p, "FindProfile('minimal') must return non-nil")
+	assert.Equal(t, "minimal", p.ID)
+}
+
+func TestContentLoaderLoadProfiles_BuiltinWinsOverFile(t *testing.T) {
+	// A file named all.yaml must be dropped; the built-in wins.
+	dir := t.TempDir()
+	profilesDir := filepath.Join(dir, "profiles")
+	require.NoError(t, os.MkdirAll(profilesDir, 0755))
+	writeFile(t, filepath.Join(profilesDir, "all.yaml"),
+		"id: all\nname: CUSTOM ALL\ndescription: custom\n")
+
+	loader := &content.ContentLoader{OfficialDir: dir}
+	profiles, err := loader.LoadProfiles()
+	require.NoError(t, err)
+
+	var allProfile *content.Profile
+	for _, p := range profiles {
+		if p.ID == "all" {
+			allProfile = p
+		}
+	}
+	require.NotNil(t, allProfile)
+	// Built-in name wins — file-backed "CUSTOM ALL" is dropped.
+	assert.Equal(t, "All Packs", allProfile.Name)
+}

@@ -2,9 +2,11 @@ package cmd
 
 import (
 	"fmt"
+	"io"
 
 	"github.com/spf13/cobra"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/config"
+	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/i18n"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/xdg"
 )
@@ -93,13 +95,23 @@ var profileShowCmd = &cobra.Command{
 			fmt.Fprintln(cmd.OutOrStdout(), i18n.Tf(i18n.ActiveLang, "profile.show.not_found", map[string]any{"ID": saved.ID}))
 			return nil
 		}
-		fmt.Fprint(cmd.OutOrStdout(), i18n.Tf(i18n.ActiveLang, "profile.show.header", map[string]any{"Name": p.Name, "Description": p.Description}))
-		fmt.Fprintln(cmd.OutOrStdout(), i18n.T(i18n.ActiveLang, "profile.show.pack_weights"))
-		for _, pw := range p.Packs {
-			fmt.Fprintf(cmd.OutOrStdout(), "  %-20s %d\n", pw.ID, pw.Weight)
-		}
+		renderProfileShow(cmd.OutOrStdout(), p, i18n.ActiveLang)
 		return nil
 	},
+}
+
+// renderProfileShow writes the profile display to out.
+// Extracted for unit testing.
+func renderProfileShow(out io.Writer, p *content.Profile, lang string) {
+	fmt.Fprint(out, i18n.Tf(lang, "profile.show.header", map[string]any{"Name": p.Name, "Description": p.Description}))
+	if content.IsBuiltinProfile(p.ID) {
+		fmt.Fprintln(out, i18n.T(lang, "profile.show.builtin_note"))
+	} else {
+		fmt.Fprintln(out, i18n.T(lang, "profile.show.pack_weights"))
+		for _, pw := range p.Packs {
+			fmt.Fprintf(out, "  %-20s %d\n", pw.ID, pw.Weight)
+		}
+	}
 }
 
 func init() {

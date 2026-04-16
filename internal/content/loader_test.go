@@ -115,3 +115,31 @@ func TestContentLoader_LoadPacks_NoBasePacks_OrderUnchanged(t *testing.T) {
 	assert.Equal(t, "cap", packs[0].ID)
 	assert.Equal(t, "abap", packs[1].ID)
 }
+
+func TestContentLoader_LoadPacks_MinimalProfile_BasePacksOnly(t *testing.T) {
+	dir := makeTempPacksDir(t, map[string]string{
+		"base": "id: base\nname: Base\nweight: 0\nbase: true\n",
+		"cap":  "id: cap\nname: CAP\nweight: 100\n",
+	})
+	loader := &content.ContentLoader{OfficialDir: dir}
+	minimal := &content.Profile{ID: "minimal", Name: "Minimal"}
+	packs, err := loader.LoadPacks(minimal, "")
+	require.NoError(t, err)
+	require.Len(t, packs, 1, "minimal profile must return only base packs")
+	assert.Equal(t, "base", packs[0].ID)
+}
+
+func TestContentLoader_LoadPacks_AllProfile_AllPacksReturned(t *testing.T) {
+	dir := makeTempPacksDir(t, map[string]string{
+		"base": "id: base\nname: Base\nweight: 0\nbase: true\n",
+		"cap":  "id: cap\nname: CAP\nweight: 100\n",
+	})
+	loader := &content.ContentLoader{OfficialDir: dir}
+	all := &content.Profile{ID: "all", Name: "All Packs"}
+	packs, err := loader.LoadPacks(all, "")
+	require.NoError(t, err)
+	require.Len(t, packs, 2, "all profile must return all packs")
+	// base pack must still be first
+	assert.Equal(t, "base", packs[0].ID)
+	assert.Equal(t, "cap", packs[1].ID)
+}
