@@ -15,7 +15,7 @@ Content is loaded from up to four sources, merged by `id` with later layers over
 | User | `~/.local/share/sap-devs/` (Linux), `~/Library/Application Support/sap-devs/data/` (macOS), `%LOCALAPPDATA%/sap-devs/data/` (Windows) | Per-user overrides |
 | Project | `.sap-devs/` in the current working directory | Per-project overrides |
 
-If two layers define a pack with the same `id`, the later layer wins completely.
+If two layers define a pack with the same `id`, the later layer wins completely — unless the later pack has `additive: true`, in which case it augments the earlier pack rather than replacing it. See [Additive Layers](../content-authoring.md#additive-layers).
 
 ---
 
@@ -58,6 +58,10 @@ locales:
 > **Note:** `overlaps` is a list of pack IDs whose content subsumes this pack's content. If any listed pack is present at a higher weight during injection, this pack is automatically dropped to avoid redundant context. Semantics: "if `cap` is already included, my content adds nothing new — drop me." Only the lower-weight pack carries the declaration. Omit the field (or leave it empty) if no overlap exists.
 >
 > **Note:** **`base`** *(optional bool, default `false`)* — when `true`, this pack is a **base pack**: it is auto-injected into every profile regardless of the `profiles` field, always rendered first (before profile-specific packs), and exempt from adapter byte-budget trimming and overlap deduplication. The `profiles` field is irrelevant for base packs and should be omitted. **Authoring contract: keep base pack content minimal** — base packs consume tokens in every context window. Note: declaring `overlaps: [base]` on a non-base pack has no effect (the base pack is separated before the deduplication pass runs). This is a known limitation.
+>
+> **Note:** **`additive`** *(optional bool, default `false`)* — when `true`, this pack augments the lower-layer pack with the same `id` rather than replacing it. Only valid in company, user, or project layers. See [Additive Layers](../content-authoring.md#additive-layers).
+>
+> **Note:** **`additive_position`** *(optional string `"before"` | `"after"`, default `"after"`)* — controls where additive content is inserted relative to the base pack's content. Only meaningful when `additive: true`.
 
 ### `context.md`
 
