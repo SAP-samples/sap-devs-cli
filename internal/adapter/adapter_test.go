@@ -292,3 +292,58 @@ func TestEngine_NilOutIsSafe(t *testing.T) {
 	engine := adapter.NewEngine(adapters, packs, nil, adapter.Options{Scope: "global"})
 	require.NoError(t, engine.Run())
 }
+
+func TestLoadAdapters_MaxBytes(t *testing.T) {
+	dir := t.TempDir()
+	writeYAML(t, filepath.Join(dir, "chatgpt.yaml"), `
+id: chatgpt
+name: ChatGPT
+type: file-export
+max_bytes: 1400
+export_path: "~/sap-devs-chatgpt-context.md"
+format: plain-prose
+instructions: "Paste into ChatGPT"
+`)
+	adapters, err := adapter.LoadAdapters(dir)
+	require.NoError(t, err)
+	require.Len(t, adapters, 1)
+	assert.Equal(t, 1400, adapters[0].MaxBytes)
+	assert.Equal(t, "~/sap-devs-chatgpt-context.md", adapters[0].ExportPath)
+	assert.Equal(t, "plain-prose", adapters[0].Format)
+	assert.Equal(t, "file-export", adapters[0].Type)
+}
+
+func TestLoadAdapters_Preamble(t *testing.T) {
+	dir := t.TempDir()
+	writeYAML(t, filepath.Join(dir, "cursor.yaml"), `
+id: cursor
+name: Cursor
+type: file-inject
+targets:
+  - scope: global
+    path: "~/.cursor/rules/sap.mdc"
+    mode: replace-file
+    preamble: "---\nalwaysApply: true\n---"
+`)
+	adapters, err := adapter.LoadAdapters(dir)
+	require.NoError(t, err)
+	require.Len(t, adapters, 1)
+	assert.Equal(t, "replace-file", adapters[0].Targets[0].Mode)
+	assert.Equal(t, "---\nalwaysApply: true\n---", adapters[0].Targets[0].Preamble)
+}
+
+func TestLoadAdapters_FormatFieldRenamedFromClipFormat(t *testing.T) {
+	// YAML tag "format" must still be parsed — field was renamed ClipFormat→Format
+	dir := t.TempDir()
+	writeYAML(t, filepath.Join(dir, "gemini.yaml"), `
+id: gemini
+name: Google Gemini
+type: clipboard-export
+format: plain-prose
+instructions: "Paste into Gemini"
+`)
+	adapters, err := adapter.LoadAdapters(dir)
+	require.NoError(t, err)
+	require.Len(t, adapters, 1)
+	assert.Equal(t, "plain-prose", adapters[0].Format)
+}

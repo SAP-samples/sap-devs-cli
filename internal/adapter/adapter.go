@@ -13,20 +13,23 @@ type Adapter struct {
 	Name         string       `yaml:"name"`
 	Type         string       `yaml:"type"` // file-inject | clipboard-export | mcp-wire
 	Targets      []Target     `yaml:"targets"`
-	ClipFormat   string       `yaml:"format"`
+	Format       string       `yaml:"format,omitempty"`      // "markdown" (default) | "plain-prose"
 	Template     string       `yaml:"template"`
 	Instructions string       `yaml:"instructions"`
-	MaxTokens    int          `yaml:"max_tokens,omitempty"` // 0 = unconstrained
+	MaxTokens    int          `yaml:"max_tokens,omitempty"`  // 0 = unconstrained
+	MaxBytes     int          `yaml:"max_bytes,omitempty"`   // hard byte ceiling; 0 = unconstrained
+	ExportPath   string       `yaml:"export_path,omitempty"` // file-export: path to write full context
 	MCPConfig    *MCPConfig   `yaml:"mcp_config,omitempty"`
 	Detect       []DetectRule `yaml:"detect"`
 }
 
 // Target is a single file injection target.
 type Target struct {
-	Scope   string `yaml:"scope"` // global | project
+	Scope   string `yaml:"scope"`             // global | project
 	Path    string `yaml:"path"`
-	Mode    string `yaml:"mode"` // replace-section | append
+	Mode    string `yaml:"mode"`              // replace-section | append | replace-file
 	Section string `yaml:"section"`
+	Preamble string `yaml:"preamble,omitempty"` // prepended before content; replace-file only
 }
 
 // MCPConfig defines where to write MCP server configuration.
