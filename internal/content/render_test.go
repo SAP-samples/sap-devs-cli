@@ -328,3 +328,61 @@ func TestTrimToBytes_UTF8Boundary(t *testing.T) {
 	assert.Equal(t, "caf", out, "must cut before the straddled rune, not after its leading byte")
 	assert.LessOrEqual(t, len(out), 4, "must not exceed maxBytes")
 }
+
+func TestTrimPacks_BasePackSurvivesBudget(t *testing.T) {
+	// Base pack content is 20 bytes; budget is 5 — base pack must survive anyway
+	packs := []*content.Pack{
+		{ID: "base", Base: true, ContextMD: "12345678901234567890"},
+		{ID: "cap", ContextMD: "CAP content"},
+	}
+	result := content.TrimPacks(packs, 5)
+	require.Len(t, result, 1)
+	assert.Equal(t, "base", result[0].ID, "base pack must survive even when its content exceeds the budget")
+}
+
+func TestTrimPacks_BasePackSurvivesDeduplication(t *testing.T) {
+	// Non-base pack declares overlaps: [base] — base pack must NOT be dropped
+	packs := []*content.Pack{
+		{ID: "base", Base: true, ContextMD: "base content"},
+		{ID: "cap", ContextMD: "CAP content", Overlaps: []string{"base"}},
+	}
+	result := content.TrimPacks(packs, 0)
+	// base pack survives; cap is not dropped either (its overlap target was separated out)
+	require.Len(t, result, 2)
+	assert.Equal(t, "base", result[0].ID)
+	assert.Equal(t, "cap", result[1].ID)
+}
+
+func TestTrimPacks_BasePackFirst_NonBasePacksAfter(t *testing.T) {
+	packs := []*content.Pack{
+		{ID: "cap", ContextMD: "CAP content"},
+		{ID: "base", Base: true, ContextMD: "base content"},
+		{ID: "abap", ContextMD: "ABAP content"},
+	}
+	result := content.TrimPacks(packs, 0)
+	require.Len(t, result, 3)
+	assert.Equal(t, "base", result[0].ID, "base pack must be first in output")
+}
+
+func TestTrimPacks_BreakOnOversizePreservedForNonBase(t *testing.T) {
+	// base pack always included (even though its 17 bytes exceeds the 10-byte budget);
+	// first non-base pack is too large → break; second non-base pack (small) is never reached.
+	// This verifies: (a) base pack is budget-exempt, (b) break-on-first-oversize preserved for non-base.
+	packs := []*content.Pack{
+		{ID: "base", Base: true, ContextMD: "base content here"}, // 17 bytes > budget
+		{ID: "big", ContextMD: "this is way too large for budget"},
+		{ID: "small", ContextMD: "hi"},
+	}
+	result := content.TrimPacks(packs, 10)
+	require.Len(t, result, 1, "only base pack survives; big breaks the loop; small never reached")
+	assert.Equal(t, "base", result[0].ID)
+}
+
+func TestTrimPacks_AllBasePacks_AllSurvive(t *testing.T) {
+	packs := []*content.Pack{
+		{ID: "base1", Base: true, ContextMD: "base one content"},
+		{ID: "base2", Base: true, ContextMD: "base two content"},
+	}
+	result := content.TrimPacks(packs, 5) // tiny budget — ignored for base packs
+	require.Len(t, result, 2)
+}

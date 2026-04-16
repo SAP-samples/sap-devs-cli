@@ -47,7 +47,20 @@ func (cl *ContentLoader) LoadPacks(profile *Profile, lang string) ([]*Pack, erro
 	sort.Slice(packs, func(i, j int) bool {
 		return packs[i].Weight > packs[j].Weight
 	})
-	return ApplyWeights(packs, profile), nil
+	weighted := ApplyWeights(packs, profile)
+
+	// Pin base packs first. Base packs are exempt from profile weight ordering —
+	// they always appear before non-base packs regardless of their weight value.
+	// Among multiple base packs, relative order is preserved from the weight sort above.
+	var base, nonBase []*Pack
+	for _, p := range weighted {
+		if p.Base {
+			base = append(base, p)
+		} else {
+			nonBase = append(nonBase, p)
+		}
+	}
+	return append(base, nonBase...), nil
 }
 
 // LoadProfiles loads profiles from all configured layers (later layers override).

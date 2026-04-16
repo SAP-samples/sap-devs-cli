@@ -60,6 +60,9 @@ func (e *Engine) Run() error {
 			maxBytes = a.MaxTokens * 4
 		}
 		trimmed := content.TrimPacks(e.packs, maxBytes)
+		// Note: when base packs exist, TrimPacks always returns at least those packs,
+		// so len(trimmed) == 0 only occurs when no base packs are configured and the
+		// budget is too small for all non-base packs.
 		if len(trimmed) == 0 && maxBytes > 0 {
 			fmt.Fprintf(os.Stderr, "sap-devs: adapter %s: budget too small to include any pack content\n", a.ID)
 			if e.opts.Stats {
@@ -119,6 +122,9 @@ func (e *Engine) Run() error {
 				ApproxTokens: len(formattedCtx) / 4,
 				BudgetBytes:  maxBytes, // resolved value (MaxBytes or MaxTokens*4)
 				Format:       a.Format,
+				// Trimmed is true when any pack was dropped. With base packs always
+				// surviving TrimPacks, this correctly reflects whether non-base packs
+				// were dropped by budget or deduplication.
 				Trimmed:      len(trimmed) < len(e.packs),
 			})
 		}

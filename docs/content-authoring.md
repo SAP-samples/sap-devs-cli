@@ -30,6 +30,36 @@ Key points:
 
 ---
 
+## Base Layer
+
+A **base pack** is injected into every AI tool context regardless of the active developer profile. It is always rendered first, before profile-specific packs, and is exempt from adapter byte-budget trimming.
+
+**When to use base packs:**
+
+- Shared ecosystem entry points every SAP developer needs (portals, community links, YouTube, BTP cockpit)
+- Content that should always be present in the AI context window regardless of the user's technology focus
+
+**When NOT to use base packs:**
+
+- Technology-specific content (CAP, ABAP, Fiori, etc.) — use a regular pack with the appropriate `profiles` entry
+- Large reference material — base packs are exempt from token budget trimming, so large base packs inflate every context window
+
+**How to create a base pack:**
+
+Add `base: true` to `pack.yaml`. Omit the `profiles` field — it is not consulted for base packs.
+
+```yaml
+id: my-base
+name: My Base Pack
+description: Shared content for all profiles
+weight: 0
+base: true
+```
+
+**Authoring contract:** Keep base pack content minimal. Every byte in a base pack is consumed in every inject, for every user, regardless of their configured token budget.
+
+---
+
 ## Marker Syntax
 
 `context.md` supports a single-line HTML comment marker that fetches live content at sync time and caches it alongside the pack:

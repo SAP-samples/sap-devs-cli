@@ -52,3 +52,66 @@ func makeTempPacksDir(t *testing.T, packs map[string]string) string {
 	}
 	return root
 }
+
+func TestLoadPack_BaseField_TrueWhenSet(t *testing.T) {
+	dir := makeTempPacksDir(t, map[string]string{
+		"base": "id: base\nname: Base\nweight: 0\nbase: true\n",
+	})
+	pack, err := content.LoadPack(filepath.Join(dir, "packs", "base"), "")
+	require.NoError(t, err)
+	assert.True(t, pack.Base, "pack.Base should be true when base: true in pack.yaml")
+}
+
+func TestLoadPack_BaseField_FalseByDefault(t *testing.T) {
+	dir := makeTempPacksDir(t, map[string]string{
+		"cap": "id: cap\nname: CAP\nweight: 100\n",
+	})
+	pack, err := content.LoadPack(filepath.Join(dir, "packs", "cap"), "")
+	require.NoError(t, err)
+	assert.False(t, pack.Base, "pack.Base should be false when base field is absent")
+}
+
+func TestContentLoader_LoadPacks_BasePackFirst_RegardlessOfWeight(t *testing.T) {
+	// base pack has weight 0 (lowest), but must always appear first
+	dir := makeTempPacksDir(t, map[string]string{
+		"base": "id: base\nname: Base\nweight: 0\nbase: true\n",
+		"cap":  "id: cap\nname: CAP\nweight: 100\n",
+		"abap": "id: abap\nname: ABAP\nweight: 90\n",
+	})
+	loader := &content.ContentLoader{OfficialDir: dir}
+	packs, err := loader.LoadPacks(nil, "")
+	require.NoError(t, err)
+	require.Len(t, packs, 3)
+	assert.Equal(t, "base", packs[0].ID, "base pack must be first regardless of weight")
+}
+
+func TestContentLoader_LoadPacks_MultipleBasePacks_AllFirst(t *testing.T) {
+	dir := makeTempPacksDir(t, map[string]string{
+		"base1": "id: base1\nname: Base 1\nweight: 50\nbase: true\n",
+		"base2": "id: base2\nname: Base 2\nweight: 10\nbase: true\n",
+		"cap":   "id: cap\nname: CAP\nweight: 100\n",
+	})
+	loader := &content.ContentLoader{OfficialDir: dir}
+	packs, err := loader.LoadPacks(nil, "")
+	require.NoError(t, err)
+	require.Len(t, packs, 3)
+	assert.True(t, packs[0].Base, "first pack must be base")
+	assert.True(t, packs[1].Base, "second pack must be base")
+	assert.False(t, packs[2].Base, "third pack must be non-base")
+	// base packs are ordered by weight among themselves
+	assert.Equal(t, "base1", packs[0].ID, "higher-weight base pack first")
+}
+
+func TestContentLoader_LoadPacks_NoBasePacks_OrderUnchanged(t *testing.T) {
+	dir := makeTempPacksDir(t, map[string]string{
+		"cap":  "id: cap\nname: CAP\nweight: 100\n",
+		"abap": "id: abap\nname: ABAP\nweight: 90\n",
+	})
+	loader := &content.ContentLoader{OfficialDir: dir}
+	packs, err := loader.LoadPacks(nil, "")
+	require.NoError(t, err)
+	require.Len(t, packs, 2)
+	// weight ordering unchanged when no base packs
+	assert.Equal(t, "cap", packs[0].ID)
+	assert.Equal(t, "abap", packs[1].ID)
+}

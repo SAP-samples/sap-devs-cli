@@ -56,6 +56,8 @@ locales:
 > **Note:** The `profiles` field is informational metadata only. A pack is only active when it is explicitly listed in a profile's `packs` list. Adding a pack id to `profiles` here does not automatically include it in that profile.
 >
 > **Note:** `overlaps` is a list of pack IDs whose content subsumes this pack's content. If any listed pack is present at a higher weight during injection, this pack is automatically dropped to avoid redundant context. Semantics: "if `cap` is already included, my content adds nothing new — drop me." Only the lower-weight pack carries the declaration. Omit the field (or leave it empty) if no overlap exists.
+>
+> **Note:** **`base`** *(optional bool, default `false`)* — when `true`, this pack is a **base pack**: it is auto-injected into every profile regardless of the `profiles` field, always rendered first (before profile-specific packs), and exempt from adapter byte-budget trimming and overlap deduplication. The `profiles` field is irrelevant for base packs and should be omitted. **Authoring contract: keep base pack content minimal** — base packs consume tokens in every context window. Note: declaring `overlaps: [base]` on a non-base pack has no effect (the base pack is separated before the deduplication pass runs). This is a known limitation.
 
 ### `context.md`
 
@@ -231,6 +233,7 @@ tip_tags: [cap, nodejs, odata, cds, btp]   # tips with these tags are preferred 
 3. Add content files as needed (`context.md`, `tips.md`, `tools.yaml`, `resources.yaml`). All are optional.
 
 4. Reference the pack in at least one profile:
+
    ```yaml
    # content/profiles/cap-developer.yaml
    packs:
@@ -239,10 +242,14 @@ tip_tags: [cap, nodejs, odata, cds, btp]   # tips with these tags are preferred 
    ```
 
 5. Test with dev mode:
+
    ```bash
    SAP_DEVS_DEV=1 go run . inject --dry-run
    ```
+
    Verify the new context appears in the output.
+
+> **Base packs:** If your pack should be auto-injected into every profile (e.g. shared ecosystem links), add `base: true` and omit the `profiles` field. Keep base pack content short — it is included in every context window regardless of budget constraints.
 
 ---
 
