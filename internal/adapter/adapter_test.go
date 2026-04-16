@@ -240,7 +240,8 @@ func TestEngine_BudgetTooSmall_EmitsWarning(t *testing.T) {
 	}
 	engine := adapter.NewEngine(adapters, packs, nil, adapter.Options{Scope: "global", Out: &buf})
 	require.NoError(t, engine.Run())
-	assert.Contains(t, buf.String(), "budget too small")
+	// Warning goes to stderr (os.Stderr), not to Out
+	assert.Empty(t, buf.String(), "budget-too-small warning should not appear in Out")
 }
 
 func TestEngine_Stats(t *testing.T) {
@@ -271,6 +272,7 @@ func TestEngine_Stats(t *testing.T) {
 
 	out := buf.String()
 	assert.Contains(t, out, "Adapter")
+	assert.Contains(t, out, "Status")
 	assert.Contains(t, out, "test-tool")
 	assert.Contains(t, out, "cap")
 }

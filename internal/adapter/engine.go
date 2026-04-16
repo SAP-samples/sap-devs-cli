@@ -4,6 +4,7 @@ package adapter
 import (
 	"fmt"
 	"io"
+	"os"
 	"strings"
 	"text/tabwriter"
 
@@ -55,7 +56,7 @@ func (e *Engine) Run() error {
 		maxBytes := a.MaxTokens * 4
 		trimmed := content.TrimPacks(e.packs, maxBytes)
 		if len(trimmed) == 0 && maxBytes > 0 {
-			fmt.Fprintf(e.opts.Out, "sap-devs: adapter %s: budget too small to include any pack content\n", a.ID)
+			fmt.Fprintf(os.Stderr, "sap-devs: adapter %s: budget too small to include any pack content\n", a.ID)
 			if e.opts.Stats {
 				stats = append(stats, adapterStats{
 					AdapterID:    a.ID,
@@ -130,7 +131,7 @@ func (e *Engine) runFileInject(a Adapter, ctx string) error {
 
 func printStats(w io.Writer, stats []adapterStats) {
 	tw := tabwriter.NewWriter(w, 0, 0, 3, ' ', 0)
-	fmt.Fprintln(tw, "Adapter\tPacks included\tTokens (approx)\tBudget")
+	fmt.Fprintln(tw, "Adapter\tPacks included\tTokens (approx)\tBudget\tStatus")
 	for _, s := range stats {
 		budget := "unconstrained"
 		if s.BudgetTokens > 0 {
@@ -140,7 +141,11 @@ func printStats(w io.Writer, stats []adapterStats) {
 		if packs == "" {
 			packs = "(none)"
 		}
-		fmt.Fprintf(tw, "%s\t%s\t~%d\t%s\n", s.AdapterID, packs, s.ApproxTokens, budget)
+		status := ""
+		if s.Trimmed {
+			status = "trimmed"
+		}
+		fmt.Fprintf(tw, "%s\t%s\t~%d\t%s\t%s\n", s.AdapterID, packs, s.ApproxTokens, budget, status)
 	}
 	tw.Flush()
 }
