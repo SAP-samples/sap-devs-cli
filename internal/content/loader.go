@@ -60,6 +60,10 @@ func (cl *ContentLoader) LoadPacks(profile *Profile, lang string) ([]*Pack, erro
 			nonBase = append(nonBase, p)
 		}
 	}
+	// minimal profile: base packs only — no technology-specific content.
+	if profile != nil && profile.ID == "minimal" {
+		return base, nil
+	}
 	return append(base, nonBase...), nil
 }
 
