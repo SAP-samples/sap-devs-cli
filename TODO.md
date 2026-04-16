@@ -54,69 +54,19 @@ Unsigned `.exe` files downloaded from the internet are blocked or warned about b
 
 ## Profiles
 
-### Built-in profiles
+### Built-in profiles - DONE ✔️
 
-#### `all` — dynamic catch-all
+#### `all` — dynamic catch-all - DONE ✔️
 
-Add a built-in `all` profile that automatically includes every pack available in the content layers, without needing a static `profiles/all.yaml` that must be kept in sync.
+#### `minimal` — cost-conscious, ecosystem-only - DONE ✔️
 
-**Problem:** Users who want the full context (e.g. during content development or when working across multiple SAP domains) must either create a custom profile listing every pack ID, or switch profiles constantly. The list would go stale as new packs are added.
-
-**Proposed approach:**
-
-- Reserve the profile ID `all` in `ApplyWeights()` / profile resolution — when this ID is active, skip pack filtering entirely and load all packs from all layers
-- `sap-devs profile set all` selects it; `sap-devs profile list` shows it as a built-in entry (not from a file)
-- No `profiles/all.yaml` on disk — the behaviour is hardcoded so it never drifts out of sync
-- Weight order for `all`: official packs first, then company, then user, then project (same as the content-layer merge order)
-
-#### `minimal` — cost-conscious, ecosystem-only
-
-A counterpart to `all` for users who want a lightweight context window footprint. Injects only general SAP ecosystem awareness — no technology-specific pack content (no CAP, no ABAP, no Fiori, etc.).
-
-Content scope:
-
-- SAP BTP overview (platform concepts, key services — no deep-dive)
-- SAP developer portals and documentation entry points
-- SAP Developer News / YouTube / community channels
-- General contribution and support guidance
-
-Like `all`, this is a hardcoded built-in — no `profiles/minimal.yaml` on disk. Reserved profile ID: `minimal`. In practice, `minimal` = base layer only (see below).
-
-### Shared base layer (auto-injected into every profile)
-
-Introduce a special `base` pack (or a `base` section in `pack.yaml`) that is automatically included regardless of the active profile. This is where shared, non-duplicated content lives:
-
-- developers.sap.com, help.sap.com, community.sap.com links
-- SAP Developer YouTube channel
-- SAP Developer News show
-- BTP cockpit and global account entry points
-- General API / SDK discovery links
-
-**Problem:** Today, every pack that wants to reference the SAP Developer YouTube channel or help.sap.com must duplicate those links. A base layer writes them once. The `minimal` profile becomes essentially just the base layer with no technology packs on top.
-
-**Design notes:**
-
-- The base layer must be injected first so technology-specific pack content can override or extend it
-- `ApplyWeights()` should always place the base pack at position 0, regardless of profile
-- `minimal` = base layer only (no additional packs); `all` = base layer + every available pack
-- Consider whether `base` is a reserved pack ID in each content layer or a first-class concept in `ContentLoader`
+### Shared base layer (auto-injected into every profile) - DONE ✔️
 
 ---
 
 ## Content System
 
-### Additive content layers
-
-Extend `ContentLoader` to support an `additive` merge mode per layer so a later layer can augment a pack rather than fully replace it.
-
-**Problem:** The current system merges by ID — a company or user layer that wants to add a few extra tips must copy and re-maintain an entire pack. Additive layers would allow inheritance-style augmentation: keep the official pack, extend it.
-
-**Proposed approach:**
-- Add `additive: true` in `pack.yaml` to mark a pack as augmenting rather than replacing the lower-layer pack with the same ID
-- `context.md` — append additive content after the base content
-- `tips.md` — merge H2-delimited tip sections, preserving tips from both layers
-- `tools.yaml`, `resources.yaml`, `mcp.yaml` — list-merge rather than replace
-- Document conflict resolution when the same tip/tool/resource ID appears in both layers
+### Additive content layers - DONE ✔️
 
 ---
 
