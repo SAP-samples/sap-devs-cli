@@ -70,25 +70,15 @@ Expected: compile error — `pack.Base undefined`
 
 - [ ] **Step 3: Add `Base bool` to `Pack` struct**
 
-In `internal/content/pack.go`, edit the `Pack` struct (lines 12–25). Add `Base bool` after `Overlaps`:
+In `internal/content/pack.go`, add `Base bool` between `Overlaps` and `ContextMD` in the `Pack` struct (line 19, after `Overlaps []string`):
 
 ```go
-type Pack struct {
-	ID          string
-	Name        string
-	Description string
-	Tags        []string
-	Profiles    []string
-	Weight      int
 	Overlaps    []string
 	Base        bool
 	ContextMD   string
-	Resources   []Resource
-	Tools       []ToolDef
-	MCPServers  []MCPServer
-	Tips        []Tip
-}
 ```
+
+The doc comment on line 11 (`// Pack is a named bundle...`) must be preserved — do not replace the whole struct block, just insert the field.
 
 - [ ] **Step 4: Add `Base` to `packMeta` struct**
 
@@ -191,10 +181,11 @@ func TestTrimPacks_BasePackFirst_NonBasePacksAfter(t *testing.T) {
 }
 
 func TestTrimPacks_BreakOnOversizePreservedForNonBase(t *testing.T) {
-	// base pack always included; first non-base pack is too large → break;
-	// second non-base pack (small) is never reached — existing break semantics preserved
+	// base pack always included (even though its 16 bytes exceeds the 10-byte budget);
+	// first non-base pack is too large → break; second non-base pack (small) is never reached.
+	// This verifies: (a) base pack is budget-exempt, (b) break-on-first-oversize preserved for non-base.
 	packs := []*content.Pack{
-		{ID: "base", Base: true, ContextMD: "base"},
+		{ID: "base", Base: true, ContextMD: "base content here"}, // 17 bytes > budget
 		{ID: "big", ContextMD: "this is way too large for budget"},
 		{ID: "small", ContextMD: "hi"},
 	}
@@ -421,17 +412,9 @@ git commit -m "feat(content): pin base packs first in LoadPacks output"
 
 No new tests — this is a documentation-only change to a stats/warning code path.
 
-- [ ] **Step 1: Add comment to the budget-too-small guard**
+- [ ] **Step 1: Add comment to the budget-too-small guard and note the Trimmed flag**
 
-In `internal/adapter/engine.go`, replace lines 62–75:
-
-```go
-		trimmed := content.TrimPacks(e.packs, maxBytes)
-		if len(trimmed) == 0 && maxBytes > 0 {
-			fmt.Fprintf(os.Stderr, "sap-devs: adapter %s: budget too small to include any pack content\n", a.ID)
-```
-
-With:
+In `internal/adapter/engine.go`, replace lines 62–75 (the full block from `trimmed :=` through the closing `}` of the early-continue block):
 
 ```go
 		trimmed := content.TrimPacks(e.packs, maxBytes)
@@ -440,6 +423,26 @@ With:
 		// budget is too small for all non-base packs.
 		if len(trimmed) == 0 && maxBytes > 0 {
 			fmt.Fprintf(os.Stderr, "sap-devs: adapter %s: budget too small to include any pack content\n", a.ID)
+			if e.opts.Stats {
+				stats = append(stats, adapterStats{
+					AdapterID:   a.ID,
+					PackIDs:     nil,
+					BudgetBytes: maxBytes, // resolved value
+					Format:      a.Format,
+					Trimmed:     true,
+				})
+			}
+			continue
+		}
+```
+
+Also add a comment to the `Trimmed` flag on line 122 (inside the stats block at the bottom of the loop):
+
+```go
+			// Trimmed is true when any pack was dropped. With base packs always
+			// surviving TrimPacks, this correctly reflects whether non-base packs
+			// were dropped by budget or deduplication.
+			Trimmed:      len(trimmed) < len(e.packs),
 ```
 
 - [ ] **Step 2: Verify build and vet pass**
