@@ -4,6 +4,54 @@ Ideas and planned features for `sap-devs`. These are not commitments or a roadma
 
 ---
 
+## Release & Distribution
+
+### Migrate to github.com/sap-samples
+
+Move the repository from `github.tools.sap/developer-relations/sap-devs-cli` to `github.com/sap-samples` for public OSS distribution.
+
+**Scope:**
+- Create the repo under `github.com/sap-samples/sap-devs-cli` (or appropriate name)
+- Update all import paths (`github.tools.sap/developer-relations/sap-devs-cli/...` → `github.com/sap-samples/...`)
+- Update `github_urls` in `.goreleaser.yml` (remove the custom `api`/`upload`/`download` overrides — they're only needed for `github.tools.sap`)
+- Update release workflow to use `GITHUB_TOKEN` against `github.com`
+- Redirect or archive the internal repo; update any internal install instructions
+
+---
+
+### Package manager publishing
+
+Distribute via package managers so users never see a Windows SmartScreen warning on install and updates are handled automatically. GoReleaser has first-class support for Scoop and Homebrew — each can be added as a section in `.goreleaser.yml` and published to a companion "bucket/tap" repo on release.
+
+**Priority order:**
+
+| Manager | Platform | Notes |
+| --- | --- | --- |
+| **Scoop** | Windows | Best fit for developer CLIs; add `scoop:` section to `.goreleaser.yml`; publish manifest to a `scoop-bucket` companion repo |
+| **Homebrew** | macOS / Linux | Add `brews:` section to `.goreleaser.yml`; publish formula to a `homebrew-tap` companion repo |
+| **winget** | Windows | Submit to `microsoft/winget-pkgs`; higher friction but reaches non-Scoop Windows users |
+
+**GoReleaser references:**
+
+- [Scoop support](https://goreleaser.com/customization/scoop/)
+- [Homebrew support](https://goreleaser.com/customization/homebrew/)
+
+---
+
+### Windows code signing for unsigned binary distribution
+
+Unsigned `.exe` files downloaded from the internet are blocked or warned about by Windows SmartScreen. Investigate free signing options for OSS.
+
+**Options (best to worst for OSS):**
+
+1. **[SignPath.io](https://signpath.io)** — free tier for OSS projects; integrates with GitHub Actions; signs `.exe` artifacts; most straightforward path for a public SAP-samples repo
+2. **Azure Trusted Signing — Community tier** — Microsoft's cloud signing service added a free OSS tier in 2024; requires an Azure account and some setup; integrates via `azure/trusted-signing-action` in the release workflow; signs produce full SmartScreen trust immediately
+3. **OV code signing cert (self-managed)** — store PFX in GitHub Secrets; sign with `signtool.exe` in CI; OV certs still show a warning until SmartScreen builds reputation over time (many downloads)
+
+**Note:** If distributing primarily via Scoop/Homebrew/winget, SmartScreen is largely a non-issue for the install path — package managers are already trusted. Signing is still useful for users who download the binary directly. Consider signing as a follow-up once package manager publishing is in place.
+
+---
+
 ## Profiles
 
 ### "All" profile — dynamic catch-all
