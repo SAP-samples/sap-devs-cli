@@ -1,0 +1,81 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Pack Metadata",
+  "description": "Schema for sap-devs pack.yaml files",
+  "type": "object",
+  "required": ["id", "name", "description", "tags"],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique pack identifier (lowercase slug, e.g. cap, abap, btp-core)"
+    },
+    "name": {
+      "type": "string",
+      "description": "Human-readable pack name"
+    },
+    "description": {
+      "type": "string",
+      "description": "Short pack description"
+    },
+    "tags": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Searchable tags for this pack"
+    },
+    "profiles": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Profile IDs that include this pack (informational)"
+    },
+    "weight": {
+      "type": "integer",
+      "default": 0,
+      "description": "Default sort priority; higher values appear earlier in context"
+    },
+    "base": {
+      "type": "boolean",
+      "default": false,
+      "description": "If true, this pack is injected into every profile and always appears first"
+    },
+    "overlaps": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Pack IDs whose content this pack subsumes (used for byte-budget deduplication)"
+    },
+    "locales": {
+      "type": "object",
+      "description": "Locale-specific overrides for name and description",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "name": { "type": "string" },
+          "description": { "type": "string" }
+        }
+      }
+    },
+    "additive": {
+      "type": "boolean",
+      "default": false,
+      "description": "If true, this pack augments (rather than replaces) the lower-layer pack with the same ID"
+    },
+    "additive_position": {
+      "type": "string",
+      "enum": ["before", "after"],
+      "default": "after",
+      "description": "Where additive content is placed relative to the base pack's content"
+    }
+  },
+  "if": {
+    "properties": { "additive": { "const": true } }
+  },
+  "then": {
+    "properties": {
+      "additive_position": { "enum": ["before", "after"] }
+    }
+  },
+  "else": {
+    "not": { "required": ["additive_position"] }
+  }
+}

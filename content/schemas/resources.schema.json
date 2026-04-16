@@ -1,0 +1,33 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Pack Resources",
+  "description": "Schema for sap-devs resources.yaml files (top-level array)",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": ["id", "title", "url", "type", "tags"],
+    "additionalProperties": false,
+    "properties": {
+      "id": {
+        "type": "string",
+        "description": "Resource identifier in format <pack-id>/<slug>, e.g. cap/docs-official"
+      },
+      "title": { "type": "string", "description": "Human-readable resource title" },
+      "url": { "type": "string", "format": "uri", "description": "Full URL to the resource" },
+      "type": {
+        "type": "string",
+        "enum": ["official-docs", "sample", "community", "tutorial", "blog"],
+        "description": "Resource classification"
+      },
+      "tags": {
+        "type": "array",
+        "items": { "type": "string" },
+        "description": "Searchable tags"
+      },
+      "advocate": {
+        "type": "string",
+        "description": "Optional contributor or advocate name"
+      }
+    }
+  }
+}

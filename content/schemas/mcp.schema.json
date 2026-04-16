@@ -1,0 +1,34 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Pack MCP Servers",
+  "description": "Schema for sap-devs mcp.yaml files (top-level array)",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": ["id", "name", "description", "install", "hosts"],
+    "additionalProperties": false,
+    "properties": {
+      "id": { "type": "string", "description": "Unique MCP server identifier within the pack" },
+      "name": { "type": "string", "description": "Human-readable MCP server name" },
+      "description": { "type": "string", "description": "Short description shown by sap-devs mcp list" },
+      "install": {
+        "type": "object",
+        "required": ["command", "args"],
+        "additionalProperties": false,
+        "properties": {
+          "command": { "type": "string", "description": "Executable to run, e.g. npx" },
+          "args": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Arguments passed to the command"
+          }
+        }
+      },
+      "hosts": {
+        "type": "array",
+        "items": { "type": "string" },
+        "description": "AI tool hosts that should register this server, e.g. [claude-code, cursor]"
+      }
+    }
+  }
+}
