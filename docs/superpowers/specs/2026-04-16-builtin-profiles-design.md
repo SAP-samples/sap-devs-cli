@@ -60,26 +60,32 @@ A package-level set of reserved IDs is used for guard checks:
 var reservedProfileIDs = map[string]bool{"all": true, "minimal": true}
 ```
 
-### 2. `LoadProfiles` — append built-ins, built-ins win on ID conflict
+### 2. `ContentLoader.LoadProfiles` — append built-ins after all layers are merged
 
-After loading file-backed profiles, built-ins are appended. Any file-backed profile whose ID matches a reserved ID is silently dropped:
+The package-level `LoadProfiles(profilesDir string)` in `profile.go` is called once per content-layer directory. Built-in injection must happen in `ContentLoader.LoadProfiles()` (the method in `loader.go`), after the per-layer merge loop completes — otherwise built-ins would be appended once per active directory and the reserved-ID filter would run redundantly.
+
+In `loader.go`, after assembling the `result` slice from `profileMap`:
 
 ```go
-func LoadProfiles(profilesDir string) ([]*Profile, error) {
-    // ... existing file loading ...
+func (cl *ContentLoader) LoadProfiles() ([]*Profile, error) {
+    profileMap := make(map[string]*Profile)
+    for _, dir := range cl.activeDirs() {
+        // ... existing per-layer loading into profileMap ...
+    }
 
-    // Filter out any file-backed profiles that shadow a reserved built-in ID.
-    var filtered []*Profile
-    for _, p := range profiles {
+    // Drop any file-backed profiles that shadow a reserved built-in ID.
+    result := make([]*Profile, 0, len(profileMap))
+    for _, p := range profileMap {
         if !reservedProfileIDs[p.ID] {
-            filtered = append(filtered, p)
+            result = append(result, p)
         }
     }
-    return append(filtered, builtinProfiles()...), nil
+    // Append built-ins last so file-backed profiles appear first in list output.
+    return append(result, builtinProfiles()...), nil
 }
 ```
 
-Built-ins appear at the end of the list — file-backed profiles (more persona-specific) appear first.
+`builtinProfiles()` and `reservedProfileIDs` are defined in `profile.go` and used from `loader.go` — both are in the same `content` package.
 
 ### 3. `FindProfile` — check reserved IDs first
 
@@ -117,17 +123,22 @@ Since base packs are exempt from `TrimPacks` byte-budget enforcement, adapters w
 
 `profile show` currently prints "Pack weights:" followed by the `p.Packs` list. For built-ins the list is nil, leaving a header with no items.
 
-Guard on `len(p.Packs) == 0` (only built-ins have an empty list; all file-backed profiles have at least one pack):
+Guard on `reservedProfileIDs[p.ID]` — semantically correct and robust against file-backed profiles that happen to have an empty `packs` list (which `LoadProfile` does not validate against):
 
 ```go
-if len(p.Packs) == 0 {
+if reservedProfileIDs[p.ID] {
     fmt.Fprintln(cmd.OutOrStdout(), i18n.T(lang, "profile.show.builtin_note"))
 } else {
     // existing pack weight table
 }
 ```
 
-New i18n key `profile.show.builtin_note` → `"Built-in profile — pack selection is determined at runtime, not by a fixed list."` (same string works for both `all` and `minimal`).
+New i18n key `profile.show.builtin_note`:
+
+- `en.json` → `"Built-in profile — pack selection is determined at runtime, not by a fixed list."`
+- `de.json` → `"Integriertes Profil — die Pack-Auswahl wird zur Laufzeit bestimmt, nicht durch eine feste Liste."`
+
+(Same string works for both `all` and `minimal`.)
 
 ### 6. Documentation updates
 
@@ -146,9 +157,9 @@ New i18n key `profile.show.builtin_note` → `"Built-in profile — pack selecti
 ## File Changelist
 
 | File | Change |
-|---|---|
-| `internal/content/profile.go` | Add `builtinProfiles()`, `reservedProfileIDs`; update `LoadProfiles` to filter reserved IDs and append built-ins; update `FindProfile` to short-circuit on reserved IDs |
-| `internal/content/loader.go` | Add `minimal` guard in `LoadPacks` after base/nonBase partition |
+| --- | --- |
+| `internal/content/profile.go` | Add `builtinProfiles()`, `reservedProfileIDs` |
+| `internal/content/loader.go` | Update `ContentLoader.LoadProfiles()` to filter reserved IDs and append built-ins; update `ContentLoader.FindProfile()` to short-circuit on reserved IDs; add `minimal` guard in `LoadPacks` after base/nonBase partition |
 | `cmd/profile.go` | Add built-in guard in `profile show` to print `profile.show.builtin_note` instead of empty pack-weight table |
 | `internal/i18n/catalogs/en.json` | Add `profile.show.builtin_note` key |
 | `internal/i18n/catalogs/de.json` | Add `profile.show.builtin_note` key (German) |
@@ -156,12 +167,17 @@ New i18n key `profile.show.builtin_note` → `"Built-in profile — pack selecti
 | `docs/content-authoring.md` | Add note in Base Layer section about `minimal` |
 | `internal/content/profile_test.go` | New/extended: built-in tests (see Testing section) |
 | `internal/content/loader_test.go` | Extended: `minimal` and `all` pack selection tests |
+| `cmd/profile_test.go` | New: `TestProfileShow_BuiltinProfile_PrintsBuiltinNote` |
 
 ---
 
 ## Testing
 
 All tests in `internal/content/`. `go test` is blocked locally by Windows Defender; CI on `ubuntu-latest` is the authoritative runner.
+
+### `cmd/profile_test.go`
+
+- `TestProfileShow_BuiltinProfile_PrintsBuiltinNote` — running `profile show` with an active built-in profile ID (`"all"` or `"minimal"`) prints the `builtin_note` string and does not print the pack-weight table header
 
 ### `internal/content/profile_test.go`
 
