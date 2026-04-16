@@ -212,7 +212,74 @@ A persistent system-tray (or menu-bar) icon that surfaces tool status, triggers 
 
 ---
 
-## Inject Enhancements - DONE ✔️
+## Inject Enhancements
+
+### `sap-devs inject --uninstall` (or `sap-devs uninject`)
+
+Remove all content previously inserted by `inject` from AI tool config files.
+
+**Problem:** There is no clean way to reverse `inject`. Users who want to stop using sap-devs, switch tools, or debug a clean state must manually find and delete fenced sections from files like `~/.claude/CLAUDE.md`.
+
+**Scope:**
+- Iterate all adapters of type `file-inject`, locate the fenced `<!-- sap-devs:start:… -->` / `<!-- sap-devs:end:… -->` sections, and remove them
+- Support `--tool` flag to limit removal to a single tool (same as `inject --tool`)
+- Support `--project` flag to only remove project-scope injections
+- Print a summary of files modified and sections removed
+- No-op (with message) if no injected sections are found
+- `--dry-run` flag to preview what would be removed without modifying files
+
+**Implementation notes:**
+- The `replace-section` logic in `internal/adapter/file_inject.go` already knows how to locate fenced sections — extract the section-finding logic into a shared helper that both inject and uninstall can use
+- Consider whether MCP server registrations (`mcp-wire` adapters) should also be cleaned up, or only `file-inject` sections
+
+---
+
+### `sap-devs inject --status` (or `sap-devs inject status`)
+
+Scan AI tool config files and report the state of injected content across all detected tools.
+
+**Problem:** Users have no visibility into *what* sap-devs has injected, *where*, or *whether it's stale*. After running `inject` once, they can't tell which tools received content, whether content is current, or if a tool was missed — without manually opening each config file.
+
+**Scope:**
+
+- Iterate all `file-inject` adapters and their targets
+- For each target file, check:
+  - **Exists?** — is the target file present on disk?
+  - **Injected?** — does it contain `<!-- sap-devs:start:… -->` / `<!-- sap-devs:end:… -->` fenced sections?
+  - **Stale?** — compare injected content hash against what `inject` would produce now (current packs + profile); flag as stale if they differ
+  - **Scope** — report global vs project injections separately
+- For `mcp-wire` adapters, check whether registered MCP servers are still present in the tool's JSON config
+- Support `--tool` flag to limit the scan to a single tool
+- Output a summary table, e.g.:
+
+  ```text
+  Tool            Scope    File                        Status
+  Claude Code     global   ~/.claude/CLAUDE.md         ✓ current
+  Claude Code     project  .claude/CLAUDE.md           ✗ stale (3 days)
+  Cursor          global   ~/.cursor/rules/sap.mdc     ✗ not found
+  Copilot         global   ~/.github/copilot.md        ✓ current
+  ```
+
+- `--json` flag for machine-readable output (CI integration, scripting)
+
+**Stretch goal — full instructions file analysis:**
+
+Go beyond sap-devs' own fenced sections and analyse the *entire* instructions file for each supported tool:
+
+- Report total file size / estimated token count
+- Identify other injected sections (non-sap-devs fenced blocks, other tools' markers)
+- Flag potential conflicts (duplicate instructions, contradictory guidance)
+- Show what percentage of the file is sap-devs content vs user-authored vs other tools
+- This gives users a holistic view of their AI tool configuration health, not just the sap-devs slice
+
+**Implementation notes:**
+
+- `DetectRule` in `adapter.go` already has command/path detection — reuse for tool presence checks
+- Section-finding logic overlaps with `inject --uninstall` — both need a shared helper extracted from `file_inject.go` to locate `sap-devs:start/end` blocks
+- Staleness check: hash the rendered content (same pipeline as `inject`) and compare against what's on disk between the markers
+- The stretch analysis could use a simple token estimator (word count × 1.3 or tiktoken-go) for the full-file report
+
+---
 
 ## Data Sources
 

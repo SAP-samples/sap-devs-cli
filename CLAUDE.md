@@ -40,6 +40,8 @@ Content is loaded from up to four layered sources, with later layers overriding 
 
 `ContentLoader` ([internal/content/loader.go](internal/content/loader.go)) manages this merge. `LoadPacks()` reads all `content/packs/<name>/` directories; each pack contains: `pack.yaml` (metadata), `context.md` (AI context text), `tips.md` (H2-delimited tips), `tools.yaml`, `resources.yaml`, `mcp.yaml`.
 
+**Additive Layers:** Packs with `additive: true` in `pack.yaml` augment (append/prepend) same-ID packs from earlier layers instead of overriding them. `AdditivePosition` controls order (`before`/`after`, default `after`). Merge logic: [internal/content/merge.go](internal/content/merge.go). A `base: true` pack (e.g., `content/packs/base/`) is auto-injected into every profile.
+
 ### Adapter System
 
 Adapters ([internal/adapter/](internal/adapter/)) define how to push context into a specific AI tool. They are YAML files in `content/adapters/` and support three types:
@@ -53,6 +55,8 @@ The `Engine` ([internal/adapter/engine.go](internal/adapter/engine.go)) iterates
 ### Profiles
 
 Profiles ([content/profiles/](content/profiles/)) are YAML files that tag which packs belong to a developer persona (e.g., `cap-developer`, `abap-developer`). `ApplyWeights()` reorders packs to prioritise those matching the active profile. The active profile ID is stored in `~/.config/sap-devs/profile.yaml`.
+
+**Built-in profiles:** `all` (includes every pack) and `minimal` (base packs only) are hardcoded in [internal/content/profile.go](internal/content/profile.go) — no YAML files. `IsBuiltinProfile()` guards reserved IDs.
 
 ### Sync
 
@@ -86,7 +90,7 @@ On every command invocation (except `update` and dev builds), a background gorou
 | --- | --- |
 | `inject` | Push rendered context into detected AI tools (`--project` for project scope); `--sync` forces fresh sync, `--no-sync` skips staleness check |
 | `sync` | Fetch latest content from official/company repos |
-| `profile set/list` | Manage active developer persona |
+| `profile set/list/show` | Manage active developer persona |
 | `config show/set/company` | View and edit `~/.config/sap-devs/config.yaml` |
 | `tip` | Show a random tip; `tip install`/`tip uninstall` wires it into your shell prompt |
 | `doctor` | Check local tool versions against pack requirements (`--fix` for install hints) |
@@ -94,6 +98,10 @@ On every command invocation (except `update` and dev builds), a background gorou
 | `resources` | List curated resources from active packs |
 | `update` | Self-update the binary |
 | `init` | First-time setup wizard |
+
+### YAML Schemas
+
+JSON Schema files in [content/schemas/](content/schemas/) validate `pack.yaml`, `resources.yaml`, `tools.yaml`, `mcp.yaml`, and `profile.yaml`. VS Code integration is wired in [.vscode/settings.json](.vscode/settings.json). Update schemas when adding/changing YAML fields.
 
 ### Release
 
