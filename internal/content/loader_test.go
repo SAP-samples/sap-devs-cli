@@ -52,3 +52,21 @@ func makeTempPacksDir(t *testing.T, packs map[string]string) string {
 	}
 	return root
 }
+
+func TestLoadPack_BaseField_TrueWhenSet(t *testing.T) {
+	dir := makeTempPacksDir(t, map[string]string{
+		"base": "id: base\nname: Base\nweight: 0\nbase: true\n",
+	})
+	pack, err := content.LoadPack(filepath.Join(dir, "packs", "base"), "")
+	require.NoError(t, err)
+	assert.True(t, pack.Base, "pack.Base should be true when base: true in pack.yaml")
+}
+
+func TestLoadPack_BaseField_FalseByDefault(t *testing.T) {
+	dir := makeTempPacksDir(t, map[string]string{
+		"cap": "id: cap\nname: CAP\nweight: 100\n",
+	})
+	pack, err := content.LoadPack(filepath.Join(dir, "packs", "cap"), "")
+	require.NoError(t, err)
+	assert.False(t, pack.Base, "pack.Base should be false when base field is absent")
+}
