@@ -29,7 +29,7 @@ Out of scope for this feature: installed tool versions (doctor-style checks), ac
 | `internal/adapter` | `Options` gains `Dynamic *content.DynamicContext` field |
 | `cmd/inject.go` | Populates `GatherOpts` (including cobra command list), calls `GatherDynamic`, passes result into `adapter.Options` |
 
-`internal/dynamic` imports both `internal/content` and `internal/adapter` — no cycle. The `DynamicContext` struct lives in `internal/content` so `RenderContext` can take it without importing `internal/dynamic`.
+`internal/dynamic` imports `internal/content` and `internal/adapter`. Import direction: `internal/dynamic` → `internal/adapter` → `internal/content`. `internal/dynamic` exports nothing that `internal/adapter` imports, so there is no cycle. The `DynamicContext` struct lives in `internal/content` so `RenderContext` can take it without importing `internal/dynamic`.
 
 ### Data model
 
@@ -78,10 +78,10 @@ func GatherDynamic(opts GatherOpts) *content.DynamicContext
 ### Gather logic per item
 
 **CLI self-awareness**  
-`CLIVersion` — from the `cmd.Version` build-time var. `ActiveProfile` — `profile.Name` if set, else `profile.ID`, else `""`. `Commands` — passed in from `cmd/inject.go` by walking `rootCmd.Commands()` and filtering `c.Hidden == false`.
+`CLIVersion` — passed in via `GatherOpts.CLIVersion`, populated from the `cmd.Version` build-time var in `cmd/inject.go`. (Direct import of the `cmd` package from `internal/dynamic` would create a cycle and must not be done.) `ActiveProfile` — `profile.Name` if set, else `profile.ID`, else `""`. `Commands` — passed in from `cmd/inject.go` by walking `rootCmd.Commands()` and filtering `c.Hidden == false`.
 
 **Pack freshness**  
-`LoadedPackIDs` — `[p.ID for p in opts.Packs]`, no I/O. `LastSynced` — read `sync-state.json` from `opts.SyncStateDir`; extract `categories["content"]` timestamp; nil if file absent or key missing.
+`LoadedPackIDs` — `[p.ID for p in opts.Packs]`, no I/O. This reflects the pre-trim pack list (all packs loaded for this session), not the per-adapter trimmed subset — the intent is to show the user which packs are active, not which survived a budget cut on a specific adapter. `LastSynced` — read `sync-state.json` from `opts.SyncStateDir` using `internal/sync`'s `loadSyncState`. The known sync categories are `"tips"`, `"tools"`, `"resources"`, `"context"`, `"mcp"`, `"advocates"`. Take the most recent non-zero timestamp across all present category entries. If the file is absent or all entries are zero, `LastSynced` is nil.
 
 **Project type**  
 Check files in `opts.CWD` in priority order (first match wins):
@@ -102,9 +102,9 @@ For each adapter with `mcp_config.path` set:
 1. Expand `~` and read the JSON file
 2. Extract the object at `mcp_config.key` (e.g. `mcpServers`)
 3. Collect top-level keys as installed server IDs
-4. Cross-reference against all `MCPServer.ID` values from `opts.Packs` — only keep matches
+4. Cross-reference against all `Pack.MCPServers[i].ID` values from `opts.Packs` — only keep matches
 
-This ensures only SAP-specific servers are surfaced, not the user's full MCP server list.
+This ensures only SAP-specific servers are surfaced, not the user's full MCP server list. The `Pack.MCPServers` field is a `[]content.MCPServer`; the relevant field is `MCPServer.ID`.
 
 **Error handling**  
 All gather steps silently skip on any error (file not found, parse failure, etc.). `GatherDynamic` always returns a non-nil `*DynamicContext`; missing data is represented as zero values (nil pointer, empty string, empty slice).
@@ -204,8 +204,12 @@ opts := adapter.Options{
 
 ## Testing
 
-- `internal/content`: unit tests for `RenderContext` with a non-nil `DynamicContext` — verify section present, formatting, nil-safety
-- `internal/dynamic`: unit tests for `GatherDynamic` with a temp directory for project type detection; stub sync state JSON for freshness; stub adapter MCP config JSON for MCP detection
+- `internal/content`: unit tests for `RenderContext` with a non-nil `DynamicContext` — verify section present, formatting, nil-safety when `dynamic` is nil
+- `internal/dynamic/gather_test.go`:
+  - **Project type**: write files (`.cdsrc.json`, `package.json` with/without `@sap/cds`, `mta.yaml`, etc.) to a `t.TempDir()` and assert the correct label
+  - **Pack freshness**: write a `sync-state.json` to a temp dir with `{"categories":{"context":"<RFC3339 time>"}}`; assert `LastSynced` is non-nil and correct; assert nil when file absent
+  - **MCP detection**: write a temp JSON file `{"mcpServers":{"sap-cap-mcp":{},"some-other-mcp":{}}}` and set `Adapters[0].MCPConfig.Path` to that file; pass a pack with `MCPServers[0].ID = "sap-cap-mcp"`; assert only `"sap-cap-mcp"` appears in output (not `"some-other-mcp"`)
+  - **Error handling**: missing CWD, missing sync state, missing MCP config file — assert `GatherDynamic` returns a non-nil context with zero-value fields, not a panic
 - All existing `RenderContext` callers pass `nil` as the third argument — no changes needed to existing tests
 
 ## Files to create / modify
