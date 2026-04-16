@@ -370,9 +370,9 @@ func TestEngine_MaxBytesOverridesMaxTokens(t *testing.T) {
 	engine := adapter.NewEngine(adapters, packs, nil, adapter.Options{Scope: "global", Out: &buf})
 	require.NoError(t, engine.Run())
 
-	// Budget was 50 bytes — pack (100 bytes) didn't fit → file should not contain pack content
-	data, _ := os.ReadFile(targetFile)
-	assert.NotContains(t, string(data), strings.Repeat("x", 100))
+	// Budget was 50 bytes — pack (100 bytes) didn't fit → file should not be created
+	_, statErr := os.Stat(targetFile)
+	assert.True(t, os.IsNotExist(statErr), "budget-too-small: engine should not write file")
 }
 
 func TestEngine_FormatApplied(t *testing.T) {

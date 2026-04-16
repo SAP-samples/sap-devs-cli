@@ -83,21 +83,6 @@ func (e *Engine) Run() error {
 			formattedCtx = ctx // raw Markdown passed to ExportFileAndClip
 		}
 
-		if e.opts.Stats {
-			packIDs := make([]string, len(trimmed))
-			for i, p := range trimmed {
-				packIDs[i] = p.ID
-			}
-			stats = append(stats, adapterStats{
-				AdapterID:    a.ID,
-				PackIDs:      packIDs,
-				ApproxTokens: len(formattedCtx) / 4,
-				BudgetBytes:  maxBytes, // resolved value (MaxBytes or MaxTokens*4)
-				Format:       a.Format,
-				Trimmed:      len(trimmed) < len(e.packs),
-			})
-		}
-
 		switch a.Type {
 		case "file-inject":
 			if err := e.runFileInject(a, formattedCtx); err != nil {
@@ -120,6 +105,22 @@ func (e *Engine) Run() error {
 			}
 		case "mcp-wire":
 			// mcp-wire is handled by the mcp command; inject skips it
+			continue
+		}
+
+		if e.opts.Stats {
+			packIDs := make([]string, len(trimmed))
+			for i, p := range trimmed {
+				packIDs[i] = p.ID
+			}
+			stats = append(stats, adapterStats{
+				AdapterID:    a.ID,
+				PackIDs:      packIDs,
+				ApproxTokens: len(formattedCtx) / 4,
+				BudgetBytes:  maxBytes, // resolved value (MaxBytes or MaxTokens*4)
+				Format:       a.Format,
+				Trimmed:      len(trimmed) < len(e.packs),
+			})
 		}
 	}
 
