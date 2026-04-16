@@ -93,7 +93,15 @@ func (cl *ContentLoader) LoadProfiles() ([]*Profile, error) {
 }
 
 // FindProfile returns a profile by ID from all layers, or nil if not found.
+// Built-in profile IDs (all, minimal) are returned directly without file I/O.
 func (cl *ContentLoader) FindProfile(id string) (*Profile, error) {
+	if reservedProfileIDs[id] {
+		for _, p := range BuiltinProfiles() {
+			if p.ID == id {
+				return p, nil
+			}
+		}
+	}
 	profiles, err := cl.LoadProfiles()
 	if err != nil {
 		return nil, err

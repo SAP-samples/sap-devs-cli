@@ -93,6 +93,23 @@ func TestContentLoaderLoadProfiles_IncludesBuiltins(t *testing.T) {
 	assert.True(t, ids["cap-developer"])
 }
 
+func TestContentLoaderFindProfile_ReturnsBuiltinForAll(t *testing.T) {
+	// No files anywhere — built-in must be found regardless.
+	loader := &content.ContentLoader{OfficialDir: t.TempDir()}
+	p, err := loader.FindProfile("all")
+	require.NoError(t, err)
+	require.NotNil(t, p, "FindProfile('all') must return non-nil")
+	assert.Equal(t, "all", p.ID)
+}
+
+func TestContentLoaderFindProfile_ReturnsBuiltinForMinimal(t *testing.T) {
+	loader := &content.ContentLoader{OfficialDir: t.TempDir()}
+	p, err := loader.FindProfile("minimal")
+	require.NoError(t, err)
+	require.NotNil(t, p, "FindProfile('minimal') must return non-nil")
+	assert.Equal(t, "minimal", p.ID)
+}
+
 func TestContentLoaderLoadProfiles_BuiltinWinsOverFile(t *testing.T) {
 	// A file named all.yaml must be dropped; the built-in wins.
 	dir := t.TempDir()
