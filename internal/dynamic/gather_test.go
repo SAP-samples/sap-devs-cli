@@ -53,6 +53,13 @@ func TestGatherDynamic_ProjectType_XsAppJson(t *testing.T) {
 	assert.Equal(t, "Fiori / BAS app", ctx.ProjectType)
 }
 
+func TestGatherDynamic_ProjectType_PomXmlWithCAPJava(t *testing.T) {
+	dir := t.TempDir()
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "pom.xml"), []byte(`<project><groupId>com.sap.cds</groupId></project>`), 0600))
+	ctx := dynamic.GatherDynamic(dynamic.GatherOpts{CWD: dir})
+	assert.Equal(t, "CAP (Java)", ctx.ProjectType)
+}
+
 func TestGatherDynamic_ProjectType_PlainPackageJson(t *testing.T) {
 	dir := t.TempDir()
 	require.NoError(t, os.WriteFile(filepath.Join(dir, "package.json"), []byte(`{"name":"myapp"}`), 0600))
