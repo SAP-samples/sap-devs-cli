@@ -1,7 +1,6 @@
 package news
 
 import (
-	"math"
 	"strings"
 	"time"
 
@@ -35,7 +34,7 @@ func bestMatch(ep youtube.Episode, posts []community.BlogPost) *community.BlogPo
 	bestScore := -1
 	for j := range posts {
 		diff := ep.Published.Sub(posts[j].Published)
-		if math.Abs(diff.Hours()) > correlationWindow.Hours() {
+		if diff < -correlationWindow || diff > correlationWindow {
 			continue
 		}
 		score := lcs(strings.ToLower(ep.Title), strings.ToLower(posts[j].Title))
