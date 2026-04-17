@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"strconv"
@@ -19,7 +20,7 @@ const (
 	newsPlaylistRSS  = "https://www.youtube.com/feeds/videos.xml?playlist_id=PL6RpkC85SLQAVBSQXN9522_1jNvPavBgg"
 	newsCommunityRSS = "https://community.sap.com/t5/developer-news/bg-p/developer-news/rss"
 	newsLinkedIn     = "https://www.linkedin.com/newsletters/sap-developer-news-7155319074263044096/"
-	newsYTMusic      = "" // fill in with YouTube Music podcast URL before shipping
+	newsYTMusic      = "" // footer line is suppressed when empty
 )
 
 var newsCmd = &cobra.Command{
@@ -177,13 +178,14 @@ var newsReadCmd = &cobra.Command{
 			fmt.Fprintln(cmd.OutOrStdout(), content)
 			return nil
 		}
-		return openPager(content)
+		return openPager(cmd.OutOrStdout(), content)
 	},
 }
 
 // openPager displays content via $PAGER, less (if available), or plain print.
 // Uses os.Stdout/Stderr directly so the pager gets a real TTY descriptor.
-func openPager(content string) error {
+// w is used only for the no-pager fallback path.
+func openPager(w io.Writer, content string) error {
 	var pagerArgs []string
 	pager := os.Getenv("PAGER")
 	if pager != "" {
@@ -194,7 +196,7 @@ func openPager(content string) error {
 		pager = "less"
 	}
 	if pager == "" {
-		fmt.Print(content)
+		fmt.Fprint(w, content)
 		return nil
 	}
 	c := exec.Command(pager, pagerArgs...) //nolint:gosec // pager comes from env or LookPath
