@@ -85,41 +85,63 @@ var initCmd = &cobra.Command{
 			fmt.Fprintln(cmd.OutOrStdout(), i18n.T(i18n.ActiveLang, "init.step3_no_profiles"))
 		}
 
-		// Step 4: Inject into AI tools
-		fmt.Fprintln(cmd.OutOrStdout(), i18n.T(i18n.ActiveLang, "init.step4_header"))
-		fmt.Fprintln(cmd.OutOrStdout(), i18n.T(i18n.ActiveLang, "init.step4_body"))
-		fmt.Fprint(cmd.OutOrStdout(), i18n.T(i18n.ActiveLang, "init.step4_prompt"))
-		if answer := strings.ToLower(strings.TrimSpace(readLine())); answer == "" || answer == "y" {
-			if err := runInjectGlobal(); err != nil {
-				fmt.Fprintln(cmd.OutOrStdout(), i18n.Tf(i18n.ActiveLang, "init.step4_warn_failed", map[string]any{"Err": err}))
-			} else {
-				fmt.Fprintln(cmd.OutOrStdout(), i18n.T(i18n.ActiveLang, "init.step4_done"))
+		// Step 4: Set location (optional)
+		fmt.Fprintln(cmd.OutOrStdout(), i18n.T(i18n.ActiveLang, "init.step4_location_header"))
+		fmt.Fprintln(cmd.OutOrStdout(), i18n.T(i18n.ActiveLang, "init.step4_location_body"))
+		fmt.Fprint(cmd.OutOrStdout(), i18n.T(i18n.ActiveLang, "init.step4_location_prompt"))
+		locInput := strings.TrimSpace(readLine())
+		if locInput != "" {
+			locationCfg, locErr := config.Load(paths.ConfigDir)
+			if locErr == nil {
+				// "detect" is an intentional English keyword regardless of display language;
+				// all language prompts instruct users to type this exact string.
+				if strings.ToLower(locInput) == "detect" {
+					if detected, detectErr := detectLocation(cmd.OutOrStdout(), os.Stdin); detectErr == nil && detected != "" {
+						locationCfg.Location = detected
+						locationCfg.Save(paths.ConfigDir) //nolint:errcheck
+					}
+				} else {
+					locationCfg.Location = locInput // preserve original casing
+					locationCfg.Save(paths.ConfigDir) //nolint:errcheck
+				}
 			}
 		}
 
-		// Step 5: Shell profile hook
+		// Step 5: Inject into AI tools
 		fmt.Fprintln(cmd.OutOrStdout(), i18n.T(i18n.ActiveLang, "init.step5_header"))
 		fmt.Fprintln(cmd.OutOrStdout(), i18n.T(i18n.ActiveLang, "init.step5_body"))
 		fmt.Fprint(cmd.OutOrStdout(), i18n.T(i18n.ActiveLang, "init.step5_prompt"))
+		if answer := strings.ToLower(strings.TrimSpace(readLine())); answer == "" || answer == "y" {
+			if err := runInjectGlobal(); err != nil {
+				fmt.Fprintln(cmd.OutOrStdout(), i18n.Tf(i18n.ActiveLang, "init.step5_warn_failed", map[string]any{"Err": err}))
+			} else {
+				fmt.Fprintln(cmd.OutOrStdout(), i18n.T(i18n.ActiveLang, "init.step5_done"))
+			}
+		}
+
+		// Step 6: Shell profile hook
+		fmt.Fprintln(cmd.OutOrStdout(), i18n.T(i18n.ActiveLang, "init.step6_header"))
+		fmt.Fprintln(cmd.OutOrStdout(), i18n.T(i18n.ActiveLang, "init.step6_body"))
+		fmt.Fprint(cmd.OutOrStdout(), i18n.T(i18n.ActiveLang, "init.step6_prompt"))
 		if strings.ToLower(strings.TrimSpace(readLine())) == "y" {
 			results, err := shellhook.Add("sap-devs tip", "# SAP developer tips")
 			if err != nil && len(results) == 0 {
-				fmt.Fprintln(cmd.OutOrStdout(), i18n.T(i18n.ActiveLang, "init.step5_no_profile"))
+				fmt.Fprintln(cmd.OutOrStdout(), i18n.T(i18n.ActiveLang, "init.step6_no_profile"))
 			} else {
 				anyUpdated := false
 				for _, r := range results {
 					if r.Updated {
 						anyUpdated = true
-						fmt.Fprintln(cmd.OutOrStdout(), i18n.Tf(i18n.ActiveLang, "init.step5_added", map[string]any{"Path": r.Path}))
+						fmt.Fprintln(cmd.OutOrStdout(), i18n.Tf(i18n.ActiveLang, "init.step6_added", map[string]any{"Path": r.Path}))
 					}
 				}
 				if err != nil {
-					fmt.Fprintln(cmd.OutOrStdout(), i18n.Tf(i18n.ActiveLang, "init.step5_warn_partial", map[string]any{"Err": err}))
+					fmt.Fprintln(cmd.OutOrStdout(), i18n.Tf(i18n.ActiveLang, "init.step6_warn_partial", map[string]any{"Err": err}))
 				}
 				if anyUpdated {
-					fmt.Fprintln(cmd.OutOrStdout(), i18n.T(i18n.ActiveLang, "init.step5_restart"))
+					fmt.Fprintln(cmd.OutOrStdout(), i18n.T(i18n.ActiveLang, "init.step6_restart"))
 				} else if err == nil {
-					fmt.Fprintln(cmd.OutOrStdout(), i18n.T(i18n.ActiveLang, "init.step5_already_present"))
+					fmt.Fprintln(cmd.OutOrStdout(), i18n.T(i18n.ActiveLang, "init.step6_already_present"))
 				}
 			}
 		}

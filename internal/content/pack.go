@@ -28,6 +28,7 @@ type Pack struct {
 	Tips       []Tip
 
 	PreambleMD string
+	Hooks      []HookDef
 }
 
 // Resource is a curated link within a pack.
@@ -78,6 +79,15 @@ type Tip struct {
 	Title   string
 	Content string
 	Tags    []string
+}
+
+// HookDef declares a hook command to wire into an AI tool's event system.
+type HookDef struct {
+	ID      string   `yaml:"id"`
+	Event   string   `yaml:"event"`
+	Command string   `yaml:"command"`
+	Tools   []string `yaml:"tools"`
+	PackID  string   // set at load time, not in YAML
 }
 
 type packMetaLocale struct {
@@ -160,6 +170,12 @@ func LoadPack(packDir string, lang string) (*Pack, error) {
 	}
 	if data, err := os.ReadFile(filepath.Join(packDir, "preamble.md")); err == nil {
 		pack.PreambleMD = string(data)
+	}
+	if data, err := os.ReadFile(filepath.Join(packDir, "hook.yaml")); err == nil {
+		_ = yaml.Unmarshal(data, &pack.Hooks)
+		for i := range pack.Hooks {
+			pack.Hooks[i].PackID = pack.ID
+		}
 	}
 	if data, err := os.ReadFile(filepath.Join(packDir, "resources.yaml")); err == nil {
 		_ = yaml.Unmarshal(data, &pack.Resources)

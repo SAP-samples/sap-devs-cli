@@ -1,0 +1,5 @@
+- id: tip-on-session-start
+  event: sessionStart
+  command: "sap-devs tip --markdown"
+  tools:
+    - claude-code

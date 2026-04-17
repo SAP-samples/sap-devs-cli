@@ -253,6 +253,38 @@ func TestLoadPack_PreambleMDEmptyWhenAbsent(t *testing.T) {
 	assert.Empty(t, p.PreambleMD)
 }
 
+func TestLoadPack_HooksLoadedWhenPresent(t *testing.T) {
+	dir := t.TempDir()
+	packYAML := "id: base\nname: Base\ndescription: Base pack\ntags: []\nprofiles: []\nweight: 0\nbase: true\n"
+	hookYAML := `- id: tip-on-session-start
+  event: sessionStart
+  command: "sap-devs tip --markdown"
+  tools:
+    - claude-code
+`
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "pack.yaml"), []byte(packYAML), 0644))
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "hook.yaml"), []byte(hookYAML), 0644))
+
+	p, err := content.LoadPack(dir, "")
+	require.NoError(t, err)
+	require.Len(t, p.Hooks, 1)
+	assert.Equal(t, "tip-on-session-start", p.Hooks[0].ID)
+	assert.Equal(t, "sessionStart", p.Hooks[0].Event)
+	assert.Equal(t, "sap-devs tip --markdown", p.Hooks[0].Command)
+	assert.Equal(t, []string{"claude-code"}, p.Hooks[0].Tools)
+	assert.Equal(t, "base", p.Hooks[0].PackID)
+}
+
+func TestLoadPack_HooksEmptyWhenAbsent(t *testing.T) {
+	dir := t.TempDir()
+	packYAML := "id: cap\nname: CAP\ndescription: CAP\ntags: []\nprofiles: []\nweight: 100\n"
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "pack.yaml"), []byte(packYAML), 0644))
+
+	p, err := content.LoadPack(dir, "")
+	require.NoError(t, err)
+	assert.Empty(t, p.Hooks)
+}
+
 func makeTempPack(t *testing.T, id, packYAML, contextMD, resourcesYAML, tipsMD string) string {
 	t.Helper()
 	dir := t.TempDir()
