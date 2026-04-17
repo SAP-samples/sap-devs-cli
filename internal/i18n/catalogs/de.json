@@ -8,6 +8,13 @@
   "inject.dry_run": "[Testlauf] Es werden keine Dateien geändert",
   "inject.done": "SAP-Entwicklerkontext eingefügt ({{.Scope}}-Bereich).",
   "inject.hint": "Führe 'sap-devs inject --dry-run' aus, um Änderungen vorab anzuzeigen.",
+  "inject.uninstall.header": "SAP-Entwicklerkontext deinstalliert:",
+  "inject.uninstall.dry_run_header": "Würde SAP-Entwicklerkontext deinstallieren:",
+  "inject.uninstall.section_removed": "Abschnitt entfernt",
+  "inject.uninstall.file_deleted": "Datei gelöscht",
+  "inject.uninstall.not_found": "nicht gefunden",
+  "inject.uninstall.nothing_found": "Keine injizierten Abschnitte gefunden.",
+  "inject.uninstall.append_warning": "Warnung: Append-Ziel {{.Path}} kann nicht automatisch entfernt werden — bitte manuell löschen",
 
   "sync.short": "Aktuellen SAP-Entwicklerinhalt herunterladen",
   "sync.long": "Synchronisiert Inhalte aus dem offiziellen Repo (und dem Unternehmens-Repo, falls konfiguriert). Berücksichtigt kategoriespezifische TTLs, außer --force ist gesetzt.",
