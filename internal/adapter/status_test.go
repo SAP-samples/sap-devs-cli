@@ -5,6 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/adapter"
+	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
 )
 
 func TestEstimateTokens_Empty(t *testing.T) {
@@ -43,4 +44,12 @@ func TestScanOtherSections_MultipleTools(t *testing.T) {
 	names := []string{result[0].Name, result[1].Name}
 	assert.Contains(t, names, "cursor")
 	assert.Contains(t, names, "copilot")
+}
+
+func makePackWithContent(id, contextMD string) *content.Pack {
+	return &content.Pack{
+		ID:        id,
+		Name:      id,
+		ContextMD: contextMD,
+	}
 }

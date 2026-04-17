@@ -235,6 +235,22 @@ func (e *Engine) runFileUninstall(a Adapter) (found, dryFound int, err error) {
 	return found, dryFound, err
 }
 
+// renderSectionContent renders the content string that would be written by inject
+// for the given adapter. It mirrors the full pipeline in Run(): TrimPacks →
+// RenderContext → FormatOutput. Returns "" when e.packs is nil.
+func (e *Engine) renderSectionContent(a Adapter) string {
+	if e.packs == nil {
+		return ""
+	}
+	maxBytes := a.MaxBytes
+	if maxBytes == 0 && a.MaxTokens > 0 {
+		maxBytes = a.MaxTokens * 4
+	}
+	trimmed := content.TrimPacks(e.packs, maxBytes)
+	ctx := content.RenderContext(trimmed, e.profile, e.opts.Dynamic)
+	return content.FormatOutput(ctx, a.Format)
+}
+
 func printStats(w io.Writer, stats []adapterStats) {
 	tw := tabwriter.NewWriter(w, 0, 0, 3, ' ', 0)
 	fmt.Fprintln(tw, "Adapter\tPacks included\tTokens (approx)\tBudget (bytes)\tFormat\tStatus")
