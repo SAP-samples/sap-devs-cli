@@ -62,3 +62,23 @@ func TestInjectUninstall_FlagsExist(t *testing.T) {
 	require.NotNil(t, injectCmd.Flags().Lookup("uninstall"), "--uninstall flag must be registered")
 	require.NotNil(t, injectCmd.Flags().Lookup("stats"), "--stats flag must be registered")
 }
+
+func TestInjectUninstall_StatsNotMutuallyExclusive(t *testing.T) {
+	// --uninstall + --stats must not be rejected by the mutual exclusion check.
+	// The command will proceed past validation and may fail later (e.g. XDG paths),
+	// but must never return the "--uninstall is incompatible" error.
+	injectUninstall = true
+	injectStats = true
+	injectSync = false
+	injectNoSync = false
+	t.Cleanup(func() {
+		injectUninstall = false
+		injectStats = false
+	})
+	err := injectCmd.RunE(injectCmd, nil)
+	// The command may error (XDG/adapter load) but NOT with the mutual-exclusion message.
+	if err != nil {
+		assert.NotContains(t, err.Error(), "--uninstall is incompatible")
+		assert.NotContains(t, err.Error(), "mutually exclusive")
+	}
+}
