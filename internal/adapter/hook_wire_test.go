@@ -68,6 +68,13 @@ func TestRemoveHookConfig_CleansUpEmptyArray(t *testing.T) {
 	installed, err := adapter.HookConfigInstalled(path, "hooks.SessionStart", "sap-devs tip --markdown")
 	require.NoError(t, err)
 	assert.False(t, installed, "command must not be present after removal")
+
+	// The hooks key should be completely removed when the array is empty
+	data, err := os.ReadFile(path)
+	require.NoError(t, err)
+	var root map[string]interface{}
+	require.NoError(t, json.Unmarshal(data, &root))
+	assert.NotContains(t, root, "hooks", "hooks key must be removed when array is empty")
 }
 
 func TestRemoveHookConfig_NoopWhenNotInstalled(t *testing.T) {

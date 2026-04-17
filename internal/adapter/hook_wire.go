@@ -64,7 +64,7 @@ func RemoveHookConfig(settingsPath, key, command string, dryRun bool) error {
 		return fmt.Errorf("parse %s: %w", settingsPath, err)
 	}
 
-	arr := navigateToArray(root, key)
+	arr := lookupArray(root, key)
 	if len(arr) == 0 {
 		return nil
 	}
@@ -98,7 +98,7 @@ func HookConfigInstalled(settingsPath, key, command string) (bool, error) {
 	if err := json.Unmarshal(data, &root); err != nil {
 		return false, fmt.Errorf("parse %s: %w", settingsPath, err)
 	}
-	return hookCommandPresent(navigateToArray(root, key), command), nil
+	return hookCommandPresent(lookupArray(root, key), command), nil
 }
 
 // --- private helpers ---
@@ -127,6 +127,25 @@ func writeJSONFile(path string, root map[string]interface{}) error {
 		return err
 	}
 	return os.WriteFile(path, out, 0644)
+}
+
+// lookupArray walks the dot-separated key path without creating intermediate nodes.
+// Returns nil if any segment of the path does not exist.
+func lookupArray(root map[string]interface{}, key string) []interface{} {
+	parts := strings.SplitN(key, ".", 2)
+	v, ok := root[parts[0]]
+	if !ok || v == nil {
+		return nil
+	}
+	if len(parts) == 1 {
+		arr, _ := v.([]interface{})
+		return arr
+	}
+	m, ok := v.(map[string]interface{})
+	if !ok {
+		return nil
+	}
+	return lookupArray(m, parts[1])
 }
 
 // navigateToArray walks the dot-separated key path and returns the array at
