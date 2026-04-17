@@ -518,6 +518,8 @@ func TestEngineUninstall_RemovesSection(t *testing.T) {
 	got, err := os.ReadFile(targetFile)
 	require.NoError(t, err)
 	assert.Equal(t, "before\n\nafter\n", string(got))
+	assert.Contains(t, buf.String(), "section removed")
+	assert.Contains(t, buf.String(), targetFile)
 }
 
 func TestEngineUninstall_DeletesFile(t *testing.T) {
@@ -545,6 +547,7 @@ func TestEngineUninstall_DeletesFile(t *testing.T) {
 	assert.Equal(t, 1, res.Found)
 	_, statErr := os.Stat(targetFile)
 	assert.True(t, os.IsNotExist(statErr))
+	assert.Contains(t, buf.String(), "file deleted")
 }
 
 func TestEngineUninstall_SkipsNonFileInject(t *testing.T) {
@@ -701,4 +704,32 @@ func TestEngineUninstall_AppendModeWarning(t *testing.T) {
 	assert.Equal(t, 0, res.Found)
 	assert.Equal(t, 0, res.DryFound)
 	assert.Contains(t, stderrBuf.String(), "append")
+}
+
+func TestEngineUninstall_NotFound(t *testing.T) {
+	dir := t.TempDir()
+	targetFile := filepath.Join(dir, "CLAUDE.md")
+	require.NoError(t, os.WriteFile(targetFile, []byte("no markers\n"), 0644))
+
+	adapters := []adapter.Adapter{
+		{
+			ID:   "claude-code",
+			Type: "file-inject",
+			Targets: []adapter.Target{
+				{Scope: "global", Path: targetFile, Mode: "replace-section", Section: "SAP Dev"},
+			},
+		},
+	}
+	var buf bytes.Buffer
+	eng := adapter.NewEngine(adapters, nil, nil, adapter.Options{
+		Scope:     "global",
+		Uninstall: true,
+		Lang:      "en",
+		Out:       &buf,
+	})
+	res := eng.Run()
+	require.NoError(t, res.Err)
+	assert.Equal(t, 0, res.Found)
+	assert.Equal(t, 0, res.DryFound)
+	assert.Contains(t, buf.String(), "not found")
 }
