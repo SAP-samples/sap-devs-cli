@@ -46,7 +46,7 @@ func bestMatch(ep youtube.Episode, posts []community.BlogPost) *community.BlogPo
 	return best
 }
 
-// lcs returns the length of the longest common substring of a and b.
+// lcs returns the byte length of the longest common substring of a and b.
 func lcs(a, b string) int {
 	best := 0
 	for i := range a {
