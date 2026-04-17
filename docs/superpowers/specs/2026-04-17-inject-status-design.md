@@ -119,10 +119,10 @@ JSON tags are added to all fields (snake_case). `OtherSections` marshals as `[]`
    - `sectionNotFound` → neither flag set
 7. For `replace-file` targets: file existing means `Injected=true`.
 8. **Staleness** (only when `Injected=true` and `e.packs != nil`):
-   - Call `renderSectionContent(a)` to get the current rendered string.
-   - For `replace-section`: extract the on-disk bytes between the markers.
+   - Call `renderSectionContent(a)` to get the current rendered string (see Render Helper — applies `TrimPacks` with the adapter's budget).
+   - For `replace-section`: extract the on-disk bytes between the markers. `findSection` returns `startIdx`/`endIdx` pointing to the start of each marker string; the inner content slice is `fileBytes[startIdx+len(startMarker)+1 : endIdx]` (skip marker + trailing `\n`).
    - For `replace-file`: use the full file bytes (minus the preamble prefix).
-   - `Stale = (rendered != onDisk)` — direct string equality, no hashing needed.
+   - `Stale = (rendered != onDisk)` — direct string equality after `TrimSpace`.
 9. **Stretch-goal fields** (always populated when `FileExists=true`):
    - `FileSizeBytes = len(fileBytes)`
    - `FileTokenEst = estimateTokens(string(fileBytes))` where `estimateTokens(s) = len(strings.Fields(s)) * 13 / 10`
@@ -153,9 +153,11 @@ func scanOtherSections(content string) []SectionInfo
 
 ## Render Helper
 
-`renderSectionContent(a Adapter) string` is a private method on `Engine`, extracted from the existing pack-rendering logic in `runFileInject`. It returns the rendered context string that would be written between markers (or as the full file for `replace-file`). This method is also used by the staleness check in `Status()`.
+`renderSectionContent(a Adapter) string` is a new private method on `Engine` that mirrors the full render pipeline used in `Run()`: apply `content.TrimPacks(e.packs, maxBytes)` using the adapter's `MaxBytes`/`MaxTokens` budget, then render context and format output. It returns the string that would be written between markers (or as the full file for `replace-file`).
 
-Extracting it serves double duty: it removes duplication from `runFileInject` and makes the render step independently testable.
+This must replicate `TrimPacks` to avoid false-positive staleness reports on budget-constrained adapters: if packs are rendered without trimming, the comparison content will exceed what `inject` actually wrote, making every budget-trimmed file appear stale.
+
+The method is used by both `Status()` (staleness check) and `runFileInject()` (replacing inline rendering logic). This removes duplication from `runFileInject` as a secondary benefit, but the primary driver is correctness in `Status()`.
 
 ---
 
@@ -201,7 +203,7 @@ if injectStatus {
 
 New package-level vars: `injectStatus bool`, `injectJSON bool`, `injectVerbose bool`.
 
-`--json` and `--verbose` are registered as flags but are silently valid only when `--status` is also set. If used without `--status`, they are ignored (no error) — this avoids noisy validation for flags that are simply no-ops in other modes.
+`--json` and `--verbose` are registered as flags but are silently valid only when `--status` is also set. If used without `--status`, they are ignored (no error) — this is intentional: keeping them as simple booleans avoids cross-flag validation complexity, and a user who accidentally passes `--json` to a normal `inject` run will not see broken output (inject produces no stdout anyway). `--stats` is similarly a different output mode and is listed as mutually exclusive with `--status` (see exclusion list above); this must be validated in the mutual-exclusion check, not just in the flag documentation.
 
 ---
 
@@ -221,6 +223,7 @@ New keys in `internal/i18n/catalogs/en.json` and `de.json`:
 | `inject.status.orphaned` | `✗ orphaned` |
 | `inject.status.not_injected` | `✗ not injected` |
 | `inject.status.no_results` | `No file-inject adapters found for the given scope/tool.` |
+| `inject.status.append_warning` | `sap-devs warning: {{.Path}} uses append mode — injection state cannot be determined` |
 
 ---
 
@@ -256,5 +259,5 @@ New keys in `internal/i18n/catalogs/en.json` and `de.json`:
 
 - MCP wire adapter status (already covered by `mcp status`)
 - Clipboard-export adapters (ephemeral; no persistent state to check)
-- `append`-mode targets (no markers to detect; emit a warning similar to `--uninstall`)
+- `append`-mode targets (no markers to detect; emit a warning to stderr using a new i18n key `inject.status.append_warning`: `"sap-devs warning: {{.Path}} uses append mode — injection state cannot be determined"`)
 - Automatic repair / re-injection on stale detection
