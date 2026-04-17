@@ -2,6 +2,7 @@ package adapter_test
 
 import (
 	"bytes"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -683,7 +684,6 @@ func TestEngineUninstall_AppendModeWarning(t *testing.T) {
 		},
 	}
 	var buf bytes.Buffer
-	var stderrBuf bytes.Buffer
 	eng := adapter.NewEngine(adapters, nil, nil, adapter.Options{
 		Scope:     "global",
 		Uninstall: true,
@@ -696,14 +696,12 @@ func TestEngineUninstall_AppendModeWarning(t *testing.T) {
 	res := eng.Run()
 	w.Close()
 	os.Stderr = oldStderr
-	stderrBytes := make([]byte, 4096)
-	n, _ := r.Read(stderrBytes)
-	stderrBuf.Write(stderrBytes[:n])
+	stderrBytes, _ := io.ReadAll(r)
 
 	require.NoError(t, res.Err)
 	assert.Equal(t, 0, res.Found)
 	assert.Equal(t, 0, res.DryFound)
-	assert.Contains(t, stderrBuf.String(), "append")
+	assert.Contains(t, string(stderrBytes), "append")
 }
 
 func TestEngineUninstall_NotFound(t *testing.T) {
