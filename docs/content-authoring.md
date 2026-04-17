@@ -11,10 +11,11 @@ For the full pack structure reference (adapters, profiles, translations), see [d
 Each pack lives in `content/packs/<pack-id>/`. All files are optional except `pack.yaml`.
 
 ```
-content/packs/cap/
+content/packs/<pack-id>/
 ├── pack.yaml          # Pack metadata (id, name, tags, weight, profiles)
 ├── context.md         # AI context text injected into coding tools
 ├── context.<lang>.md  # Localised AI context (e.g. context.de.md)
+├── preamble.md        # AI preamble (base pack only)
 ├── tips.md            # H2-delimited tips shown by `sap-devs tip`
 ├── tips.<lang>.md     # Localised tips
 ├── tools.yaml         # Tool version requirements checked by `sap-devs doctor`
@@ -55,6 +56,32 @@ description: Shared content for all profiles
 weight: 0
 base: true
 ```
+
+### preamble.md
+
+A base pack may include an optional `preamble.md` file. When present, its content is rendered **before all pack `context.md` content** — immediately after the dynamic runtime section.
+
+**Rendered output order:**
+
+1. `# SAP Developer Context` header + profile line
+2. `## sap-devs Runtime Context` (dynamic — version, packs, available commands)
+3. **Preamble** — from `base/preamble.md` (this file)
+4. Base pack `context.md`
+5. Technology pack `context.md` files (cap, abap, btp-core, …)
+
+*Implementation note:* The preamble and `ContextMD` are emitted in two separate loops. The base pack's `ContextMD` is still rendered in the second loop with all other packs — not in the preamble loop. This prevents double-emission.
+
+**Authoring constraints:**
+
+- Keep it ≤ 3 lines — it is injected into every AI tool config on every `sap-devs inject` run.
+- No Markdown headings — it appears before pack content and must not create heading hierarchy collisions.
+- No locale variants — the preamble is intentionally language-neutral (command names don't translate).
+
+**Token budget:** The preamble is exempt from adapter token-budget trimming (same as base pack `ContextMD`). Every byte is unconditionally injected. Keep it short.
+
+**Layer override:** Only the official base pack's `preamble.md` is used. User, company, and project layer packs cannot override or augment the preamble. The render loop guards on `Pack.Base == true`; only base packs have their `PreambleMD` emitted. An additive pack targeting `id: base` also cannot modify `PreambleMD` — `MergeWith` preserves scalar fields from the base pack.
+
+---
 
 **Authoring contract:** Keep base pack content minimal. Every byte in a base pack is consumed in every inject, for every user, regardless of their configured token budget.
 
@@ -285,6 +312,8 @@ Adapter-level budgets are set in the adapter YAML via `max_tokens`. When a budge
 ## The `### Agent Instructions` Pattern
 
 The `### Agent Instructions` section is a convention for the bottom of `context.md`. It is not parsed specially — it is plain Markdown injected along with everything else. Its purpose is to teach the AI assistant *when to ask for more context* using `sap-devs` CLI commands, rather than falling back to web search.
+
+> **Note:** The general "prefer `sap-devs` commands over web search" instruction lives in `content/packs/base/preamble.md` and is injected automatically into every profile. Per-pack `### Agent Instructions` sections should contain only pack-specific command hints — for example, `--pack cap` flag variants for the CAP pack. See `content/packs/base/preamble.md` for the canonical example.
 
 Dynamic markers inject live data (release notes, API docs, changelogs). Agent instructions tell the AI how to use the CLI to fetch *additional* live data on demand. Together they form two tiers:
 

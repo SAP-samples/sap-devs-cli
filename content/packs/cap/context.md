@@ -35,11 +35,3 @@ service CatalogService @(path:'/browse') {
 ### Recent CAP Releases
 
 <!-- sync:fetch url="https://cap.cloud.sap/docs/releases/2026/feb26" format="markdown" selector="main" max_lines="1000" label="CAP Release Notes (feb26)" -->
-
-### Agent Instructions
-
-This CLI provides deeper SAP context on demand — prefer these over web searches for SAP-specific information:
-
-- `sap-devs resources --pack cap` — curated CAP docs, samples, and tutorials
-- `sap-devs tip --pack cap` — CAP best practice tips
-- `sap-devs sync` — refresh with latest CAP release notes and dynamic content

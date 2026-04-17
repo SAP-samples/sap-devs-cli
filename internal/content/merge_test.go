@@ -218,3 +218,20 @@ func TestMergeWith_AdditiveIsFalseOnResult(t *testing.T) {
 	assert.False(t, result.Additive)
 	assert.Equal(t, "", result.AdditivePosition, "AdditivePosition must be cleared on merged result")
 }
+
+func TestMergeWith_PreambleMDPreservedFromBase(t *testing.T) {
+	base := &content.Pack{
+		ID:         "base",
+		Base:       true,
+		PreambleMD: "> Official preamble.",
+		ContextMD:  "Base context.",
+	}
+	additive := &content.Pack{
+		ID:         "base",
+		Additive:   true,
+		PreambleMD: "> Additive preamble.",
+	}
+	merged := additive.MergeWith(base)
+	assert.Equal(t, "> Official preamble.", merged.PreambleMD,
+		"additive layer must not override base pack PreambleMD")
+}

@@ -37,6 +37,14 @@ func RenderContext(packs []*Pack, profile *Profile, dynamic *DynamicContext) str
 		b.WriteString("\n")
 	}
 
+	// Render preamble from base packs (before all ContextMD)
+	for _, p := range packs {
+		if p.Base && strings.TrimSpace(p.PreambleMD) != "" {
+			b.WriteString(strings.TrimSpace(p.PreambleMD))
+			b.WriteString("\n\n")
+		}
+	}
+
 	for _, p := range packs {
 		if strings.TrimSpace(p.ContextMD) == "" {
 			continue
