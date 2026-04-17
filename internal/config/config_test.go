@@ -101,3 +101,43 @@ func TestLocation_Omitempty(t *testing.T) {
 	assert.NotContains(t, string(data), "location",
 		"empty Location should not appear in YAML output")
 }
+
+func TestTipRotation_DefaultIsEmpty(t *testing.T) {
+	// Default() leaves Rotation as "" — tipSeed treats "" as "daily" at runtime
+	cfg := config.Default()
+	assert.Equal(t, "", cfg.Tip.Rotation)
+}
+
+func TestTipRotation_RoundTrip(t *testing.T) {
+	dir := t.TempDir()
+	cfg := config.Default()
+	cfg.Tip.Rotation = "hourly"
+	require.NoError(t, cfg.Save(dir))
+
+	loaded, err := config.Load(dir)
+	require.NoError(t, err)
+	assert.Equal(t, "hourly", loaded.Tip.Rotation)
+}
+
+func TestTipRotation_Omitempty(t *testing.T) {
+	// When Rotation is "" (zero value), the "tip" block must not appear in YAML
+	dir := t.TempDir()
+	cfg := config.Default() // Rotation is "" — zero value
+	require.NoError(t, cfg.Save(dir))
+
+	data, err := os.ReadFile(filepath.Join(dir, "config.yaml"))
+	require.NoError(t, err)
+	assert.NotContains(t, string(data), "tip",
+		"empty TipConfig should not appear in YAML output")
+}
+
+func TestTipRotation_MissingKeyLoadsEmpty(t *testing.T) {
+	// Config files without a "tip" block load with Rotation == ""
+	dir := t.TempDir()
+	yaml := `language: "en"`
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "config.yaml"), []byte(yaml), 0600))
+
+	cfg, err := config.Load(dir)
+	require.NoError(t, err)
+	assert.Equal(t, "", cfg.Tip.Rotation)
+}
