@@ -182,18 +182,22 @@ var newsReadCmd = &cobra.Command{
 }
 
 // openPager displays content via $PAGER, less (if available), or plain print.
+// Uses os.Stdout/Stderr directly so the pager gets a real TTY descriptor.
 func openPager(content string) error {
+	var pagerArgs []string
 	pager := os.Getenv("PAGER")
-	if pager == "" {
-		if _, err := exec.LookPath("less"); err == nil {
-			pager = "less"
-		}
+	if pager != "" {
+		parts := strings.Fields(pager)
+		pager = parts[0]
+		pagerArgs = parts[1:]
+	} else if _, err := exec.LookPath("less"); err == nil {
+		pager = "less"
 	}
 	if pager == "" {
 		fmt.Print(content)
 		return nil
 	}
-	c := exec.Command(pager) //nolint:gosec // pager comes from env or LookPath
+	c := exec.Command(pager, pagerArgs...) //nolint:gosec // pager comes from env or LookPath
 	c.Stdin = strings.NewReader(content)
 	c.Stdout = os.Stdout
 	c.Stderr = os.Stderr
@@ -201,6 +205,7 @@ func openPager(content string) error {
 }
 
 func init() {
+	newsCmd.Flags().IntVarP(&newsListN, "count", "n", 10, "number of episodes to show")
 	newsListCmd.Flags().IntVarP(&newsListN, "count", "n", 10, "number of episodes to show")
 	newsReadCmd.Flags().BoolVar(&newsReadPlain, "plain", false, "print plain text to stdout")
 	newsCmd.AddCommand(newsListCmd, newsLatestCmd, newsOpenCmd, newsSearchCmd, newsReadCmd)
