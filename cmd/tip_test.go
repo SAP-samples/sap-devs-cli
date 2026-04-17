@@ -26,9 +26,11 @@ func TestTipSeed_EmptyStringIsDailyBehavior(t *testing.T) {
 	assert.Equal(t, empty, daily)
 }
 
-func TestTipSeed_RandomNonZero(t *testing.T) {
-	s := tipSeed("daily", true)
-	assert.NotEqual(t, int64(0), s)
+func TestTipSeed_RandomProducesDistinctValues(t *testing.T) {
+	// useRandom=true must produce different seeds on successive calls
+	s1 := tipSeed("daily", true)
+	s2 := tipSeed("daily", true)
+	assert.NotEqual(t, s1, s2)
 }
 
 func TestTipSeed_HourlyAndDailyArePositive(t *testing.T) {

@@ -39,7 +39,7 @@ func tipSeed(rotation string, useRandom bool) int64 {
 	}
 	now := time.Now()
 	switch rotation {
-	case "hourly", "session":
+	case "hourly", "session": // "session" is a stateless alias for hourly-granularity seeding
 		// All terms cast to int64 before arithmetic to avoid 32-bit int overflow
 		return int64(now.Year())*100000 + int64(now.YearDay())*24 + int64(now.Hour())
 	default: // "daily" and ""
@@ -90,7 +90,7 @@ var tipCmd = &cobra.Command{
 
 		rotation := cfg.Tip.Rotation
 		if rotation != "" && rotation != "daily" && rotation != "hourly" && rotation != "session" {
-			fmt.Fprintf(os.Stderr, "warning: unknown tip_rotation value %q, falling back to daily\n", rotation)
+			fmt.Fprintf(os.Stderr, "sap-devs: unknown tip_rotation value %q, falling back to daily\n", rotation)
 			rotation = ""
 		}
 
