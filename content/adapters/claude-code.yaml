@@ -17,3 +17,7 @@ mcp_config:
   path: "~/.claude/settings.json"
   format: json
   key: "mcpServers"
+hook_config:
+  path: "~/.claude/settings.json"
+  format: json
+  key: "hooks.SessionStart"
