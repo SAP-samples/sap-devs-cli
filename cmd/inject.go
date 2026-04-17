@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -20,12 +21,13 @@ import (
 )
 
 var (
-	injectProject bool
-	injectTool    string
-	injectDryRun  bool
-	injectSync    bool
-	injectNoSync  bool
-	injectStats   bool
+	injectProject   bool
+	injectTool      string
+	injectDryRun    bool
+	injectSync      bool
+	injectNoSync    bool
+	injectStats     bool
+	injectUninstall bool
 )
 
 var injectCmd = &cobra.Command{
@@ -39,6 +41,52 @@ into project-level files (CLAUDE.md, .cursorrules, etc.) in the current director
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if injectSync && injectNoSync {
 			return fmt.Errorf("--sync and --no-sync are mutually exclusive")
+		}
+
+		if injectUninstall && (injectSync || injectNoSync) {
+			return fmt.Errorf("--uninstall is incompatible with --sync and --no-sync")
+		}
+
+		if injectUninstall {
+			lang := i18n.ActiveLang
+			var buf bytes.Buffer
+			gatheredAdapters, err := loadAdapters()
+			if err != nil {
+				return err
+			}
+			scope := "global"
+			if injectProject {
+				scope = "project"
+			}
+			opts := adapter.Options{
+				Uninstall:  true,
+				Scope:      scope,
+				ToolFilter: injectTool,
+				DryRun:     injectDryRun,
+				Lang:       lang,
+				Out:        &buf,
+			}
+			eng := adapter.NewEngine(gatheredAdapters, nil, nil, opts)
+			res := eng.Run()
+			if res.Err != nil {
+				return res.Err
+			}
+			if injectDryRun {
+				if res.DryFound > 0 {
+					fmt.Fprintln(cmd.OutOrStdout(), i18n.T(lang, "inject.uninstall.dry_run_header"))
+					fmt.Fprint(cmd.OutOrStdout(), buf.String())
+				} else {
+					fmt.Fprintln(cmd.OutOrStdout(), i18n.T(lang, "inject.uninstall.nothing_found"))
+				}
+			} else {
+				if res.Found > 0 {
+					fmt.Fprintln(cmd.OutOrStdout(), i18n.T(lang, "inject.uninstall.header"))
+					fmt.Fprint(cmd.OutOrStdout(), buf.String())
+				} else {
+					fmt.Fprintln(cmd.OutOrStdout(), i18n.T(lang, "inject.uninstall.nothing_found"))
+				}
+			}
+			return nil
 		}
 
 		scope := "global"
@@ -213,5 +261,6 @@ func init() {
 	injectCmd.Flags().BoolVar(&injectSync, "sync", false, "sync dynamic content before injecting (no prompt)")
 	injectCmd.Flags().BoolVar(&injectNoSync, "no-sync", false, "skip freshness check; use cached content as-is")
 	injectCmd.Flags().BoolVar(&injectStats, "stats", false, "show injection stats per adapter")
+	injectCmd.Flags().BoolVar(&injectUninstall, "uninstall", false, "remove previously injected SAP developer context")
 	rootCmd.AddCommand(injectCmd)
 }

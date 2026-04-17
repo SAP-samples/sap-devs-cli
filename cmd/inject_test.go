@@ -2,6 +2,7 @@
 package cmd_test
 
 import (
+	"bytes"
 	"os"
 	"path/filepath"
 	"strings"
@@ -61,4 +62,67 @@ func TestInjectEndToEnd(t *testing.T) {
 	assert.Equal(t, 1, strings.Count(result2, "<!-- sap-devs:start:SAP Developer Context -->"))
 	assert.Contains(t, result2, "# My Project")
 	assert.Contains(t, result2, "My notes.")
+}
+
+func TestInjectUninstall_NothingFoundMessage(t *testing.T) {
+	// When uninstall runs and nothing is found, the engine returns Found=0.
+	// Test the engine-layer behavior: empty file produces "not found" output.
+	dir := t.TempDir()
+	targetFile := filepath.Join(dir, "CLAUDE.md")
+	require.NoError(t, os.WriteFile(targetFile, []byte("no markers here\n"), 0644))
+
+	adapters := []adapter.Adapter{
+		{
+			ID:   "claude-code",
+			Type: "file-inject",
+			Targets: []adapter.Target{
+				{Scope: "global", Path: targetFile, Mode: "replace-section", Section: "SAP Developer Context"},
+			},
+		},
+	}
+	var buf bytes.Buffer
+	eng := adapter.NewEngine(adapters, nil, nil, adapter.Options{
+		Scope:     "global",
+		Uninstall: true,
+		Lang:      "en",
+		Out:       &buf,
+	})
+	res := eng.Run()
+	require.NoError(t, res.Err)
+	assert.Equal(t, 0, res.Found)
+	assert.Contains(t, buf.String(), "not found")
+}
+
+func TestInjectUninstall_DryRunOutputContainsDryRunLine(t *testing.T) {
+	dir := t.TempDir()
+	targetFile := filepath.Join(dir, "CLAUDE.md")
+	content := "before\n\n<!-- sap-devs:start:SAP Developer Context -->\nbody\n<!-- sap-devs:end:SAP Developer Context -->\n\nafter\n"
+	require.NoError(t, os.WriteFile(targetFile, []byte(content), 0644))
+
+	adapters := []adapter.Adapter{
+		{
+			ID:   "claude-code",
+			Type: "file-inject",
+			Targets: []adapter.Target{
+				{Scope: "global", Path: targetFile, Mode: "replace-section", Section: "SAP Developer Context"},
+			},
+		},
+	}
+	var buf bytes.Buffer
+	eng := adapter.NewEngine(adapters, nil, nil, adapter.Options{
+		Scope:     "global",
+		Uninstall: true,
+		DryRun:    true,
+		Lang:      "en",
+		Out:       &buf,
+	})
+	res := eng.Run()
+	require.NoError(t, res.Err)
+	assert.Equal(t, 0, res.Found)
+	assert.Equal(t, 1, res.DryFound)
+	assert.Contains(t, buf.String(), "[dry-run]")
+	// File must be unchanged
+	got, err := os.ReadFile(targetFile)
+	require.NoError(t, err)
+	assert.Equal(t, content, string(got))
 }
