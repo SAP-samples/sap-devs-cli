@@ -510,50 +510,9 @@ Adopt conventional section headings across all pack `context.md` files so conten
 
 ---
 
-### `sap-devs inject --status` (or `sap-devs inject status`)
+### ✅ DONE: `sap-devs inject --status`
 
-Scan AI tool config files and report the state of injected content across all detected tools.
-
-**Problem:** Users have no visibility into *what* sap-devs has injected, *where*, or *whether it's stale*. After running `inject` once, they can't tell which tools received content, whether content is current, or if a tool was missed — without manually opening each config file.
-
-**Scope:**
-
-- Iterate all `file-inject` adapters and their targets
-- For each target file, check:
-  - **Exists?** — is the target file present on disk?
-  - **Injected?** — does it contain `<!-- sap-devs:start:… -->` / `<!-- sap-devs:end:… -->` fenced sections?
-  - **Stale?** — compare injected content hash against what `inject` would produce now (current packs + profile); flag as stale if they differ
-  - **Scope** — report global vs project injections separately
-- For `mcp-wire` adapters, check whether registered MCP servers are still present in the tool's JSON config
-- Support `--tool` flag to limit the scan to a single tool
-- Output a summary table, e.g.:
-
-  ```text
-  Tool            Scope    File                        Status
-  Claude Code     global   ~/.claude/CLAUDE.md         ✓ current
-  Claude Code     project  .claude/CLAUDE.md           ✗ stale (3 days)
-  Cursor          global   ~/.cursor/rules/sap.mdc     ✗ not found
-  Copilot         global   ~/.github/copilot.md        ✓ current
-  ```
-
-- `--json` flag for machine-readable output (CI integration, scripting)
-
-**Stretch goal — full instructions file analysis:**
-
-Go beyond sap-devs' own fenced sections and analyse the *entire* instructions file for each supported tool:
-
-- Report total file size / estimated token count
-- Identify other injected sections (non-sap-devs fenced blocks, other tools' markers)
-- Flag potential conflicts (duplicate instructions, contradictory guidance)
-- Show what percentage of the file is sap-devs content vs user-authored vs other tools
-- This gives users a holistic view of their AI tool configuration health, not just the sap-devs slice
-
-**Implementation notes:**
-
-- `DetectRule` in `adapter.go` already has command/path detection — reuse for tool presence checks
-- Section-finding logic overlaps with `inject --uninstall` — both need a shared helper extracted from `file_inject.go` to locate `sap-devs:start/end` blocks
-- Staleness check: hash the rendered content (same pipeline as `inject`) and compare against what's on disk between the markers
-- The stretch analysis could use a simple token estimator (word count × 1.3 or tiktoken-go) for the full-file report
+Implemented in `feat/inject-status`. See spec: `docs/superpowers/specs/2026-04-17-inject-status-design.md`.
 
 ---
 
