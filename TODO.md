@@ -112,20 +112,7 @@ Browse SAP community influencers and thought leaders relevant to your active pro
 
 ---
 
-### `sap-devs config location`
-
-Let users store their location for features (events, learn) that benefit from geographic context.
-
-**Configuration key:** `location` in `~/.config/sap-devs/config.yaml`
-
-**Input modes:**
-
-- Manual: `sap-devs config set location "Hamburg, Germany"` — free-text city/country string
-- Auto-detect: `sap-devs config set location --detect` — fetches approximate location from a public IP geolocation API (e.g. ip-api.com, no key required); prompts the user to confirm before saving
-
-**Stored format:** free-text string (city + country is sufficient; no need for precise coordinates)
-
-**Privacy note:** auto-detect uses IP geolocation, which is approximate and does not require GPS or OS location permissions. Display a one-line notice to the user when `--detect` is used.
+### `sap-devs config location` - DONE ✔️
 
 ---
 
