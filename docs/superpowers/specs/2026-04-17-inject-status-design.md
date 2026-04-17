@@ -74,7 +74,8 @@ type SectionInfo struct {
     Tokens int
 }
 
-// StatusRow is the result of inspecting one adapter target.
+// StatusRow is the result of inspecting one adapter target (one row per adapter+target pair).
+// An adapter with both a global and a project target produces two StatusRows.
 type StatusRow struct {
     AdapterName string
     AdapterID   string
