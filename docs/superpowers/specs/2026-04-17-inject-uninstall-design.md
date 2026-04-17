@@ -42,31 +42,43 @@ Extracts the marker-search logic currently inlined in `ReplaceSection`. `section
 
 `startIdx` is the byte offset of the first character of the start marker string (matching `strings.Index` convention). `endIdx` is the byte offset of the first character of the end marker string (same convention). Both are only meaningful when `status == sectionFound`.
 
-`ReplaceSection` is refactored to call `findSection` and return an error when it gets `sectionOrphaned` (preserving existing behaviour). Used by both `ReplaceSection` and the new `RemoveSection`.
+`ReplaceSection` is refactored to call `findSection` and return an error when it gets `sectionOrphaned` (preserving existing behaviour). When `findSection` returns `sectionNotFound`, `ReplaceSection` continues to the append-on-create path unchanged. No existing `ReplaceSection` behaviour changes — the refactor is purely internal.
 
-**`RemoveSection(path, section string, dryRun bool, w io.Writer) (removed bool, err error)`**
+`findSection` never returns an error itself. The caller is responsible for converting `sectionOrphaned` into an error with an appropriate message.
 
-- Reads the file; returns `removed=false, err=nil` if file doesn't exist.
-- Constructs `start = fmt.Sprintf("<!-- sap-devs:start:%s -->", section)` and `end = fmt.Sprintf("<!-- sap-devs:end:%s -->", section)`, then calls `findSection`.
-- `sectionNotFound` → returns `removed=false, err=nil` (clean no-op).
-- `sectionOrphaned` → returns `removed=false, err=<orphaned marker error>`.
-- `sectionFound` → removes the block as follows:
-  1. Start with `result = content[:startIdx] + content[endIdx+len(end):]`
-  2. Consume the `\n` immediately after the end marker (i.e., advance `endIdx+len(end)` by 1 if that byte is `\n`) — same as `ReplaceSection` does today with `afterEnd++`.
-  3. **Always** collapse any `\n\n\n` sequence in the result to `\n\n` — this step is unconditional, not optional cleanup. It is required to produce correct output when content surrounded the section with blank lines.
-  4. Example: input `"before\n\n<!-- sap-devs:start:X -->\nbody\n<!-- sap-devs:end:X -->\n\nafter\n"` → after step 2 the trailing `\n` after the end marker is consumed → after step 3 no triple-newline remains → output `"before\n\nafter\n"`.
-  5. Write the modified content back to the file.
-- Dry-run: writes `fmt.Sprintf("[dry-run] would remove section %q from %s\n", section, path)` to `w`, no file write.
-- Normal run: writes nothing to `w` (result lines are printed by the caller `runFileUninstall`).
+**`RemoveSection(path, section string, dryRun bool, w io.Writer) (found, removed bool, err error)`**
 
-**`DeleteFile(path string, dryRun bool, w io.Writer) (deleted bool, err error)`**
+Returns three values:
 
-- Returns `deleted=false, err=nil` if file does not exist.
-- Removes the file via `os.Remove`.
-- Dry-run: writes `fmt.Sprintf("[dry-run] would delete %s\n", path)` to `w`, no deletion.
-- Normal run: writes nothing to `w`.
+- `found=true, removed=true`: live mode, section was present and has been removed.
+- `found=true, removed=false`: dry-run mode, section was present but not removed (dry-run only previews).
+- `found=false, removed=false`: section not present in file (either mode); `err=nil`.
+- Any of the above with `err!=nil`: an error occurred.
 
-**Refactoring note:** The existing `ReplaceSection` and `ReplaceFile` use `fmt.Printf` for dry-run output (writing to raw stdout). To keep the change set minimal, those functions are **not** migrated to `io.Writer` in this feature. Only the new `RemoveSection` and `DeleteFile` use the `w io.Writer` pattern, which allows their output to be captured in engine tests via `opts.Out`.
+Behaviour:
+
+- Reads the file; returns `found=false, removed=false, err=nil` if file doesn't exist.
+- Constructs `start` and `end` marker strings, then calls `findSection`.
+- `sectionNotFound` → returns `found=false, removed=false, err=nil` (clean no-op).
+- `sectionOrphaned` → returns `found=false, removed=false, err=<orphaned marker error>`.
+- `sectionFound` in **dry-run** mode → writes `fmt.Sprintf("[dry-run] would remove section %q from %s\n", section, path)` to `w`; returns `found=true, removed=false, err=nil`. No file write.
+- `sectionFound` in **live** mode → removes the block as follows:
+  1. The removed region is bytes `[startIdx, endIdx+len(end))` — inclusive of both markers. Formula: `result = content[:startIdx] + content[endIdx+len(end):]`.
+  2. Consume the `\n` immediately following the end marker (advance `endIdx+len(end)` by 1 if that byte is `\n`) — same as `ReplaceSection` does today with `afterEnd++`.
+  3. **Always** apply a global collapse of three or more consecutive newlines to exactly two — unconditional, applied to all occurrences (not just the first). Required to produce correct output when content surrounded the section with blank lines. Use a loop or regexp: `for strings.Contains(result, "\n\n\n") { result = strings.ReplaceAll(result, "\n\n\n", "\n\n") }`.
+  4. Example: `"before\n\n<!-- sap-devs:start:X -->\nbody\n<!-- sap-devs:end:X -->\n\nafter\n"` → step 2 consumes trailing `\n` → step 3 collapses nothing (no triple-newline) → output `"before\n\nafter\n"`.
+  5. Write modified content back to the file.
+  6. Returns `found=true, removed=true, err=nil`. Writes nothing to `w` (result lines are printed by `runFileUninstall`).
+
+**`DeleteFile(path string, dryRun bool, w io.Writer) (found, deleted bool, err error)`**
+
+Returns analogous three values: `found=true, deleted=true` (live, file existed and was removed), `found=true, deleted=false` (dry-run, file exists but not deleted), `found=false, deleted=false` (file absent).
+
+- File absent → returns `found=false, deleted=false, err=nil`.
+- File present, dry-run → writes `fmt.Sprintf("[dry-run] would delete %s\n", path)` to `w`; returns `found=true, deleted=false, err=nil`.
+- File present, live → removes file via `os.Remove`; returns `found=true, deleted=true, err=nil` on success. Writes nothing to `w`.
+
+**Refactoring note:** The existing `ReplaceSection` and `ReplaceFile` use `fmt.Printf` for dry-run output (writing to raw stdout). To keep the change set minimal, those functions are **not** migrated to `io.Writer` in this feature. Only the new `RemoveSection` and `DeleteFile` use the `w io.Writer` pattern.
 
 ### Engine changes in `internal/adapter/engine.go`
 
@@ -74,26 +86,26 @@ Add to the `Options` struct:
 
 ```go
 Uninstall bool
-Lang      string  // populated from i18n.ActiveLang in cmd layer; used for i18n in runFileUninstall
+// Lang is the active language for i18n in runFileUninstall.
+// Populated from i18n.ActiveLang in the cmd layer.
+// Always use e.opts.Lang inside engine code — do not reference i18n.ActiveLang directly
+// from the engine package, as it is a cmd-layer global.
+Lang string
 ```
 
-`engine.Run()` returns a `RunResult` struct instead of bare `error`. This avoids a bare signature change while exposing the `Found` count to the command layer:
+`engine.Run()` returns a `RunResult` struct instead of bare `error`:
 
 ```go
 type RunResult struct {
-    Found    int   // sections/files actually removed; 0 during dry-run
-    DryFound int   // targets that would be removed in dry-run (incremented per target when dryRun=true and section/file exists or would-be removed)
+    Found    int   // sections/files actually removed (live mode only)
+    DryFound int   // sections/files that would be removed (dry-run mode only; 0 in live mode)
     Err      error
 }
 
 func (e *Engine) Run() RunResult { ... }
 ```
 
-**All existing callers of `engine.Run()` must be updated.** There are 16 call sites:
-
-- 13 in `internal/adapter/adapter_test.go` — change `require.NoError(t, eng.Run())` to `res := eng.Run(); require.NoError(t, res.Err)`.
-- 1 in `cmd/inject.go` — change `if err := eng.Run(); err != nil` to `res := eng.Run(); if res.Err != nil`.
-- 2 in `cmd/inject_test.go` — same pattern as the adapter tests.
+**All existing callers of `engine.Run()` must be updated.** Use `grep -n '\.Run()' ./internal/adapter/ ./cmd/` to find all call sites before editing — do not rely on a hard-coded count. The pattern to apply is: change `require.NoError(t, eng.Run())` to `res := eng.Run(); require.NoError(t, res.Err)`, and `if err := eng.Run(); err != nil` to `res := eng.Run(); if res.Err != nil`. Call sites are in `internal/adapter/adapter_test.go`, `cmd/inject.go`, and `cmd/inject_test.go`.
 
 In `engine.Run()`, the uninstall check is placed at the **top of the per-adapter loop body**, before any pack-trim, render, or budget operations:
 
@@ -124,17 +136,17 @@ This avoids calling `TrimPacks` or `RenderContext` (which require loaded packs) 
 
 - Iterates `a.Targets`.
 - Applies scope filtering (skips targets whose scope doesn't match `opts.Scope`). An empty `opts.Scope` skips all targets (consistent with `runFileInject`). Tests must set `opts.Scope` explicitly.
-- Expands `~/` paths via `ExpandHome()`. If `ExpandHome` returns an error for a target, collect it via `errors.Join` and continue to remaining targets (consistent with the collect-all-errors pattern, unlike the fail-fast behaviour in `runFileInject`).
+- Expands `~/` paths via `ExpandHome()`. If `ExpandHome` returns an error for a target, collect it via `errors.Join` and continue to remaining targets (consistent with collect-all-errors, unlike fail-fast in `runFileInject`).
 - Dispatches by mode:
-  - `replace-section` → `RemoveSection(path, target.Section, opts.DryRun, e.opts.Out)`
-  - `replace-file` → `DeleteFile(path, opts.DryRun, e.opts.Out)`
-  - `append` → writes `i18n.Tf(e.opts.Lang, "inject.uninstall.append_warning", map[string]any{"Path": path}) + "\n"` to `os.Stderr`; skips target (not counted as found, not an error).
+  - `replace-section` → `RemoveSection(path, target.Section, opts.DryRun, e.opts.Out)` → `(found, removed bool, err)`
+  - `replace-file` → `DeleteFile(path, opts.DryRun, e.opts.Out)` → `(found, deleted bool, err)`
+  - `append` → writes `i18n.Tf(e.opts.Lang, "inject.uninstall.append_warning", map[string]any{"Path": path}) + "\n"` to `os.Stderr`; skips target (not an error, not counted).
   - Unknown mode → returns error immediately (same as `runFileInject`).
-- After each `replace-section` or `replace-file` call:
-  - If `opts.DryRun == true`: increment `dryFound`; `RemoveSection`/`DeleteFile` have already written the `[dry-run]` line to `e.opts.Out`; also write `fmt.Sprintf("  %s  — %s\n", path, i18n.T(e.opts.Lang, "inject.uninstall.not_found"))` to `e.opts.Out`.
-  - If `removed`/`deleted` is true (normal mode): increment `found`; write `fmt.Sprintf("  %s  — %s\n", path, i18n.T(e.opts.Lang, key))` to `e.opts.Out` where key is `inject.uninstall.section_removed` or `inject.uninstall.file_deleted` accordingly.
-  - If `removed`/`deleted` is false and not dry-run (section not present in file): write `fmt.Sprintf("  %s  — %s\n", path, i18n.T(e.opts.Lang, "inject.uninstall.not_found"))` to `e.opts.Out`.
-- **Error handling:** collects all errors across all targets via `errors.Join`, returns after processing all targets (does not stop on first error).
+- After each `replace-section` or `replace-file` call, uses `found` (not `removed`/`deleted`) to determine output:
+  - If `found && removed` (live mode, section/file was present and removed): increment the local `found` counter; write `fmt.Sprintf("  %s  — %s\n", path, i18n.T(e.opts.Lang, key))` to `e.opts.Out` where key is `inject.uninstall.section_removed` or `inject.uninstall.file_deleted`.
+  - If `found && !removed` (dry-run mode, section/file is present): increment local `dryFound`; the `[dry-run]` line was already written to `e.opts.Out` by `RemoveSection`/`DeleteFile`. Write no additional line.
+  - If `!found` (section/file not present, either mode): write `fmt.Sprintf("  %s  — %s\n", path, i18n.T(e.opts.Lang, "inject.uninstall.not_found"))` to `e.opts.Out`. Do not increment `found` or `dryFound`.
+- **Error handling:** collects all errors via `errors.Join`, returns after processing all targets (does not stop on first error).
 
 ### Command changes in `cmd/inject.go`
 
@@ -146,9 +158,11 @@ When `--uninstall` is set, skip:
 
 - Staleness check
 - Dynamic context gathering
-- Pack loading (pass `nil` packs to the engine)
+- Pack loading
 
-Use a `bytes.Buffer` as the `Out` writer passed to the engine so the command can inspect what was written:
+Load adapters via `loadAdapters()` (same as the normal inject path — check the error, return it if non-nil). Pass `nil` packs and `nil` profile to `adapter.NewEngine` directly. Do not use `newAdapterEngine` — it requires loaded packs and performs layer merging that is unnecessary for uninstall.
+
+Use a `bytes.Buffer` as the `Out` writer so the command can inspect what was written:
 
 ```go
 var buf bytes.Buffer
@@ -160,7 +174,11 @@ opts := adapter.Options{
     Lang:       i18n.ActiveLang,
     Out:        &buf,
 }
-eng := adapter.NewEngine(gatheredAdapters, nil, nil, opts)  // adapters loaded same as normal inject path; nil packs and profile
+gatheredAdapters, err := loadAdapters()
+if err != nil {
+    return err
+}
+eng := adapter.NewEngine(gatheredAdapters, nil, nil, opts)
 res := eng.Run()
 if res.Err != nil {
     return res.Err
@@ -170,8 +188,8 @@ if res.Err != nil {
 **Summary output logic:**
 
 - In **normal mode**: if `res.Found > 0`, print `i18n.T(lang, "inject.uninstall.header")` then `buf.String()` to `cmd.OutOrStdout()`. Otherwise print `i18n.T(lang, "inject.uninstall.nothing_found")`.
-- In **dry-run mode**: `res.Found` is always 0. Use `res.DryFound > 0` as the criterion: if non-zero, print `i18n.T(lang, "inject.uninstall.dry_run_header")` then `buf.String()`; otherwise print `inject.uninstall.nothing_found`.
-- Note: if all matched targets are `append`-mode (warnings to stderr, `found == 0`, buf empty), `nothing_found` is printed on stdout. The stderr warnings convey the manual action required.
+- In **dry-run mode**: `res.Found` is always 0. Use `res.DryFound > 0`: if non-zero, print `i18n.T(lang, "inject.uninstall.dry_run_header")` then `buf.String()`; otherwise print `inject.uninstall.nothing_found`.
+- Note: if all matched targets are `append`-mode (`found == 0`, `DryFound == 0`), `nothing_found` is printed on stdout alongside the stderr warnings. This combination — stderr append warnings + stdout nothing-found — is intentional: the stderr warnings convey the manual action required, and `nothing_found` accurately reflects that no automatic removal occurred.
 
 **Summary output format (normal mode):**
 
@@ -181,15 +199,15 @@ Uninstalled SAP developer context:
   ~/.cursor/rules/sap-developer-context.mdc  — file deleted
 ```
 
-**Summary output format (dry-run mode):**
+**Summary output format (dry-run mode, sections present):**
 
 ```text
 Would uninstall SAP developer context:
   [dry-run] would remove section "SAP Developer Context" from ~/.claude/CLAUDE.md
-  ~/.claude/CLAUDE.md  — not found
+  [dry-run] would delete ~/.cursor/rules/sap-developer-context.mdc
 ```
 
-If nothing was found:
+If nothing was found or would be found:
 
 ```text
 No injected sections found.
@@ -207,24 +225,27 @@ No injected sections found.
 | `inject.uninstall.nothing_found` | `No injected sections found.` | `Keine injizierten Abschnitte gefunden.` |
 | `inject.uninstall.append_warning` | `warning: cannot auto-remove append-mode target {{.Path}} — remove manually` | `Warnung: Append-Ziel {{.Path}} kann nicht automatisch entfernt werden — bitte manuell löschen` |
 
-Call site for append warning inside `runFileUninstall`: `i18n.Tf(e.opts.Lang, "inject.uninstall.append_warning", map[string]any{"Path": path})`. Always use `e.opts.Lang` inside engine code, not `i18n.ActiveLang` — the latter is a cmd-layer global and must not be referenced from the engine package.
+Call site for append warning inside `runFileUninstall`: `i18n.Tf(e.opts.Lang, "inject.uninstall.append_warning", map[string]any{"Path": path})`. Always use `e.opts.Lang` inside engine code — do not reference `i18n.ActiveLang` from the engine package.
 
 ## Data Flow
 
 ```text
 inject --uninstall [--tool X] [--project] [--dry-run]
-  └─ cmd/inject.go: validates flags, builds Options{Uninstall:true, Out: &buf, Lang: i18n.ActiveLang}
-       └─ engine.Run() → RunResult{Found, Err}
+  └─ cmd/inject.go: load adapters, build Options{Uninstall:true, Out:&buf, Lang:i18n.ActiveLang}
+       └─ engine.Run() → RunResult{Found, DryFound, Err}
             └─ for each adapter (--tool filter applied):
                  ├─ non-file-inject → skip (continue)
-                 └─ file-inject → runFileUninstall(a) → (found int, err error)
+                 └─ file-inject → runFileUninstall(a) → (found, dryFound int, err)
                       ├─ scope filter applied per target
-                      ├─ replace-section → RemoveSection(…, &buf) → [dry-run] line + result line to buf
-                      ├─ replace-file    → DeleteFile(…, &buf)    → [dry-run] line + result line to buf
-                      └─ append          → warning to os.Stderr, skips
-       └─ cmd: normal: Found>0 → header+buf
-              dry-run: DryFound>0 → dry_run_header+buf
-              else → nothing_found
+                      ├─ replace-section → RemoveSection(…, &buf)
+                      │     found+removed  → result line to buf (section removed)
+                      │     found+!removed → [dry-run] line to buf (by primitive)
+                      │     !found         → not-found line to buf
+                      ├─ replace-file → DeleteFile(…, &buf)   [same pattern]
+                      └─ append → warning to os.Stderr, skips
+       └─ cmd: normal: Found>0   → header + buf
+              dry-run: DryFound>0 → dry_run_header + buf
+              else               → nothing_found
 ```
 
 ## Error Handling
@@ -235,17 +256,19 @@ inject --uninstall [--tool X] [--project] [--dry-run]
 - `append`-mode target: warning printed to `os.Stderr`, target skipped, not an error.
 - `ExpandHome` error for a target: collected via `errors.Join`, continues to remaining targets.
 - File permission errors: collected by `runFileUninstall` via `errors.Join`, returned after all targets processed.
-- All-append adapter (only adapter matched has all `append` targets): `found == 0`, `buf` empty, stdout prints `nothing_found`. Stderr warnings convey the manual action required.
+- `loadAdapters()` error: returned immediately from `RunE`.
 - `--uninstall` with `--sync` or `--no-sync`: validation error at the top of `RunE`.
 
 ## Testing
 
-- Unit test `findSection`: given `content = "before\n<!-- sap-devs:start:X -->\nbody\n<!-- sap-devs:end:X -->\nafter\n"`, `startIdx = 7` (index of `<` of start marker; `"before\n"` = 7 bytes), `endIdx = 38` (index of `<` of end marker; `7 + len("<!-- sap-devs:start:X -->") + len("\nbody\n") = 7 + 25 + 6 = 38`; note the end marker `<!-- sap-devs:end:X -->` is 23 bytes — 2 fewer than the start marker due to `end` vs `start`); status = `sectionFound`. Also: start marker only → `sectionOrphaned`; end marker only → `sectionOrphaned`; neither → `sectionNotFound`.
-- Unit test `RemoveSection`: section present → `removed=true`, content correct (`"before\n\n<!-- sap-devs:start:X -->\nbody\n<!-- sap-devs:end:X -->\n\nafter\n"` → `"before\n\nafter\n"`), no triple-newline left; section absent → `removed=false, err=nil`; file absent → `removed=false, err=nil`; orphaned start marker → `err!=nil`; orphaned end marker → `err!=nil`; dry-run → no file write, expected `[dry-run]` message written to buffer `w`.
-- Unit test `DeleteFile`: file present → `deleted=true`; file absent → `deleted=false, err=nil`; dry-run → no deletion, expected `[dry-run]` message written to buffer `w`.
-- Engine integration test: `--uninstall` removes a previously injected `replace-section` target and `RunResult.Found == 1`; `--uninstall` deletes a `replace-file` target and `Found == 1`; skips non-`file-inject` adapters; respects `--tool` filter; respects `--project` scope; `--dry-run` makes no disk changes and buffer contains `[dry-run]` lines; `append`-mode target emits warning to stderr, not counted in `Found`.
-- Command-level test: `--uninstall` with `--sync` returns an error; `--uninstall` with `--no-sync` returns an error; `--uninstall` with `--stats` succeeds (stats ignored); nothing-found path prints `inject.uninstall.nothing_found`; dry-run with content prints dry-run header + `[dry-run]` lines.
-- Caller update test: all 15 existing `engine.Run()` call sites updated to `RunResult` pattern (`res := eng.Run(); require.NoError(t, res.Err)`) — 13 in `internal/adapter/adapter_test.go`, 1 in `cmd/inject.go`, 2 in `cmd/inject_test.go`.
+- Unit test `findSection`: given `content = "before\n<!-- sap-devs:start:X -->\nbody\n<!-- sap-devs:end:X -->\nafter\n"`, verify `startIdx` and `endIdx` using `strings.Index` directly in the test rather than hard-coding computed values (manual byte counting is error-prone); status = `sectionFound`. Also: start marker only → `sectionOrphaned`; end marker only → `sectionOrphaned`; neither → `sectionNotFound`.
+- Unit test `RemoveSection` (live mode): section present → `found=true, removed=true`, content is `"before\n\nafter\n"` for input `"before\n\n<!-- sap-devs:start:X -->\nbody\n<!-- sap-devs:end:X -->\n\nafter\n"`, no triple-newline; section absent → `found=false, removed=false, err=nil`; file absent → `found=false, removed=false, err=nil`; orphaned start → `err!=nil`; orphaned end → `err!=nil`.
+- Unit test `RemoveSection` (dry-run): section present → `found=true, removed=false`, `[dry-run]` message written to `w`, file unchanged; section absent → `found=false, removed=false`, nothing written to `w`.
+- Unit test `DeleteFile`: file present, live → `found=true, deleted=true`; file absent → `found=false, deleted=false, err=nil`; dry-run, file present → `found=true, deleted=false`, `[dry-run]` message written to `w`, file not deleted.
+- Engine integration test: `--uninstall` removes a previously injected `replace-section` target and `RunResult.Found == 1`; `--uninstall` deletes a `replace-file` target and `Found == 1`; skips non-`file-inject` adapters; respects `--tool` filter; respects `--project` scope; `--dry-run` makes no disk changes, `DryFound == 1`, buf contains `[dry-run]` line; `append`-mode target emits warning to stderr, `Found == 0`, `DryFound == 0`.
+- Command-level test: `--uninstall` with `--sync` returns an error; `--uninstall` with `--no-sync` returns an error; `--uninstall` with `--stats` succeeds; nothing-found path prints `inject.uninstall.nothing_found`; dry-run with content prints dry-run header + `[dry-run]` lines.
+- Regression: verify all existing `ReplaceSection` tests pass after extracting `findSection`; no new `ReplaceSection` tests needed beyond confirming the refactor does not change observable behaviour.
+- Caller update: update all `engine.Run()` call sites in `internal/adapter/adapter_test.go`, `cmd/inject.go`, and `cmd/inject_test.go` to the `RunResult` pattern (`res := eng.Run(); require.NoError(t, res.Err)`). Use `grep -n '\.Run()' ./internal/adapter/ ./cmd/` to locate all sites before editing.
 
 ## Out of Scope
 
