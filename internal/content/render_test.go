@@ -386,3 +386,56 @@ func TestTrimPacks_AllBasePacks_AllSurvive(t *testing.T) {
 	result := content.TrimPacks(packs, 5) // tiny budget — ignored for base packs
 	require.Len(t, result, 2)
 }
+
+func TestRenderContext_Preamble_PrecedesSameBasePackContextMD(t *testing.T) {
+	packs := []*content.Pack{
+		{ID: "base", Base: true, PreambleMD: "> Preamble.", ContextMD: "## Base context."},
+	}
+	out := content.RenderContext(packs, nil, nil)
+	preambleIdx := strings.Index(out, "> Preamble.")
+	baseCtxIdx := strings.Index(out, "## Base context.")
+	require.NotEqual(t, -1, preambleIdx, "preamble must be present")
+	assert.Less(t, preambleIdx, baseCtxIdx, "preamble must precede same base pack ContextMD")
+}
+
+func TestRenderContext_Preamble_AppearsBeforeContextMD(t *testing.T) {
+	packs := []*content.Pack{
+		{ID: "base", Base: true, PreambleMD: "> Prefer sap-devs.", ContextMD: "## Base context."},
+		{ID: "cap", ContextMD: "## CAP context."},
+	}
+	out := content.RenderContext(packs, nil, nil)
+	preambleIdx := strings.Index(out, "> Prefer sap-devs.")
+	baseCtxIdx := strings.Index(out, "## Base context.")
+	capCtxIdx := strings.Index(out, "## CAP context.")
+	require.NotEqual(t, -1, preambleIdx, "preamble must be present")
+	assert.Less(t, preambleIdx, baseCtxIdx, "preamble must appear before base ContextMD")
+	assert.Less(t, preambleIdx, capCtxIdx, "preamble must appear before non-base ContextMD")
+}
+
+func TestRenderContext_Preamble_NonBasePackPreambleSuppressed(t *testing.T) {
+	packs := []*content.Pack{
+		{ID: "cap", Base: false, PreambleMD: "> Should not appear.", ContextMD: "## CAP context."},
+	}
+	out := content.RenderContext(packs, nil, nil)
+	assert.NotContains(t, out, "> Should not appear.", "non-base pack preamble must be suppressed")
+	assert.Contains(t, out, "## CAP context.")
+}
+
+func TestRenderContext_Preamble_TwoBasePacks(t *testing.T) {
+	packs := []*content.Pack{
+		{ID: "base1", Base: true, PreambleMD: "> Preamble one.", ContextMD: "## Base one context."},
+		{ID: "base2", Base: true, PreambleMD: "> Preamble two.", ContextMD: "## Base two context."},
+		{ID: "cap", ContextMD: "## CAP context."},
+	}
+	out := content.RenderContext(packs, nil, nil)
+	p1Idx := strings.Index(out, "> Preamble one.")
+	p2Idx := strings.Index(out, "> Preamble two.")
+	ctx1Idx := strings.Index(out, "## Base one context.")
+	ctx2Idx := strings.Index(out, "## Base two context.")
+	capIdx := strings.Index(out, "## CAP context.")
+	require.NotEqual(t, -1, p1Idx, "preamble 1 must be present")
+	require.NotEqual(t, -1, p2Idx, "preamble 2 must be present")
+	assert.Less(t, p1Idx, ctx1Idx, "preamble 1 before base1 ContextMD")
+	assert.Less(t, p1Idx, ctx2Idx, "preamble 1 before base2 ContextMD")
+	assert.Less(t, p2Idx, capIdx, "preamble 2 before CAP ContextMD")
+}
