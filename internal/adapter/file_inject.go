@@ -10,6 +10,30 @@ import (
 const markerFmt = "<!-- sap-devs:start:%s -->"
 const markerEndFmt = "<!-- sap-devs:end:%s -->"
 
+type sectionStatus int
+
+const (
+	sectionNotFound sectionStatus = iota
+	sectionFound
+	sectionOrphaned
+)
+
+// findSection locates the start and end markers within content.
+// startIdx and endIdx are the byte offsets of the first character of each marker string.
+// Both are only meaningful when status == sectionFound.
+func findSection(content, start, end string) (startIdx, endIdx int, status sectionStatus) {
+	si := strings.Index(content, start)
+	ei := strings.Index(content, end)
+	switch {
+	case si != -1 && ei != -1 && si < ei:
+		return si, ei, sectionFound
+	case si == -1 && ei == -1:
+		return -1, -1, sectionNotFound
+	default:
+		return -1, -1, sectionOrphaned
+	}
+}
+
 // ReplaceSection writes `content` into `filePath` between HTML comment markers
 // for the named section. If the section already exists it is replaced in-place;
 // otherwise it is appended. Parent directories are created as needed.

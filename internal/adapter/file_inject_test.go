@@ -1,4 +1,4 @@
-package adapter_test
+package adapter
 
 import (
 	"os"
@@ -8,7 +8,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/adapter"
 )
 
 func TestReplaceSection_FirstInject(t *testing.T) {
@@ -16,7 +15,7 @@ func TestReplaceSection_FirstInject(t *testing.T) {
 	path := filepath.Join(dir, "CLAUDE.md")
 	require.NoError(t, os.WriteFile(path, []byte("# My Notes\n\nExisting content.\n"), 0644))
 
-	err := adapter.ReplaceSection(path, "SAP Developer Context", "## SAP Tips\n\nUse CAP.\n", false)
+	err := ReplaceSection(path, "SAP Developer Context", "## SAP Tips\n\nUse CAP.\n", false)
 	require.NoError(t, err)
 
 	got, err := os.ReadFile(path)
@@ -36,9 +35,9 @@ func TestReplaceSection_Idempotent(t *testing.T) {
 	path := filepath.Join(dir, "CLAUDE.md")
 
 	// First inject
-	require.NoError(t, adapter.ReplaceSection(path, "SAP Developer Context", "v1 content", false))
+	require.NoError(t, ReplaceSection(path, "SAP Developer Context", "v1 content", false))
 	// Second inject with different content
-	require.NoError(t, adapter.ReplaceSection(path, "SAP Developer Context", "v2 content", false))
+	require.NoError(t, ReplaceSection(path, "SAP Developer Context", "v2 content", false))
 
 	got, err := os.ReadFile(path)
 	require.NoError(t, err)
@@ -54,7 +53,7 @@ func TestReplaceSection_CreatesFile(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "subdir", "CLAUDE.md")
 
-	err := adapter.ReplaceSection(path, "SAP Developer Context", "content", false)
+	err := ReplaceSection(path, "SAP Developer Context", "content", false)
 	require.NoError(t, err)
 
 	_, err = os.Stat(path)
@@ -65,7 +64,7 @@ func TestReplaceSection_DryRun(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "CLAUDE.md")
 
-	err := adapter.ReplaceSection(path, "SAP Developer Context", "injected", true)
+	err := ReplaceSection(path, "SAP Developer Context", "injected", true)
 	require.NoError(t, err)
 
 	// File should not be created in dry-run
@@ -77,7 +76,7 @@ func TestReplaceFile_CreatesFile(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "rules", "sap.mdc")
 
-	err := adapter.ReplaceFile(path, "", "content here", false)
+	err := ReplaceFile(path, "", "content here", false)
 	require.NoError(t, err)
 
 	data, err := os.ReadFile(path)
@@ -90,7 +89,7 @@ func TestReplaceFile_WithPreamble(t *testing.T) {
 	path := filepath.Join(dir, "sap.mdc")
 	preamble := "---\nalwaysApply: true\n---"
 
-	err := adapter.ReplaceFile(path, preamble, "the content", false)
+	err := ReplaceFile(path, preamble, "the content", false)
 	require.NoError(t, err)
 
 	data, err := os.ReadFile(path)
@@ -102,8 +101,8 @@ func TestReplaceFile_OverwritesOnReInject(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "sap.mdc")
 
-	require.NoError(t, adapter.ReplaceFile(path, "", "first run", false))
-	require.NoError(t, adapter.ReplaceFile(path, "", "second run", false))
+	require.NoError(t, ReplaceFile(path, "", "first run", false))
+	require.NoError(t, ReplaceFile(path, "", "second run", false))
 
 	data, err := os.ReadFile(path)
 	require.NoError(t, err)
@@ -115,7 +114,7 @@ func TestReplaceFile_DryRun(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "sap.mdc")
 
-	err := adapter.ReplaceFile(path, "preamble", "content", true)
+	err := ReplaceFile(path, "preamble", "content", true)
 	require.NoError(t, err)
 
 	// File must not be created in dry-run mode
@@ -124,27 +123,54 @@ func TestReplaceFile_DryRun(t *testing.T) {
 }
 
 func TestExpandHome_TildeSlash(t *testing.T) {
-	result, err := adapter.ExpandHome("~/foo/bar")
+	result, err := ExpandHome("~/foo/bar")
 	require.NoError(t, err)
 	home, _ := os.UserHomeDir()
 	assert.Equal(t, filepath.Join(home, "foo", "bar"), result)
 }
 
 func TestExpandHome_TildeOnly(t *testing.T) {
-	result, err := adapter.ExpandHome("~")
+	result, err := ExpandHome("~")
 	require.NoError(t, err)
 	home, _ := os.UserHomeDir()
 	assert.Equal(t, home, result)
 }
 
 func TestExpandHome_NoTilde(t *testing.T) {
-	result, err := adapter.ExpandHome("/absolute/path")
+	result, err := ExpandHome("/absolute/path")
 	require.NoError(t, err)
 	assert.Equal(t, "/absolute/path", result)
 }
 
 func TestExpandHome_Relative(t *testing.T) {
-	result, err := adapter.ExpandHome("./relative/path")
+	result, err := ExpandHome("./relative/path")
 	require.NoError(t, err)
 	assert.Equal(t, "./relative/path", result)
+}
+
+func TestFindSection_Found(t *testing.T) {
+	content := "before\n<!-- sap-devs:start:X -->\nbody\n<!-- sap-devs:end:X -->\nafter\n"
+	start := "<!-- sap-devs:start:X -->"
+	end := "<!-- sap-devs:end:X -->"
+	startIdx, endIdx, status := findSection(content, start, end)
+	assert.Equal(t, sectionFound, status)
+	assert.Equal(t, strings.Index(content, start), startIdx)
+	assert.Equal(t, strings.Index(content, end), endIdx)
+}
+
+func TestFindSection_NotFound(t *testing.T) {
+	_, _, status := findSection("no markers here", "<!-- sap-devs:start:X -->", "<!-- sap-devs:end:X -->")
+	assert.Equal(t, sectionNotFound, status)
+}
+
+func TestFindSection_OrphanedStart(t *testing.T) {
+	content := "before\n<!-- sap-devs:start:X -->\nbody\n"
+	_, _, status := findSection(content, "<!-- sap-devs:start:X -->", "<!-- sap-devs:end:X -->")
+	assert.Equal(t, sectionOrphaned, status)
+}
+
+func TestFindSection_OrphanedEnd(t *testing.T) {
+	content := "before\n<!-- sap-devs:end:X -->\nbody\n"
+	_, _, status := findSection(content, "<!-- sap-devs:start:X -->", "<!-- sap-devs:end:X -->")
+	assert.Equal(t, sectionOrphaned, status)
 }
