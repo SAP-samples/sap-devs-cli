@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -19,7 +20,7 @@ var locationDetectFlag bool
 
 var configLocationCmd = &cobra.Command{
 	Use:   "location [value]",
-	Short: i18n.T("en", "config.location.short"),
+	Short: i18n.T(i18n.ActiveLang, "config.location.short"),
 	Args:  cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if locationDetectFlag && len(args) > 0 {
@@ -36,7 +37,7 @@ var configLocationCmd = &cobra.Command{
 		}
 
 		if locationDetectFlag {
-			loc, err := detectLocation(cmd.OutOrStdout(), strings.NewReader(""))
+			loc, err := detectLocation(cmd.OutOrStdout(), os.Stdin)
 			if err != nil {
 				return err
 			}
@@ -78,15 +79,15 @@ func detectLocation(w io.Writer, r io.Reader) (string, error) {
 
 	client := &http.Client{Timeout: 3 * time.Second}
 	resp, err := client.Get("http://ip-api.com/json")
-	if err != nil || resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		errMsg := "HTTP error"
-		if err != nil {
-			errMsg = err.Error()
-		}
-		fmt.Fprintln(w, i18n.Tf(i18n.ActiveLang, "config.location.detect_failed", map[string]any{"Err": errMsg}))
+	if err != nil {
+		fmt.Fprintln(w, i18n.Tf(i18n.ActiveLang, "config.location.detect_failed", map[string]any{"Err": err.Error()}))
 		return "", nil
 	}
 	defer resp.Body.Close()
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		fmt.Fprintln(w, i18n.Tf(i18n.ActiveLang, "config.location.detect_failed", map[string]any{"Err": "HTTP error"}))
+		return "", nil
+	}
 
 	var result struct {
 		City    string `json:"city"`
