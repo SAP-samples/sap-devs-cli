@@ -14,6 +14,21 @@ import (
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/xdg"
 )
 
+var tipMarkdown bool
+var tipPlain bool
+
+// FormatTip formats a tip for non-interactive output. Returns empty string for
+// the default case (caller uses glamour rendering instead).
+func FormatTip(tip content.Tip, markdown, plain bool) string {
+	if markdown {
+		return fmt.Sprintf("## 💡 %s\n\n%s\n", tip.Title, tip.Content)
+	}
+	if plain {
+		return fmt.Sprintf("%s\n\n%s\n", tip.Title, tip.Content)
+	}
+	return ""
+}
+
 var tipCmd = &cobra.Command{
 	Use:   "tip",
 	Short: "Print a SAP developer tip (add to your shell profile)",
@@ -66,10 +81,13 @@ var tipCmd = &cobra.Command{
 			return nil
 		}
 
+		if tipMarkdown || tipPlain {
+			fmt.Fprint(cmd.OutOrStdout(), FormatTip(*tip, tipMarkdown, tipPlain))
+			return nil
+		}
 		md := fmt.Sprintf("## 💡 %s\n\n%s\n", tip.Title, tip.Content)
 		rendered, err := glamour.Render(md, "dark")
 		if err != nil {
-			// Fallback to plain output if glamour fails
 			fmt.Printf("💡 %s\n\n%s\n", tip.Title, tip.Content)
 			return nil
 		}
@@ -125,6 +143,8 @@ var tipUninstallCmd = &cobra.Command{
 }
 
 func init() {
+	tipCmd.Flags().BoolVar(&tipMarkdown, "markdown", false, "output raw Markdown (no ANSI rendering)")
+	tipCmd.Flags().BoolVar(&tipPlain, "plain", false, "output plain text (no Markdown or ANSI)")
 	tipCmd.AddCommand(tipInstallCmd)
 	tipCmd.AddCommand(tipUninstallCmd)
 	rootCmd.AddCommand(tipCmd)
