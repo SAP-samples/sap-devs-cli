@@ -41,6 +41,11 @@ var configShowCmd = &cobra.Command{
 		fmt.Fprintln(cmd.OutOrStdout(), i18n.Tf(i18n.ActiveLang, "config.show.sync_context", map[string]any{"Value": cfg.Sync.Context}))
 		fmt.Fprintln(cmd.OutOrStdout(), i18n.Tf(i18n.ActiveLang, "config.show.sync_mcp", map[string]any{"Value": cfg.Sync.MCP}))
 		fmt.Fprintln(cmd.OutOrStdout(), i18n.Tf(i18n.ActiveLang, "config.show.sync_disabled", map[string]any{"Value": cfg.Sync.Disabled}))
+		tipRotationDisplay := cfg.Tip.Rotation
+		if tipRotationDisplay == "" {
+			tipRotationDisplay = "daily"
+		}
+		fmt.Fprintln(cmd.OutOrStdout(), i18n.Tf(i18n.ActiveLang, "config.show.tip_rotation", map[string]any{"Value": tipRotationDisplay}))
 
 		// Show token status (masked — never show the full value)
 		tok, loadErr := credentials.Load(paths.ConfigDir)
@@ -183,6 +188,6 @@ to a credentials file with restricted permissions.`,
 
 func init() {
 	configTokenCmd.Flags().BoolVar(&tokenDeleteFlag, "delete", false, "Remove the stored token")
-	configCmd.AddCommand(configShowCmd, configSetCmd, configCompanyCmd, configTokenCmd, configLocationCmd)
+	configCmd.AddCommand(configShowCmd, configSetCmd, configCompanyCmd, configTokenCmd, configLocationCmd, configTipRotationCmd)
 	rootCmd.AddCommand(configCmd)
 }
