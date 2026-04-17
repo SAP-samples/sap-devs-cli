@@ -49,13 +49,17 @@ sap-devs config location
 ```
 No args, no flags: prints current value or `(not set)`.
 
+### Note: `config set location` is intentionally unsupported
+
+`configSetCmd`'s switch is **not** extended with `"location"`. The dedicated `config location` subcommand is the only setter. If a user runs `sap-devs config set location "..."`, the existing "unknown config key" error is the correct response — it will point them toward `config location`.
+
 ### Error cases
 - `--detect` with a positional arg: returns an error (mirrors `config token` pattern).
-- HTTP timeout or failure: warning message, exits with non-zero code.
+- HTTP timeout or failure: prints a warning message and returns `nil` (soft failure, no save). Mirrors the project norm of reserving non-zero exits for hard failures.
 
 ## `config show` Update
 
-Add a `location` line to `configShowCmd` output, aligned with existing fields:
+Add a `location` line to `configShowCmd` output after the `language` line and before the `sync.*` lines (i.e., between `language` and `sync.tips`), aligned with existing fields:
 
 ```
 location:        Hamburg, Germany
@@ -63,13 +67,15 @@ location:        Hamburg, Germany
 
 Empty string displays as blank (consistent with `company_repo` behaviour).
 
-## `init` Wizard — Step 4
+## `init` Wizard — Step 4 (location)
 
-Insert a new Step 4 between profile selection (current Step 3) and inject (current Step 4). Renumber subsequent steps.
+Insert a new location step between profile selection (current Step 3) and the inject step (current Step 4). The existing `init.step4_*` and `init.step5_*` i18n keys (inject and shell-hook) are **renamed** to `init.step5_*` and `init.step6_*` respectively as part of this change. All references in `cmd/init.go` are updated to match.
 
-Prompt text:
+New i18n keys use the prefix `init.step4_location_` to avoid any collision risk:
+
+Prompt text (matching existing step header style):
 ```
-=== Step 4: Set your location (optional) ===
+Step 4/6: Set your location (optional)
 
 Your location is used for event filtering and recommendations.
 Enter city and country (e.g. "Hamburg, Germany"), type "detect" to
@@ -82,7 +88,7 @@ Logic:
 - Input `"detect"` (case-insensitive) → run the same detect flow as `--detect` (privacy notice → HTTP fetch → confirm → save).
 - Any other input → save as-is.
 
-The detect flow is extracted into a shared helper `detectLocation(w io.Writer, r io.Reader) (string, error)` so both the command handler and the init wizard call the same code path.
+The detect flow calls the shared `detectLocation` helper. For the init wizard, `detectLocation` is called with `cmd.OutOrStdout()` as `w` and `os.Stdin` as `r` (bypassing `readLine()` for this sub-flow only, consistent with how `config token` reads from `os.Stdin` directly).
 
 ## i18n
 
@@ -99,9 +105,11 @@ New keys added to both `internal/i18n/catalogs/en.json` and `de.json`:
 | `config.location.not_set` | `(not set)` |
 | `config.location.done` | `Location set to: {{.Value}}` |
 | `config.show.location` | `location:        {{.Value}}` |
-| `init.step4_header` | `=== Step 4: Set your location (optional) ===` |
-| `init.step4_body` | `Your location is used for event filtering and recommendations.\nEnter city and country (e.g. "Hamburg, Germany"), type "detect" to auto-detect from your IP address, or press Enter to skip:` |
-| `init.step4_prompt` | `> ` |
+| `init.step4_location_header` | `\nStep 4/6: Set your location (optional)` |
+| `init.step4_location_body` | `Your location is used for event filtering and recommendations.\nEnter city and country (e.g. "Hamburg, Germany"), type "detect" to auto-detect from your IP address, or press Enter to skip:` |
+| `init.step4_location_prompt` | Bare string: prompt character followed by a space (`"> "` without the outer quotes) |
+
+Existing `init.step4_*` keys (inject step) are renamed to `init.step5_*`; existing `init.step5_*` keys (shell-hook step) are renamed to `init.step6_*`. The `/5` denominator embedded in all `init.stepN_header` string values must also be updated to `/6` across all six steps (steps 1–3 already have correct numbers, only the denominator changes).
 
 German translations provided for all keys.
 
