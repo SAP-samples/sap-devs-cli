@@ -33,6 +33,7 @@ var configShowCmd = &cobra.Command{
 		}
 		fmt.Fprintln(cmd.OutOrStdout(), i18n.Tf(i18n.ActiveLang, "config.show.company_repo", map[string]any{"Value": cfg.CompanyRepo}))
 		fmt.Fprintln(cmd.OutOrStdout(), i18n.Tf(i18n.ActiveLang, "config.show.language", map[string]any{"Value": cfg.Language}))
+		fmt.Fprintln(cmd.OutOrStdout(), i18n.Tf(i18n.ActiveLang, "config.show.location", map[string]any{"Value": cfg.Location}))
 		fmt.Fprintln(cmd.OutOrStdout(), i18n.Tf(i18n.ActiveLang, "config.show.sync_tips", map[string]any{"Value": cfg.Sync.Tips}))
 		fmt.Fprintln(cmd.OutOrStdout(), i18n.Tf(i18n.ActiveLang, "config.show.sync_tools", map[string]any{"Value": cfg.Sync.Tools}))
 		fmt.Fprintln(cmd.OutOrStdout(), i18n.Tf(i18n.ActiveLang, "config.show.sync_advocates", map[string]any{"Value": cfg.Sync.Advocates}))
@@ -182,6 +183,6 @@ to a credentials file with restricted permissions.`,
 
 func init() {
 	configTokenCmd.Flags().BoolVar(&tokenDeleteFlag, "delete", false, "Remove the stored token")
-	configCmd.AddCommand(configShowCmd, configSetCmd, configCompanyCmd, configTokenCmd)
+	configCmd.AddCommand(configShowCmd, configSetCmd, configCompanyCmd, configTokenCmd, configLocationCmd)
 	rootCmd.AddCommand(configCmd)
 }

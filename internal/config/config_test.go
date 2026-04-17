@@ -79,3 +79,25 @@ func TestConfigLanguageOmitempty(t *testing.T) {
 	assert.NotContains(t, string(data), "language",
 		"empty Language should not appear in YAML output")
 }
+
+func TestLocation_RoundTrip(t *testing.T) {
+	dir := t.TempDir()
+	cfg := config.Default()
+	cfg.Location = "Hamburg, Germany"
+	require.NoError(t, cfg.Save(dir))
+
+	loaded, err := config.Load(dir)
+	require.NoError(t, err)
+	assert.Equal(t, "Hamburg, Germany", loaded.Location)
+}
+
+func TestLocation_Omitempty(t *testing.T) {
+	dir := t.TempDir()
+	cfg := config.Default() // Location is ""
+	require.NoError(t, cfg.Save(dir))
+
+	data, err := os.ReadFile(filepath.Join(dir, "config.yaml"))
+	require.NoError(t, err)
+	assert.NotContains(t, string(data), "location",
+		"empty Location should not appear in YAML output")
+}

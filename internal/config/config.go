@@ -12,6 +12,7 @@ import (
 type Config struct {
 	CompanyRepo string     `yaml:"company_repo,omitempty"`
 	Language    string     `yaml:"language,omitempty"` // e.g. "de"; empty = auto-detect from locale
+	Location    string     `yaml:"location,omitempty"`
 	Sync        SyncConfig `yaml:"sync"`
 }
 
