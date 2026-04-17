@@ -8,6 +8,13 @@
   "inject.dry_run": "[dry-run] no files will be modified",
   "inject.done": "SAP developer context injected ({{.Scope}} scope).",
   "inject.hint": "Run 'sap-devs inject --dry-run' to preview changes before writing.",
+  "inject.uninstall.header": "Uninstalled SAP developer context:",
+  "inject.uninstall.dry_run_header": "Would uninstall SAP developer context:",
+  "inject.uninstall.section_removed": "section removed",
+  "inject.uninstall.file_deleted": "file deleted",
+  "inject.uninstall.not_found": "not found",
+  "inject.uninstall.nothing_found": "No injected sections found.",
+  "inject.uninstall.append_warning": "warning: cannot auto-remove append-mode target {{.Path}} — remove manually",
 
   "sync.short": "Pull latest SAP developer content",
   "sync.long": "Syncs content from the official repo (and company repo if configured). Respects per-category TTLs unless --force is set.",
