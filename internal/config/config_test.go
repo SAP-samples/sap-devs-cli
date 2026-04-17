@@ -127,7 +127,7 @@ func TestTipRotation_Omitempty(t *testing.T) {
 
 	data, err := os.ReadFile(filepath.Join(dir, "config.yaml"))
 	require.NoError(t, err)
-	assert.NotContains(t, string(data), "tip",
+	assert.NotContains(t, string(data), "\ntip:",
 		"empty TipConfig should not appear in YAML output")
 }
 
