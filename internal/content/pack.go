@@ -26,6 +26,8 @@ type Pack struct {
 	Tools      []ToolDef
 	MCPServers []MCPServer
 	Tips       []Tip
+
+	PreambleMD string
 }
 
 // Resource is a curated link within a pack.
@@ -155,6 +157,9 @@ func LoadPack(packDir string, lang string) (*Pack, error) {
 	}
 	if data, err := os.ReadFile(contextFile); err == nil {
 		pack.ContextMD = string(data)
+	}
+	if data, err := os.ReadFile(filepath.Join(packDir, "preamble.md")); err == nil {
+		pack.PreambleMD = string(data)
 	}
 	if data, err := os.ReadFile(filepath.Join(packDir, "resources.yaml")); err == nil {
 		_ = yaml.Unmarshal(data, &pack.Resources)
