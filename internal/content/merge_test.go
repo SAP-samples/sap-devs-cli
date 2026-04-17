@@ -235,3 +235,37 @@ func TestMergeWith_PreambleMDPreservedFromBase(t *testing.T) {
 	assert.Equal(t, "> Official preamble.", merged.PreambleMD,
 		"additive layer must not override base pack PreambleMD")
 }
+
+func TestMergeHooks_ReplacesOnMatchingIDAndRestampsPackID(t *testing.T) {
+	base := []content.HookDef{{ID: "lint-hook", Event: "PreToolUse", Command: "old-cmd", PackID: "cap"}}
+	additive := []content.HookDef{{ID: "lint-hook", Event: "PreToolUse", Command: "new-cmd", PackID: "company"}}
+	got := content.MergeHooks(base, additive, "cap")
+	assert.Len(t, got, 1)
+	assert.Equal(t, "new-cmd", got[0].Command)
+	assert.Equal(t, "cap", got[0].PackID)
+}
+
+func TestMergeHooks_AppendsNewIDs(t *testing.T) {
+	base := []content.HookDef{{ID: "lint-hook", Event: "PreToolUse", Command: "cmd-a", PackID: "cap"}}
+	additive := []content.HookDef{{ID: "format-hook", Event: "PostToolUse", Command: "cmd-b", PackID: "company"}}
+	got := content.MergeHooks(base, additive, "cap")
+	assert.Len(t, got, 2)
+	assert.Equal(t, "format-hook", got[1].ID)
+	assert.Equal(t, "cap", got[1].PackID)
+}
+
+func TestMergeWith_HooksFromAdditivePack(t *testing.T) {
+	base := makePack("cap", "CAP", "", nil, nil)
+	base.Hooks = []content.HookDef{{ID: "base-hook", Event: "PreToolUse", Command: "base-cmd", PackID: "cap"}}
+	additive := &content.Pack{
+		ID:       "cap",
+		Additive: true,
+		Hooks:    []content.HookDef{{ID: "extra-hook", Event: "PostToolUse", Command: "extra-cmd"}},
+	}
+	result := additive.MergeWith(base)
+	require.Len(t, result.Hooks, 2)
+	assert.Equal(t, "base-hook", result.Hooks[0].ID)
+	assert.Equal(t, "extra-hook", result.Hooks[1].ID)
+	// PackID re-stamped to base pack ID
+	assert.Equal(t, "cap", result.Hooks[1].PackID)
+}

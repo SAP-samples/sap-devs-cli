@@ -20,7 +20,8 @@ content/packs/<pack-id>/
 ├── tips.<lang>.md     # Localised tips
 ├── tools.yaml         # Tool version requirements checked by `sap-devs doctor`
 ├── resources.yaml     # Curated links shown by `sap-devs resources`
-└── mcp.yaml           # MCP server definitions wired by `sap-devs mcp install`
+├── mcp.yaml           # MCP server definitions wired by `sap-devs mcp install`
+└── hook.yaml          # Hook commands wired by `sap-devs hook install`
 ```
 
 Key points:
@@ -342,6 +343,77 @@ For a complete example see [`content/packs/cap/context.md`](../content/packs/cap
 - Prefer `--pack <id>` flags so the AI gets targeted results.
 - Include `sap-devs sync` so the AI knows how to refresh stale dynamic content.
 - Keep the section short — 3–6 bullet points is enough. Long agent instruction blocks eat into the budget for actual content.
+
+---
+
+## Hook Authoring
+
+A pack may include an optional `hook.yaml` file. Each entry declares a shell command to wire into an AI tool's lifecycle event system (e.g. run `sap-devs tip --markdown` every time Claude Code starts a new session).
+
+### `hook.yaml` schema
+
+```yaml
+- id: tip-on-session-start     # Unique within the pack
+  event: sessionStart          # Tool-neutral event name
+  command: "sap-devs tip --markdown"  # Command to run when the event fires
+  tools:                       # Adapter IDs that support this hook
+    - claude-code
+```
+
+| Field     | Type     | Description                                                            |
+| --------- | -------- | ---------------------------------------------------------------------- |
+| `id`      | string   | Unique identifier. Used by `sap-devs hook install <id>`.               |
+| `event`   | string   | Tool-neutral event. Supported values: `sessionStart`.                  |
+| `command` | string   | Shell command. Keep it fast (< 200 ms) — it runs on every event fire.  |
+| `tools`   | []string | Adapter IDs that support this hook (must have `hook_config` in YAML).  |
+
+### Event values
+
+| `event`        | Claude Code hook key      | When it fires                                |
+| -------------- | ------------------------- | -------------------------------------------- |
+| `sessionStart` | `hooks.SessionStart`      | Once when a new session starts or resumes    |
+
+### Authoring constraints
+
+- **Keep `command` fast** — hooks run synchronously on every event. Avoid network calls in the hook command itself; `sap-devs tip --markdown` reads from cache and exits in < 100 ms.
+- **No headings in output** — hook output is read directly by the AI tool; headings in stdout may confuse context injection.
+- **`tools` must match a configured adapter** — if the adapter YAML does not have a `hook_config` block, the hook is silently skipped during install.
+
+### Installing hooks
+
+```bash
+sap-devs hook install                      # install all hooks for active profile
+sap-devs hook install tip-on-session-start # install a specific hook
+sap-devs hook status                       # check what's installed
+sap-devs hook uninstall tip-on-session-start
+```
+
+### Example: the base pack's session tip hook
+
+`content/packs/base/hook.yaml` ships with one hook:
+
+```yaml
+- id: tip-on-session-start
+  event: sessionStart
+  command: "sap-devs tip --markdown"
+  tools:
+    - claude-code
+```
+
+When installed, Claude Code runs `sap-devs tip --markdown` at every session start and the Markdown output is available to the agent as session context — delivering a daily SAP developer tip as a session greeting.
+
+### Adding `hook_config` to an adapter YAML
+
+To make a new AI tool's adapter support hook installation, add a `hook_config` block to its YAML in `content/adapters/<id>.yaml` alongside the existing `mcp_config`:
+
+```yaml
+hook_config:
+  path: "~/.tool/settings.json"   # path to the tool's settings file (tilde expanded)
+  format: json                     # "json" only for now
+  key: "hooks.SessionStart"        # dot-separated JSON path to the hook array
+```
+
+The `key` field is a dot-separated path that `WriteHookConfig` navigates dynamically. For Claude Code, the value is `"hooks.SessionStart"`. Only adapters with a `hook_config` block can be targeted by `hook install`. Adapters without it are silently skipped.
 
 ---
 

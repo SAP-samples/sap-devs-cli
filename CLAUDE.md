@@ -95,6 +95,7 @@ On every command invocation (except `update` and dev builds), a background gorou
 | `tip` | Show a random tip; `tip install`/`tip uninstall` wires it into your shell prompt |
 | `doctor` | Check local tool versions against pack requirements (`--fix` for install hints) |
 | `mcp list/install/status` | Browse and wire SAP MCP servers into AI tool configs |
+| `hook list/install/uninstall/status` | Wire AI tool lifecycle hooks from pack definitions |
 | `resources` | List curated resources from active packs |
 | `update` | Self-update the binary |
 | `init` | First-time setup wizard |

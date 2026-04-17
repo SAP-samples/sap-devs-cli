@@ -41,10 +41,11 @@ func (a *Pack) MergeWith(base *Pack) *Pack {
 	}
 
 	// Structured lists: additive replaces on matching ID, appends new entries.
-	// PackID re-stamped to base pack's ID on Resources and MCPServers.
+	// PackID re-stamped to base pack's ID on Resources, MCPServers, and Hooks.
 	merged.Resources = mergeResources(base.Resources, a.Resources, base.ID)
 	merged.Tools = mergeTools(base.Tools, a.Tools)
 	merged.MCPServers = mergeMCPServers(base.MCPServers, a.MCPServers, base.ID)
+	merged.Hooks = mergeHooks(base.Hooks, a.Hooks, base.ID)
 
 	// Merged result is not itself additive; a subsequent additive layer will
 	// merge into this result rather than treating it as an additive pack.
@@ -117,6 +118,32 @@ func mergeTools(base, additive []ToolDef) []ToolDef {
 		if !replaced {
 			result = append(result, a)
 		}
+	}
+	return result
+}
+
+// mergeHooks builds a fresh []HookDef: starts with base entries, replaces
+// any entry whose ID matches an additive entry, appends unmatched additive entries.
+// PackID is re-stamped to packID on every entry in the result.
+func mergeHooks(base, additive []HookDef, packID string) []HookDef {
+	result := make([]HookDef, len(base))
+	copy(result, base)
+	for _, a := range additive {
+		replaced := false
+		for i, b := range result {
+			if b.ID == a.ID {
+				result[i] = a
+				replaced = true
+				break
+			}
+		}
+		if !replaced {
+			result = append(result, a)
+		}
+	}
+	// Re-stamp all entries: same rationale as mergeResources.
+	for i := range result {
+		result[i].PackID = packID
 	}
 	return result
 }

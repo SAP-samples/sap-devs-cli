@@ -20,6 +20,7 @@ type Adapter struct {
 	MaxBytes     int          `yaml:"max_bytes,omitempty"`   // hard byte ceiling; 0 = unconstrained
 	ExportPath   string       `yaml:"export_path,omitempty"` // file-export: path to write full context
 	MCPConfig    *MCPConfig   `yaml:"mcp_config,omitempty"`
+	HookConfig   *HookConfig  `yaml:"hook_config,omitempty"`
 	Detect       []DetectRule `yaml:"detect"`
 }
 
@@ -37,6 +38,13 @@ type MCPConfig struct {
 	Path   string `yaml:"path"`
 	Format string `yaml:"format"`
 	Key    string `yaml:"key"`
+}
+
+// HookConfig defines where to write hook command entries.
+type HookConfig struct {
+	Path   string `yaml:"path"`
+	Format string `yaml:"format"` // "json" only for now
+	Key    string `yaml:"key"`    // dot-separated JSON path, e.g. "hooks.SessionStart"
 }
 
 // DetectRule defines a detection method for whether the tool is installed.

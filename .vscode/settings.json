@@ -4,6 +4,7 @@
     "./content/schemas/resources.schema.json": "**/packs/*/resources.yaml",
     "./content/schemas/tools.schema.json":     "**/packs/*/tools.yaml",
     "./content/schemas/mcp.schema.json":       "**/packs/*/mcp.yaml",
-    "./content/schemas/profile.schema.json":   "**/profiles/*.yaml"
+    "./content/schemas/profile.schema.json":   "**/profiles/*.yaml",
+    "./content/schemas/hook.schema.json":      "**/packs/*/hook.yaml"
   }
 }
