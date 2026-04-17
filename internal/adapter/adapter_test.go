@@ -92,7 +92,8 @@ func TestEngine_FileInject_DryRun(t *testing.T) {
 		Scope:  "global",
 		DryRun: true,
 	})
-	require.NoError(t, engine.Run().Err)
+	res := engine.Run()
+	require.NoError(t, res.Err)
 	_, err := os.Stat(targetFile)
 	assert.True(t, os.IsNotExist(err), "dry-run should not create file")
 }
@@ -113,7 +114,8 @@ func TestEngine_SkipsWrongScope(t *testing.T) {
 
 	// Running with global scope — project target should be skipped
 	engine := adapter.NewEngine(adapters, nil, nil, adapter.Options{Scope: "global"})
-	require.NoError(t, engine.Run().Err)
+	res := engine.Run()
+	require.NoError(t, res.Err)
 	_, err := os.Stat(projectFile)
 	assert.True(t, os.IsNotExist(err), "global scope should skip project targets")
 }
@@ -137,7 +139,8 @@ func TestEngine_FilterByTool(t *testing.T) {
 	}
 
 	engine := adapter.NewEngine(adapters, nil, nil, adapter.Options{Scope: "global", ToolFilter: "tool-a"})
-	require.NoError(t, engine.Run().Err)
+	res := engine.Run()
+	require.NoError(t, res.Err)
 
 	_, errA := os.Stat(fileA)
 	_, errB := os.Stat(fileB)
@@ -157,7 +160,8 @@ func TestEngine_ClipboardSkippedForProject(t *testing.T) {
 	// clipboard-export should be skipped entirely for project scope
 	engine := adapter.NewEngine(adapters, nil, nil, adapter.Options{Scope: "project"})
 	// Should run without error (skipped, not attempted)
-	require.NoError(t, engine.Run().Err)
+	res := engine.Run()
+	require.NoError(t, res.Err)
 }
 
 func TestLoadAdapters_MaxTokens(t *testing.T) {
@@ -217,7 +221,8 @@ func TestEngine_PerAdapterBudget(t *testing.T) {
 	}
 
 	engine := adapter.NewEngine(adapters, packs, nil, adapter.Options{Scope: "global"})
-	require.NoError(t, engine.Run().Err)
+	res := engine.Run()
+	require.NoError(t, res.Err)
 
 	data, err := os.ReadFile(fileA)
 	require.NoError(t, err)
@@ -239,7 +244,8 @@ func TestEngine_BudgetTooSmall_EmitsWarning(t *testing.T) {
 		},
 	}
 	engine := adapter.NewEngine(adapters, packs, nil, adapter.Options{Scope: "global", Out: &buf})
-	require.NoError(t, engine.Run().Err)
+	res := engine.Run()
+	require.NoError(t, res.Err)
 	// Warning goes to stderr (os.Stderr), not to Out
 	assert.Empty(t, buf.String(), "budget-too-small warning should not appear in Out")
 }
@@ -268,7 +274,8 @@ func TestEngine_Stats(t *testing.T) {
 		Stats:  true,
 		Out:    &buf,
 	})
-	require.NoError(t, engine.Run().Err)
+	res := engine.Run()
+	require.NoError(t, res.Err)
 
 	out := buf.String()
 	assert.Contains(t, out, "Adapter")
@@ -290,7 +297,8 @@ func TestEngine_NilOutIsSafe(t *testing.T) {
 	}
 	// Out is nil — NewEngine must normalise to io.Discard
 	engine := adapter.NewEngine(adapters, packs, nil, adapter.Options{Scope: "global"})
-	require.NoError(t, engine.Run().Err)
+	res := engine.Run()
+	require.NoError(t, res.Err)
 }
 
 func TestLoadAdapters_MaxBytes(t *testing.T) {
@@ -368,7 +376,8 @@ func TestEngine_MaxBytesOverridesMaxTokens(t *testing.T) {
 
 	var buf bytes.Buffer
 	engine := adapter.NewEngine(adapters, packs, nil, adapter.Options{Scope: "global", Out: &buf})
-	require.NoError(t, engine.Run().Err)
+	res := engine.Run()
+	require.NoError(t, res.Err)
 
 	// Budget was 50 bytes — pack (100 bytes) didn't fit → file should not be created
 	_, statErr := os.Stat(targetFile)
@@ -394,7 +403,8 @@ func TestEngine_FormatApplied(t *testing.T) {
 	}
 
 	engine := adapter.NewEngine(adapters, packs, nil, adapter.Options{Scope: "global"})
-	require.NoError(t, engine.Run().Err)
+	res := engine.Run()
+	require.NoError(t, res.Err)
 
 	data, err := os.ReadFile(targetFile)
 	require.NoError(t, err)
@@ -424,7 +434,8 @@ func TestEngine_FileExportType(t *testing.T) {
 	}
 
 	engine := adapter.NewEngine(adapters, packs, nil, adapter.Options{Scope: "global", DryRun: true})
-	require.NoError(t, engine.Run().Err)
+	res := engine.Run()
+	require.NoError(t, res.Err)
 	// DryRun=true: no file written, no error
 }
 
@@ -443,7 +454,8 @@ func TestEngine_FileExportSkippedForProjectScope(t *testing.T) {
 	}
 
 	engine := adapter.NewEngine(adapters, packs, nil, adapter.Options{Scope: "project"})
-	require.NoError(t, engine.Run().Err)
+	res := engine.Run()
+	require.NoError(t, res.Err)
 
 	// file-export must be skipped for project scope — export file not created
 	_, err := os.Stat(exportPath)
@@ -468,7 +480,8 @@ func TestEngine_FileExportWritesRawMarkdown(t *testing.T) {
 	}
 
 	engine := adapter.NewEngine(adapters, packs, nil, adapter.Options{Scope: "global"})
-	require.NoError(t, engine.Run().Err)
+	res := engine.Run()
+	require.NoError(t, res.Err)
 
 	data, err := os.ReadFile(exportPath)
 	require.NoError(t, err)
