@@ -157,7 +157,7 @@ func scanOtherSections(content string) []SectionInfo
 
 This must replicate `TrimPacks` to avoid false-positive staleness reports on budget-constrained adapters: if packs are rendered without trimming, the comparison content will exceed what `inject` actually wrote, making every budget-trimmed file appear stale.
 
-The method is used by both `Status()` (staleness check) and `runFileInject()` (replacing inline rendering logic). This removes duplication from `runFileInject` as a secondary benefit, but the primary driver is correctness in `Status()`.
+**Where the rendering currently lives:** In `Run()`, not in `runFileInject`. The current flow is `Run()` → renders `ctx string` → passes `ctx` to `runFileInject(a, ctx)`. Introducing `renderSectionContent` means `Run()` calls `renderSectionContent(a)` instead of inlining the render steps, and `Status()` also calls `renderSectionContent(a)` for the staleness check. `runFileInject` continues to receive a pre-rendered string — its signature does not change.
 
 ---
 
@@ -174,7 +174,9 @@ Stale     = strings.TrimSpace(rendered) != strings.TrimSpace(onDisk)
 
 For `replace-file`:
 ```
-rendered  = preamble + renderSectionContent(a)   // full file that inject would write
+// mirrors ReplaceFile: preamble + "\n" + content when preamble non-empty
+rendered  = preamble + "\n" + renderSectionContent(a)   // when target.Preamble != ""
+rendered  = renderSectionContent(a)                     // when target.Preamble == ""
 onDisk    = string(fileBytes)
 Stale     = strings.TrimSpace(rendered) != strings.TrimSpace(onDisk)
 ```
