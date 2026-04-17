@@ -58,22 +58,19 @@ func ReplaceSection(filePath, section, content string, dryRun bool) error {
 	}
 
 	var result string
-	startIdx := strings.Index(existing, start)
-	endIdx := strings.Index(existing, end)
+	startIdx, endIdx, sStatus := findSection(existing, start, end)
 
-	// Detect orphaned/mismatched markers
-	if (startIdx == -1) != (endIdx == -1) {
+	switch sStatus {
+	case sectionOrphaned:
 		return fmt.Errorf("file %s has mismatched section markers for %q; fix manually", filePath, section)
-	}
-
-	if startIdx != -1 && endIdx != -1 && endIdx > startIdx {
+	case sectionFound:
 		// Replace in-place; consume the trailing newline after the end marker if present
 		afterEnd := endIdx + len(end)
 		if afterEnd < len(existing) && existing[afterEnd] == '\n' {
 			afterEnd++
 		}
 		result = existing[:startIdx] + block + existing[afterEnd:]
-	} else {
+	default: // sectionNotFound
 		// Append with separator
 		if existing != "" && !strings.HasSuffix(existing, "\n") {
 			existing += "\n"
