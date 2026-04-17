@@ -2,7 +2,6 @@ package community_test
 
 import (
 	"os"
-	"strings"
 	"testing"
 	"time"
 
@@ -49,5 +48,5 @@ func TestExtractMarkdown_ContainsHeadings(t *testing.T) {
 func TestExtractMarkdown_Empty(t *testing.T) {
 	md, err := community.ExtractMarkdown([]byte("<html><body></body></html>"))
 	require.NoError(t, err)
-	assert.Equal(t, "", strings.TrimSpace(md))
+	assert.Equal(t, "", md)
 }
