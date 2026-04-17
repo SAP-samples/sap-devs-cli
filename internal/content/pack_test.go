@@ -231,7 +231,7 @@ func TestLoadPack_AdditiveDefaults(t *testing.T) {
 	assert.Equal(t, "", pack.AdditivePosition)
 }
 
-func TestLoadPack_PreambleMD_LoadedWhenPresent(t *testing.T) {
+func TestLoadPack_PreambleMDLoadedWhenPresent(t *testing.T) {
 	dir := t.TempDir()
 	yaml := "id: base\nname: Base\ndescription: Base pack\ntags: []\nprofiles: []\nweight: 0\nbase: true\n"
 	require.NoError(t, os.WriteFile(filepath.Join(dir, "pack.yaml"), []byte(yaml), 0644))
@@ -242,7 +242,7 @@ func TestLoadPack_PreambleMD_LoadedWhenPresent(t *testing.T) {
 	assert.Equal(t, "> Prefer sap-devs commands.", p.PreambleMD)
 }
 
-func TestLoadPack_PreambleMD_EmptyWhenAbsent(t *testing.T) {
+func TestLoadPack_PreambleMDEmptyWhenAbsent(t *testing.T) {
 	dir := t.TempDir()
 	yaml := "id: base\nname: Base\ndescription: Base pack\ntags: []\nprofiles: []\nweight: 0\nbase: true\n"
 	require.NoError(t, os.WriteFile(filepath.Join(dir, "pack.yaml"), []byte(yaml), 0644))
