@@ -109,6 +109,15 @@ sap-devs inject --uninstall
 
 # Preview what --uninstall would remove without making changes
 sap-devs inject --uninstall --dry-run
+
+# Report injection state across all AI tools
+sap-devs inject --status
+
+# Report with file size and token breakdown
+sap-devs inject --status --verbose
+
+# Report as JSON (for scripting / CI)
+sap-devs inject --status --json
 ```
 
 ### Choose your developer profile
@@ -137,6 +146,9 @@ sap-devs inject [flags]
 | `--tool <id>` | Inject into a specific tool only (e.g. `claude-code`, `cursor`) |
 | `--dry-run` | Preview changes without writing files |
 | `--uninstall` | Remove all previously injected SAP context from AI tool config files |
+| `--status` | Report injection state (present/stale/not found) for all AI tool config files |
+| `--json` | Output status as JSON array (only with `--status`) |
+| `--verbose` | Show file size and token breakdown columns (only with `--status`) |
 | `--stats` | Show a per-adapter table of packs included, approximate token count, and budget status |
 | `--sync` | Force a content sync before injecting (no prompt) |
 | `--no-sync` | Skip the freshness check; use cached content as-is |
@@ -155,6 +167,21 @@ sap-devs inject --uninstall --dry-run
 Uninstalled SAP developer context:
   ~/.claude/CLAUDE.md  — section removed
   ~/.cursor/rules/sap-developer-context.mdc  — file deleted
+```
+
+**`--status` output example:**
+
+```text
+Tool            Scope    File                        Status
+Claude Code     global   ~/.claude/CLAUDE.md         ✓ current
+Cursor          global   ~/.cursor/rules/sap.mdc     ✗ not found
+```
+
+**`--status --verbose` output example:**
+
+```text
+Tool            Scope    File                    Status      Size     Tokens  SAP%  Other sections
+Claude Code     global   ~/.claude/CLAUDE.md     ✓ current   14200 B  3200    42%   1
 ```
 
 **`--stats` output example:**

@@ -124,6 +124,8 @@ Adapters (`content/adapters/<tool>.yaml`) define how to push context into a spec
 
 The `Engine` (`internal/adapter/engine.go`) iterates adapters, filters by `--tool` flag and scope (`global`/`project`), and dispatches to the appropriate handler. `Run()` returns a `RunResult{Found, DryFound int; Err error}` — `Found` is the count of sections/files removed (live mode), `DryFound` the count that would be removed (dry-run mode).
 
+> `Status() ([]StatusRow, error)` — inspects all `file-inject` targets for the configured scope and returns one `StatusRow` per `(adapter, target)` pair. Each row reports file existence, injection state, staleness (via content-hash comparison using `renderSectionContent`), and stretch-goal file-analysis fields. Defined alongside its types and helpers in `internal/adapter/status.go`.
+
 ### Profiles
 
 Profiles (`content/profiles/`) are YAML files that tag which packs belong to a developer persona (e.g. `cap-developer`). `ApplyWeights()` reorders packs to prioritise those matching the active profile. The active profile is stored in `~/.config/sap-devs/profile.yaml`.
