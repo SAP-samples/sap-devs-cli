@@ -74,6 +74,8 @@ func TestInjectUninstall_StatsNotMutuallyExclusive(t *testing.T) {
 	t.Cleanup(func() {
 		injectUninstall = false
 		injectStats = false
+		injectSync = false
+		injectNoSync = false
 	})
 	err := injectCmd.RunE(injectCmd, nil)
 	// The command may error (XDG/adapter load) but NOT with the mutual-exclusion message.

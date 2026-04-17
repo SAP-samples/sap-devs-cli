@@ -157,7 +157,10 @@ into project-level files (CLAUDE.md, .cursorrules, etc.) in the current director
 			}
 		}
 
-		gatheredAdapters, _ := loadAdapters()
+		gatheredAdapters, err := loadAdapters()
+		if err != nil {
+			return err
+		}
 
 		dynCtx := dynamic.GatherDynamic(dynamic.GatherOpts{
 			CWD:          cwd,
