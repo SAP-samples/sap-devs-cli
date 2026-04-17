@@ -11,6 +11,13 @@ import (
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
 )
 
+// RunResult holds the outcome of an Engine.Run() call.
+type RunResult struct {
+	Found    int   // sections/files removed in live mode
+	DryFound int   // sections/files that would be removed in dry-run mode
+	Err      error
+}
+
 // Options controls inject scope, filtering, dry-run, and stats behaviour.
 type Options struct {
 	Scope      string                 // "global" | "project"
@@ -19,6 +26,9 @@ type Options struct {
 	Stats      bool
 	Out        io.Writer              // for stats/warning output; nil → io.Discard
 	Dynamic    *content.DynamicContext // nil = no dynamic section
+	Uninstall  bool
+	// Lang is the active language for i18n. Always use e.opts.Lang inside engine code.
+	Lang       string
 }
 
 // Engine runs injection for a set of adapters, rendering per-adapter with its own budget.
@@ -48,7 +58,8 @@ func NewEngine(adapters []Adapter, packs []*content.Pack, profile *content.Profi
 }
 
 // Run dispatches to the appropriate handler for each adapter.
-func (e *Engine) Run() error {
+func (e *Engine) Run() RunResult {
+	var result RunResult
 	var stats []adapterStats
 
 	for _, a := range e.adapters {
@@ -89,7 +100,7 @@ func (e *Engine) Run() error {
 		switch a.Type {
 		case "file-inject":
 			if err := e.runFileInject(a, formattedCtx); err != nil {
-				return fmt.Errorf("adapter %s: %w", a.ID, err)
+				return RunResult{Err: fmt.Errorf("adapter %s: %w", a.ID, err)}
 			}
 		case "clipboard-export":
 			// clipboard-export is only for global scope
@@ -97,14 +108,14 @@ func (e *Engine) Run() error {
 				continue
 			}
 			if err := ExportToClipboard(formattedCtx, a.Instructions, e.opts.DryRun); err != nil {
-				return fmt.Errorf("adapter %s: %w", a.ID, err)
+				return RunResult{Err: fmt.Errorf("adapter %s: %w", a.ID, err)}
 			}
 		case "file-export":
 			if e.opts.Scope == "project" {
 				continue
 			}
 			if err := ExportFileAndClip(a, formattedCtx, e.opts); err != nil {
-				return fmt.Errorf("adapter %s: %w", a.ID, err)
+				return RunResult{Err: fmt.Errorf("adapter %s: %w", a.ID, err)}
 			}
 		case "mcp-wire":
 			// mcp-wire is handled by the mcp command; inject skips it
@@ -133,7 +144,7 @@ func (e *Engine) Run() error {
 	if e.opts.Stats && len(stats) > 0 {
 		printStats(e.opts.Out, stats)
 	}
-	return nil
+	return result
 }
 
 func (e *Engine) runFileInject(a Adapter, ctx string) error {

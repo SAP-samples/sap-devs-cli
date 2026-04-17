@@ -38,7 +38,8 @@ func TestInjectEndToEnd(t *testing.T) {
 		},
 	}
 	engine := adapter.NewEngine(adapters, packs, nil, adapter.Options{Scope: "global"})
-	require.NoError(t, engine.Run())
+	res := engine.Run()
+	require.NoError(t, res.Err)
 
 	// Verify output
 	data, err := os.ReadFile(claudeMD)
@@ -52,7 +53,8 @@ func TestInjectEndToEnd(t *testing.T) {
 	assert.Contains(t, result, "<!-- sap-devs:end:SAP Developer Context -->")
 
 	// Second run — idempotent
-	require.NoError(t, engine.Run())
+	res2 := engine.Run()
+	require.NoError(t, res2.Err)
 	data2, err := os.ReadFile(claudeMD)
 	require.NoError(t, err)
 	result2 := string(data2)

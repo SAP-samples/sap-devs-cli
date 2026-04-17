@@ -137,8 +137,9 @@ into project-level files (CLAUDE.md, .cursorrules, etc.) in the current director
 		if injectDryRun {
 			fmt.Fprintln(cmd.OutOrStdout(), i18n.T(i18n.ActiveLang, "inject.dry_run"))
 		}
-		if err := eng.Run(); err != nil {
-			return err
+		res := eng.Run()
+		if res.Err != nil {
+			return res.Err
 		}
 		if !injectDryRun {
 			fmt.Fprintln(cmd.OutOrStdout(), i18n.Tf(i18n.ActiveLang, "inject.done", map[string]any{"Scope": scope}))
