@@ -115,9 +115,9 @@ var hookStatusCmd = &cobra.Command{
 					continue
 				}
 				installed, err := adapter.HookConfigInstalled(path, a.HookConfig.Key, h.Command)
-				status := "x not installed"
+				status := "✗ not installed"
 				if err == nil && installed {
-					status = "* installed"
+					status = "✓ installed"
 				}
 				fmt.Fprintf(cmd.OutOrStdout(), "%-30s %-10s %-14s %s\n", h.ID, h.PackID, toolID, status)
 			}
@@ -219,8 +219,7 @@ func hookInstallAll(loader *content.ContentLoader, allAdapters []adapter.Adapter
 	}
 	hooks := content.FlattenHooks(packs)
 	if len(hooks) == 0 {
-		fmt.Println("No hooks to install.")
-		return nil
+		return fmt.Errorf("no hooks to install for active profile")
 	}
 	toolSet := make(map[string]bool)
 	for _, h := range hooks {
