@@ -93,6 +93,8 @@ var initCmd = &cobra.Command{
 		if locInput != "" {
 			locationCfg, locErr := config.Load(paths.ConfigDir)
 			if locErr == nil {
+				// "detect" is an intentional English keyword regardless of display language;
+				// all language prompts instruct users to type this exact string.
 				if strings.ToLower(locInput) == "detect" {
 					if detected, detectErr := detectLocation(cmd.OutOrStdout(), os.Stdin); detectErr == nil && detected != "" {
 						locationCfg.Location = detected
