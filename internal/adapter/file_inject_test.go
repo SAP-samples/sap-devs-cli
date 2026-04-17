@@ -174,3 +174,93 @@ func TestFindSection_OrphanedEnd(t *testing.T) {
 	_, _, status := findSection(content, "<!-- sap-devs:start:X -->", "<!-- sap-devs:end:X -->")
 	assert.Equal(t, sectionOrphaned, status)
 }
+
+func TestRemoveSection_LiveSectionPresent(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "CLAUDE.md")
+	input := "before\n\n<!-- sap-devs:start:X -->\nbody\n<!-- sap-devs:end:X -->\n\nafter\n"
+	require.NoError(t, os.WriteFile(path, []byte(input), 0644))
+
+	var w strings.Builder
+	found, removed, err := removeSection(path, "X", false, &w)
+	require.NoError(t, err)
+	assert.True(t, found)
+	assert.True(t, removed)
+	assert.Empty(t, w.String(), "live mode writes nothing to w")
+
+	data, err := os.ReadFile(path)
+	require.NoError(t, err)
+	assert.Equal(t, "before\n\nafter\n", string(data))
+}
+
+func TestRemoveSection_LiveSectionAbsent(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "CLAUDE.md")
+	require.NoError(t, os.WriteFile(path, []byte("no markers\n"), 0644))
+
+	var w strings.Builder
+	found, removed, err := removeSection(path, "X", false, &w)
+	require.NoError(t, err)
+	assert.False(t, found)
+	assert.False(t, removed)
+}
+
+func TestRemoveSection_FileAbsent(t *testing.T) {
+	var w strings.Builder
+	found, removed, err := removeSection("/no/such/path.md", "X", false, &w)
+	require.NoError(t, err)
+	assert.False(t, found)
+	assert.False(t, removed)
+}
+
+func TestRemoveSection_OrphanedStart(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "CLAUDE.md")
+	require.NoError(t, os.WriteFile(path, []byte("before\n<!-- sap-devs:start:X -->\nbody\n"), 0644))
+
+	var w strings.Builder
+	_, _, err := removeSection(path, "X", false, &w)
+	require.Error(t, err)
+}
+
+func TestRemoveSection_OrphanedEnd(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "CLAUDE.md")
+	require.NoError(t, os.WriteFile(path, []byte("before\n<!-- sap-devs:end:X -->\nbody\n"), 0644))
+
+	var w strings.Builder
+	_, _, err := removeSection(path, "X", false, &w)
+	require.Error(t, err)
+}
+
+func TestRemoveSection_DryRunSectionPresent(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "CLAUDE.md")
+	input := "before\n<!-- sap-devs:start:X -->\nbody\n<!-- sap-devs:end:X -->\nafter\n"
+	require.NoError(t, os.WriteFile(path, []byte(input), 0644))
+
+	var w strings.Builder
+	found, removed, err := removeSection(path, "X", true, &w)
+	require.NoError(t, err)
+	assert.True(t, found)
+	assert.False(t, removed)
+	assert.Contains(t, w.String(), "[dry-run]")
+	assert.Contains(t, w.String(), "X")
+
+	// File must be unchanged
+	data, _ := os.ReadFile(path)
+	assert.Equal(t, input, string(data))
+}
+
+func TestRemoveSection_DryRunSectionAbsent(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "CLAUDE.md")
+	require.NoError(t, os.WriteFile(path, []byte("no markers\n"), 0644))
+
+	var w strings.Builder
+	found, removed, err := removeSection(path, "X", true, &w)
+	require.NoError(t, err)
+	assert.False(t, found)
+	assert.False(t, removed)
+	assert.Empty(t, w.String())
+}

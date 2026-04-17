@@ -2,6 +2,7 @@ package adapter
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -120,4 +121,54 @@ func ExpandHome(path string) (string, error) {
 		return "", err
 	}
 	return filepath.Join(home, path[1:]), nil
+}
+
+// removeSection removes the fenced sap-devs section with the given name from the file at path.
+// Returns found=true if the section was present, removed=true if it was actually deleted (live mode).
+// In dry-run mode, writes a preview line to w and returns found=true, removed=false.
+// If the file does not exist, returns found=false, removed=false, err=nil.
+// If markers are orphaned, returns err non-nil.
+func removeSection(path, section string, dryRun bool, w io.Writer) (found, removed bool, err error) {
+	data, readErr := os.ReadFile(path)
+	if readErr != nil {
+		if os.IsNotExist(readErr) {
+			return false, false, nil
+		}
+		return false, false, readErr
+	}
+	existing := string(data)
+
+	start := fmt.Sprintf(markerFmt, section)
+	end := fmt.Sprintf(markerEndFmt, section)
+	startIdx, endIdx, status := findSection(existing, start, end)
+
+	switch status {
+	case sectionNotFound:
+		return false, false, nil
+	case sectionOrphaned:
+		return false, false, fmt.Errorf("file %s has orphaned section marker for %q; fix manually", path, section)
+	}
+	// sectionFound
+	if dryRun {
+		fmt.Fprintf(w, "[dry-run] would remove section %q from %s\n", section, path)
+		return true, false, nil
+	}
+
+	// Remove the block: bytes [startIdx, endIdx+len(end))
+	afterEnd := endIdx + len(end)
+	// Consume trailing newline after end marker
+	if afterEnd < len(existing) && existing[afterEnd] == '\n' {
+		afterEnd++
+	}
+	result := existing[:startIdx] + existing[afterEnd:]
+
+	// Collapse three or more consecutive newlines to two
+	for strings.Contains(result, "\n\n\n") {
+		result = strings.ReplaceAll(result, "\n\n\n", "\n\n")
+	}
+
+	if writeErr := os.WriteFile(path, []byte(result), 0644); writeErr != nil {
+		return true, false, writeErr
+	}
+	return true, true, nil
 }
