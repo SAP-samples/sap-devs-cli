@@ -122,13 +122,14 @@ This context is maintained by sap-devs and provides up-to-date SAP developer kno
 ## sap-devs Runtime Context
 
 **CLI:** sap-devs vdev | **Profile:** CAP Developer | **Packs:** base, cap, btp-core, abap
-**Last synced:** 2026-04-17 09:39 (2m0s ago)
+**Last synced:** 2026-04-17 17:29 (0s ago)
 
 **Available commands:**
 - `completion` — Generate the autocompletion script for the specified shell
 - `config` — Manage sap-devs configuration
 - `doctor` — Check local tool versions against pack requirements
 - `help` — Help about any command
+- `hook` — Manage AI tool lifecycle hooks from pack definitions
 - `init` — First-time setup wizard
 - `inject` — Push SAP context to your AI tools
 - `mcp` — Manage SAP MCP servers

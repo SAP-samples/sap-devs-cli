@@ -512,8 +512,6 @@ Adopt conventional section headings across all pack `context.md` files so conten
 
 ### ✅ DONE: `sap-devs inject --status`
 
-Implemented in `feat/inject-status`. See spec: `docs/superpowers/specs/2026-04-17-inject-status-design.md`.
-
 ---
 
 ## Data Sources
