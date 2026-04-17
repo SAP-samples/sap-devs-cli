@@ -247,6 +247,9 @@ func (e *Engine) renderSectionContent(a Adapter) string {
 		maxBytes = a.MaxTokens * 4
 	}
 	trimmed := content.TrimPacks(e.packs, maxBytes)
+	if len(trimmed) == 0 && maxBytes > 0 {
+		return ""
+	}
 	ctx := content.RenderContext(trimmed, e.profile, e.opts.Dynamic)
 	return content.FormatOutput(ctx, a.Format)
 }
