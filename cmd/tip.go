@@ -1,8 +1,8 @@
 package cmd
 
 import (
-	"os"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/charmbracelet/glamour"
