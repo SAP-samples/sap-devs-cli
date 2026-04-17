@@ -2,6 +2,7 @@
 package adapter
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -9,6 +10,7 @@ import (
 	"text/tabwriter"
 
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
+	"github.tools.sap/developer-relations/sap-devs-cli/internal/i18n"
 )
 
 // RunResult holds the outcome of an Engine.Run() call.
@@ -64,6 +66,17 @@ func (e *Engine) Run() RunResult {
 
 	for _, a := range e.adapters {
 		if e.opts.ToolFilter != "" && a.ID != e.opts.ToolFilter {
+			continue
+		}
+		if e.opts.Uninstall {
+			if a.Type == "file-inject" {
+				n, dn, err := e.runFileUninstall(a)
+				result.Found += n
+				result.DryFound += dn
+				if err != nil {
+					result.Err = errors.Join(result.Err, err)
+				}
+			}
 			continue
 		}
 		maxBytes := a.MaxBytes
@@ -170,6 +183,56 @@ func (e *Engine) runFileInject(a Adapter, ctx string) error {
 		}
 	}
 	return nil
+}
+
+func (e *Engine) runFileUninstall(a Adapter) (found, dryFound int, err error) {
+	for _, target := range a.Targets {
+		if target.Scope != e.opts.Scope {
+			continue
+		}
+		path, expandErr := ExpandHome(target.Path)
+		if expandErr != nil {
+			err = errors.Join(err, fmt.Errorf("target %s: %w", target.Path, expandErr))
+			continue
+		}
+		switch target.Mode {
+		case "replace-section":
+			f, removed, rerr := removeSection(path, target.Section, e.opts.DryRun, e.opts.Out)
+			if rerr != nil {
+				err = errors.Join(err, fmt.Errorf("target %s: %w", target.Path, rerr))
+				continue
+			}
+			if f && removed {
+				found++
+				fmt.Fprintf(e.opts.Out, "  %s  — %s\n", path, i18n.T(e.opts.Lang, "inject.uninstall.section_removed"))
+			} else if f && !removed {
+				dryFound++
+				// [dry-run] line already written by removeSection
+			} else {
+				fmt.Fprintf(e.opts.Out, "  %s  — %s\n", path, i18n.T(e.opts.Lang, "inject.uninstall.not_found"))
+			}
+		case "replace-file":
+			f, deleted, rerr := deleteFile(path, e.opts.DryRun, e.opts.Out)
+			if rerr != nil {
+				err = errors.Join(err, fmt.Errorf("target %s: %w", target.Path, rerr))
+				continue
+			}
+			if f && deleted {
+				found++
+				fmt.Fprintf(e.opts.Out, "  %s  — %s\n", path, i18n.T(e.opts.Lang, "inject.uninstall.file_deleted"))
+			} else if f && !deleted {
+				dryFound++
+				// [dry-run] line already written by deleteFile
+			} else {
+				fmt.Fprintf(e.opts.Out, "  %s  — %s\n", path, i18n.T(e.opts.Lang, "inject.uninstall.not_found"))
+			}
+		case "append":
+			fmt.Fprintf(os.Stderr, "%s\n", i18n.Tf(e.opts.Lang, "inject.uninstall.append_warning", map[string]any{"Path": path}))
+		default:
+			err = errors.Join(err, fmt.Errorf("target %s: unknown mode %q", target.Path, target.Mode))
+		}
+	}
+	return found, dryFound, err
 }
 
 func printStats(w io.Writer, stats []adapterStats) {

@@ -489,3 +489,216 @@ func TestEngine_FileExportWritesRawMarkdown(t *testing.T) {
 	assert.Contains(t, string(data), "##", "export file must preserve Markdown headers")
 	assert.Contains(t, string(data), "**", "export file must preserve Markdown bold")
 }
+
+func TestEngineUninstall_RemovesSection(t *testing.T) {
+	dir := t.TempDir()
+	targetFile := filepath.Join(dir, "CLAUDE.md")
+	initial := "before\n\n<!-- sap-devs:start:SAP Dev -->\nbody\n<!-- sap-devs:end:SAP Dev -->\n\nafter\n"
+	require.NoError(t, os.WriteFile(targetFile, []byte(initial), 0644))
+
+	adapters := []adapter.Adapter{
+		{
+			ID:   "claude-code",
+			Type: "file-inject",
+			Targets: []adapter.Target{
+				{Scope: "global", Path: targetFile, Mode: "replace-section", Section: "SAP Dev"},
+			},
+		},
+	}
+	var buf bytes.Buffer
+	eng := adapter.NewEngine(adapters, nil, nil, adapter.Options{
+		Scope:     "global",
+		Uninstall: true,
+		Out:       &buf,
+	})
+	res := eng.Run()
+	require.NoError(t, res.Err)
+	assert.Equal(t, 1, res.Found)
+	assert.Equal(t, 0, res.DryFound)
+	got, err := os.ReadFile(targetFile)
+	require.NoError(t, err)
+	assert.Equal(t, "before\n\nafter\n", string(got))
+}
+
+func TestEngineUninstall_DeletesFile(t *testing.T) {
+	dir := t.TempDir()
+	targetFile := filepath.Join(dir, "rules.mdc")
+	require.NoError(t, os.WriteFile(targetFile, []byte("content"), 0644))
+
+	adapters := []adapter.Adapter{
+		{
+			ID:   "cursor",
+			Type: "file-inject",
+			Targets: []adapter.Target{
+				{Scope: "global", Path: targetFile, Mode: "replace-file"},
+			},
+		},
+	}
+	var buf bytes.Buffer
+	eng := adapter.NewEngine(adapters, nil, nil, adapter.Options{
+		Scope:     "global",
+		Uninstall: true,
+		Out:       &buf,
+	})
+	res := eng.Run()
+	require.NoError(t, res.Err)
+	assert.Equal(t, 1, res.Found)
+	_, statErr := os.Stat(targetFile)
+	assert.True(t, os.IsNotExist(statErr))
+}
+
+func TestEngineUninstall_SkipsNonFileInject(t *testing.T) {
+	adapters := []adapter.Adapter{
+		{ID: "clip", Type: "clipboard-export"},
+		{ID: "mcp", Type: "mcp-wire"},
+	}
+	var buf bytes.Buffer
+	eng := adapter.NewEngine(adapters, nil, nil, adapter.Options{
+		Scope:     "global",
+		Uninstall: true,
+		Out:       &buf,
+	})
+	res := eng.Run()
+	require.NoError(t, res.Err)
+	assert.Equal(t, 0, res.Found)
+	assert.Equal(t, 0, res.DryFound)
+}
+
+func TestEngineUninstall_RespectsToolFilter(t *testing.T) {
+	dir := t.TempDir()
+	fileA := filepath.Join(dir, "a.md")
+	fileB := filepath.Join(dir, "b.md")
+	content := "<!-- sap-devs:start:S -->\nbody\n<!-- sap-devs:end:S -->\n"
+	require.NoError(t, os.WriteFile(fileA, []byte(content), 0644))
+	require.NoError(t, os.WriteFile(fileB, []byte(content), 0644))
+
+	adapters := []adapter.Adapter{
+		{
+			ID:   "tool-a",
+			Type: "file-inject",
+			Targets: []adapter.Target{{Scope: "global", Path: fileA, Mode: "replace-section", Section: "S"}},
+		},
+		{
+			ID:   "tool-b",
+			Type: "file-inject",
+			Targets: []adapter.Target{{Scope: "global", Path: fileB, Mode: "replace-section", Section: "S"}},
+		},
+	}
+	var buf bytes.Buffer
+	eng := adapter.NewEngine(adapters, nil, nil, adapter.Options{
+		Scope:      "global",
+		Uninstall:  true,
+		ToolFilter: "tool-a",
+		Out:        &buf,
+	})
+	res := eng.Run()
+	require.NoError(t, res.Err)
+	assert.Equal(t, 1, res.Found)
+	// fileB should be untouched
+	gotB, err := os.ReadFile(fileB)
+	require.NoError(t, err)
+	assert.Equal(t, content, string(gotB))
+}
+
+func TestEngineUninstall_RespectsProjectScope(t *testing.T) {
+	dir := t.TempDir()
+	globalFile := filepath.Join(dir, "global.md")
+	projectFile := filepath.Join(dir, "project.md")
+	content := "<!-- sap-devs:start:S -->\nbody\n<!-- sap-devs:end:S -->\n"
+	require.NoError(t, os.WriteFile(globalFile, []byte(content), 0644))
+	require.NoError(t, os.WriteFile(projectFile, []byte(content), 0644))
+
+	adapters := []adapter.Adapter{
+		{
+			ID:   "tool",
+			Type: "file-inject",
+			Targets: []adapter.Target{
+				{Scope: "global", Path: globalFile, Mode: "replace-section", Section: "S"},
+				{Scope: "project", Path: projectFile, Mode: "replace-section", Section: "S"},
+			},
+		},
+	}
+	var buf bytes.Buffer
+	eng := adapter.NewEngine(adapters, nil, nil, adapter.Options{
+		Scope:     "project",
+		Uninstall: true,
+		Out:       &buf,
+	})
+	res := eng.Run()
+	require.NoError(t, res.Err)
+	assert.Equal(t, 1, res.Found)
+	// globalFile should be untouched
+	gotGlobal, err := os.ReadFile(globalFile)
+	require.NoError(t, err)
+	assert.Equal(t, content, string(gotGlobal))
+}
+
+func TestEngineUninstall_DryRun(t *testing.T) {
+	dir := t.TempDir()
+	targetFile := filepath.Join(dir, "CLAUDE.md")
+	initial := "before\n\n<!-- sap-devs:start:SAP Dev -->\nbody\n<!-- sap-devs:end:SAP Dev -->\n\nafter\n"
+	require.NoError(t, os.WriteFile(targetFile, []byte(initial), 0644))
+
+	adapters := []adapter.Adapter{
+		{
+			ID:   "claude-code",
+			Type: "file-inject",
+			Targets: []adapter.Target{
+				{Scope: "global", Path: targetFile, Mode: "replace-section", Section: "SAP Dev"},
+			},
+		},
+	}
+	var buf bytes.Buffer
+	eng := adapter.NewEngine(adapters, nil, nil, adapter.Options{
+		Scope:     "global",
+		Uninstall: true,
+		DryRun:    true,
+		Out:       &buf,
+	})
+	res := eng.Run()
+	require.NoError(t, res.Err)
+	assert.Equal(t, 0, res.Found)
+	assert.Equal(t, 1, res.DryFound)
+	assert.Contains(t, buf.String(), "[dry-run]")
+	// File must be unchanged
+	got, err := os.ReadFile(targetFile)
+	require.NoError(t, err)
+	assert.Equal(t, initial, string(got))
+}
+
+func TestEngineUninstall_AppendModeWarning(t *testing.T) {
+	dir := t.TempDir()
+	targetFile := filepath.Join(dir, "CLAUDE.md")
+
+	adapters := []adapter.Adapter{
+		{
+			ID:   "claude-code",
+			Type: "file-inject",
+			Targets: []adapter.Target{
+				{Scope: "global", Path: targetFile, Mode: "append"},
+			},
+		},
+	}
+	var buf bytes.Buffer
+	var stderrBuf bytes.Buffer
+	eng := adapter.NewEngine(adapters, nil, nil, adapter.Options{
+		Scope:     "global",
+		Uninstall: true,
+		Out:       &buf,
+	})
+	// Capture stderr by temporarily reassigning os.Stderr
+	oldStderr := os.Stderr
+	r, w, _ := os.Pipe()
+	os.Stderr = w
+	res := eng.Run()
+	w.Close()
+	os.Stderr = oldStderr
+	stderrBytes := make([]byte, 4096)
+	n, _ := r.Read(stderrBytes)
+	stderrBuf.Write(stderrBytes[:n])
+
+	require.NoError(t, res.Err)
+	assert.Equal(t, 0, res.Found)
+	assert.Equal(t, 0, res.DryFound)
+	assert.Contains(t, stderrBuf.String(), "append")
+}
