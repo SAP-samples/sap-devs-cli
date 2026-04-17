@@ -11,7 +11,7 @@ For the full pack structure reference (adapters, profiles, translations), see [d
 Each pack lives in `content/packs/<pack-id>/`. All files are optional except `pack.yaml`.
 
 ```
-content/packs/cap/
+content/packs/<pack-id>/
 ├── pack.yaml          # Pack metadata (id, name, tags, weight, profiles)
 ├── context.md         # AI context text injected into coding tools
 ├── context.<lang>.md  # Localised AI context (e.g. context.de.md)
