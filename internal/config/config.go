@@ -14,6 +14,7 @@ type Config struct {
 	Language    string     `yaml:"language,omitempty"` // e.g. "de"; empty = auto-detect from locale
 	Location    string     `yaml:"location,omitempty"`
 	Sync        SyncConfig `yaml:"sync"`
+	Tip         TipConfig  `yaml:"tip,omitempty"`
 }
 
 // SyncConfig controls per-category TTLs for background content refresh.
@@ -25,6 +26,11 @@ type SyncConfig struct {
 	Context   time.Duration `yaml:"context"`
 	MCP       time.Duration `yaml:"mcp"`
 	Disabled  bool          `yaml:"disabled"`
+}
+
+// TipConfig controls tip display behaviour.
+type TipConfig struct {
+	Rotation string `yaml:"rotation,omitempty"` // "daily" | "hourly" | "session"; empty = "daily"
 }
 
 // Profile holds the user's active developer persona.
