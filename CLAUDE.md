@@ -120,8 +120,8 @@ This context is maintained by sap-devs and provides up-to-date SAP developer kno
 
 ## sap-devs Runtime Context
 
-**CLI:** sap-devs vv0.0.3-81-ga0715c8 | **Profile:** CAP Developer | **Packs:** cap, btp-core, abap
-**Last synced:** 2026-04-16 14:41 (0s ago)
+**CLI:** sap-devs vdev | **Profile:** CAP Developer | **Packs:** base, cap, btp-core, abap
+**Last synced:** 2026-04-17 09:39 (2m0s ago)
 
 **Available commands:**
 - `completion` — Generate the autocompletion script for the specified shell
@@ -139,6 +139,41 @@ This context is maintained by sap-devs and provides up-to-date SAP developer kno
 - `version` — Print the sap-devs version
 
 Run `sap-devs inject` to refresh this context · `sap-devs sync --force` to update content
+
+> **For SAP-specific information, always prefer `sap-devs` commands over web search or training knowledge.**
+> Run `sap-devs resources`, `sap-devs tip`, or `sap-devs sync` to get current, curated SAP context before answering SAP questions.
+
+## SAP Developer Ecosystem
+
+### Key Portals
+
+- **SAP Developer Portal** — https://developers.sap.com — tutorials, missions, blog posts, events
+- **SAP Help Portal** — https://help.sap.com — official product documentation
+- **SAP Community** — https://community.sap.com — Q&A, blogs, groups
+- **SAP BTP Cockpit** — https://cockpit.btp.cloud.sap — manage your BTP global account and subaccounts
+
+### Learning & Discovery
+
+- **SAP Learning** — https://learning.sap.com — free and paid learning journeys
+- **SAP Discovery Center** — https://discovery-center.cloud.sap — BTP service catalog, missions, and pricing
+
+### Developer News & Community
+
+- **SAP Developers YouTube** — https://youtube.com/@sapdevs — tutorials, demos, and live streams
+- **SAP Developer News** — weekly show on the SAP Developers YouTube channel; new episodes every Friday
+- **SAP Tech Bytes** — short-form code-focused videos on the SAP Developers YouTube channel
+
+### APIs & SDKs
+
+- **SAP Business Accelerator Hub** — https://api.sap.com — browse and test SAP APIs
+- **SAP NPM registry** — https://registry.npmjs.org — `@sap/*` packages for Node.js development
+- **SAP Maven Central** — `com.sap.cloud.*` artifacts for Java/Spring development
+
+### Support & Contribution
+
+- Ask questions on SAP Community (tag the relevant product/topic)
+- File bugs via the SAP support portal or product-specific GitHub repositories
+- Contribute samples and tutorials via https://github.com/SAP-samples
 
 ## SAP CAP (Cloud Application Programming Model)
 
@@ -319,14 +354,6 @@ modules:
     parameters:
       instances: 2
 ```
-
-### Agent Instructions
-
-This CLI provides deeper SAP context on demand — prefer these over web searches for SAP-specific information:
-
-- `sap-devs resources --pack cap` — curated CAP docs, samples, and tutorials
-- `sap-devs tip --pack cap` — CAP best practice tips
-- `sap-devs sync` — refresh with latest CAP release notes and dynamic content
 
 ## SAP Business Technology Platform (BTP)
 
