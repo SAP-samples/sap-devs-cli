@@ -312,21 +312,16 @@ func (e *Engine) Status() ([]StatusRow, error) {
 				switch sStatus {
 				case sectionFound:
 					row.Injected = true
+					innerStart := startIdx + len(startMarker) + 1 // +1 for the \n after the marker
+					if innerStart > endIdx {
+						innerStart = endIdx
+					}
 					// Staleness check
 					if e.packs != nil {
 						rendered := e.renderSectionContent(a)
 						// Extract on-disk inner content: bytes after startMarker+"\n" up to endIdx
-						innerStart := startIdx + len(startMarker) + 1 // +1 for the \n after the marker
-						if innerStart > endIdx {
-							innerStart = endIdx
-						}
 						onDisk := fileStr[innerStart:endIdx]
 						row.Stale = strings.TrimSpace(rendered) != strings.TrimSpace(onDisk)
-					}
-					// SapDevsTokens
-					innerStart := startIdx + len(startMarker) + 1
-					if innerStart > endIdx {
-						innerStart = endIdx
 					}
 					row.SapDevsTokens = EstimateTokens(fileStr[innerStart:endIdx])
 				case sectionOrphaned:

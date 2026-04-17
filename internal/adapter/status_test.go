@@ -154,10 +154,7 @@ func TestStatus_Current(t *testing.T) {
 	eng := adapter.NewEngine([]adapter.Adapter{a}, packs, nil, adapter.Options{Scope: "global"})
 
 	// Write the file with exactly what renderSectionContent would produce
-	rendered := eng.RenderSectionContentForTest(adapter.Adapter{
-		ID:   "test-tool",
-		Type: "file-inject",
-	})
+	rendered := eng.RenderSectionContentForTest(a)
 	writeSectionFile(t, targetFile, "SAP Dev", rendered)
 
 	rows, err := eng.Status()
