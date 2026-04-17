@@ -520,25 +520,9 @@ Adopt conventional section headings across all pack `context.md` files so conten
 
 ---
 
-### `sap-devs inject --uninstall` (or `sap-devs uninject`)
+### `sap-devs inject --uninstall` (or `sap-devs uninject`) ✅ DONE
 
-Remove all content previously inserted by `inject` from AI tool config files.
-
-**Problem:** There is no clean way to reverse `inject`. Users who want to stop using sap-devs, switch tools, or debug a clean state must manually find and delete fenced sections from files like `~/.claude/CLAUDE.md`.
-
-**Scope:**
-
-- Iterate all adapters of type `file-inject`, locate the fenced `<!-- sap-devs:start:… -->` / `<!-- sap-devs:end:… -->` sections, and remove them
-- Support `--tool` flag to limit removal to a single tool (same as `inject --tool`)
-- Support `--project` flag to only remove project-scope injections
-- Print a summary of files modified and sections removed
-- No-op (with message) if no injected sections are found
-- `--dry-run` flag to preview what would be removed without modifying files
-
-**Implementation notes:**
-
-- The `replace-section` logic in `internal/adapter/file_inject.go` already knows how to locate fenced sections — extract the section-finding logic into a shared helper that both inject and uninstall can use
-- Consider whether MCP server registrations (`mcp-wire` adapters) should also be cleaned up, or only `file-inject` sections
+Implemented in feat/inject-uninstall. See docs/superpowers/specs/2026-04-17-inject-uninstall-design.md.
 
 ---
 

@@ -2,6 +2,7 @@ package adapter_test
 
 import (
 	"bytes"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -92,7 +93,8 @@ func TestEngine_FileInject_DryRun(t *testing.T) {
 		Scope:  "global",
 		DryRun: true,
 	})
-	require.NoError(t, engine.Run())
+	res := engine.Run()
+	require.NoError(t, res.Err)
 	_, err := os.Stat(targetFile)
 	assert.True(t, os.IsNotExist(err), "dry-run should not create file")
 }
@@ -113,7 +115,8 @@ func TestEngine_SkipsWrongScope(t *testing.T) {
 
 	// Running with global scope — project target should be skipped
 	engine := adapter.NewEngine(adapters, nil, nil, adapter.Options{Scope: "global"})
-	require.NoError(t, engine.Run())
+	res := engine.Run()
+	require.NoError(t, res.Err)
 	_, err := os.Stat(projectFile)
 	assert.True(t, os.IsNotExist(err), "global scope should skip project targets")
 }
@@ -137,7 +140,8 @@ func TestEngine_FilterByTool(t *testing.T) {
 	}
 
 	engine := adapter.NewEngine(adapters, nil, nil, adapter.Options{Scope: "global", ToolFilter: "tool-a"})
-	require.NoError(t, engine.Run())
+	res := engine.Run()
+	require.NoError(t, res.Err)
 
 	_, errA := os.Stat(fileA)
 	_, errB := os.Stat(fileB)
@@ -157,7 +161,8 @@ func TestEngine_ClipboardSkippedForProject(t *testing.T) {
 	// clipboard-export should be skipped entirely for project scope
 	engine := adapter.NewEngine(adapters, nil, nil, adapter.Options{Scope: "project"})
 	// Should run without error (skipped, not attempted)
-	require.NoError(t, engine.Run())
+	res := engine.Run()
+	require.NoError(t, res.Err)
 }
 
 func TestLoadAdapters_MaxTokens(t *testing.T) {
@@ -217,7 +222,8 @@ func TestEngine_PerAdapterBudget(t *testing.T) {
 	}
 
 	engine := adapter.NewEngine(adapters, packs, nil, adapter.Options{Scope: "global"})
-	require.NoError(t, engine.Run())
+	res := engine.Run()
+	require.NoError(t, res.Err)
 
 	data, err := os.ReadFile(fileA)
 	require.NoError(t, err)
@@ -239,7 +245,8 @@ func TestEngine_BudgetTooSmall_EmitsWarning(t *testing.T) {
 		},
 	}
 	engine := adapter.NewEngine(adapters, packs, nil, adapter.Options{Scope: "global", Out: &buf})
-	require.NoError(t, engine.Run())
+	res := engine.Run()
+	require.NoError(t, res.Err)
 	// Warning goes to stderr (os.Stderr), not to Out
 	assert.Empty(t, buf.String(), "budget-too-small warning should not appear in Out")
 }
@@ -268,7 +275,8 @@ func TestEngine_Stats(t *testing.T) {
 		Stats:  true,
 		Out:    &buf,
 	})
-	require.NoError(t, engine.Run())
+	res := engine.Run()
+	require.NoError(t, res.Err)
 
 	out := buf.String()
 	assert.Contains(t, out, "Adapter")
@@ -290,7 +298,8 @@ func TestEngine_NilOutIsSafe(t *testing.T) {
 	}
 	// Out is nil — NewEngine must normalise to io.Discard
 	engine := adapter.NewEngine(adapters, packs, nil, adapter.Options{Scope: "global"})
-	require.NoError(t, engine.Run())
+	res := engine.Run()
+	require.NoError(t, res.Err)
 }
 
 func TestLoadAdapters_MaxBytes(t *testing.T) {
@@ -368,7 +377,8 @@ func TestEngine_MaxBytesOverridesMaxTokens(t *testing.T) {
 
 	var buf bytes.Buffer
 	engine := adapter.NewEngine(adapters, packs, nil, adapter.Options{Scope: "global", Out: &buf})
-	require.NoError(t, engine.Run())
+	res := engine.Run()
+	require.NoError(t, res.Err)
 
 	// Budget was 50 bytes — pack (100 bytes) didn't fit → file should not be created
 	_, statErr := os.Stat(targetFile)
@@ -394,7 +404,8 @@ func TestEngine_FormatApplied(t *testing.T) {
 	}
 
 	engine := adapter.NewEngine(adapters, packs, nil, adapter.Options{Scope: "global"})
-	require.NoError(t, engine.Run())
+	res := engine.Run()
+	require.NoError(t, res.Err)
 
 	data, err := os.ReadFile(targetFile)
 	require.NoError(t, err)
@@ -424,7 +435,8 @@ func TestEngine_FileExportType(t *testing.T) {
 	}
 
 	engine := adapter.NewEngine(adapters, packs, nil, adapter.Options{Scope: "global", DryRun: true})
-	require.NoError(t, engine.Run())
+	res := engine.Run()
+	require.NoError(t, res.Err)
 	// DryRun=true: no file written, no error
 }
 
@@ -443,7 +455,8 @@ func TestEngine_FileExportSkippedForProjectScope(t *testing.T) {
 	}
 
 	engine := adapter.NewEngine(adapters, packs, nil, adapter.Options{Scope: "project"})
-	require.NoError(t, engine.Run())
+	res := engine.Run()
+	require.NoError(t, res.Err)
 
 	// file-export must be skipped for project scope — export file not created
 	_, err := os.Stat(exportPath)
@@ -468,11 +481,253 @@ func TestEngine_FileExportWritesRawMarkdown(t *testing.T) {
 	}
 
 	engine := adapter.NewEngine(adapters, packs, nil, adapter.Options{Scope: "global"})
-	require.NoError(t, engine.Run())
+	res := engine.Run()
+	require.NoError(t, res.Err)
 
 	data, err := os.ReadFile(exportPath)
 	require.NoError(t, err)
 	// File must contain raw Markdown — ## and ** must NOT be stripped
 	assert.Contains(t, string(data), "##", "export file must preserve Markdown headers")
 	assert.Contains(t, string(data), "**", "export file must preserve Markdown bold")
+}
+
+func TestEngineUninstall_RemovesSection(t *testing.T) {
+	dir := t.TempDir()
+	targetFile := filepath.Join(dir, "CLAUDE.md")
+	initial := "before\n\n<!-- sap-devs:start:SAP Dev -->\nbody\n<!-- sap-devs:end:SAP Dev -->\n\nafter\n"
+	require.NoError(t, os.WriteFile(targetFile, []byte(initial), 0644))
+
+	adapters := []adapter.Adapter{
+		{
+			ID:   "claude-code",
+			Type: "file-inject",
+			Targets: []adapter.Target{
+				{Scope: "global", Path: targetFile, Mode: "replace-section", Section: "SAP Dev"},
+			},
+		},
+	}
+	var buf bytes.Buffer
+	eng := adapter.NewEngine(adapters, nil, nil, adapter.Options{
+		Scope:     "global",
+		Uninstall: true,
+		Out:       &buf,
+	})
+	res := eng.Run()
+	require.NoError(t, res.Err)
+	assert.Equal(t, 1, res.Found)
+	assert.Equal(t, 0, res.DryFound)
+	got, err := os.ReadFile(targetFile)
+	require.NoError(t, err)
+	assert.Equal(t, "before\n\nafter\n", string(got))
+	assert.Contains(t, buf.String(), "section removed")
+	assert.Contains(t, buf.String(), targetFile)
+}
+
+func TestEngineUninstall_DeletesFile(t *testing.T) {
+	dir := t.TempDir()
+	targetFile := filepath.Join(dir, "rules.mdc")
+	require.NoError(t, os.WriteFile(targetFile, []byte("content"), 0644))
+
+	adapters := []adapter.Adapter{
+		{
+			ID:   "cursor",
+			Type: "file-inject",
+			Targets: []adapter.Target{
+				{Scope: "global", Path: targetFile, Mode: "replace-file"},
+			},
+		},
+	}
+	var buf bytes.Buffer
+	eng := adapter.NewEngine(adapters, nil, nil, adapter.Options{
+		Scope:     "global",
+		Uninstall: true,
+		Out:       &buf,
+	})
+	res := eng.Run()
+	require.NoError(t, res.Err)
+	assert.Equal(t, 1, res.Found)
+	_, statErr := os.Stat(targetFile)
+	assert.True(t, os.IsNotExist(statErr))
+	assert.Contains(t, buf.String(), "file deleted")
+}
+
+func TestEngineUninstall_SkipsNonFileInject(t *testing.T) {
+	adapters := []adapter.Adapter{
+		{ID: "clip", Type: "clipboard-export"},
+		{ID: "mcp", Type: "mcp-wire"},
+	}
+	var buf bytes.Buffer
+	eng := adapter.NewEngine(adapters, nil, nil, adapter.Options{
+		Scope:     "global",
+		Uninstall: true,
+		Out:       &buf,
+	})
+	res := eng.Run()
+	require.NoError(t, res.Err)
+	assert.Equal(t, 0, res.Found)
+	assert.Equal(t, 0, res.DryFound)
+}
+
+func TestEngineUninstall_RespectsToolFilter(t *testing.T) {
+	dir := t.TempDir()
+	fileA := filepath.Join(dir, "a.md")
+	fileB := filepath.Join(dir, "b.md")
+	content := "<!-- sap-devs:start:S -->\nbody\n<!-- sap-devs:end:S -->\n"
+	require.NoError(t, os.WriteFile(fileA, []byte(content), 0644))
+	require.NoError(t, os.WriteFile(fileB, []byte(content), 0644))
+
+	adapters := []adapter.Adapter{
+		{
+			ID:   "tool-a",
+			Type: "file-inject",
+			Targets: []adapter.Target{{Scope: "global", Path: fileA, Mode: "replace-section", Section: "S"}},
+		},
+		{
+			ID:   "tool-b",
+			Type: "file-inject",
+			Targets: []adapter.Target{{Scope: "global", Path: fileB, Mode: "replace-section", Section: "S"}},
+		},
+	}
+	var buf bytes.Buffer
+	eng := adapter.NewEngine(adapters, nil, nil, adapter.Options{
+		Scope:      "global",
+		Uninstall:  true,
+		ToolFilter: "tool-a",
+		Out:        &buf,
+	})
+	res := eng.Run()
+	require.NoError(t, res.Err)
+	assert.Equal(t, 1, res.Found)
+	// fileB should be untouched
+	gotB, err := os.ReadFile(fileB)
+	require.NoError(t, err)
+	assert.Equal(t, content, string(gotB))
+}
+
+func TestEngineUninstall_RespectsProjectScope(t *testing.T) {
+	dir := t.TempDir()
+	globalFile := filepath.Join(dir, "global.md")
+	projectFile := filepath.Join(dir, "project.md")
+	content := "<!-- sap-devs:start:S -->\nbody\n<!-- sap-devs:end:S -->\n"
+	require.NoError(t, os.WriteFile(globalFile, []byte(content), 0644))
+	require.NoError(t, os.WriteFile(projectFile, []byte(content), 0644))
+
+	adapters := []adapter.Adapter{
+		{
+			ID:   "tool",
+			Type: "file-inject",
+			Targets: []adapter.Target{
+				{Scope: "global", Path: globalFile, Mode: "replace-section", Section: "S"},
+				{Scope: "project", Path: projectFile, Mode: "replace-section", Section: "S"},
+			},
+		},
+	}
+	var buf bytes.Buffer
+	eng := adapter.NewEngine(adapters, nil, nil, adapter.Options{
+		Scope:     "project",
+		Uninstall: true,
+		Out:       &buf,
+	})
+	res := eng.Run()
+	require.NoError(t, res.Err)
+	assert.Equal(t, 1, res.Found)
+	// globalFile should be untouched
+	gotGlobal, err := os.ReadFile(globalFile)
+	require.NoError(t, err)
+	assert.Equal(t, content, string(gotGlobal))
+}
+
+func TestEngineUninstall_DryRun(t *testing.T) {
+	dir := t.TempDir()
+	targetFile := filepath.Join(dir, "CLAUDE.md")
+	initial := "before\n\n<!-- sap-devs:start:SAP Dev -->\nbody\n<!-- sap-devs:end:SAP Dev -->\n\nafter\n"
+	require.NoError(t, os.WriteFile(targetFile, []byte(initial), 0644))
+
+	adapters := []adapter.Adapter{
+		{
+			ID:   "claude-code",
+			Type: "file-inject",
+			Targets: []adapter.Target{
+				{Scope: "global", Path: targetFile, Mode: "replace-section", Section: "SAP Dev"},
+			},
+		},
+	}
+	var buf bytes.Buffer
+	eng := adapter.NewEngine(adapters, nil, nil, adapter.Options{
+		Scope:     "global",
+		Uninstall: true,
+		DryRun:    true,
+		Out:       &buf,
+	})
+	res := eng.Run()
+	require.NoError(t, res.Err)
+	assert.Equal(t, 0, res.Found)
+	assert.Equal(t, 1, res.DryFound)
+	assert.Contains(t, buf.String(), "[dry-run]")
+	// File must be unchanged
+	got, err := os.ReadFile(targetFile)
+	require.NoError(t, err)
+	assert.Equal(t, initial, string(got))
+}
+
+func TestEngineUninstall_AppendModeWarning(t *testing.T) {
+	dir := t.TempDir()
+	targetFile := filepath.Join(dir, "CLAUDE.md")
+
+	adapters := []adapter.Adapter{
+		{
+			ID:   "claude-code",
+			Type: "file-inject",
+			Targets: []adapter.Target{
+				{Scope: "global", Path: targetFile, Mode: "append"},
+			},
+		},
+	}
+	var buf bytes.Buffer
+	eng := adapter.NewEngine(adapters, nil, nil, adapter.Options{
+		Scope:     "global",
+		Uninstall: true,
+		Out:       &buf,
+	})
+	// Capture stderr by temporarily reassigning os.Stderr
+	oldStderr := os.Stderr
+	r, w, _ := os.Pipe()
+	os.Stderr = w
+	res := eng.Run()
+	w.Close()
+	os.Stderr = oldStderr
+	stderrBytes, _ := io.ReadAll(r)
+
+	require.NoError(t, res.Err)
+	assert.Equal(t, 0, res.Found)
+	assert.Equal(t, 0, res.DryFound)
+	assert.Contains(t, string(stderrBytes), "append")
+}
+
+func TestEngineUninstall_NotFound(t *testing.T) {
+	dir := t.TempDir()
+	targetFile := filepath.Join(dir, "CLAUDE.md")
+	require.NoError(t, os.WriteFile(targetFile, []byte("no markers\n"), 0644))
+
+	adapters := []adapter.Adapter{
+		{
+			ID:   "claude-code",
+			Type: "file-inject",
+			Targets: []adapter.Target{
+				{Scope: "global", Path: targetFile, Mode: "replace-section", Section: "SAP Dev"},
+			},
+		},
+	}
+	var buf bytes.Buffer
+	eng := adapter.NewEngine(adapters, nil, nil, adapter.Options{
+		Scope:     "global",
+		Uninstall: true,
+		Lang:      "en",
+		Out:       &buf,
+	})
+	res := eng.Run()
+	require.NoError(t, res.Err)
+	assert.Equal(t, 0, res.Found)
+	assert.Equal(t, 0, res.DryFound)
+	assert.Contains(t, buf.String(), "not found")
 }

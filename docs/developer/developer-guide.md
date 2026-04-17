@@ -118,11 +118,11 @@ Content is loaded from up to four sources, merged by `id` with later layers over
 
 Adapters (`content/adapters/<tool>.yaml`) define how to push context into a specific AI tool. Three types:
 
-- **`file-inject`** — writes a fenced section into a config file (e.g. `~/.claude/CLAUDE.md`) using HTML comment markers. The section is identified by markers of the form `<!-- sap-devs:start:Section Name -->` and `<!-- sap-devs:end:Section Name -->`. Currently only `replace-section` mode is implemented (replaces an existing section or appends if not present); `append` mode is defined in the adapter schema but not yet active.
+- **`file-inject`** — writes a fenced section into a config file (e.g. `~/.claude/CLAUDE.md`) using HTML comment markers. The section is identified by markers of the form `<!-- sap-devs:start:Section Name -->` and `<!-- sap-devs:end:Section Name -->`. Supports `replace-section` mode (replaces an existing section or appends if not present) and `replace-file` mode (overwrites the file entirely). `inject --uninstall` reverses both modes: `replace-section` removes the fenced block; `replace-file` deletes the file.
 - **`clipboard-export`** — copies context to clipboard (global scope only).
 - **`mcp-wire`** — registers MCP servers in the tool's JSON config (used by `mcp install`, not `inject`).
 
-The `Engine` (`internal/adapter/engine.go`) iterates adapters, filters by `--tool` flag and scope (`global`/`project`), and dispatches to the appropriate handler.
+The `Engine` (`internal/adapter/engine.go`) iterates adapters, filters by `--tool` flag and scope (`global`/`project`), and dispatches to the appropriate handler. `Run()` returns a `RunResult{Found, DryFound int; Err error}` — `Found` is the count of sections/files removed (live mode), `DryFound` the count that would be removed (dry-run mode).
 
 ### Profiles
 

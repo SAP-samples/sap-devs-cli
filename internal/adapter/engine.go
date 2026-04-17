@@ -2,6 +2,7 @@
 package adapter
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -9,7 +10,15 @@ import (
 	"text/tabwriter"
 
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
+	"github.tools.sap/developer-relations/sap-devs-cli/internal/i18n"
 )
+
+// RunResult holds the outcome of an Engine.Run() call.
+type RunResult struct {
+	Found    int   // sections/files removed in live mode
+	DryFound int   // sections/files that would be removed in dry-run mode
+	Err      error
+}
 
 // Options controls inject scope, filtering, dry-run, and stats behaviour.
 type Options struct {
@@ -19,6 +28,9 @@ type Options struct {
 	Stats      bool
 	Out        io.Writer              // for stats/warning output; nil → io.Discard
 	Dynamic    *content.DynamicContext // nil = no dynamic section
+	Uninstall  bool
+	// Lang is the active language for i18n. Always use e.opts.Lang inside engine code.
+	Lang       string
 }
 
 // Engine runs injection for a set of adapters, rendering per-adapter with its own budget.
@@ -48,11 +60,23 @@ func NewEngine(adapters []Adapter, packs []*content.Pack, profile *content.Profi
 }
 
 // Run dispatches to the appropriate handler for each adapter.
-func (e *Engine) Run() error {
+func (e *Engine) Run() RunResult {
+	var result RunResult
 	var stats []adapterStats
 
 	for _, a := range e.adapters {
 		if e.opts.ToolFilter != "" && a.ID != e.opts.ToolFilter {
+			continue
+		}
+		if e.opts.Uninstall {
+			if a.Type == "file-inject" {
+				n, dn, err := e.runFileUninstall(a)
+				result.Found += n
+				result.DryFound += dn
+				if err != nil {
+					result.Err = errors.Join(result.Err, err)
+				}
+			}
 			continue
 		}
 		maxBytes := a.MaxBytes
@@ -89,7 +113,7 @@ func (e *Engine) Run() error {
 		switch a.Type {
 		case "file-inject":
 			if err := e.runFileInject(a, formattedCtx); err != nil {
-				return fmt.Errorf("adapter %s: %w", a.ID, err)
+				return RunResult{Err: fmt.Errorf("adapter %s: %w", a.ID, err)}
 			}
 		case "clipboard-export":
 			// clipboard-export is only for global scope
@@ -97,14 +121,14 @@ func (e *Engine) Run() error {
 				continue
 			}
 			if err := ExportToClipboard(formattedCtx, a.Instructions, e.opts.DryRun); err != nil {
-				return fmt.Errorf("adapter %s: %w", a.ID, err)
+				return RunResult{Err: fmt.Errorf("adapter %s: %w", a.ID, err)}
 			}
 		case "file-export":
 			if e.opts.Scope == "project" {
 				continue
 			}
 			if err := ExportFileAndClip(a, formattedCtx, e.opts); err != nil {
-				return fmt.Errorf("adapter %s: %w", a.ID, err)
+				return RunResult{Err: fmt.Errorf("adapter %s: %w", a.ID, err)}
 			}
 		case "mcp-wire":
 			// mcp-wire is handled by the mcp command; inject skips it
@@ -133,7 +157,7 @@ func (e *Engine) Run() error {
 	if e.opts.Stats && len(stats) > 0 {
 		printStats(e.opts.Out, stats)
 	}
-	return nil
+	return result
 }
 
 func (e *Engine) runFileInject(a Adapter, ctx string) error {
@@ -159,6 +183,56 @@ func (e *Engine) runFileInject(a Adapter, ctx string) error {
 		}
 	}
 	return nil
+}
+
+func (e *Engine) runFileUninstall(a Adapter) (found, dryFound int, err error) {
+	for _, target := range a.Targets {
+		if target.Scope != e.opts.Scope {
+			continue
+		}
+		path, expandErr := ExpandHome(target.Path)
+		if expandErr != nil {
+			err = errors.Join(err, fmt.Errorf("target %s: %w", target.Path, expandErr))
+			continue
+		}
+		switch target.Mode {
+		case "replace-section":
+			f, removed, rerr := removeSection(path, target.Section, e.opts.DryRun, e.opts.Out)
+			if rerr != nil {
+				err = errors.Join(err, fmt.Errorf("target %s: %w", target.Path, rerr))
+				continue
+			}
+			if f && removed {
+				found++
+				fmt.Fprintf(e.opts.Out, "  %s  — %s\n", path, i18n.T(e.opts.Lang, "inject.uninstall.section_removed"))
+			} else if f && !removed {
+				dryFound++
+				// [dry-run] line already written by removeSection
+			} else {
+				fmt.Fprintf(e.opts.Out, "  %s  — %s\n", path, i18n.T(e.opts.Lang, "inject.uninstall.not_found"))
+			}
+		case "replace-file":
+			f, deleted, rerr := deleteFile(path, e.opts.DryRun, e.opts.Out)
+			if rerr != nil {
+				err = errors.Join(err, fmt.Errorf("target %s: %w", target.Path, rerr))
+				continue
+			}
+			if f && deleted {
+				found++
+				fmt.Fprintf(e.opts.Out, "  %s  — %s\n", path, i18n.T(e.opts.Lang, "inject.uninstall.file_deleted"))
+			} else if f && !deleted {
+				dryFound++
+				// [dry-run] line already written by deleteFile
+			} else {
+				fmt.Fprintf(e.opts.Out, "  %s  — %s\n", path, i18n.T(e.opts.Lang, "inject.uninstall.not_found"))
+			}
+		case "append":
+			fmt.Fprintf(os.Stderr, "%s\n", i18n.Tf(e.opts.Lang, "inject.uninstall.append_warning", map[string]any{"Path": path}))
+		default:
+			err = errors.Join(err, fmt.Errorf("target %s: unknown mode %q", target.Path, target.Mode))
+		}
+	}
+	return found, dryFound, err
 }
 
 func printStats(w io.Writer, stats []adapterStats) {

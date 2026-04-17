@@ -103,6 +103,12 @@ sap-devs inject --project
 
 # Preview what would be written without making changes
 sap-devs inject --dry-run
+
+# Remove all previously injected SAP context from AI tool config files
+sap-devs inject --uninstall
+
+# Preview what --uninstall would remove without making changes
+sap-devs inject --uninstall --dry-run
 ```
 
 ### Choose your developer profile
@@ -130,6 +136,7 @@ sap-devs inject [flags]
 | `--project` | Inject at project scope (writes to project config files in the current directory) |
 | `--tool <id>` | Inject into a specific tool only (e.g. `claude-code`, `cursor`) |
 | `--dry-run` | Preview changes without writing files |
+| `--uninstall` | Remove all previously injected SAP context from AI tool config files |
 | `--stats` | Show a per-adapter table of packs included, approximate token count, and budget status |
 | `--sync` | Force a content sync before injecting (no prompt) |
 | `--no-sync` | Skip the freshness check; use cached content as-is |
@@ -138,6 +145,16 @@ sap-devs inject [flags]
 ```bash
 sap-devs inject --tool claude-code --dry-run
 sap-devs inject --stats --dry-run
+sap-devs inject --uninstall
+sap-devs inject --uninstall --dry-run
+```
+
+**`--uninstall` output example:**
+
+```text
+Uninstalled SAP developer context:
+  ~/.claude/CLAUDE.md  — section removed
+  ~/.cursor/rules/sap-developer-context.mdc  — file deleted
 ```
 
 **`--stats` output example:**

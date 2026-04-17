@@ -2,6 +2,7 @@ package adapter
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -9,6 +10,30 @@ import (
 
 const markerFmt = "<!-- sap-devs:start:%s -->"
 const markerEndFmt = "<!-- sap-devs:end:%s -->"
+
+type sectionStatus int
+
+const (
+	sectionNotFound sectionStatus = iota
+	sectionFound
+	sectionOrphaned
+)
+
+// findSection locates the start and end markers within content.
+// startIdx and endIdx are the byte offsets of the first character of each marker string.
+// Both are only meaningful when status == sectionFound.
+func findSection(content, start, end string) (startIdx, endIdx int, status sectionStatus) {
+	si := strings.Index(content, start)
+	ei := strings.Index(content, end)
+	switch {
+	case si != -1 && ei != -1 && si < ei:
+		return si, ei, sectionFound
+	case si == -1 && ei == -1:
+		return -1, -1, sectionNotFound
+	default:
+		return -1, -1, sectionOrphaned
+	}
+}
 
 // ReplaceSection writes `content` into `filePath` between HTML comment markers
 // for the named section. If the section already exists it is replaced in-place;
@@ -34,22 +59,19 @@ func ReplaceSection(filePath, section, content string, dryRun bool) error {
 	}
 
 	var result string
-	startIdx := strings.Index(existing, start)
-	endIdx := strings.Index(existing, end)
+	startIdx, endIdx, sStatus := findSection(existing, start, end)
 
-	// Detect orphaned/mismatched markers
-	if (startIdx == -1) != (endIdx == -1) {
+	switch sStatus {
+	case sectionOrphaned:
 		return fmt.Errorf("file %s has mismatched section markers for %q; fix manually", filePath, section)
-	}
-
-	if startIdx != -1 && endIdx != -1 && endIdx > startIdx {
+	case sectionFound:
 		// Replace in-place; consume the trailing newline after the end marker if present
 		afterEnd := endIdx + len(end)
 		if afterEnd < len(existing) && existing[afterEnd] == '\n' {
 			afterEnd++
 		}
 		result = existing[:startIdx] + block + existing[afterEnd:]
-	} else {
+	default: // sectionNotFound
 		// Append with separator
 		if existing != "" && !strings.HasSuffix(existing, "\n") {
 			existing += "\n"
@@ -99,4 +121,75 @@ func ExpandHome(path string) (string, error) {
 		return "", err
 	}
 	return filepath.Join(home, path[1:]), nil
+}
+
+// removeSection removes the fenced sap-devs section with the given name from the file at path.
+// Returns found=true if the section was present, removed=true if it was actually deleted (live mode).
+// In dry-run mode, writes a preview line to w and returns found=true, removed=false.
+// If the file does not exist, returns found=false, removed=false, err=nil.
+// If markers are orphaned, returns err non-nil.
+func removeSection(path, section string, dryRun bool, w io.Writer) (found, removed bool, err error) {
+	data, readErr := os.ReadFile(path)
+	if readErr != nil {
+		if os.IsNotExist(readErr) {
+			return false, false, nil
+		}
+		return false, false, readErr
+	}
+	existing := string(data)
+
+	start := fmt.Sprintf(markerFmt, section)
+	end := fmt.Sprintf(markerEndFmt, section)
+	startIdx, endIdx, status := findSection(existing, start, end)
+
+	switch status {
+	case sectionNotFound:
+		return false, false, nil
+	case sectionOrphaned:
+		return false, false, fmt.Errorf("file %s has orphaned section marker for %q; fix manually", path, section)
+	}
+	// sectionFound
+	if dryRun {
+		fmt.Fprintf(w, "[dry-run] would remove section %q from %s\n", section, path)
+		return true, false, nil
+	}
+
+	// Remove the block: bytes [startIdx, endIdx+len(end))
+	afterEnd := endIdx + len(end)
+	// Consume trailing newline after end marker
+	if afterEnd < len(existing) && existing[afterEnd] == '\n' {
+		afterEnd++
+	}
+	result := existing[:startIdx] + existing[afterEnd:]
+
+	// Collapse three or more consecutive newlines to two
+	for strings.Contains(result, "\n\n\n") {
+		result = strings.ReplaceAll(result, "\n\n\n", "\n\n")
+	}
+
+	if writeErr := os.WriteFile(path, []byte(result), 0644); writeErr != nil {
+		return true, false, writeErr
+	}
+	return true, true, nil
+}
+
+// deleteFile removes the file at path entirely.
+// Returns found=true if the file existed, deleted=true if actually removed (live mode).
+// Dry-run writes a preview line to w and returns found=true, deleted=false.
+// If the file does not exist, returns found=false, deleted=false, err=nil.
+func deleteFile(path string, dryRun bool, w io.Writer) (found, deleted bool, err error) {
+	if _, statErr := os.Stat(path); statErr != nil {
+		if os.IsNotExist(statErr) {
+			return false, false, nil
+		}
+		return false, false, statErr
+	}
+	if dryRun {
+		fmt.Fprintf(w, "[dry-run] would delete %s\n", path)
+		return true, false, nil
+	}
+	if removeErr := os.Remove(path); removeErr != nil {
+		return true, false, removeErr
+	}
+	return true, true, nil
 }
