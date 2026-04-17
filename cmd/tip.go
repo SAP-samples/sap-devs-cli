@@ -90,7 +90,7 @@ var tipCmd = &cobra.Command{
 
 		rotation := cfg.Tip.Rotation
 		if rotation != "" && rotation != "daily" && rotation != "hourly" && rotation != "session" {
-			fmt.Fprintf(os.Stderr, "sap-devs: unknown tip_rotation value %q, falling back to daily\n", rotation)
+			fmt.Fprintf(cmd.ErrOrStderr(), "sap-devs: unknown tip_rotation value %q, falling back to daily\n", rotation)
 			rotation = ""
 		}
 
