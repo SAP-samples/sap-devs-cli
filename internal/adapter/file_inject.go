@@ -172,3 +172,21 @@ func removeSection(path, section string, dryRun bool, w io.Writer) (found, remov
 	}
 	return true, true, nil
 }
+
+// deleteFile removes the file at path entirely.
+// Returns found=true if the file existed, deleted=true if actually removed (live mode).
+// Dry-run writes a preview line to w and returns found=true, deleted=false.
+// If the file does not exist, returns found=false, deleted=false, err=nil.
+func deleteFile(path string, dryRun bool, w io.Writer) (found, deleted bool, err error) {
+	if _, statErr := os.Stat(path); os.IsNotExist(statErr) {
+		return false, false, nil
+	}
+	if dryRun {
+		fmt.Fprintf(w, "[dry-run] would delete %s\n", path)
+		return true, false, nil
+	}
+	if removeErr := os.Remove(path); removeErr != nil {
+		return true, false, removeErr
+	}
+	return true, true, nil
+}

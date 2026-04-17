@@ -264,3 +264,45 @@ func TestRemoveSection_DryRunSectionAbsent(t *testing.T) {
 	assert.False(t, removed)
 	assert.Empty(t, w.String())
 }
+
+func TestDeleteFile_LiveFilePresent(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "sap.mdc")
+	require.NoError(t, os.WriteFile(path, []byte("content"), 0644))
+
+	var w strings.Builder
+	found, deleted, err := deleteFile(path, false, &w)
+	require.NoError(t, err)
+	assert.True(t, found)
+	assert.True(t, deleted)
+	assert.Empty(t, w.String())
+
+	_, statErr := os.Stat(path)
+	assert.True(t, os.IsNotExist(statErr))
+}
+
+func TestDeleteFile_FileAbsent(t *testing.T) {
+	var w strings.Builder
+	found, deleted, err := deleteFile("/no/such/file.mdc", false, &w)
+	require.NoError(t, err)
+	assert.False(t, found)
+	assert.False(t, deleted)
+}
+
+func TestDeleteFile_DryRunFilePresent(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "sap.mdc")
+	require.NoError(t, os.WriteFile(path, []byte("content"), 0644))
+
+	var w strings.Builder
+	found, deleted, err := deleteFile(path, true, &w)
+	require.NoError(t, err)
+	assert.True(t, found)
+	assert.False(t, deleted)
+	assert.Contains(t, w.String(), "[dry-run]")
+	assert.Contains(t, w.String(), path)
+
+	// File must still exist
+	_, statErr := os.Stat(path)
+	assert.NoError(t, statErr)
+}
