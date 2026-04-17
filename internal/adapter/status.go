@@ -46,6 +46,7 @@ func EstimateTokens(s string) int {
 
 // ScanOtherSections finds non-sap-devs HTML-comment fenced blocks in content.
 // Returns []SectionInfo{} (never nil) so it marshals as [] in JSON.
+// If the same prefix appears multiple times, each start marker produces a separate entry.
 func ScanOtherSections(content string) []SectionInfo {
 	result := []SectionInfo{}
 	matches := reOtherSection.FindAllStringSubmatchIndex(content, -1)
