@@ -14,7 +14,7 @@ type SectionInfo struct {
 // StatusRow is the result of inspecting one adapter target (one row per adapter+target pair).
 // An adapter with both a global and a project target produces two StatusRows.
 type StatusRow struct {
-	AdapterName string `json:"adapter_name"`
+	AdapterName string `json:"name"`
 	AdapterID   string `json:"adapter"`
 	Scope       string `json:"scope"`
 	TargetPath  string `json:"path"` // unexpanded (~-form)
@@ -35,7 +35,7 @@ type StatusRow struct {
 }
 
 // reOtherSection matches <!-- <prefix>:start:<name> --> where prefix != "sap-devs".
-var reOtherSection = regexp.MustCompile(`<!-- ([^:>]+):start:([^>]+) -->`)
+var reOtherSection = regexp.MustCompile(`<!-- ([^:]+):start:[^>]+ -->`)
 
 // EstimateTokens returns a rough token estimate: word count × 1.3.
 // Exported for testing.
