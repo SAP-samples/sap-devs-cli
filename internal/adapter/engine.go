@@ -235,6 +235,128 @@ func (e *Engine) runFileUninstall(a Adapter) (found, dryFound int, err error) {
 	return found, dryFound, err
 }
 
+// renderSectionContent renders the content string that would be written by inject
+// for the given adapter. It mirrors the full pipeline in Run(): TrimPacks →
+// RenderContext → FormatOutput. Returns "" when e.packs is nil.
+func (e *Engine) renderSectionContent(a Adapter) string {
+	if e.packs == nil {
+		return ""
+	}
+	maxBytes := a.MaxBytes
+	if maxBytes == 0 && a.MaxTokens > 0 {
+		maxBytes = a.MaxTokens * 4
+	}
+	trimmed := content.TrimPacks(e.packs, maxBytes)
+	if len(trimmed) == 0 && maxBytes > 0 {
+		return ""
+	}
+	ctx := content.RenderContext(trimmed, e.profile, e.opts.Dynamic)
+	return content.FormatOutput(ctx, a.Format)
+}
+
+// RenderSectionContentForTest exposes renderSectionContent for white-box tests.
+// Do not call this from production code.
+func (e *Engine) RenderSectionContentForTest(a Adapter) string {
+	return e.renderSectionContent(a)
+}
+
+// Status inspects each file-inject adapter target and returns one StatusRow per
+// (adapter, target) pair for the configured scope.
+func (e *Engine) Status() ([]StatusRow, error) {
+	var rows []StatusRow
+	var err error
+
+	for _, a := range e.adapters {
+		if e.opts.ToolFilter != "" && a.ID != e.opts.ToolFilter {
+			continue
+		}
+		if a.Type != "file-inject" {
+			continue
+		}
+		for _, target := range a.Targets {
+			if target.Scope != e.opts.Scope {
+				continue
+			}
+			row := StatusRow{
+				AdapterName:   a.Name,
+				AdapterID:     a.ID,
+				Scope:         target.Scope,
+				TargetPath:    target.Path,
+				OtherSections: []SectionInfo{},
+			}
+
+			path, expandErr := ExpandHome(target.Path)
+			if expandErr != nil {
+				err = errors.Join(err, fmt.Errorf("target %s: %w", target.Path, expandErr))
+				rows = append(rows, row)
+				continue
+			}
+
+			fileBytes, readErr := os.ReadFile(path)
+			if readErr != nil {
+				if !os.IsNotExist(readErr) {
+					err = errors.Join(err, fmt.Errorf("target %s: %w", target.Path, readErr))
+				}
+				rows = append(rows, row)
+				continue
+			}
+
+			row.FileExists = true
+			fileStr := string(fileBytes)
+
+			switch target.Mode {
+			case "replace-section":
+				startMarker := fmt.Sprintf(markerFmt, target.Section)
+				endMarker := fmt.Sprintf(markerEndFmt, target.Section)
+				startIdx, endIdx, sStatus := findSection(fileStr, startMarker, endMarker)
+				switch sStatus {
+				case sectionFound:
+					row.Injected = true
+					innerStart := startIdx + len(startMarker) + 1 // +1 for the \n after the marker
+					if innerStart > endIdx {
+						innerStart = endIdx
+					}
+					// Staleness check
+					if e.packs != nil {
+						rendered := e.renderSectionContent(a)
+						// Extract on-disk inner content: bytes after startMarker+"\n" up to endIdx
+						onDisk := fileStr[innerStart:endIdx]
+						row.Stale = strings.TrimSpace(rendered) != strings.TrimSpace(onDisk)
+					}
+					row.SapDevsTokens = EstimateTokens(fileStr[innerStart:endIdx])
+				case sectionOrphaned:
+					row.Orphaned = true
+				}
+			case "replace-file":
+				row.Injected = true
+				if e.packs != nil {
+					rendered := e.renderSectionContent(a)
+					var expected string
+					if target.Preamble != "" {
+						expected = target.Preamble + "\n" + rendered
+					} else {
+						expected = rendered
+					}
+					row.Stale = strings.TrimSpace(expected) != strings.TrimSpace(fileStr)
+				}
+				row.SapDevsTokens = EstimateTokens(fileStr)
+			case "append":
+				fmt.Fprintf(os.Stderr, "%s\n", i18n.Tf(e.opts.Lang, "inject.status.append_warning", map[string]any{"Path": path}))
+				continue
+			}
+
+			// Stretch-goal fields
+			row.FileSizeBytes = len(fileBytes)
+			row.FileTokenEst = EstimateTokens(fileStr)
+			row.OtherSections = ScanOtherSections(fileStr)
+
+			rows = append(rows, row)
+		}
+	}
+
+	return rows, err
+}
+
 func printStats(w io.Writer, stats []adapterStats) {
 	tw := tabwriter.NewWriter(w, 0, 0, 3, ' ', 0)
 	fmt.Fprintln(tw, "Adapter\tPacks included\tTokens (approx)\tBudget (bytes)\tFormat\tStatus")

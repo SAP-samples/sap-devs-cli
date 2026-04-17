@@ -3,10 +3,12 @@ package cmd
 import (
 	"bufio"
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
+	"text/tabwriter"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -28,6 +30,9 @@ var (
 	injectNoSync    bool
 	injectStats     bool
 	injectUninstall bool
+	injectStatus    bool
+	injectJSON      bool
+	injectVerbose   bool
 )
 
 var injectCmd = &cobra.Command{
@@ -45,6 +50,10 @@ into project-level files (CLAUDE.md, .cursorrules, etc.) in the current director
 
 		if injectUninstall && (injectSync || injectNoSync) {
 			return fmt.Errorf("--uninstall is incompatible with --sync and --no-sync")
+		}
+
+		if injectStatus && (injectUninstall || injectSync || injectNoSync || injectDryRun || injectStats) {
+			return fmt.Errorf("--status is incompatible with --uninstall, --sync, --no-sync, --dry-run, and --stats")
 		}
 
 		if injectUninstall {
@@ -86,6 +95,50 @@ into project-level files (CLAUDE.md, .cursorrules, etc.) in the current director
 					fmt.Fprintln(cmd.OutOrStdout(), i18n.T(lang, "inject.uninstall.nothing_found"))
 				}
 			}
+			return nil
+		}
+
+		if injectStatus {
+			lang := i18n.ActiveLang
+			gatheredAdapters, err := loadAdapters()
+			if err != nil {
+				return err
+			}
+			scope := "global"
+			if injectProject {
+				scope = "project"
+			}
+
+			// Load packs for staleness check (errors are non-fatal — status still works without packs)
+			loader, loaderErr := newContentLoader()
+			var packs []*content.Pack
+			var activeProfile *content.Profile
+			if loaderErr == nil {
+				paths, pathsErr := xdg.New()
+				if pathsErr == nil {
+					configProfile, _ := config.LoadProfile(paths.ConfigDir)
+					if configProfile.ID != "" {
+						activeProfile, _ = loader.FindProfile(configProfile.ID)
+					}
+				}
+				packs, _ = loader.LoadPacks(activeProfile, lang)
+			}
+
+			opts := adapter.Options{
+				Scope:      scope,
+				ToolFilter: injectTool,
+				Lang:       lang,
+			}
+			eng := adapter.NewEngine(gatheredAdapters, packs, activeProfile, opts)
+			rows, statusErr := eng.Status()
+			if statusErr != nil {
+				return statusErr
+			}
+
+			if injectJSON {
+				return printStatusJSON(cmd, rows)
+			}
+			printStatusTable(cmd, rows, lang, injectVerbose)
 			return nil
 		}
 
@@ -257,6 +310,71 @@ func shouldSyncNow(cmd *cobra.Command) bool {
 	return answer == "" || answer == "Y" || answer == "y"
 }
 
+func printStatusJSON(cmd *cobra.Command, rows []adapter.StatusRow) error {
+	enc := json.NewEncoder(cmd.OutOrStdout())
+	enc.SetIndent("", "  ")
+	return enc.Encode(rows)
+}
+
+func printStatusTable(cmd *cobra.Command, rows []adapter.StatusRow, lang string, verbose bool) {
+	w := cmd.OutOrStdout()
+	if len(rows) == 0 {
+		fmt.Fprintln(w, i18n.T(lang, "inject.status.no_results"))
+		return
+	}
+	tw := tabwriter.NewWriter(w, 0, 0, 3, ' ', 0)
+	if verbose {
+		fmt.Fprintln(tw,
+			i18n.T(lang, "inject.status.header_tool")+"\t"+
+				i18n.T(lang, "inject.status.header_scope")+"\t"+
+				i18n.T(lang, "inject.status.header_file")+"\t"+
+				i18n.T(lang, "inject.status.header_status")+"\t"+
+				i18n.T(lang, "inject.status.header_size")+"\t"+
+				i18n.T(lang, "inject.status.header_tokens")+"\t"+
+				i18n.T(lang, "inject.status.header_sap_pct")+"\t"+
+				i18n.T(lang, "inject.status.header_other"))
+	} else {
+		fmt.Fprintln(tw,
+			i18n.T(lang, "inject.status.header_tool")+"\t"+
+				i18n.T(lang, "inject.status.header_scope")+"\t"+
+				i18n.T(lang, "inject.status.header_file")+"\t"+
+				i18n.T(lang, "inject.status.header_status"))
+	}
+	for _, row := range rows {
+		status := injectStatusLabel(row, lang)
+		if verbose {
+			pct := 0
+			if row.FileTokenEst > 0 {
+				pct = row.SapDevsTokens * 100 / row.FileTokenEst
+			}
+			other := fmt.Sprintf("%d", len(row.OtherSections))
+			fmt.Fprintf(tw, "%s\t%s\t%s\t%s\t%d B\t%d\t%d%%\t%s\n",
+				row.AdapterName, row.Scope, row.TargetPath, status,
+				row.FileSizeBytes, row.FileTokenEst, pct, other)
+		} else {
+			fmt.Fprintf(tw, "%s\t%s\t%s\t%s\n",
+				row.AdapterName, row.Scope, row.TargetPath, status)
+		}
+	}
+	tw.Flush()
+}
+
+func injectStatusLabel(row adapter.StatusRow, lang string) string {
+	if !row.FileExists {
+		return i18n.T(lang, "inject.status.not_found")
+	}
+	if row.Orphaned {
+		return i18n.T(lang, "inject.status.orphaned")
+	}
+	if !row.Injected {
+		return i18n.T(lang, "inject.status.not_injected")
+	}
+	if row.Stale {
+		return i18n.T(lang, "inject.status.stale")
+	}
+	return i18n.T(lang, "inject.status.current")
+}
+
 func init() {
 	injectCmd.Flags().BoolVar(&injectProject, "project", false, "inject at project scope (current directory)")
 	injectCmd.Flags().StringVar(&injectTool, "tool", "", "inject into a specific tool only (e.g. claude-code)")
@@ -265,5 +383,8 @@ func init() {
 	injectCmd.Flags().BoolVar(&injectNoSync, "no-sync", false, "skip freshness check; use cached content as-is")
 	injectCmd.Flags().BoolVar(&injectStats, "stats", false, "show injection stats per adapter")
 	injectCmd.Flags().BoolVar(&injectUninstall, "uninstall", false, "remove previously injected SAP developer context")
+	injectCmd.Flags().BoolVar(&injectStatus, "status", false, "report injection state for all detected AI tools")
+	injectCmd.Flags().BoolVar(&injectJSON, "json", false, "output status as JSON (only with --status)")
+	injectCmd.Flags().BoolVar(&injectVerbose, "verbose", false, "show file size and token breakdown (only with --status)")
 	rootCmd.AddCommand(injectCmd)
 }
