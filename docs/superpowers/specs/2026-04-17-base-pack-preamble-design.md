@@ -28,7 +28,7 @@ The base pack (`content/packs/base/`) is auto-injected into every profile and al
 
 ## Non-Goals
 
-- Additive layer support for `preamble.md` — the preamble is fixed to whichever `preamble.md` ships in the official base pack; user/company/project layer overrides are not supported.
+- Additive layer support for `preamble.md` — the preamble is fixed to whichever `preamble.md` ships in the official base pack; user/company/project layer overrides are not supported. Layer override suppression relies on the `p.Base` guard in `RenderContext`: only base packs (`Base == true`) have their `PreambleMD` rendered. A full replacement of the official base pack (non-additive, same `id: base`) by a company/user layer would also replace `PreambleMD` — this edge case is accepted.
 - Per-adapter preamble variations — one preamble, injected the same way everywhere.
 - Generating the preamble at inject time — it is static authored content in `content/packs/base/preamble.md`.
 
@@ -45,6 +45,8 @@ After this change the injected block renders in this order:
 3. **Preamble** — from `base/preamble.md`, rendered once before all pack `context.md` content
 4. Base pack `context.md` *(SAP ecosystem portals, community links, etc.)*
 5. Technology pack `context.md` files *(cap, abap, btp-core, …)*
+
+**Implementation note:** The preamble loop and the `ContextMD` loop are separate passes over the same `packs` slice. The base pack's `ContextMD` is emitted in the second loop pass, in the same relative position it always has (first among all packs, since `LoadPacks` pins base packs first). There is no special-casing of base pack `ContextMD` in the first loop — this would cause it to be emitted twice.
 
 ### New file: `content/packs/base/preamble.md`
 
@@ -68,6 +70,8 @@ type Pack struct {
     PreambleMD string
 }
 ```
+
+**Merge behaviour:** `PreambleMD` is a scalar string field. `MergeWith` does a shallow copy (`merged := *base`), so `PreambleMD` is preserved from the base pack through any additive merge. An additive pack targeting the base pack cannot modify `PreambleMD` — this is intentional (preamble is not overridable by upper layers) and requires no additional merge logic in `merge.go`.
 
 ### `LoadPack` — load `preamble.md`
 
@@ -112,22 +116,22 @@ Remove the `### Agent Instructions` section (currently the last section of the f
 
 ## Documentation updates (`docs/content-authoring.md`)
 
-Four targeted changes:
+Three targeted changes:
 
 1. **Pack directory structure** — add `preamble.md` to the directory tree with annotation: `# AI preamble (base pack only)`.
 
 2. **Base Layer section** — add a `### preamble.md` subsection:
    - What it is and what it does
-   - Rendered output order (the numbered list above)
-   - Token cost reminder: every byte is injected into every AI tool config
-   - Only the official base pack's `preamble.md` is used (no layer override)
+   - Rendered output order (the numbered list above, including the two-loop implementation note)
+   - Token cost reminder: every byte is injected into every AI tool config on every `sap-devs inject` run; the preamble is exempt from token budget trimming (same as base pack `ContextMD`) — keep it ≤ 3 lines
+   - Only the official base pack's `preamble.md` is used (no layer override; mechanism explained above in Non-Goals)
 
 3. **`### Agent Instructions` pattern section** — update to note:
    - The general "prefer sap-devs" instruction now lives in `base/preamble.md`
    - Per-pack `### Agent Instructions` sections should contain only pack-specific command hints (e.g. `--pack <id>` variants)
    - Refer readers to `base/preamble.md` for the canonical example
 
-4. **No new sections required** — the rendered output order is documented within the Base Layer section update.
+*No schema changes required — `preamble.md` is a standalone file, not a `pack.yaml` field.*
 
 ---
 
@@ -146,6 +150,12 @@ Four targeted changes:
 ## Testing
 
 - Existing `render_test.go` tests should continue to pass (preamble field is empty for non-base packs in test fixtures).
-- Add a test case to `render_test.go`: base pack with non-empty `PreambleMD` renders before pack `ContextMD`.
-- Add a test case to `pack_test.go`: `LoadPack` on a pack dir with `preamble.md` populates `PreambleMD`; without `preamble.md` field is empty string.
+- Add test cases to `render_test.go`:
+  1. Base pack with non-empty `PreambleMD` — verify preamble appears before that pack's `ContextMD`.
+  2. Base pack with both `PreambleMD` and `ContextMD` — verify preamble precedes `ContextMD` of the same base pack.
+  3. Non-base pack with `PreambleMD` set — verify `PreambleMD` is **not** emitted (the `p.Base` guard suppresses it).
+  4. Two base packs each with `PreambleMD` — verify both preambles are emitted and both appear before all `ContextMD`.
+- Add test cases to `pack_test.go`:
+  1. `LoadPack` on a pack dir with `preamble.md` populates `PreambleMD`.
+  2. `LoadPack` on a pack dir without `preamble.md` leaves `PreambleMD` as empty string.
 - `go build ./... && go vet ./...` locally; CI is authoritative for `go test`.
