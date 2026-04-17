@@ -16,6 +16,7 @@ import (
 
 var tipMarkdown bool
 var tipPlain bool
+var tipNew bool
 
 // FormatTip formats a tip for non-interactive output. Returns empty string for
 // the default case (caller uses glamour rendering instead).
@@ -27,6 +28,23 @@ func FormatTip(tip content.Tip, markdown, plain bool) string {
 		return fmt.Sprintf("%s\n\n%s\n", tip.Title, tip.Content)
 	}
 	return ""
+}
+
+// tipSeed returns the seed for tip selection.
+// useRandom=true (--new flag or dev mode) returns a unique value on every call.
+// Otherwise the seed is derived from the current time at the rotation granularity.
+func tipSeed(rotation string, useRandom bool) int64 {
+	if useRandom {
+		return time.Now().UnixNano()
+	}
+	now := time.Now()
+	switch rotation {
+	case "hourly", "session":
+		// All terms cast to int64 before arithmetic to avoid 32-bit int overflow
+		return int64(now.Year())*100000 + int64(now.YearDay())*24 + int64(now.Hour())
+	default: // "daily" and ""
+		return int64(now.Year())*1000 + int64(now.YearDay())
+	}
 }
 
 var tipCmd = &cobra.Command{
@@ -65,14 +83,19 @@ var tipCmd = &cobra.Command{
 			tipTags = activeProfile.TipTags
 		}
 
-		// Use year*1000+yearday as seed for daily consistency
-		now := time.Now()
-		seed := int64(now.Year()*1000 + now.YearDay())
-
-		// If in local development mode, use a more variable seed
-		if os.Getenv("SAP_DEVS_DEV") == "1" {
-			seed = now.Unix()
+		cfg, err := config.Load(paths.ConfigDir)
+		if err != nil {
+			return err
 		}
+
+		rotation := cfg.Tip.Rotation
+		if rotation != "" && rotation != "daily" && rotation != "hourly" && rotation != "session" {
+			fmt.Fprintf(os.Stderr, "warning: unknown tip_rotation value %q, falling back to daily\n", rotation)
+			rotation = ""
+		}
+
+		useRandom := tipNew || os.Getenv("SAP_DEVS_DEV") == "1"
+		seed := tipSeed(rotation, useRandom)
 
 		tip, err := content.SelectTip(packs, tipTags, seed)
 		if err != nil {
@@ -145,6 +168,7 @@ var tipUninstallCmd = &cobra.Command{
 func init() {
 	tipCmd.Flags().BoolVar(&tipMarkdown, "markdown", false, "output raw Markdown (no ANSI rendering)")
 	tipCmd.Flags().BoolVar(&tipPlain, "plain", false, "output plain text (no Markdown or ANSI)")
+	tipCmd.Flags().BoolVar(&tipNew, "new", false, "show a different tip than the current rotation slot")
 	tipCmd.AddCommand(tipInstallCmd)
 	tipCmd.AddCommand(tipUninstallCmd)
 	rootCmd.AddCommand(tipCmd)
