@@ -75,6 +75,17 @@ func staticFridayTip() *content.Tip {
 	}
 }
 
+func fridayNewsOverride() *content.Tip {
+	if time.Now().Weekday() != time.Friday {
+		return nil
+	}
+	episodes, err := youtube.FetchPlaylist(newsPlaylistRSS)
+	if err != nil || len(episodes) == 0 {
+		return staticFridayTip()
+	}
+	return formatFridayTip(episodes[0])
+}
+
 var tipCmd = &cobra.Command{
 	Use:   "tip",
 	Short: "Print a SAP developer tip (add to your shell profile)",
@@ -125,12 +136,19 @@ var tipCmd = &cobra.Command{
 		useRandom := tipNew || os.Getenv("SAP_DEVS_DEV") == "1"
 		seed := tipSeed(rotation, useRandom)
 
-		tip, err := content.SelectTip(packs, tipTags, seed)
-		if err != nil {
-			// No tips available — not an error worth surfacing as exit code 1
-			fmt.Fprintln(cmd.OutOrStdout(), i18n.T(i18n.ActiveLang, "tip.no_tips"))
-			return nil
+		var selectedTip *content.Tip
+		if !useRandom {
+			selectedTip = fridayNewsOverride()
 		}
+		if selectedTip == nil {
+			selectedTip, err = content.SelectTip(packs, tipTags, seed)
+			if err != nil {
+				// No tips available — not an error worth surfacing as exit code 1
+				fmt.Fprintln(cmd.OutOrStdout(), i18n.T(i18n.ActiveLang, "tip.no_tips"))
+				return nil
+			}
+		}
+		tip := selectedTip
 
 		if tipMarkdown || tipPlain {
 			fmt.Fprint(cmd.OutOrStdout(), FormatTip(*tip, tipMarkdown, tipPlain))
