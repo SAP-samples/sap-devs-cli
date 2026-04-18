@@ -60,10 +60,17 @@ func ExtractMarkdown(data []byte) (string, error) {
 	return strings.TrimSpace(md), nil
 }
 
+const userAgent = "Mozilla/5.0 (compatible; sap-devs/1.0)"
+
 // FetchBlogPosts fetches the SAP Community RSS feed and returns blog posts.
 func FetchBlogPosts(rssURL string) ([]BlogPost, error) {
 	client := &http.Client{Timeout: 10 * time.Second}
-	resp, err := client.Get(rssURL) //nolint:gosec // URL is a package-level constant
+	req, err := http.NewRequest(http.MethodGet, rssURL, nil) //nolint:gosec
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("User-Agent", userAgent)
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +89,12 @@ func FetchBlogPosts(rssURL string) ([]BlogPost, error) {
 // FetchPostContent fetches a Community blog post URL and returns the body as markdown.
 func FetchPostContent(postURL string) (string, error) {
 	client := &http.Client{Timeout: 10 * time.Second}
-	resp, err := client.Get(postURL) //nolint:gosec // URL comes from RSS feed
+	req, err := http.NewRequest(http.MethodGet, postURL, nil) //nolint:gosec
+	if err != nil {
+		return "", err
+	}
+	req.Header.Set("User-Agent", userAgent)
+	resp, err := client.Do(req)
 	if err != nil {
 		return "", err
 	}
