@@ -116,6 +116,24 @@ When a `location` is configured (see `sap-devs config location` above), apply sm
 
 ---
 
+### Content Editing UI
+
+Interactive UI for editing and maintaining pack content YAML files (event-types.yaml, event-instances.yaml, influencers.yaml, resources.yaml, etc.).
+
+**Goals:**
+
+- Guided editor that understands JSON schemas — validates input, offers autocomplete for enums (scope, type, tags)
+- Lower the barrier for content contributors who don't want to hand-edit YAML
+- Could be terminal-based (Bubbletea TUI) or a local web UI served from the CLI
+
+**Scope:**
+
+- `sap-devs content edit <file>` — open an interactive editor for a specific content file
+- `sap-devs content validate` — validate all content files against their schemas
+- Support for all content YAML types: pack.yaml, resources.yaml, influencers.yaml, event-types.yaml, event-instances.yaml, mcp.yaml, tools.yaml, hook.yaml
+
+---
+
 ### `sap-devs learn`
 
 Guided learning recommendations based on the active profile and experience level.

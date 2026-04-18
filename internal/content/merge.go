@@ -47,6 +47,8 @@ func (a *Pack) MergeWith(base *Pack) *Pack {
 	merged.MCPServers = mergeMCPServers(base.MCPServers, a.MCPServers, base.ID)
 	merged.Hooks = mergeHooks(base.Hooks, a.Hooks, base.ID)
 	merged.Influencers = mergeInfluencers(base.Influencers, a.Influencers, base.ID)
+	merged.EventTypes = mergeEventTypes(base.EventTypes, a.EventTypes, base.ID)
+	merged.EventInstances = mergeEventInstances(base.EventInstances, a.EventInstances, base.ID)
 
 	// Merged result is not itself additive; a subsequent additive layer will
 	// merge into this result rather than treating it as an additive pack.
@@ -174,7 +176,55 @@ func mergeInfluencers(base, additive []Influencer, packID string) []Influencer {
 	return result
 }
 
-// mergeMCPServers builds a fresh []MCPServer: starts with base entries, replaces
+// mergeEventTypes builds a fresh []EventType: starts with base entries, replaces
+// any entry whose ID matches an additive entry, appends unmatched additive entries.
+// PackID is re-stamped to packID on every entry in the result.
+func mergeEventTypes(base, additive []EventType, packID string) []EventType {
+	result := make([]EventType, len(base))
+	copy(result, base)
+	for _, a := range additive {
+		replaced := false
+		for i, b := range result {
+			if b.ID == a.ID {
+				result[i] = a
+				replaced = true
+				break
+			}
+		}
+		if !replaced {
+			result = append(result, a)
+		}
+	}
+	for i := range result {
+		result[i].PackID = packID
+	}
+	return result
+}
+
+// mergeEventInstances builds a fresh []EventInstance: starts with base entries, replaces
+// any entry whose ID matches an additive entry, appends unmatched additive entries.
+// PackID is re-stamped to packID on every entry in the result.
+func mergeEventInstances(base, additive []EventInstance, packID string) []EventInstance {
+	result := make([]EventInstance, len(base))
+	copy(result, base)
+	for _, a := range additive {
+		replaced := false
+		for i, b := range result {
+			if b.ID == a.ID {
+				result[i] = a
+				replaced = true
+				break
+			}
+		}
+		if !replaced {
+			result = append(result, a)
+		}
+	}
+	for i := range result {
+		result[i].PackID = packID
+	}
+	return result
+}
 // any entry whose ID matches an additive entry, appends unmatched additive entries.
 // PackID is re-stamped to packID on every entry in the result.
 func mergeMCPServers(base, additive []MCPServer, packID string) []MCPServer {

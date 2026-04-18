@@ -10,11 +10,12 @@ import (
 
 // Config holds user-level tool configuration from ~/.config/sap-devs/config.yaml.
 type Config struct {
-	CompanyRepo string     `yaml:"company_repo,omitempty"`
-	Language    string     `yaml:"language,omitempty"` // e.g. "de"; empty = auto-detect from locale
-	Location    string     `yaml:"location,omitempty"`
-	Sync        SyncConfig `yaml:"sync"`
-	Tip         TipConfig  `yaml:"tip,omitempty"`
+	CompanyRepo string       `yaml:"company_repo,omitempty"`
+	Language    string       `yaml:"language,omitempty"` // e.g. "de"; empty = auto-detect from locale
+	Location    string       `yaml:"location,omitempty"`
+	Sync        SyncConfig   `yaml:"sync"`
+	Tip         TipConfig    `yaml:"tip,omitempty"`
+	Events      EventsConfig `yaml:"events,omitempty"`
 }
 
 // SyncConfig controls per-category TTLs for background content refresh.
@@ -25,12 +26,42 @@ type SyncConfig struct {
 	Resources time.Duration `yaml:"resources"`
 	Context   time.Duration `yaml:"context"`
 	MCP       time.Duration `yaml:"mcp"`
+	Events    time.Duration `yaml:"events"`
 	Disabled  bool          `yaml:"disabled"`
 }
 
 // TipConfig controls tip display behaviour.
 type TipConfig struct {
 	Rotation string `yaml:"rotation,omitempty"` // "daily" | "hourly" | "session"; empty = "daily"
+}
+
+// EventsConfig controls event filtering and notification behaviour.
+type EventsConfig struct {
+	LocalRadius    int    `yaml:"local_radius,omitempty"`
+	RegionalRadius int    `yaml:"regional_radius,omitempty"`
+	NotifyDays     int    `yaml:"notify_days,omitempty"`
+	NotifyMethod   string `yaml:"notify_method,omitempty"`
+}
+
+func (e EventsConfig) EffectiveLocalRadius() int {
+	if e.LocalRadius > 0 {
+		return e.LocalRadius
+	}
+	return 200
+}
+
+func (e EventsConfig) EffectiveRegionalRadius() int {
+	if e.RegionalRadius > 0 {
+		return e.RegionalRadius
+	}
+	return 800
+}
+
+func (e EventsConfig) EffectiveNotifyDays() int {
+	if e.NotifyDays > 0 {
+		return e.NotifyDays
+	}
+	return 7
 }
 
 // Profile holds the user's active developer persona.
@@ -48,6 +79,7 @@ func Default() *Config {
 			Resources: 168 * time.Hour,
 			Context:   168 * time.Hour,
 			MCP:       168 * time.Hour,
+			Events:    4 * time.Hour,
 		},
 	}
 }

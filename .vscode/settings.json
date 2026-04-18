@@ -6,6 +6,8 @@
     "./content/schemas/mcp.schema.json":       "**/packs/*/mcp.yaml",
     "./content/schemas/profile.schema.json":   "**/profiles/*.yaml",
     "./content/schemas/hook.schema.json":      "**/packs/*/hook.yaml",
-    "./content/schemas/influencers.schema.json": "**/packs/*/influencers.yaml"
+    "./content/schemas/influencers.schema.json": "**/packs/*/influencers.yaml",
+    "./content/schemas/event-types.schema.json": "**/packs/*/event-types.yaml",
+    "./content/schemas/event-instances.schema.json": "**/packs/*/event-instances.yaml"
   }
 }

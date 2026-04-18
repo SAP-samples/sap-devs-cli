@@ -1,9 +1,11 @@
 package content
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"gopkg.in/yaml.v3"
 )
@@ -30,6 +32,9 @@ type Pack struct {
 	PreambleMD string
 	Hooks      []HookDef
 	Influencers []Influencer
+
+	EventTypes     []EventType
+	EventInstances []EventInstance
 }
 
 // Resource is a curated link within a pack.
@@ -100,6 +105,56 @@ type Influencer struct {
 	Focus  []string          `yaml:"focus"`
 	Links  map[string]string `yaml:"links"`
 	PackID string            // set at load time, not in YAML
+}
+
+// EventType defines a category of events and its data source.
+type EventType struct {
+	ID           string   `yaml:"id"`
+	Name         string   `yaml:"name"`
+	Description  string   `yaml:"description,omitempty"`
+	Source       string   `yaml:"source"`
+	RSSURL       string   `yaml:"rss_url,omitempty"`
+	DefaultScope string   `yaml:"default_scope"`
+	Tags         []string `yaml:"tags,omitempty"`
+	PackID       string   // set at load time
+}
+
+// EventInstance is a specific event occurrence.
+type EventInstance struct {
+	ID         string   `yaml:"id"`
+	Type       string   `yaml:"type"`
+	Title      string   `yaml:"title"`
+	DateStr    string   `yaml:"date"`
+	EndDateStr string   `yaml:"end_date,omitempty"`
+	Location   string   `yaml:"location,omitempty"`
+	Scope      string   `yaml:"scope"`
+	URL        string   `yaml:"url"`
+	Room       string   `yaml:"room,omitempty"`
+	Speaker    string   `yaml:"speaker,omitempty"`
+	Tags       []string `yaml:"tags,omitempty"`
+	PackID     string   // set at load time
+}
+
+// ParseDate parses the DateStr field into time.Time.
+func (e *EventInstance) ParseDate() (time.Time, error) {
+	return parseEventDate(e.DateStr)
+}
+
+// ParseEndDate parses the EndDateStr field into time.Time.
+func (e *EventInstance) ParseEndDate() (time.Time, error) {
+	if e.EndDateStr == "" {
+		return time.Time{}, nil
+	}
+	return parseEventDate(e.EndDateStr)
+}
+
+func parseEventDate(s string) (time.Time, error) {
+	for _, layout := range []string{"2006-01-02", time.RFC3339, time.RFC1123Z} {
+		if t, err := time.Parse(layout, s); err == nil {
+			return t, nil
+		}
+	}
+	return time.Time{}, fmt.Errorf("cannot parse date: %s", s)
 }
 
 type packMetaLocale struct {
@@ -193,6 +248,18 @@ func LoadPack(packDir string, lang string) (*Pack, error) {
 		_ = yaml.Unmarshal(data, &pack.Influencers)
 		for i := range pack.Influencers {
 			pack.Influencers[i].PackID = pack.ID
+		}
+	}
+	if data, err := os.ReadFile(filepath.Join(packDir, "event-types.yaml")); err == nil {
+		_ = yaml.Unmarshal(data, &pack.EventTypes)
+		for i := range pack.EventTypes {
+			pack.EventTypes[i].PackID = pack.ID
+		}
+	}
+	if data, err := os.ReadFile(filepath.Join(packDir, "event-instances.yaml")); err == nil {
+		_ = yaml.Unmarshal(data, &pack.EventInstances)
+		for i := range pack.EventInstances {
+			pack.EventInstances[i].PackID = pack.ID
 		}
 	}
 	if data, err := os.ReadFile(filepath.Join(packDir, "resources.yaml")); err == nil {
