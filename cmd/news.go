@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 	"text/tabwriter"
+	"time"
 
 	"github.com/pkg/browser"
 	"github.com/spf13/cobra"
@@ -207,10 +208,28 @@ func openPager(w io.Writer, content string) error {
 	return c.Run()
 }
 
+func fridayHookMessage(day time.Weekday) string {
+	if day != time.Friday {
+		return ""
+	}
+	return "📺 It's Friday — a new SAP Developer News episode is likely out!\n\nWould you like me to open the latest episode? Run `sap-devs news latest` or just say yes."
+}
+
+var newsHookCmd = &cobra.Command{
+	Use:   "hook",
+	Short: "Print a Friday Developer News reminder (used by session-start hook)",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		if msg := fridayHookMessage(time.Now().Weekday()); msg != "" {
+			fmt.Fprintln(cmd.OutOrStdout(), msg)
+		}
+		return nil
+	},
+}
+
 func init() {
 	newsCmd.Flags().IntVarP(&newsListN, "count", "n", 10, "number of episodes to show")
 	newsListCmd.Flags().IntVarP(&newsListN, "count", "n", 10, "number of episodes to show")
 	newsReadCmd.Flags().BoolVar(&newsReadPlain, "plain", false, "print plain text to stdout")
-	newsCmd.AddCommand(newsListCmd, newsLatestCmd, newsOpenCmd, newsSearchCmd, newsReadCmd)
+	newsCmd.AddCommand(newsListCmd, newsLatestCmd, newsOpenCmd, newsSearchCmd, newsReadCmd, newsHookCmd)
 	rootCmd.AddCommand(newsCmd)
 }
