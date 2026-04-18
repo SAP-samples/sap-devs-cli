@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 	"text/tabwriter"
 
 	"github.com/pkg/browser"
@@ -11,6 +12,7 @@ import (
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/events"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/geo"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/i18n"
+	"github.tools.sap/developer-relations/sap-devs-cli/internal/notify"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/xdg"
 )
 
@@ -18,6 +20,12 @@ var (
 	eventsAll   bool
 	eventsType  string
 	eventsCount int
+)
+
+var (
+	eventsExportType   string
+	eventsExportOutput string
+	eventsExportFormat string
 )
 
 var eventsCmd = &cobra.Command{
@@ -157,6 +165,196 @@ var eventsTypesCmd = &cobra.Command{
 	},
 }
 
+var eventsExportCmd = &cobra.Command{
+	Use:   "export",
+	Short: "Export events to a calendar file or generate calendar URLs",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		paths, err := xdg.New()
+		if err != nil {
+			return err
+		}
+		cfg, err := config.Load(paths.ConfigDir)
+		if err != nil {
+			return err
+		}
+		loader, err := newContentLoader()
+		if err != nil {
+			return err
+		}
+		packs, err := loader.LoadPacks(nil, i18n.ActiveLang)
+		if err != nil {
+			return err
+		}
+
+		eventTypes := content.FlattenEventTypes(packs)
+		var allEvents []content.EventInstance
+		for _, et := range eventTypes {
+			if et.Source == "rss" {
+				resolved, _ := events.Resolve(et, paths.CacheDir, false)
+				allEvents = append(allEvents, resolved...)
+			}
+		}
+		manual := content.FlattenEventInstances(packs)
+		allEvents = events.MergeAndSort(allEvents, manual)
+
+		if eventsExportType != "" {
+			allEvents = content.FilterEventsByType(allEvents, eventsExportType)
+		}
+
+		if !eventsAll && cfg.Location != "" {
+			userLat, userLon, ok := geo.Lookup(cfg.Location)
+			if ok {
+				allEvents = events.FilterByLocation(allEvents, userLat, userLon,
+					cfg.Events.EffectiveLocalRadius(), cfg.Events.EffectiveRegionalRadius())
+			}
+		}
+
+		if len(allEvents) == 0 {
+			fmt.Fprintln(cmd.OutOrStdout(), i18n.T(i18n.ActiveLang, "events.export.none"))
+			return nil
+		}
+
+		format := eventsExportFormat
+		if format == "" {
+			format = "ics"
+		}
+
+		switch format {
+		case "google":
+			for _, e := range allEvents {
+				fmt.Fprintf(cmd.OutOrStdout(), "%s\n  %s\n\n", e.Title, events.GoogleCalendarURL(e))
+			}
+			return nil
+		case "outlook":
+			for _, e := range allEvents {
+				fmt.Fprintf(cmd.OutOrStdout(), "%s\n  %s\n\n", e.Title, events.OutlookWebURL(e))
+			}
+			return nil
+		case "ics", "vcs":
+			outPath := eventsExportOutput
+			if outPath == "" {
+				outPath = "sap-devs-events." + format
+			}
+			f, err := os.Create(outPath)
+			if err != nil {
+				return err
+			}
+			defer f.Close()
+
+			if format == "vcs" {
+				err = events.ExportVCS(allEvents, f)
+			} else {
+				err = events.ExportICS(allEvents, f)
+			}
+			if err != nil {
+				return err
+			}
+			fmt.Fprintln(cmd.OutOrStdout(), i18n.Tf(i18n.ActiveLang, "events.export.done", map[string]any{"Count": len(allEvents), "Path": outPath}))
+			return nil
+		default:
+			return fmt.Errorf("unknown format %q: must be ics, vcs, google, or outlook", format)
+		}
+	},
+}
+
+var eventsHookCmd = &cobra.Command{
+	Use:    "hook",
+	Short:  "Print upcoming event reminders (session-start hook)",
+	Hidden: true,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		paths, err := xdg.New()
+		if err != nil {
+			return err
+		}
+		cfg, err := config.Load(paths.ConfigDir)
+		if err != nil {
+			return err
+		}
+		loader, err := newContentLoader()
+		if err != nil {
+			return err
+		}
+		packs, err := loader.LoadPacks(nil, i18n.ActiveLang)
+		if err != nil {
+			return err
+		}
+
+		eventTypes := content.FlattenEventTypes(packs)
+		var allEvents []content.EventInstance
+		for _, et := range eventTypes {
+			if et.Source == "rss" {
+				resolved, _ := events.Resolve(et, paths.CacheDir, false)
+				allEvents = append(allEvents, resolved...)
+			}
+		}
+		manual := content.FlattenEventInstances(packs)
+		allEvents = events.MergeAndSort(allEvents, manual)
+
+		upcoming := events.CheckUpcoming(allEvents, cfg.Events.EffectiveNotifyDays())
+		if msg := events.FormatHookMessage(upcoming); msg != "" {
+			fmt.Fprintln(cmd.OutOrStdout(), msg)
+		}
+		return nil
+	},
+}
+
+var eventsNotifyCmd = &cobra.Command{
+	Use:   "notify",
+	Short: "Send OS notification for upcoming events",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		paths, err := xdg.New()
+		if err != nil {
+			return err
+		}
+		cfg, err := config.Load(paths.ConfigDir)
+		if err != nil {
+			return err
+		}
+		loader, err := newContentLoader()
+		if err != nil {
+			return err
+		}
+		packs, err := loader.LoadPacks(nil, i18n.ActiveLang)
+		if err != nil {
+			return err
+		}
+
+		eventTypes := content.FlattenEventTypes(packs)
+		var allEvents []content.EventInstance
+		for _, et := range eventTypes {
+			if et.Source == "rss" {
+				resolved, _ := events.Resolve(et, paths.CacheDir, false)
+				allEvents = append(allEvents, resolved...)
+			}
+		}
+		manual := content.FlattenEventInstances(packs)
+		allEvents = events.MergeAndSort(allEvents, manual)
+
+		days := cfg.Events.EffectiveNotifyDays()
+		upcoming := events.CheckUpcoming(allEvents, days)
+		if len(upcoming) == 0 {
+			fmt.Fprintln(cmd.OutOrStdout(), i18n.Tf(i18n.ActiveLang, "events.notify.none", map[string]any{"Days": days}))
+			return nil
+		}
+
+		msg := events.FormatHookMessage(upcoming)
+
+		if !notify.Available() {
+			fmt.Fprintln(cmd.OutOrStdout(), i18n.T(i18n.ActiveLang, "events.notify.unsupported"))
+			fmt.Fprintln(cmd.OutOrStdout(), msg)
+			return nil
+		}
+
+		title := fmt.Sprintf("SAP Events: %d upcoming", len(upcoming))
+		if err := notify.Send(title, msg); err != nil {
+			fmt.Fprintln(cmd.OutOrStdout(), msg)
+			return nil
+		}
+		fmt.Fprintln(cmd.OutOrStdout(), i18n.Tf(i18n.ActiveLang, "events.notify.sent", map[string]any{"Count": len(upcoming)}))
+		return nil
+	},
+}
+
 func printEventTable(cmd *cobra.Command, evts []content.EventInstance) {
 	w := tabwriter.NewWriter(cmd.OutOrStdout(), 0, 0, 2, ' ', 0)
 	fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n",
@@ -184,6 +382,10 @@ func init() {
 	eventsCmd.Flags().BoolVarP(&eventsAll, "all", "a", false, "show all events regardless of location")
 	eventsCmd.Flags().StringVarP(&eventsType, "type", "t", "", "filter by event type ID")
 	eventsCmd.Flags().IntVarP(&eventsCount, "count", "n", 10, "max events to display")
-	eventsCmd.AddCommand(eventsOpenCmd, eventsTypesCmd)
+	eventsExportCmd.Flags().StringVarP(&eventsExportType, "type", "t", "", "filter by event type ID")
+	eventsExportCmd.Flags().StringVarP(&eventsExportOutput, "output", "o", "", "output file path (default: sap-devs-events.ics)")
+	eventsExportCmd.Flags().StringVarP(&eventsExportFormat, "format", "f", "ics", "export format: ics, vcs, google, outlook")
+	eventsExportCmd.Flags().BoolVarP(&eventsAll, "all", "a", false, "export all events regardless of location")
+	eventsCmd.AddCommand(eventsOpenCmd, eventsTypesCmd, eventsExportCmd, eventsHookCmd, eventsNotifyCmd)
 	rootCmd.AddCommand(eventsCmd)
 }
