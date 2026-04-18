@@ -357,12 +357,13 @@ var eventsNotifyCmd = &cobra.Command{
 
 func printEventTable(cmd *cobra.Command, evts []content.EventInstance) {
 	w := tabwriter.NewWriter(cmd.OutOrStdout(), 0, 0, 2, ' ', 0)
-	fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n",
+	fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\n",
 		i18n.T(i18n.ActiveLang, "events.col_date"),
 		i18n.T(i18n.ActiveLang, "events.col_type"),
 		i18n.T(i18n.ActiveLang, "events.col_scope"),
 		i18n.T(i18n.ActiveLang, "events.col_location"),
 		i18n.T(i18n.ActiveLang, "events.col_title"),
+		i18n.T(i18n.ActiveLang, "events.col_url"),
 	)
 	for _, e := range evts {
 		date := e.DateStr
@@ -373,7 +374,7 @@ func printEventTable(cmd *cobra.Command, evts []content.EventInstance) {
 		if loc == "" {
 			loc = "virtual"
 		}
-		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n", date, e.Type, e.Scope, loc, e.Title)
+		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\n", date, e.Type, e.Scope, loc, e.Title, e.URL)
 	}
 	w.Flush()
 }

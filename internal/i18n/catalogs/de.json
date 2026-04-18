@@ -214,6 +214,7 @@
   "events.col_scope": "BEREICH",
   "events.col_location": "ORT",
   "events.col_title": "TITEL",
+  "events.col_url": "URL",
   "events.types.col_id": "ID",
   "events.types.col_source": "QUELLE",
   "events.types.col_name": "NAME",
