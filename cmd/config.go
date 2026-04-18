@@ -46,6 +46,16 @@ var configShowCmd = &cobra.Command{
 			tipRotationDisplay = "daily"
 		}
 		fmt.Fprintln(cmd.OutOrStdout(), i18n.Tf(i18n.ActiveLang, "config.show.tip_rotation", map[string]any{"Value": tipRotationDisplay}))
+		method := cfg.Events.NotifyMethod
+		if method == "" {
+			method = "hook"
+		}
+		fmt.Fprintln(cmd.OutOrStdout(), i18n.Tf(i18n.ActiveLang, "config.events.show", map[string]any{
+			"LocalRadius":    cfg.Events.EffectiveLocalRadius(),
+			"RegionalRadius": cfg.Events.EffectiveRegionalRadius(),
+			"NotifyDays":     cfg.Events.EffectiveNotifyDays(),
+			"NotifyMethod":   method,
+		}))
 
 		// Show token status (masked — never show the full value)
 		tok, loadErr := credentials.Load(paths.ConfigDir)
@@ -188,6 +198,6 @@ to a credentials file with restricted permissions.`,
 
 func init() {
 	configTokenCmd.Flags().BoolVar(&tokenDeleteFlag, "delete", false, "Remove the stored token")
-	configCmd.AddCommand(configShowCmd, configSetCmd, configCompanyCmd, configTokenCmd, configLocationCmd, configTipRotationCmd)
+	configCmd.AddCommand(configShowCmd, configSetCmd, configCompanyCmd, configTokenCmd, configLocationCmd, configTipRotationCmd, configEventsCmd)
 	rootCmd.AddCommand(configCmd)
 }
