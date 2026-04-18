@@ -36,6 +36,9 @@ type Pack struct {
 
 	EventTypes     []EventType
 	EventInstances []EventInstance
+
+	YouTubeSources []YouTubeSource
+	Videos         []Video
 }
 
 // Resource is a curated link within a pack.
@@ -117,6 +120,31 @@ type Sample struct {
 	Tags        []string `yaml:"tags"`
 	Inject      bool     `yaml:"inject"`
 	PackID      string   // set at load time, not in YAML
+}
+
+// YouTubeSource declares a playlist or individual video in youtube.yaml.
+type YouTubeSource struct {
+	ID         string   `yaml:"id"`
+	Type       string   `yaml:"type"`
+	Name       string   `yaml:"name"`
+	PlaylistID string   `yaml:"playlist_id,omitempty"`
+	VideoID    string   `yaml:"video_id,omitempty"`
+	Tags       []string `yaml:"tags,omitempty"`
+	PackID     string
+}
+
+// Video is a resolved YouTube video (fetched from a playlist or declared individually).
+type Video struct {
+	ID          string    `json:"id"`
+	Title       string    `json:"title"`
+	URL         string    `json:"url"`
+	VideoID     string    `json:"video_id"`
+	Published   time.Time `json:"published"`
+	Description string    `json:"description"`
+	Duration    string    `json:"duration,omitempty"`
+	SourceID    string    `json:"source_id"`
+	Tags        []string  `json:"tags,omitempty"`
+	PackID      string    `json:"pack_id"`
 }
 
 // EventType defines a category of events and its data source.
@@ -267,6 +295,12 @@ func LoadPack(packDir string, lang string) (*Pack, error) {
 		_ = yaml.Unmarshal(data, &pack.Samples)
 		for i := range pack.Samples {
 			pack.Samples[i].PackID = pack.ID
+		}
+	}
+	if data, err := os.ReadFile(filepath.Join(packDir, "youtube.yaml")); err == nil {
+		_ = yaml.Unmarshal(data, &pack.YouTubeSources)
+		for i := range pack.YouTubeSources {
+			pack.YouTubeSources[i].PackID = pack.ID
 		}
 	}
 	if data, err := os.ReadFile(filepath.Join(packDir, "event-types.yaml")); err == nil {

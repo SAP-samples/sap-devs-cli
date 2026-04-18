@@ -285,6 +285,45 @@ func TestLoadPack_HooksEmptyWhenAbsent(t *testing.T) {
 	assert.Empty(t, p.Hooks)
 }
 
+func TestLoadPack_YouTubeSourcesLoaded(t *testing.T) {
+	dir := t.TempDir()
+	packYAML := "id: cap\nname: CAP\ndescription: CAP\ntags: []\nprofiles: []\nweight: 100\n"
+	youtubeYAML := `- id: cap-tutorials
+  type: playlist
+  name: CAP Tutorial Series
+  playlist_id: PLxxxxxxxxxxx
+  tags: [tutorial, cap]
+- id: cap-walkthrough
+  type: video
+  name: CAP Full Walkthrough
+  video_id: dQw4w9WgXcQ
+  tags: [tutorial]
+`
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "pack.yaml"), []byte(packYAML), 0644))
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "youtube.yaml"), []byte(youtubeYAML), 0644))
+
+	p, err := content.LoadPack(dir, "")
+	require.NoError(t, err)
+	require.Len(t, p.YouTubeSources, 2)
+	assert.Equal(t, "cap-tutorials", p.YouTubeSources[0].ID)
+	assert.Equal(t, "playlist", p.YouTubeSources[0].Type)
+	assert.Equal(t, "PLxxxxxxxxxxx", p.YouTubeSources[0].PlaylistID)
+	assert.Equal(t, "cap", p.YouTubeSources[0].PackID)
+	assert.Equal(t, "cap-walkthrough", p.YouTubeSources[1].ID)
+	assert.Equal(t, "video", p.YouTubeSources[1].Type)
+	assert.Equal(t, "dQw4w9WgXcQ", p.YouTubeSources[1].VideoID)
+}
+
+func TestLoadPack_YouTubeSourcesEmptyWhenAbsent(t *testing.T) {
+	dir := t.TempDir()
+	packYAML := "id: cap\nname: CAP\ndescription: CAP\ntags: []\nprofiles: []\nweight: 100\n"
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "pack.yaml"), []byte(packYAML), 0644))
+
+	p, err := content.LoadPack(dir, "")
+	require.NoError(t, err)
+	assert.Empty(t, p.YouTubeSources)
+}
+
 func makeTempPack(t *testing.T, id, packYAML, contextMD, resourcesYAML, tipsMD string) string {
 	t.Helper()
 	dir := t.TempDir()
