@@ -136,6 +136,37 @@ Profiles (`content/profiles/`) are YAML files that tag which packs belong to a d
 
 The auth token is resolved once at the top of `syncCmd.RunE` via `credentials.Resolve()` and passed to both `FetchArchive` calls (official + company repo). `FetchArchive` signature: `FetchArchive(rawURL, destDir, token string) error`.
 
+### News
+
+`sap-devs news` (`cmd/news.go`) fetches SAP Developer News episodes live on every invocation — no caching or sync integration.
+
+**Packages:**
+
+| Package | Responsibility |
+| --- | --- |
+| `internal/youtube` | Fetches and parses the YouTube playlist Atom RSS feed → `[]Episode` |
+| `internal/community` | Fetches and parses the SAP Community RSS feed → `[]BlogPost`; also fetches post HTML and converts it to markdown via `html-to-markdown/v2` |
+| `internal/news` | Correlates episodes and posts by publish date (±7-day window, LCS tiebreaker) → `[]NewsItem` |
+
+**Key types:**
+
+```go
+// internal/youtube
+type Episode struct { ID, Title, URL string; Published time.Time; Description string }
+
+// internal/community
+type BlogPost struct { Title, URL string; Published time.Time }
+
+// internal/news
+type NewsItem struct { Episode youtube.Episode; Community *community.BlogPost }
+```
+
+**Subcommands:** `list [-n]`, `latest`, `open <id>`, `search <query>`, `read <id> [--plain]`.
+
+**Pager resolution** (for `news read`): `$PAGER` env var (split on whitespace to support args like `less -R`) → `exec.LookPath("less")` silent probe → plain print. On Windows, `less` is absent by default; plain print is the expected fallback.
+
+**Static footer constants** in `cmd/news.go`: LinkedIn newsletter URL (always shown); `newsYTMusic` (suppressed when empty).
+
 ### Credentials
 
 `internal/credentials/` manages token storage and resolution.

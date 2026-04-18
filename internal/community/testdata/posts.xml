@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>SAP Developer News</title>
+    <item>
+      <title>SAP Developer News - April 11 2026</title>
+      <link>https://community.sap.com/t5/developer-news/apr-11/ba-p/999</link>
+      <pubDate>Fri, 11 Apr 2026 10:00:00 +0000</pubDate>
+    </item>
+    <item>
+      <title>SAP Developer News - March 21 2026</title>
+      <link>https://community.sap.com/t5/developer-news/mar-21/ba-p/998</link>
+      <pubDate>Fri, 21 Mar 2026 10:00:00 +0000</pubDate>
+    </item>
+  </channel>
+</rss>
