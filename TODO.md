@@ -456,35 +456,11 @@ Adopt conventional section headings across all pack `context.md` files so conten
 
 ## Data Sources
 
-### YouTube integration
-
-Fetch and process video metadata from the SAP Developers YouTube channel to keep `news.yaml` and `resources.yaml` current automatically.
-
-**Channel:** [https://www.youtube.com/@SAPDevelopers](https://www.youtube.com/@SAPDevelopers)
-
-**Key playlists:** SAP Developer News, CodeJam recordings, SAP TechEd sessions, tutorial series (CAP, ABAP, Fiori, BTP)
-
-**Two-tier approach:**
-
-1. **RSS fallback (no credentials required)** — YouTube exposes a public RSS feed per channel/playlist. Zero-config; limited to title, date, URL. Ships first.
-
-2. **YouTube Data API v3** — richer metadata (tags, descriptions, playlist routing). API key stored via the existing credentials system (`sap-devs config token --service youtube`). Free tier (10,000 units/day) is sufficient for periodic sync.
-
-**Sync integration:** New `youtube` category in `sync.Engine` with its own TTL (6–24h). Skips silently if no key is configured; existing static YAML remains the fallback.
-
-**Dependency:** `sap-devs news` command must exist first.
+### YouTube integration - DONE ✔️
 
 ---
 
-### SAP Discovery Center integration
-
-Integrate with [SAP Discovery Center](https://discovery.sap.com) for mission and tutorial discovery.
-
-**Scope (TBD):**
-
-- Browse and search Discovery Center missions
-- Surface relevant missions based on active profile
-- Likely bundled with or adjacent to `sap-devs learn`
+### SAP Discovery Center integration - DONE ✔️
 
 ---
 
