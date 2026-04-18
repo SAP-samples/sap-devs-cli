@@ -270,7 +270,7 @@ var tutorialShowCmd = &cobra.Command{
 				return fmt.Errorf("fetch tutorial: %w", fetchErr)
 			}
 
-			tut, err = tutorials.Parse(raw, slug, meta.Repo)
+			tut, err = tutorials.Parse(raw, slug, meta.Repo, branch)
 			if err != nil {
 				return fmt.Errorf("parse tutorial: %w", err)
 			}

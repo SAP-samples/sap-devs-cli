@@ -242,17 +242,36 @@ func (c *Client) batchGET(query string) ([]byte, error) {
 // It finds the JSON object in the response, then unwraps the "d" envelope.
 // If the value is a string (double-encoded JSON), it returns the raw inner JSON.
 func extractBatchJSON(body []byte) ([]byte, error) {
-	// Find the start of the JSON object in the multipart response.
 	text := string(body)
-	idx := strings.Index(text, "{")
-	if idx < 0 {
+	start := strings.Index(text, "{")
+	if start < 0 {
 		return nil, fmt.Errorf("no JSON found in batch response")
 	}
-	jsonStr := text[idx:]
+	// Find the matching closing brace — the multipart response has
+	// boundary lines after the JSON that would break json.Unmarshal.
+	depth := 0
+	end := -1
+	for i := start; i < len(text); i++ {
+		switch text[i] {
+		case '{':
+			depth++
+		case '}':
+			depth--
+			if depth == 0 {
+				end = i + 1
+				break
+			}
+		}
+		if end > 0 {
+			break
+		}
+	}
+	if end < 0 {
+		return nil, fmt.Errorf("no complete JSON object in batch response")
+	}
 
-	// Unmarshal the outer OData envelope: {"d": {"FunctionName": <value>}}
 	var envelope map[string]json.RawMessage
-	if err := json.Unmarshal([]byte(jsonStr), &envelope); err != nil {
+	if err := json.Unmarshal([]byte(text[start:end]), &envelope); err != nil {
 		return nil, fmt.Errorf("parse batch envelope: %w", err)
 	}
 	dRaw, ok := envelope["d"]

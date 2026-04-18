@@ -20,7 +20,7 @@ type frontmatter struct {
 }
 
 // Parse parses a full tutorial markdown into a Tutorial struct.
-func Parse(md, slug, repo string) (*Tutorial, error) {
+func Parse(md, slug, repo, branch string) (*Tutorial, error) {
 	fm, body, err := splitFrontmatter(md)
 	if err != nil {
 		return nil, err
@@ -38,11 +38,15 @@ func Parse(md, slug, repo string) (*Tutorial, error) {
 		tut.Steps = parseV1Steps(body)
 	}
 
+	for i := range tut.Steps {
+		tut.Steps[i].Content = ResolveImageURLs(tut.Steps[i].Content, repo, branch, slug)
+	}
+
 	return tut, nil
 }
 
 // ParseFrontmatterOnly extracts metadata without parsing steps.
-func ParseFrontmatterOnly(md, slug, repo string) (*TutorialMeta, error) {
+func ParseFrontmatterOnly(md, slug, repo, branch string) (*TutorialMeta, error) {
 	fm, body, err := splitFrontmatter(md)
 	if err != nil {
 		return nil, err
@@ -197,6 +201,26 @@ func parseV2Steps(body string) []TutorialStep {
 		})
 	}
 	return steps
+}
+
+const rawBaseURL = "https://raw.githubusercontent.com"
+
+var imageRE = regexp.MustCompile(`!\[([^\]]*)\]\(([^)]+)\)`)
+
+// ResolveImageURLs replaces relative image paths with full GitHub raw content URLs.
+func ResolveImageURLs(content, repo, branch, slug string) string {
+	return imageRE.ReplaceAllStringFunc(content, func(match string) string {
+		parts := imageRE.FindStringSubmatch(match)
+		path := parts[2]
+		if strings.HasPrefix(path, "http://") || strings.HasPrefix(path, "https://") {
+			return match
+		}
+		if strings.Contains(path, "..") {
+			return match
+		}
+		path = strings.TrimLeft(path, "/")
+		return fmt.Sprintf("![%s](%s/sap-tutorials/%s/%s/tutorials/%s/%s)", parts[1], rawBaseURL, repo, branch, slug, path)
+	})
 }
 
 var accordionBeginRE = regexp.MustCompile(`\[ACCORDION-BEGIN\s+\[Step\s+\d+:\s*\]\((.+?)\)\]`)

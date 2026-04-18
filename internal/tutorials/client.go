@@ -2,12 +2,16 @@ package tutorials
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"strings"
 	"time"
 )
+
+// ErrRepoUnavailable is returned when a GitHub API request returns 403 or 404.
+var ErrRepoUnavailable = errors.New("repo unavailable")
 
 const (
 	defaultRepoListURL = "https://raw.githubusercontent.com/sap-tutorials/Tutorials/master/config/repository-groups.json"
@@ -148,6 +152,9 @@ func (c *Client) get(url string) ([]byte, error) {
 		return nil, err
 	}
 	defer resp.Body.Close()
+	if resp.StatusCode == http.StatusNotFound || resp.StatusCode == http.StatusForbidden {
+		return nil, fmt.Errorf("HTTP %d for %s: %w", resp.StatusCode, url, ErrRepoUnavailable)
+	}
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("HTTP %d for %s", resp.StatusCode, url)
 	}

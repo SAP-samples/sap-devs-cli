@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -477,14 +478,18 @@ func runTutorialsFetch(cacheDir string, force bool) error {
 				var err error
 				branch, err = client.FetchDefaultBranch(repo)
 				if err != nil {
-					fmt.Fprintf(os.Stderr, "sap-devs: skip repo %s: %v\n", repo, err)
+					if !errors.Is(err, tutorials.ErrRepoUnavailable) {
+						fmt.Fprintf(os.Stderr, "sap-devs: skip repo %s: %v\n", repo, err)
+					}
 					return nil
 				}
 			}
 
 			slugs, sha, err := client.FetchRepoTree(repo, branch)
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "sap-devs: skip repo %s: %v\n", repo, err)
+				if !errors.Is(err, tutorials.ErrRepoUnavailable) {
+					fmt.Fprintf(os.Stderr, "sap-devs: skip repo %s: %v\n", repo, err)
+				}
 				return nil
 			}
 
@@ -534,7 +539,7 @@ func runTutorialsFetch(cacheDir string, force bool) error {
 				if err != nil {
 					return nil
 				}
-				meta, err := tutorials.ParseFrontmatterOnly(md, slug, repo)
+				meta, err := tutorials.ParseFrontmatterOnly(md, slug, repo, branch)
 				if err != nil {
 					return nil
 				}

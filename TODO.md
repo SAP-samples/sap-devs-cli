@@ -466,16 +466,9 @@ Adopt conventional section headings across all pack `context.md` files so conten
 
 ### developers.sap.com tutorial content — render and interactive execution
 
-Fetch, render, and interactively execute tutorials from developers.sap.com without leaving the terminal.
-
-This is a two-phase feature:
+This is a three-phase feature:
 
 #### Phase 1 — Content ingestion and rendering - DONE ✔️
-
-- Fetch and cache tutorials from developers.sap.com as structured step data (via public API, JSON-LD, or sitemap — needs exploration)
-- Store as YAML per pack; updated via `sap-devs sync` with its own TTL category
-- `sap-devs tutorial list` — browse tutorials relevant to the active profile
-- `sap-devs tutorial show <id>` — render a tutorial in the terminal: markdown output, step navigation (next/prev/jump), progress tracking, resume from last step
 
 #### Phase 2 — Guided execution
 
