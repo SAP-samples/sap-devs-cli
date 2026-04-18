@@ -27,10 +27,15 @@ func TestTipSeed_EmptyStringIsDailyBehavior(t *testing.T) {
 }
 
 func TestTipSeed_RandomProducesDistinctValues(t *testing.T) {
-	// useRandom=true must produce different seeds on successive calls
+	// useRandom=true must eventually produce a different seed.
+	// Two back-to-back calls can collide on fast hardware, so we retry.
 	s1 := tipSeed("daily", true)
-	s2 := tipSeed("daily", true)
-	assert.NotEqual(t, s1, s2)
+	for i := 0; i < 1000; i++ {
+		if tipSeed("daily", true) != s1 {
+			return
+		}
+	}
+	t.Fatal("tipSeed with useRandom=true returned the same value 1001 times in a row")
 }
 
 func TestTipSeed_HourlyAndDailyArePositive(t *testing.T) {
