@@ -214,6 +214,7 @@
   "events.col_scope": "SCOPE",
   "events.col_location": "LOCATION",
   "events.col_title": "TITLE",
+  "events.col_url": "URL",
   "events.types.col_id": "ID",
   "events.types.col_source": "SOURCE",
   "events.types.col_name": "NAME",

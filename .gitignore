@@ -9,4 +9,5 @@ sap-devs-cli.exe
 *.log
 *.tmp
 *.bak
-*.swpsap-devs-news
+*.swp
+sap-devs-news
