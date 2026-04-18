@@ -10,12 +10,13 @@ import (
 
 // Config holds user-level tool configuration from ~/.config/sap-devs/config.yaml.
 type Config struct {
-	CompanyRepo string       `yaml:"company_repo,omitempty"`
-	Language    string       `yaml:"language,omitempty"` // e.g. "de"; empty = auto-detect from locale
-	Location    string       `yaml:"location,omitempty"`
-	Sync        SyncConfig   `yaml:"sync"`
-	Tip         TipConfig    `yaml:"tip,omitempty"`
-	Events      EventsConfig `yaml:"events,omitempty"`
+	CompanyRepo string         `yaml:"company_repo,omitempty"`
+	Language    string         `yaml:"language,omitempty"` // e.g. "de"; empty = auto-detect from locale
+	Location    string         `yaml:"location,omitempty"`
+	Sync        SyncConfig     `yaml:"sync"`
+	Tip         TipConfig      `yaml:"tip,omitempty"`
+	Events      EventsConfig   `yaml:"events,omitempty"`
+	Tutorial    TutorialConfig `yaml:"tutorial,omitempty"`
 }
 
 // SyncConfig controls per-category TTLs for background content refresh.
@@ -29,6 +30,7 @@ type SyncConfig struct {
 	Events    time.Duration `yaml:"events"`
 	YouTube   time.Duration `yaml:"youtube"`
 	Discovery time.Duration `yaml:"discovery"`
+	Tutorials time.Duration `yaml:"tutorials"`
 	Disabled  bool          `yaml:"disabled"`
 }
 
@@ -43,6 +45,11 @@ type EventsConfig struct {
 	RegionalRadius int    `yaml:"regional_radius,omitempty"`
 	NotifyDays     int    `yaml:"notify_days,omitempty"`
 	NotifyMethod   string `yaml:"notify_method,omitempty"`
+}
+
+// TutorialConfig controls tutorial display behaviour.
+type TutorialConfig struct {
+	Interactive bool `yaml:"interactive,omitempty"`
 }
 
 func (e EventsConfig) EffectiveLocalRadius() int {
@@ -84,6 +91,7 @@ func Default() *Config {
 			Events:    4 * time.Hour,
 			YouTube:   6 * time.Hour,
 			Discovery: 168 * time.Hour, // 7 days
+			Tutorials: 168 * time.Hour, // 7 days
 		},
 	}
 }

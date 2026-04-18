@@ -32,7 +32,8 @@ type Pack struct {
 	PreambleMD string
 	Hooks      []HookDef
 	Influencers []Influencer
-	Samples     []Sample
+	Samples      []Sample
+	TutorialRefs []TutorialRef
 
 	EventTypes     []EventType
 	EventInstances []EventInstance
@@ -125,6 +126,13 @@ type Sample struct {
 	Tags        []string `yaml:"tags"`
 	Inject      bool     `yaml:"inject"`
 	PackID      string   // set at load time, not in YAML
+}
+
+// TutorialRef is a curated tutorial reference in a pack's tutorials.yaml.
+type TutorialRef struct {
+	Slug     string `yaml:"slug"`
+	Featured bool   `yaml:"featured,omitempty"`
+	PackID   string // set at load time, not in YAML
 }
 
 // YouTubeSource declares a playlist or individual video in youtube.yaml.
@@ -339,6 +347,12 @@ func LoadPack(packDir string, lang string) (*Pack, error) {
 		_ = yaml.Unmarshal(data, &pack.Samples)
 		for i := range pack.Samples {
 			pack.Samples[i].PackID = pack.ID
+		}
+	}
+	if data, err := os.ReadFile(filepath.Join(packDir, "tutorials.yaml")); err == nil {
+		_ = yaml.Unmarshal(data, &pack.TutorialRefs)
+		for i := range pack.TutorialRefs {
+			pack.TutorialRefs[i].PackID = pack.ID
 		}
 	}
 	if data, err := os.ReadFile(filepath.Join(packDir, "youtube.yaml")); err == nil {

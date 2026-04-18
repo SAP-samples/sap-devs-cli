@@ -1,0 +1,23 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Pack Tutorials",
+  "description": "Schema for sap-devs tutorials.yaml files (top-level array)",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": ["slug"],
+    "additionalProperties": false,
+    "properties": {
+      "slug": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9-]*$",
+        "description": "Tutorial slug matching the folder name in sap-tutorials GitHub repos"
+      },
+      "featured": {
+        "type": "boolean",
+        "default": false,
+        "description": "If true, highlighted in tutorial list output"
+      }
+    }
+  }
+}

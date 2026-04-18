@@ -470,7 +470,7 @@ Fetch, render, and interactively execute tutorials from developers.sap.com witho
 
 This is a two-phase feature:
 
-#### Phase 1 — Content ingestion and rendering
+#### Phase 1 — Content ingestion and rendering - DONE ✔️
 
 - Fetch and cache tutorials from developers.sap.com as structured step data (via public API, JSON-LD, or sitemap — needs exploration)
 - Store as YAML per pack; updated via `sap-devs sync` with its own TTL category

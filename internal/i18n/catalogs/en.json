@@ -358,5 +358,26 @@
   "videos.col_date": "DATE",
   "videos.col_pack": "PACK",
   "videos.col_source": "SOURCE",
-  "videos.col_title": "TITLE"
+  "videos.col_title": "TITLE",
+
+  "tutorial.short": "Browse SAP tutorials",
+  "tutorial.list.short": "List tutorials for your active profile",
+  "tutorial.search.short": "Search across all SAP tutorials",
+  "tutorial.show.short": "Show a tutorial in the terminal",
+  "tutorial.open.short": "Open a tutorial on developers.sap.com",
+  "tutorial.list.no_profile": "no profile set — run 'sap-devs profile set <name>' first",
+  "tutorial.list.profile_not_found": "profile \"{{.ID}}\" not found — run 'sap-devs sync' to refresh content",
+  "tutorial.none": "No tutorials found for your current profile.",
+  "tutorial.none_pack": "No tutorials found for pack \"{{.Pack}}\".",
+  "tutorial.none_tags": "No tutorials found for tags {{.Tags}}.",
+  "tutorial.search.no_results": "No tutorials matching \"{{.Query}}\".",
+  "tutorial.not_found": "Tutorial \"{{.Slug}}\" not found — run 'sap-devs tutorial search' to browse",
+  "tutorial.no_index": "Tutorial index not found — run 'sap-devs sync' first",
+  "tutorial.open.opening": "Opening: {{.Title}} — {{.URL}}",
+  "tutorial.open.browser_fail": "Could not open browser: {{.Err}}. URL: {{.URL}}",
+  "tutorial.col_slug": "SLUG",
+  "tutorial.col_title": "TITLE",
+  "tutorial.col_time": "TIME",
+  "tutorial.col_level": "LEVEL",
+  "tutorial.col_pack": "PACK"
 }
