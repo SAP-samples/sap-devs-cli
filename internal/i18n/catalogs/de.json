@@ -358,5 +358,26 @@
   "videos.col_date": "DATUM",
   "videos.col_pack": "PACK",
   "videos.col_source": "QUELLE",
-  "videos.col_title": "TITEL"
+  "videos.col_title": "TITEL",
+
+  "tutorial.short": "SAP-Tutorials durchsuchen",
+  "tutorial.list.short": "Tutorials für das aktive Profil anzeigen",
+  "tutorial.search.short": "Alle SAP-Tutorials durchsuchen",
+  "tutorial.show.short": "Ein Tutorial im Terminal anzeigen",
+  "tutorial.open.short": "Ein Tutorial auf developers.sap.com öffnen",
+  "tutorial.list.no_profile": "Kein Profil gesetzt — führen Sie 'sap-devs profile set <name>' aus",
+  "tutorial.list.profile_not_found": "Profil \"{{.ID}}\" nicht gefunden — führen Sie 'sap-devs sync' aus",
+  "tutorial.none": "Keine Tutorials für Ihr aktuelles Profil gefunden.",
+  "tutorial.none_pack": "Keine Tutorials für Pack \"{{.Pack}}\" gefunden.",
+  "tutorial.none_tags": "Keine Tutorials für Tags {{.Tags}} gefunden.",
+  "tutorial.search.no_results": "Keine Tutorials für \"{{.Query}}\" gefunden.",
+  "tutorial.not_found": "Tutorial \"{{.Slug}}\" nicht gefunden — führen Sie 'sap-devs tutorial search' aus",
+  "tutorial.no_index": "Tutorial-Index nicht gefunden — führen Sie 'sap-devs sync' aus",
+  "tutorial.open.opening": "Öffne: {{.Title}} — {{.URL}}",
+  "tutorial.open.browser_fail": "Browser konnte nicht geöffnet werden: {{.Err}}. URL: {{.URL}}",
+  "tutorial.col_slug": "SLUG",
+  "tutorial.col_title": "TITEL",
+  "tutorial.col_time": "ZEIT",
+  "tutorial.col_level": "STUFE",
+  "tutorial.col_pack": "PACK"
 }
