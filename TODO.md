@@ -86,18 +86,7 @@ i18n infrastructure is complete and all commands are wired (`en` + `de` catalogs
 
 ---
 
-### `sap-devs influencers`
-
-Browse SAP community influencers and thought leaders relevant to your active profile.
-
-**Subcommands:**
-
-- `influencers` — list influencers matching your active profile's focus tags
-- `influencers --all` — list all influencers across all packs
-- `influencers --pack <name>` — filter by pack
-- `influencers --random` — surface one influencer for discovery
-
-**Data:** `influencers.yaml` per pack with `id`, `name`, `role`, `org`, `focus` tags, and `links` map (blog, github, twitter, youtube). Seed data: SAP Developer Advocates — DJ Adams, Thomas Jung, Marius Obert, Ian Thain, Gregor Wolf, Christian Gurke, Kevin Muessig.
+### `sap-devs influencers` - DONE ✔️
 
 ---
 
