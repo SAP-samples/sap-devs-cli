@@ -46,7 +46,7 @@ Pure function — no I/O, fully testable.
 
 - `Title`: `"SAP Developer News — " + ep.Title`
 - `Content`: `ep.URL + "\n\n" + trimmedDescription`
-- Description is trimmed to ≤280 bytes; a `…` suffix is appended when truncated
+- Description is trimmed to ≤280 Unicode characters (rune count, not bytes); a `…` suffix is appended when truncated
 - When `ep.Description` is empty, content is `ep.URL` only (no trailing blank line)
 
 ### Static fallback: `staticFridayTip() *content.Tip`
