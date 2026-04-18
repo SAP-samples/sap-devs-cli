@@ -1,9 +1,11 @@
 package cmd
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.tools.sap/developer-relations/sap-devs-cli/internal/youtube"
 )
 
 func TestTipSeed_DailyConsistency(t *testing.T) {
@@ -38,4 +40,40 @@ func TestTipSeed_HourlyAndDailyArePositive(t *testing.T) {
 	hourly := tipSeed("hourly", false)
 	assert.Greater(t, daily, int64(0))
 	assert.Greater(t, hourly, int64(0))
+}
+
+func TestFormatFridayTip_ShortDescription(t *testing.T) {
+	ep := youtube.Episode{
+		Title:       "Episode 42",
+		URL:         "https://youtu.be/abc123",
+		Description: "Short desc",
+	}
+	tip := formatFridayTip(ep)
+	assert.Equal(t, "SAP Developer News — Episode 42", tip.Title)
+	assert.Equal(t, "https://youtu.be/abc123\n\nShort desc", tip.Content)
+}
+
+func TestFormatFridayTip_LongDescriptionTrimmed(t *testing.T) {
+	long := strings.Repeat("é", 300)
+	ep := youtube.Episode{
+		Title:       "Ep",
+		URL:         "https://youtu.be/x",
+		Description: long,
+	}
+	tip := formatFridayTip(ep)
+	parts := strings.SplitN(tip.Content, "\n\n", 2)
+	assert.Equal(t, "https://youtu.be/x", parts[0])
+	desc := parts[1]
+	assert.LessOrEqual(t, len([]rune(desc)), 281)
+	assert.True(t, strings.HasSuffix(desc, "…"))
+}
+
+func TestFormatFridayTip_EmptyDescription(t *testing.T) {
+	ep := youtube.Episode{
+		Title:       "Ep",
+		URL:         "https://youtu.be/x",
+		Description: "",
+	}
+	tip := formatFridayTip(ep)
+	assert.Equal(t, "https://youtu.be/x", tip.Content)
 }

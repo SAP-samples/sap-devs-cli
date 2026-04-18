@@ -12,6 +12,7 @@ import (
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/i18n"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/shellhook"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/xdg"
+	"github.tools.sap/developer-relations/sap-devs-cli/internal/youtube"
 )
 
 var tipMarkdown bool
@@ -44,6 +45,33 @@ func tipSeed(rotation string, useRandom bool) int64 {
 		return int64(now.Year())*100000 + int64(now.YearDay())*24 + int64(now.Hour())
 	default: // "daily" and ""
 		return int64(now.Year())*1000 + int64(now.YearDay())
+	}
+}
+
+func formatFridayTip(ep youtube.Episode) *content.Tip {
+	desc := ep.Description
+	if desc != "" {
+		runes := []rune(desc)
+		if len(runes) > 280 {
+			desc = string(runes[:280]) + "…"
+		}
+	}
+	var c string
+	if desc == "" {
+		c = ep.URL
+	} else {
+		c = ep.URL + "\n\n" + desc
+	}
+	return &content.Tip{
+		Title:   "SAP Developer News — " + ep.Title,
+		Content: c,
+	}
+}
+
+func staticFridayTip() *content.Tip {
+	return &content.Tip{
+		Title:   "It's Friday — SAP Developer News is out!",
+		Content: "Watch the latest episode:\n" + newsPlaylistURL,
 	}
 }
 
