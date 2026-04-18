@@ -213,3 +213,57 @@ func TestCredFile_IsRestrictedPermissions(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, os.FileMode(0600), info.Mode().Perm())
 }
+
+func TestStoreLoadService_KeychainRoundtrip(t *testing.T) {
+	kb := &fakeKeyring{}
+	keyringBackend = kb
+	dir := t.TempDir()
+	require.NoError(t, StoreService(dir, "youtube", "yt-key"))
+	tok, err := LoadService(dir, "youtube")
+	require.NoError(t, err)
+	assert.Equal(t, "yt-key", tok)
+}
+
+func TestStoreLoadService_FileRoundtrip(t *testing.T) {
+	keyringBackend = unavailableKeyring{err: errors.New("no keychain")}
+	dir := t.TempDir()
+	require.NoError(t, StoreService(dir, "youtube", "yt-key"))
+	tok, err := LoadService(dir, "youtube")
+	require.NoError(t, err)
+	assert.Equal(t, "yt-key", tok)
+	// Verify service-specific file name
+	_, statErr := os.Stat(filepath.Join(dir, "credentials-youtube"))
+	assert.NoError(t, statErr)
+}
+
+func TestDeleteService_RemovesToken(t *testing.T) {
+	kb := &fakeKeyring{token: "yt-key"}
+	keyringBackend = kb
+	dir := t.TempDir()
+	require.NoError(t, DeleteService(dir, "youtube"))
+	assert.Equal(t, "", kb.token)
+}
+
+func TestResolveService_EnvVarWins(t *testing.T) {
+	keyringBackend = notFoundKeyring{}
+	dir := t.TempDir()
+	t.Setenv("YOUTUBE_API_KEY", "env-key")
+	assert.Equal(t, "env-key", ResolveService(dir, "youtube", []string{"YOUTUBE_API_KEY"}))
+}
+
+func TestResolveService_EmptyWhenNothing(t *testing.T) {
+	keyringBackend = notFoundKeyring{}
+	dir := t.TempDir()
+	t.Setenv("YOUTUBE_API_KEY", "")
+	assert.Equal(t, "", ResolveService(dir, "youtube", []string{"YOUTUBE_API_KEY"}))
+}
+
+func TestExistingStore_StillWorks(t *testing.T) {
+	kb := &fakeKeyring{}
+	keyringBackend = kb
+	dir := t.TempDir()
+	require.NoError(t, Store(dir, "gh-token"))
+	tok, err := Load(dir)
+	require.NoError(t, err)
+	assert.Equal(t, "gh-token", tok)
+}
