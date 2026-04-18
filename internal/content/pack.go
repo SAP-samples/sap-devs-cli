@@ -39,6 +39,11 @@ type Pack struct {
 
 	YouTubeSources []YouTubeSource
 	Videos         []Video
+
+	DiscoveryMissions []DiscoveryMissionRef
+	DiscoveryServices []DiscoveryServiceRef
+	DiscoveryGuidance []DiscoveryGuidanceRef
+	DiscoveryFilters  *DiscoveryProfileFilters
 }
 
 // Resource is a curated link within a pack.
@@ -145,6 +150,45 @@ type Video struct {
 	SourceID    string    `json:"source_id"`
 	Tags        []string  `json:"tags,omitempty"`
 	PackID      string    `json:"pack_id"`
+}
+
+// DiscoveryYAML is the intermediate struct for unmarshaling discovery.yaml.
+// Unlike most pack YAML files (top-level arrays), this is a top-level object.
+type DiscoveryYAML struct {
+	ProfileFilters *DiscoveryProfileFilters `yaml:"profile_filters,omitempty"`
+	Missions       []DiscoveryMissionRef    `yaml:"missions,omitempty"`
+	Services       []DiscoveryServiceRef    `yaml:"services,omitempty"`
+	Guidance       []DiscoveryGuidanceRef   `yaml:"guidance,omitempty"`
+}
+
+// DiscoveryMissionRef is a curated mission reference in discovery.yaml.
+type DiscoveryMissionRef struct {
+	ID       int    `yaml:"id"`
+	Name     string `yaml:"name"`
+	Featured bool   `yaml:"featured,omitempty"`
+	PackID   string // set at load time
+}
+
+// DiscoveryServiceRef is a curated service reference in discovery.yaml.
+type DiscoveryServiceRef struct {
+	ID       string `yaml:"id"`
+	Name     string `yaml:"name"`
+	Featured bool   `yaml:"featured,omitempty"`
+	PackID   string
+}
+
+// DiscoveryGuidanceRef is a curated guidance reference in discovery.yaml.
+type DiscoveryGuidanceRef struct {
+	ID     string `yaml:"id"`
+	Name   string `yaml:"name"`
+	PackID string
+}
+
+// DiscoveryProfileFilters maps a pack to Discovery Center filter values.
+type DiscoveryProfileFilters struct {
+	Products   []string `yaml:"products,omitempty"`
+	Categories []string `yaml:"categories,omitempty"`
+	FocusTags  []string `yaml:"focus_tags,omitempty"`
 }
 
 // EventType defines a category of events and its data source.
@@ -302,6 +346,23 @@ func LoadPack(packDir string, lang string) (*Pack, error) {
 		for i := range pack.YouTubeSources {
 			pack.YouTubeSources[i].PackID = pack.ID
 		}
+	}
+	if data, err := os.ReadFile(filepath.Join(packDir, "discovery.yaml")); err == nil {
+		var disc DiscoveryYAML
+		_ = yaml.Unmarshal(data, &disc)
+		pack.DiscoveryMissions = disc.Missions
+		for i := range pack.DiscoveryMissions {
+			pack.DiscoveryMissions[i].PackID = pack.ID
+		}
+		pack.DiscoveryServices = disc.Services
+		for i := range pack.DiscoveryServices {
+			pack.DiscoveryServices[i].PackID = pack.ID
+		}
+		pack.DiscoveryGuidance = disc.Guidance
+		for i := range pack.DiscoveryGuidance {
+			pack.DiscoveryGuidance[i].PackID = pack.ID
+		}
+		pack.DiscoveryFilters = disc.ProfileFilters
 	}
 	if data, err := os.ReadFile(filepath.Join(packDir, "event-types.yaml")); err == nil {
 		_ = yaml.Unmarshal(data, &pack.EventTypes)
