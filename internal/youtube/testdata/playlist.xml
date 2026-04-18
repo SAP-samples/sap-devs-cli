@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns:yt="http://www.youtube.com/xml/schemas/2015"
+      xmlns:media="http://search.yahoo.com/mrss/"
+      xmlns="http://www.w3.org/2005/Atom">
+  <title>SAP Developer News</title>
+  <entry>
+    <yt:videoId>abc123</yt:videoId>
+    <title>SAP Developer News Apr 11 2026</title>
+    <link rel="alternate" href="https://www.youtube.com/watch?v=abc123"/>
+    <published>2026-04-11T15:00:00+00:00</published>
+    <media:group>
+      <media:description>CAP updates and BTP news this week.</media:description>
+    </media:group>
+  </entry>
+  <entry>
+    <yt:videoId>def456</yt:videoId>
+    <title>SAP Developer News Apr 4 2026</title>
+    <link rel="alternate" href="https://www.youtube.com/watch?v=def456"/>
+    <published>2026-04-04T15:00:00+00:00</published>
+    <media:group>
+      <media:description>ABAP Cloud and UI5 highlights.</media:description>
+    </media:group>
+  </entry>
+</feed>
