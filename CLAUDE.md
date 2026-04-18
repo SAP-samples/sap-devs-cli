@@ -38,7 +38,7 @@ Content is loaded from up to four layered sources, with later layers overriding 
 3. **User** — `~/.local/share/sap-devs/` (Linux), `%LOCALAPPDATA%/sap-devs/data/` (Windows)
 4. **Project** — `.sap-devs/` in the current working directory
 
-`ContentLoader` ([internal/content/loader.go](internal/content/loader.go)) manages this merge. `LoadPacks()` reads all `content/packs/<name>/` directories; each pack contains: `pack.yaml` (metadata), `context.md` (AI context text), `tips.md` (H2-delimited tips), `tools.yaml`, `resources.yaml`, `mcp.yaml`.
+`ContentLoader` ([internal/content/loader.go](internal/content/loader.go)) manages this merge. `LoadPacks()` reads all `content/packs/<name>/` directories; each pack contains: `pack.yaml` (metadata), `context.md` (AI context text), `tips.md` (H2-delimited tips), `tools.yaml`, `resources.yaml`, `mcp.yaml`, `samples.yaml` (canonical code sample references).
 
 **Additive Layers:** Packs with `additive: true` in `pack.yaml` augment (append/prepend) same-ID packs from earlier layers instead of overriding them. `AdditivePosition` controls order (`before`/`after`, default `after`). Merge logic: [internal/content/merge.go](internal/content/merge.go). A `base: true` pack (e.g., `content/packs/base/`) is auto-injected into every profile.
 
@@ -99,13 +99,14 @@ On every command invocation (except `update` and dev builds), a background gorou
 | `events` | Browse upcoming SAP community events with location filtering; `events types` lists event categories |
 | `influencers` | Browse SAP community influencers and thought leaders |
 | `resources` | List curated resources from active packs |
+| `samples` | Browse canonical code samples; `samples list/search/open/clone` |
 | `news list/latest/open/search/read/hook` | Browse SAP Developer News episodes fetched live from YouTube RSS and SAP Community; `news hook` prints a Friday reminder for use as a session-start hook |
 | `update` | Self-update the binary |
 | `init` | First-time setup wizard |
 
 ### YAML Schemas
 
-JSON Schema files in [content/schemas/](content/schemas/) validate `pack.yaml`, `resources.yaml`, `tools.yaml`, `mcp.yaml`, and `profile.yaml`. VS Code integration is wired in [.vscode/settings.json](.vscode/settings.json). Update schemas when adding/changing YAML fields.
+JSON Schema files in [content/schemas/](content/schemas/) validate `pack.yaml`, `resources.yaml`, `tools.yaml`, `mcp.yaml`, `profile.yaml`, and `samples.yaml`. VS Code integration is wired in [.vscode/settings.json](.vscode/settings.json). Update schemas when adding/changing YAML fields.
 
 ### Release
 

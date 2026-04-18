@@ -398,7 +398,7 @@ Give each section of `context.md` a verbosity tag so injection density can be co
 
 ## Content System Enhancements
 
-### Code sample pinning (`samples.yaml`)
+### ~~Code sample pinning (`samples.yaml`)~~ — DONE ✔️
 
 A `samples.yaml` per pack that links to specific canonical code files in SAP GitHub sample repositories, so agents can reference concrete, authoritative patterns rather than generating from prose alone.
 
