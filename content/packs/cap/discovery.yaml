@@ -1,0 +1,26 @@
+profile_filters:
+  products: ["1006"]
+  categories: ["appdev"]
+  focus_tags: ["4"]
+
+missions:
+  - id: 4327
+    name: Develop a Full-Stack CAP Application
+    featured: true
+  - id: 4371
+    name: GenAI Mail Insights with CAP and RAG
+  - id: 4064
+    name: Develop a multitenant SaaS app using CAP
+  - id: 4432
+    name: Implement Observability in a Full-Stack CAP Application
+  - id: 4426
+    name: Develop a Side-by-Side CAP-Based Extension Application
+
+services:
+  - id: 73554e5a-6885-4e50-8388-2d8a5e52f3ba
+    name: SAP Cloud Application Programming Model
+    featured: true
+
+guidance:
+  - id: realize-application-dev-best-practices
+    name: Application Development Best Practices

@@ -64,6 +64,12 @@ Profiles ([content/profiles/](content/profiles/)) are YAML files that tag which 
 
 **Phase 2 — Dynamic Content Expansion:** After the zip fetch, `sync` scans each `context.md` for `<!-- sap-devs:fetch ... -->` markers via `ScanMarkers()`, fetches remote content in parallel (Bubbletea progress UI), then writes `context.expanded.md` alongside `context.md`. `inject` prefers `context.expanded.md` when present. Marker authoring details: [docs/content-authoring.md](docs/content-authoring.md).
 
+### Discovery Center
+
+`sap-devs discovery` ([cmd/discovery.go](cmd/discovery.go), [cmd/discovery_services.go](cmd/discovery_services.go), [cmd/discovery_guidance.go](cmd/discovery_guidance.go)) surfaces content from the SAP Discovery Center via two OData V2 services. Curated references in `discovery.yaml` per pack are enriched with live API data cached at `~/.cache/sap-devs/discovery/` (7-day TTL). The `internal/discovery` package ([internal/discovery/client.go](internal/discovery/client.go)) handles CSRF tokens, OData `$batch` requests, and the double-JSON-encoding quirk of the `/platformx/` endpoint.
+
+Three content types: **missions** (guided learning paths), **services** (BTP service catalog), and **guidance** (BTP Guidance Framework phases). Profile-aware filtering uses `profile_filters` in `discovery.yaml` to auto-filter by product/category/focus tags.
+
 ### i18n
 
 `internal/i18n` ([internal/i18n/i18n.go](internal/i18n/i18n.go)) provides CLI string localisation. Language resolution: `lang` config key → `LANG` env var → `LC_ALL` env var → `"en"`. Catalogs for `en` and `de` are embedded at compile time. `T(lang, key)` and `Tf(lang, key, data)` are the public API.
@@ -94,6 +100,7 @@ On every command invocation (except `update` and dev builds), a background gorou
 | `config show/set/company` | View and edit `~/.config/sap-devs/config.yaml` |
 | `tip` | Show a SAP developer tip; on Fridays shows the latest SAP Developer News episode (bypassed by `--new`); `tip install`/`tip uninstall` wires it into your shell prompt |
 | `doctor` | Check local tool versions against pack requirements (`--fix` for install hints) |
+| `discovery` | Browse SAP Discovery Center missions, BTP services, and guidance framework; `discovery missions list/search/open`, `discovery services list/search/open`, `discovery guidance/show/open` |
 | `mcp list/install/status` | Browse and wire SAP MCP servers into AI tool configs |
 | `hook list/install/uninstall/status` | Wire AI tool lifecycle hooks from pack definitions |
 | `events` | Browse upcoming SAP community events with location filtering; `events types` lists event categories |

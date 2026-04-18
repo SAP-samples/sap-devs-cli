@@ -488,6 +488,37 @@ YouTube metadata is not injected into the AI context window (unlike `context.md`
 
 ---
 
+## Discovery Center (`discovery.yaml`)
+
+Each pack may include a `discovery.yaml` file that references curated SAP Discovery Center content. Unlike other pack YAML files (which are top-level arrays), `discovery.yaml` uses a top-level object:
+
+```yaml
+profile_filters:
+  products: ["1006"]      # Discovery Center product IDs
+  categories: ["appdev"]  # Category codes (appdev, intgn, dataanalytics, aicatg)
+  focus_tags: ["4"]       # Focus tag IDs
+
+missions:
+  - id: 4327              # Integer — Discovery Center mission ID
+    name: Develop a Full-Stack CAP Application
+    featured: true         # Optional — appears first in listings
+
+services:
+  - id: 73554e5a-6885-...  # UUID — ServiceDetails ID from /servicecatalog/
+    name: SAP Cloud Application Programming Model
+    featured: true
+
+guidance:
+  - id: realize-application-dev-best-practices  # Slug — guidance node ID
+    name: Application Development Best Practices
+```
+
+`profile_filters` controls automatic filtering when the user has an active profile. The filter values map to Discovery Center API filter parameters.
+
+Schema: `content/schemas/discovery.schema.json`
+
+---
+
 ## Pack Author Guidance
 
 `format` defaults to `"markdown"`. Both `format="markdown"` and `format="text"` pass the response through an HTML parser. **Always set `format="raw"` for any non-HTML source** — plain text files, JSON endpoints, RSS feeds. Passing non-HTML through the parser is safe (the parser is lenient) but may produce garbled or sparse output.

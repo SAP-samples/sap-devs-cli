@@ -51,6 +51,12 @@ func (a *Pack) MergeWith(base *Pack) *Pack {
 	merged.EventInstances = mergeEventInstances(base.EventInstances, a.EventInstances, base.ID)
 	merged.Samples = mergeSamples(base.Samples, a.Samples, base.ID)
 	merged.YouTubeSources = mergeYouTubeSources(base.YouTubeSources, a.YouTubeSources, base.ID)
+	merged.DiscoveryMissions = mergeDiscoveryMissions(base.DiscoveryMissions, a.DiscoveryMissions, base.ID)
+	merged.DiscoveryServices = mergeDiscoveryServices(base.DiscoveryServices, a.DiscoveryServices, base.ID)
+	merged.DiscoveryGuidance = mergeDiscoveryGuidance(base.DiscoveryGuidance, a.DiscoveryGuidance, base.ID)
+	if a.DiscoveryFilters != nil {
+		merged.DiscoveryFilters = a.DiscoveryFilters
+	}
 
 	// Merged result is not itself additive; a subsequent additive layer will
 	// merge into this result rather than treating it as an additive pack.
@@ -298,6 +304,81 @@ func mergeMCPServers(base, additive []MCPServer, packID string) []MCPServer {
 		}
 	}
 	// Re-stamp all entries: same rationale as mergeResources.
+	for i := range result {
+		result[i].PackID = packID
+	}
+	return result
+}
+
+// mergeDiscoveryMissions builds a fresh []DiscoveryMissionRef: starts with base entries,
+// replaces any entry whose ID matches an additive entry, appends unmatched additive entries.
+// PackID is re-stamped to packID on every entry in the result.
+func mergeDiscoveryMissions(base, additive []DiscoveryMissionRef, packID string) []DiscoveryMissionRef {
+	result := make([]DiscoveryMissionRef, len(base))
+	copy(result, base)
+	for _, a := range additive {
+		replaced := false
+		for i, b := range result {
+			if b.ID == a.ID {
+				result[i] = a
+				replaced = true
+				break
+			}
+		}
+		if !replaced {
+			result = append(result, a)
+		}
+	}
+	for i := range result {
+		result[i].PackID = packID
+	}
+	return result
+}
+
+// mergeDiscoveryServices builds a fresh []DiscoveryServiceRef: starts with base entries,
+// replaces any entry whose ID matches an additive entry, appends unmatched additive entries.
+// PackID is re-stamped to packID on every entry in the result.
+func mergeDiscoveryServices(base, additive []DiscoveryServiceRef, packID string) []DiscoveryServiceRef {
+	result := make([]DiscoveryServiceRef, len(base))
+	copy(result, base)
+	for _, a := range additive {
+		replaced := false
+		for i, b := range result {
+			if b.ID == a.ID {
+				result[i] = a
+				replaced = true
+				break
+			}
+		}
+		if !replaced {
+			result = append(result, a)
+		}
+	}
+	for i := range result {
+		result[i].PackID = packID
+	}
+	return result
+}
+
+// mergeDiscoveryGuidance builds a fresh []DiscoveryGuidanceRef: starts with base entries,
+// replaces any entry whose ID matches an additive entry, appends unmatched additive entries.
+// PackID is re-stamped to packID on every entry in the result.
+func mergeDiscoveryGuidance(base, additive []DiscoveryGuidanceRef, packID string) []DiscoveryGuidanceRef {
+	result := make([]DiscoveryGuidanceRef, len(base))
+	copy(result, base)
+	for _, a := range additive {
+		replaced := false
+		for i, b := range result {
+			if b.ID == a.ID {
+				result[i] = a
+				replaced = true
+				break
+			}
+		}
+		if !replaced {
+			result = append(result, a)
+		}
+	}
 	for i := range result {
 		result[i].PackID = packID
 	}

@@ -15,6 +15,7 @@ import (
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/config"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/credentials"
+	"github.tools.sap/developer-relations/sap-devs-cli/internal/discovery"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/events"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/i18n"
 	sapSync "github.tools.sap/developer-relations/sap-devs-cli/internal/sync"
@@ -68,11 +69,12 @@ func runSync(ctx context.Context, force bool, out io.Writer) error {
 		"advocates": cfg.Sync.Advocates, "resources": cfg.Sync.Resources,
 		"context": cfg.Sync.Context, "mcp": cfg.Sync.MCP,
 		"events": cfg.Sync.Events, "youtube": cfg.Sync.YouTube,
+		"discovery": cfg.Sync.Discovery,
 	}
 	engine := sapSync.NewEngine(paths.CacheDir, 24*time.Hour, ttls)
 
 	archiveCats := []string{"tips", "tools", "resources", "context", "mcp", "advocates"}
-	independentCats := []string{"events", "youtube"}
+	independentCats := []string{"events", "youtube", "discovery"}
 
 	activeArchive := intersectStrings(archiveCats, categories)
 	activeIndependent := intersectStrings(independentCats, categories)
@@ -143,6 +145,14 @@ func runSync(ctx context.Context, force bool, out io.Writer) error {
 			fmt.Fprintf(os.Stderr, "sap-devs: youtube sync warning: %v\n", err)
 		}
 		_ = engine.MarkSynced("youtube")
+	}
+
+	// Phase 5: Discovery Center fetch
+	if containsString(activeIndependent, "discovery") && (force || engine.IsStale("discovery")) {
+		if err := runDiscoveryFetch(paths.CacheDir, force); err != nil {
+			fmt.Fprintf(os.Stderr, "sap-devs: discovery sync: %v\n", err)
+		}
+		_ = engine.MarkSynced("discovery")
 	}
 
 	return nil
@@ -269,7 +279,7 @@ func runEventsFetch(cacheDir, officialCache string, force bool) error {
 }
 
 func allCategories() []string {
-	return []string{"tips", "tools", "resources", "context", "mcp", "advocates", "events", "youtube"}
+	return []string{"tips", "tools", "resources", "context", "mcp", "advocates", "events", "youtube", "discovery"}
 }
 
 func intersectStrings(a, b []string) []string {
@@ -329,6 +339,52 @@ func runYouTubeFetch(cacheDir, officialCache, companyRepo, configDir string, for
 			}
 		}
 	}
+	return nil
+}
+
+func runDiscoveryFetch(cacheDir string, force bool) error {
+	client := discovery.NewClient()
+
+	if force || discovery.CacheAge(cacheDir, "missions") < 0 || discovery.CacheAge(cacheDir, "missions") > discovery.CacheTTL {
+		groups, err := client.FetchMissions()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "sap-devs: fetch discovery missions: %v\n", err)
+		} else {
+			var all []discovery.Mission
+			for _, g := range groups {
+				all = append(all, g.Missions...)
+			}
+			_ = discovery.SaveCache(cacheDir, "missions", all)
+		}
+	}
+
+	if force || discovery.CacheAge(cacheDir, "services") < 0 || discovery.CacheAge(cacheDir, "services") > discovery.CacheTTL {
+		svcs, err := client.FetchServices()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "sap-devs: fetch discovery services: %v\n", err)
+		} else {
+			_ = discovery.SaveCache(cacheDir, "services", svcs)
+		}
+	}
+
+	if force || discovery.CacheAge(cacheDir, "guidance-tree") < 0 || discovery.CacheAge(cacheDir, "guidance-tree") > discovery.CacheTTL {
+		tree, err := client.FetchGuidanceTree()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "sap-devs: fetch discovery guidance: %v\n", err)
+		} else {
+			_ = discovery.SaveCache(cacheDir, "guidance-tree", tree)
+		}
+	}
+
+	if force || discovery.CacheAge(cacheDir, "categories") < 0 || discovery.CacheAge(cacheDir, "categories") > discovery.CacheTTL {
+		cats, err := client.FetchCategories()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "sap-devs: fetch discovery categories: %v\n", err)
+		} else {
+			_ = discovery.SaveCache(cacheDir, "categories", cats)
+		}
+	}
+
 	return nil
 }
 

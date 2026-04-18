@@ -1,0 +1,20 @@
+profile_filters:
+  products: ["1006"]
+  categories: ["appdev", "intgn"]
+
+missions:
+  - id: 4538
+    name: Establish a Unified Joule Instance
+    featured: true
+  - id: 3260
+    name: Process and approve your invoices with SAP Build Process Automation
+  - id: 4024
+    name: Keep the Core Clean Using SAP Build Apps with SAP S/4HANA
+
+guidance:
+  - id: prepare-organizational-readiness
+    name: Organizational Readiness
+  - id: deploy-deployment-and-delivery
+    name: Solution Deployment and Delivery
+  - id: run-governance-model-btp
+    name: Governance Model for SAP BTP
