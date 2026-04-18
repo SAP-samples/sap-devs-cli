@@ -3,3 +3,9 @@
   command: "sap-devs tip --markdown"
   tools:
     - claude-code
+
+- id: community/friday-developer-news
+  event: sessionStart
+  command: "sap-devs news hook"
+  tools:
+    - claude-code

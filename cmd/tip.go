@@ -12,6 +12,7 @@ import (
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/i18n"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/shellhook"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/xdg"
+	"github.tools.sap/developer-relations/sap-devs-cli/internal/youtube"
 )
 
 var tipMarkdown bool
@@ -45,6 +46,44 @@ func tipSeed(rotation string, useRandom bool) int64 {
 	default: // "daily" and ""
 		return int64(now.Year())*1000 + int64(now.YearDay())
 	}
+}
+
+func formatFridayTip(ep youtube.Episode) *content.Tip {
+	desc := ep.Description
+	if desc != "" {
+		runes := []rune(desc)
+		if len(runes) > 280 {
+			desc = string(runes[:280]) + "…"
+		}
+	}
+	var c string
+	if desc == "" {
+		c = ep.URL
+	} else {
+		c = ep.URL + "\n\n" + desc
+	}
+	return &content.Tip{
+		Title:   "SAP Developer News — " + ep.Title,
+		Content: c,
+	}
+}
+
+func staticFridayTip() *content.Tip {
+	return &content.Tip{
+		Title:   "It's Friday — SAP Developer News is out!",
+		Content: "Watch the latest episode:\n" + newsPlaylistURL,
+	}
+}
+
+func fridayNewsOverride() *content.Tip {
+	if time.Now().Weekday() != time.Friday {
+		return nil
+	}
+	episodes, err := youtube.FetchPlaylist(newsPlaylistRSS)
+	if err != nil || len(episodes) == 0 {
+		return staticFridayTip()
+	}
+	return formatFridayTip(episodes[0])
 }
 
 var tipCmd = &cobra.Command{
@@ -97,12 +136,19 @@ var tipCmd = &cobra.Command{
 		useRandom := tipNew || os.Getenv("SAP_DEVS_DEV") == "1"
 		seed := tipSeed(rotation, useRandom)
 
-		tip, err := content.SelectTip(packs, tipTags, seed)
-		if err != nil {
-			// No tips available — not an error worth surfacing as exit code 1
-			fmt.Fprintln(cmd.OutOrStdout(), i18n.T(i18n.ActiveLang, "tip.no_tips"))
-			return nil
+		var selectedTip *content.Tip
+		if !useRandom {
+			selectedTip = fridayNewsOverride()
 		}
+		if selectedTip == nil {
+			selectedTip, err = content.SelectTip(packs, tipTags, seed)
+			if err != nil {
+				// No tips available — not an error worth surfacing as exit code 1
+				fmt.Fprintln(cmd.OutOrStdout(), i18n.T(i18n.ActiveLang, "tip.no_tips"))
+				return nil
+			}
+		}
+		tip := selectedTip
 
 		if tipMarkdown || tipPlain {
 			fmt.Fprint(cmd.OutOrStdout(), FormatTip(*tip, tipMarkdown, tipPlain))
