@@ -269,3 +269,28 @@ func TestMergeWith_HooksFromAdditivePack(t *testing.T) {
 	// PackID re-stamped to base pack ID
 	assert.Equal(t, "cap", result.Hooks[1].PackID)
 }
+
+func TestMergeSamples_ReplacesOnMatchingIDAndRestampsPackID(t *testing.T) {
+	base := []content.Sample{
+		{ID: "cap/handler", Label: "Old", URL: "https://old.example", PackID: "cap"},
+		{ID: "cap/schema", Label: "Schema", URL: "https://schema.example", PackID: "cap"},
+	}
+	additive := []content.Sample{
+		{ID: "cap/handler", Label: "New", URL: "https://new.example", PackID: "company"},
+	}
+	got := content.MergeSamples(base, additive, "cap")
+	assert.Len(t, got, 2)
+	assert.Equal(t, "New", got[0].Label)
+	assert.Equal(t, "https://new.example", got[0].URL)
+	assert.Equal(t, "cap", got[0].PackID)
+	assert.Equal(t, "cap/schema", got[1].ID)
+}
+
+func TestMergeSamples_AppendsNewIDs(t *testing.T) {
+	base := []content.Sample{{ID: "cap/handler", Label: "Handler", PackID: "cap"}}
+	additive := []content.Sample{{ID: "cap/new", Label: "New Sample", PackID: "company"}}
+	got := content.MergeSamples(base, additive, "cap")
+	assert.Len(t, got, 2)
+	assert.Equal(t, "cap/new", got[1].ID)
+	assert.Equal(t, "cap", got[1].PackID)
+}
