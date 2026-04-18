@@ -101,6 +101,7 @@ On every command invocation (except `update` and dev builds), a background gorou
 | `resources` | List curated resources from active packs |
 | `samples` | Browse canonical code samples; `samples list/search/open/clone` |
 | `news list/latest/open/search/read/hook` | Browse SAP Developer News episodes fetched live from YouTube RSS and SAP Community; `news hook` prints a Friday reminder for use as a session-start hook |
+| `videos` | Browse SAP YouTube videos; `videos list/search/open` |
 | `update` | Self-update the binary |
 | `init` | First-time setup wizard |
 
