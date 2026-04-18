@@ -79,6 +79,8 @@ type Video struct {
 }
 ```
 
+**ID format and lookup:** The composite `Video.ID` (`base/sap-dev-news/dQw4w9WgXcQ`) is used internally and displayed in list output. The `videos open` command also accepts a positional index (`videos open 3`) for convenience, matching the `news open` pattern. Both lookup methods are supported by `FindVideo`.
+
 Pack gains two new fields: `YouTubeSources []YouTubeSource` and `Videos []Video`. Sources are loaded from YAML at `LoadPack` time. Videos are populated at runtime by resolving sources against the cache.
 
 ## 2. YouTube Package (`internal/youtube`)
@@ -87,9 +89,27 @@ Pack gains two new fields: `YouTubeSources []YouTubeSource` and `Videos []Video`
 
 `ParseFeed` and `FetchPlaylist` already handle any YouTube playlist Atom RSS feed. No changes needed to the parser. Returns `[]Episode` which maps to `[]Video` at a higher level.
 
+### Episode struct extension
+
+The existing `Episode` struct gains two optional fields to carry API v3 metadata:
+
+```go
+type Episode struct {
+    ID          string
+    Title       string
+    URL         string
+    Published   time.Time
+    Description string
+    Duration    string   // ISO 8601; populated by API v3, empty from RSS
+    Tags        []string // populated by API v3, nil from RSS
+}
+```
+
+The `news` command ignores these fields (zero values). The `videos` package maps `Episode` → `Video`, merging source-level tags with any API-provided tags.
+
 ### New: API v3 path
 
-`FetchPlaylistAPI(playlistID, apiKey string) ([]Episode, error)` calls the YouTube Data API v3 `playlistItems.list` endpoint, followed by a `videos.list` call for the batch of video IDs to get duration and additional metadata. Returns the same `[]Episode` struct with richer fields populated.
+`FetchPlaylistAPI(playlistID, apiKey string) ([]Episode, error)` calls the YouTube Data API v3 `playlistItems.list` endpoint (paginating with `nextPageToken` for playlists > 50 items), followed by a batched `videos.list` call for the video IDs to get duration and tags. Returns `[]Episode` with the richer fields populated.
 
 ### Resolution function
 
@@ -101,24 +121,24 @@ func Resolve(src content.YouTubeSource, apiKey string) ([]Episode, error)
 ```
 
 - `type: "video"` — returns a synthetic `Episode` from the source fields. No network call.
-- `type: "playlist"` + `apiKey != ""` — calls `FetchPlaylistAPI`.
+- `type: "playlist"` + `apiKey != ""` — calls `FetchPlaylistAPI`. On failure (HTTP errors, quota exceeded 403, invalid key), falls back to RSS with a stderr warning.
 - `type: "playlist"` + `apiKey == ""` — calls `FetchPlaylist` via RSS URL constructed from `playlist_id`.
 
-API v3 errors (HTTP failures, quota exceeded 403, invalid key) fall back to RSS transparently with a stderr warning.
+**Quota awareness:** The sync phase checks cache freshness *before* calling `Resolve`. If cached data is fresh, no API/RSS call is made. This avoids unnecessary API quota consumption (YouTube Data API v3 free tier: 10,000 units/day).
 
 ## 3. Caching & Sync Integration
 
 ### Cache structure
 
-```
-~/.cache/sap-devs/youtube/<source-id>.json
+```text
+~/.cache/sap-devs/youtube/<pack-id>/<source-id>.json
 ```
 
-Each file contains `[]Video` as JSON. New `internal/videos/cache.go`:
+Cache paths are namespaced by pack ID to avoid collisions when different packs declare sources with the same ID. Each file contains `[]Video` as JSON. New `internal/videos/cache.go`:
 
-- `LoadCache(cacheDir, sourceID) ([]content.Video, error)`
-- `SaveCache(cacheDir, sourceID, []content.Video) error`
-- `CacheAge(cacheDir, sourceID) time.Duration`
+- `LoadCache(cacheDir, packID, sourceID) ([]content.Video, error)`
+- `SaveCache(cacheDir, packID, sourceID, []content.Video) error`
+- `CacheAge(cacheDir, packID, sourceID) time.Duration`
 
 Default TTL: 6 hours. Cache-with-live-fallback pattern (same as events): try fresh fetch, fall back to stale cache on error.
 
@@ -129,6 +149,10 @@ Default TTL: 6 hours. Cache-with-live-fallback pattern (same as events): try fre
 ```go
 ttls["youtube"] = cfg.Sync.YouTube
 ```
+
+**TTL independence:** Adding `"youtube"` to `allCategories()` means a stale YouTube TTL contributes to the `needsSync` check in phase 1 — but a stale YouTube alone should NOT trigger a full archive re-download. Phase 4 (`runYouTubeFetch`) checks its own per-source cache freshness independently, just like events. The fix: phase 4 runs conditionally based on `engine.IsStale("youtube") || force`, not unconditionally whenever any category triggers sync. If only YouTube is stale, `runSync` skips the archive download (phase 1) and marker expansion (phase 2) and jumps to the YouTube fetch.
+
+To implement this, `needsSync` in `runSync` should split archive-dependent categories from independent ones. Categories `"youtube"` and `"events"` can refresh without an archive download; the rest (`tips`, `tools`, `resources`, `context`, `mcp`, `advocates`) require the archive.
 
 ### Sync phase 4
 
@@ -141,7 +165,7 @@ if err := runYouTubeFetch(paths.CacheDir, officialCache, paths.ConfigDir, force)
 }
 ```
 
-`runYouTubeFetch` scans all packs for `youtube.yaml`, collects playlist sources, resolves API key from credentials, then calls `youtube.Resolve` for each source and caches results via `videos.SaveCache`. Individual source failures are non-fatal (warning to stderr, skip).
+`runYouTubeFetch` scans packs from the official cache and company cache (if configured) for `youtube.yaml`, collects playlist sources, resolves API key from credentials, then calls `youtube.Resolve` for each source (checking per-source cache freshness first to avoid unnecessary fetches) and caches results via `videos.SaveCache`. User-layer and project-layer packs only support `type: video` entries (static, no fetching). Individual source failures are non-fatal (warning to stderr, skip).
 
 ### Video resolution at display time
 
@@ -152,7 +176,7 @@ if err := runYouTubeFetch(paths.CacheDir, officialCache, paths.ConfigDir, force)
 ### Subcommands
 
 | Subcommand | Purpose |
-|---|---|
+| --- | --- |
 | `videos list` | List videos for the active profile's packs. Default: most recent 20. |
 | `videos search <query>` | Search across all packs by title, description, tags. |
 | `videos open <id>` | Open a video URL in the browser. |
@@ -161,7 +185,7 @@ if err := runYouTubeFetch(paths.CacheDir, officialCache, paths.ConfigDir, force)
 
 ### List output format
 
-```
+```text
 #   DATE        PACK   SOURCE              TITLE
 1   2026-04-11  base   sap-dev-news        SAP Developer News - Apr 11
 2   2026-04-09  base   tech-bytes          SAP Tech Bytes: CDS Lint
@@ -185,10 +209,9 @@ Uses `tabwriter`. Videos sorted by `Published` descending (most recent first).
 
 ### Helper functions (`internal/videos/videos.go`)
 
-- `ResolveAll(sources []content.YouTubeSource, cacheDir string) ([]content.Video, error)`
-- `FlattenVideos(packs []*content.Pack) []content.Video`
-- `FilterVideos(videos []content.Video, query string) []content.Video`
-- `FindVideo(videos []content.Video, id string) *content.Video`
+- `ResolveAll(sources []content.YouTubeSource, cacheDir string) ([]content.Video, error)` — reads cached JSON for each source, maps to `[]Video`
+- `FilterVideos(videos []content.Video, query string) []content.Video` — case-insensitive substring match on title, description, tags
+- `FindVideo(videos []content.Video, id string) *content.Video` — exact match on composite ID
 
 ## 5. Credentials Extension & Config
 
@@ -205,6 +228,8 @@ func ResolveService(configDir, service string, envVars []string) string
 
 Keyring: `keyringSvc = "sap-devs"` (same), `keyringUser = service` (variable). File fallback: `<configDir>/credentials-<service>` (e.g., `credentials-youtube`).
 
+**Implementation approach:** Extract the common keyring+file logic from existing `Store`/`Load`/`Delete` into private helpers (`storeForUser`, `loadForUser`, `deleteForUser`) that take a `user` parameter. The existing public functions become thin wrappers passing `"github-token"` as the user. The new `*Service` functions pass the `service` argument as the user. This avoids code duplication while keeping the existing API untouched.
+
 ### YouTube API key resolution chain
 
 `YOUTUBE_API_KEY` env var -> keychain (`sap-devs` / `youtube`) -> file (`credentials-youtube`) -> `""` (empty = RSS fallback).
@@ -215,6 +240,8 @@ Keyring: `keyringSvc = "sap-devs"` (same), `keyringUser = service` (variable). F
 sap-devs config token <key> --service youtube   # stores YouTube API key
 sap-devs config token <key>                      # existing: stores GitHub token
 ```
+
+`config show` is updated to also display YouTube API key status (configured/not configured) alongside the existing GitHub token status.
 
 ### Sync config
 
@@ -238,7 +265,7 @@ New `content/schemas/youtube.schema.json` validating `youtube.yaml`. Covers both
 ### Testing
 
 - `internal/youtube/youtube_test.go` — extend with API v3 response parsing tests; add testdata for API JSON responses.
-- `internal/videos/videos_test.go` — test `ResolveAll`, `FlattenVideos`, `FilterVideos`, `FindVideo` with fixture JSON cache files.
+- `internal/videos/videos_test.go` — test `ResolveAll`, `FilterVideos`, `FindVideo` with fixture JSON cache files.
 - `internal/credentials/credentials_test.go` — test `StoreService`/`LoadService`/`ResolveService` using the existing mock keyring pattern.
 - `internal/content/pack_test.go` — test that `LoadPack` reads `youtube.yaml` into `YouTubeSources`.
 
@@ -254,7 +281,8 @@ All tests follow existing patterns: table-driven, testdata fixtures, no mocks ex
 ## Files Created/Modified
 
 ### New files
-- `internal/videos/videos.go` — FlattenVideos, FilterVideos, FindVideo, ResolveAll
+
+- `internal/videos/videos.go` — FilterVideos, FindVideo, ResolveAll
 - `internal/videos/cache.go` — LoadCache, SaveCache, CacheAge
 - `internal/videos/videos_test.go` — tests with fixture data
 - `cmd/videos.go` — CLI command with list/search/open subcommands
@@ -263,14 +291,15 @@ All tests follow existing patterns: table-driven, testdata fixtures, no mocks ex
 - `content/packs/cap/youtube.yaml` — CAP pack playlist/video declarations
 
 ### Modified files
+
 - `internal/content/pack.go` — add YouTubeSource, Video structs; add fields to Pack; load youtube.yaml in LoadPack
-- `internal/youtube/youtube.go` — add FetchPlaylistAPI, Resolve function
+- `internal/youtube/youtube.go` — extend Episode struct with Duration/Tags; add FetchPlaylistAPI, Resolve function
 - `internal/youtube/youtube_test.go` — add API v3 tests
-- `internal/credentials/credentials.go` — add StoreService, LoadService, DeleteService, ResolveService
+- `internal/credentials/credentials.go` — refactor to private helpers; add StoreService, LoadService, DeleteService, ResolveService
 - `internal/credentials/credentials_test.go` — test service-keyed storage
 - `internal/config/config.go` — add YouTube field to SyncConfig
-- `cmd/sync.go` — add "youtube" to allCategories(), add phase 4, add TTL entry
-- `cmd/config.go` — add --service flag to token subcommand
+- `cmd/sync.go` — add "youtube" to allCategories(), split archive-dependent vs independent categories, add phase 4, add TTL entry
+- `cmd/config.go` — add --service flag to token subcommand; update config show to display YouTube key status
 - `.vscode/settings.json` — wire youtube.schema.json
 - `CLAUDE.md` — document videos command
 - `docs/content-authoring.md` — document youtube.yaml format
