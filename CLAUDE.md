@@ -70,6 +70,14 @@ Profiles ([content/profiles/](content/profiles/)) are YAML files that tag which 
 
 Three content types: **missions** (guided learning paths), **services** (BTP service catalog), and **guidance** (BTP Guidance Framework phases). Profile-aware filtering uses `profile_filters` in `discovery.yaml` to auto-filter by product/category/focus tags.
 
+### Tutorials
+
+`sap-devs tutorial` ([cmd/tutorials.go](cmd/tutorials.go)) fetches and renders tutorials from the `sap-tutorials` GitHub organization (~1,290 tutorials across ~21 repos). The `internal/tutorials` package handles the GitHub client, markdown parsing (v2 H3-steps and legacy ACCORDION format), full-text search, caching, and per-user progress tracking.
+
+**Sync:** Tutorial metadata is synced as an independent category (`tutorials`) during `sap-devs sync`. A two-phase pipeline fetches repo metadata + tree listings via the GitHub API (bounded to 5 concurrent), then fetches YAML frontmatter from the CDN (bounded to 10 concurrent). Incremental sync skips repos whose tree SHA hasn't changed. Full tutorial content is fetched on demand by `tutorial show`.
+
+**Pack integration:** Each pack can include a `tutorials.yaml` file with curated `TutorialRef` entries (slug + featured flag). `tutorial list` joins these refs with the cached index for profile-filtered browsing; `tutorial search` searches the full index across all repos.
+
 ### i18n
 
 `internal/i18n` ([internal/i18n/i18n.go](internal/i18n/i18n.go)) provides CLI string localisation. Language resolution: `lang` config key → `LANG` env var → `LC_ALL` env var → `"en"`. Catalogs for `en` and `de` are embedded at compile time. `T(lang, key)` and `Tf(lang, key, data)` are the public API.
@@ -99,6 +107,7 @@ On every command invocation (except `update` and dev builds), a background gorou
 | `profile set/list/show` | Manage active developer persona |
 | `config show/set/company` | View and edit `~/.config/sap-devs/config.yaml` |
 | `tip` | Show a SAP developer tip; on Fridays shows the latest SAP Developer News episode (bypassed by `--new`); `tip install`/`tip uninstall` wires it into your shell prompt |
+| `tutorial` | Browse and render SAP tutorials; `tutorial list/search/show/open`; `-i` for interactive step-by-step TUI |
 | `doctor` | Check local tool versions against pack requirements (`--fix` for install hints) |
 | `discovery` | Browse SAP Discovery Center missions, BTP services, and guidance framework; `discovery missions list/search/open`, `discovery services list/search/open`, `discovery guidance/show/open` |
 | `mcp list/install/status` | Browse and wire SAP MCP servers into AI tool configs |
