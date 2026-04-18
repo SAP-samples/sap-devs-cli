@@ -15,6 +15,8 @@ type Episode struct {
 	URL         string
 	Published   time.Time
 	Description string
+	Duration    string
+	Tags        []string
 }
 
 type atomFeed struct {

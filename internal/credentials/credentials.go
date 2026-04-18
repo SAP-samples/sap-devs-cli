@@ -41,54 +41,15 @@ var keyringBackend keyring = osKeyring{}
 
 // Store saves the token to the OS keychain.
 // Falls back to <configDir>/credentials (0600) if the keychain is unavailable.
-func Store(configDir, token string) error {
-	err := keyringBackend.Set(keyringSvc, keyringUser, token)
-	if err == nil {
-		return nil
-	}
-	fmt.Fprintf(os.Stderr, "keychain unavailable: %v; token stored in credentials file\n", err)
-	return writeCredFile(configDir, token)
-}
+func Store(configDir, token string) error { return storeForUser(configDir, keyringUser, token) }
 
 // Load retrieves the token from the OS keychain or credentials file.
 // Returns ErrNotFound if no token is stored.
-func Load(configDir string) (string, error) {
-	tok, err := keyringBackend.Get(keyringSvc, keyringUser)
-	if err == nil {
-		return tok, nil
-	}
-	if errors.Is(err, goKeyring.ErrNotFound) {
-		// Not in keychain — try file
-		return readCredFile(configDir)
-	}
-	// Keychain access error — warn and fall back to file
-	fmt.Fprintf(os.Stderr, "keychain unavailable: %v; falling back to credentials file\n", err)
-	return readCredFile(configDir)
-}
+func Load(configDir string) (string, error) { return loadForUser(configDir, keyringUser) }
 
 // Delete removes the stored token from the keychain or credentials file.
 // Returns ErrNotFound if no token was stored anywhere.
-func Delete(configDir string) error {
-	keychainErr := keyringBackend.Delete(keyringSvc, keyringUser)
-	if keychainErr != nil && !errors.Is(keychainErr, errKeyringNotFound) {
-		// Keychain unavailable or access error — warn and fall through to file,
-		// matching the Store/Load fallback pattern.
-		fmt.Fprintf(os.Stderr, "keychain unavailable: %v; trying credentials file\n", keychainErr)
-	}
-	// Keychain either succeeded, reported "not found", or is unavailable.
-	// Also remove the fallback credentials file if present.
-	path := credFile(configDir)
-	err := os.Remove(path)
-	if os.IsNotExist(err) {
-		if keychainErr == nil {
-			// Keychain delete succeeded; file absence is fine.
-			return nil
-		}
-		// Token was neither in keychain nor in file.
-		return ErrNotFound
-	}
-	return err
-}
+func Delete(configDir string) error { return deleteForUser(configDir, keyringUser) }
 
 // Resolve returns the best available token using the full priority chain:
 // GITHUB_TOOLS_SAP_TOKEN -> GH_TOKEN -> GITHUB_TOKEN -> keychain/file -> "".
@@ -106,19 +67,107 @@ func Resolve(configDir string) string {
 	return ""
 }
 
-func credFile(configDir string) string {
-	return filepath.Join(configDir, "credentials")
+// StoreService saves a service-specific token to the OS keychain.
+// Falls back to <configDir>/credentials-<service> (0600) if the keychain is unavailable.
+func StoreService(configDir, service, token string) error {
+	return storeForUser(configDir, service, token)
 }
 
-func writeCredFile(configDir, token string) error {
+// LoadService retrieves a service-specific token from the OS keychain or credentials file.
+// Returns ErrNotFound if no token is stored.
+func LoadService(configDir, service string) (string, error) {
+	return loadForUser(configDir, service)
+}
+
+// DeleteService removes a service-specific token from the keychain or credentials file.
+// Returns ErrNotFound if no token was stored anywhere.
+func DeleteService(configDir, service string) error {
+	return deleteForUser(configDir, service)
+}
+
+// ResolveService returns the best available token for a service using the priority chain:
+// env vars (in order) -> keychain/file -> "".
+// Never returns an error.
+func ResolveService(configDir, service string, envVars []string) string {
+	for _, env := range envVars {
+		if v := os.Getenv(env); v != "" {
+			return v
+		}
+	}
+	tok, err := LoadService(configDir, service)
+	if err == nil {
+		return tok
+	}
+	return ""
+}
+
+// storeForUser saves a token keyed by user to the OS keychain,
+// falling back to a credentials file if the keychain is unavailable.
+func storeForUser(configDir, user, token string) error {
+	err := keyringBackend.Set(keyringSvc, user, token)
+	if err == nil {
+		return nil
+	}
+	fmt.Fprintf(os.Stderr, "keychain unavailable: %v; token stored in credentials file\n", err)
+	return writeCredFileForUser(configDir, user, token)
+}
+
+// loadForUser retrieves a token keyed by user from the OS keychain or credentials file.
+func loadForUser(configDir, user string) (string, error) {
+	tok, err := keyringBackend.Get(keyringSvc, user)
+	if err == nil {
+		return tok, nil
+	}
+	if errors.Is(err, goKeyring.ErrNotFound) {
+		// Not in keychain — try file
+		return readCredFileForUser(configDir, user)
+	}
+	// Keychain access error — warn and fall back to file
+	fmt.Fprintf(os.Stderr, "keychain unavailable: %v; falling back to credentials file\n", err)
+	return readCredFileForUser(configDir, user)
+}
+
+// deleteForUser removes a token keyed by user from the keychain and credentials file.
+func deleteForUser(configDir, user string) error {
+	keychainErr := keyringBackend.Delete(keyringSvc, user)
+	if keychainErr != nil && !errors.Is(keychainErr, errKeyringNotFound) {
+		// Keychain unavailable or access error — warn and fall through to file,
+		// matching the Store/Load fallback pattern.
+		fmt.Fprintf(os.Stderr, "keychain unavailable: %v; trying credentials file\n", keychainErr)
+	}
+	// Keychain either succeeded, reported "not found", or is unavailable.
+	// Also remove the fallback credentials file if present.
+	path := credFileForUser(configDir, user)
+	err := os.Remove(path)
+	if os.IsNotExist(err) {
+		if keychainErr == nil {
+			// Keychain delete succeeded; file absence is fine.
+			return nil
+		}
+		// Token was neither in keychain nor in file.
+		return ErrNotFound
+	}
+	return err
+}
+
+// credFileForUser returns the path to the credentials file for the given user.
+// The legacy keyringUser maps to the original "credentials" filename for backward compatibility.
+func credFileForUser(configDir, user string) string {
+	if user == keyringUser {
+		return filepath.Join(configDir, "credentials")
+	}
+	return filepath.Join(configDir, "credentials-"+user)
+}
+
+func writeCredFileForUser(configDir, user, token string) error {
 	if err := os.MkdirAll(configDir, 0755); err != nil {
 		return err
 	}
-	return os.WriteFile(credFile(configDir), []byte(token), 0600)
+	return os.WriteFile(credFileForUser(configDir, user), []byte(token), 0600)
 }
 
-func readCredFile(configDir string) (string, error) {
-	data, err := os.ReadFile(credFile(configDir))
+func readCredFileForUser(configDir, user string) (string, error) {
+	data, err := os.ReadFile(credFileForUser(configDir, user))
 	if os.IsNotExist(err) {
 		return "", ErrNotFound
 	}

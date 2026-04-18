@@ -1,0 +1,24 @@
+[
+  {
+    "id": "base/sap-dev-news/abc123",
+    "title": "SAP Developer News Apr 11 2026",
+    "url": "https://www.youtube.com/watch?v=abc123",
+    "video_id": "abc123",
+    "published": "2026-04-11T12:00:00Z",
+    "description": "CAP updates and BTP news.",
+    "source_id": "sap-dev-news",
+    "tags": ["news"],
+    "pack_id": "base"
+  },
+  {
+    "id": "base/sap-dev-news/def456",
+    "title": "SAP Developer News Apr 4 2026",
+    "url": "https://www.youtube.com/watch?v=def456",
+    "video_id": "def456",
+    "published": "2026-04-04T12:00:00Z",
+    "description": "ABAP Cloud updates.",
+    "source_id": "sap-dev-news",
+    "tags": ["news"],
+    "pack_id": "base"
+  }
+]

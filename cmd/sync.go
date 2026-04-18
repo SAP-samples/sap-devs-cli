@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -18,7 +19,9 @@ import (
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/i18n"
 	sapSync "github.tools.sap/developer-relations/sap-devs-cli/internal/sync"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/ui"
+	"github.tools.sap/developer-relations/sap-devs-cli/internal/videos"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/xdg"
+	"github.tools.sap/developer-relations/sap-devs-cli/internal/youtube"
 	"gopkg.in/yaml.v3"
 )
 
@@ -64,57 +67,84 @@ func runSync(ctx context.Context, force bool, out io.Writer) error {
 		"tips": cfg.Sync.Tips, "tools": cfg.Sync.Tools,
 		"advocates": cfg.Sync.Advocates, "resources": cfg.Sync.Resources,
 		"context": cfg.Sync.Context, "mcp": cfg.Sync.MCP,
-		"events": cfg.Sync.Events,
+		"events": cfg.Sync.Events, "youtube": cfg.Sync.YouTube,
 	}
 	engine := sapSync.NewEngine(paths.CacheDir, 24*time.Hour, ttls)
 
-	// Phase 1: archive download (existing behaviour, fmt output)
-	needsSync := false
-	for _, cat := range categories {
-		if force || engine.IsStale(cat) {
-			needsSync = true
+	archiveCats := []string{"tips", "tools", "resources", "context", "mcp", "advocates"}
+	independentCats := []string{"events", "youtube"}
+
+	activeArchive := intersectStrings(archiveCats, categories)
+	activeIndependent := intersectStrings(independentCats, categories)
+
+	archiveNeedsSync := force
+	for _, cat := range activeArchive {
+		if engine.IsStale(cat) {
+			archiveNeedsSync = true
 			break
 		}
 	}
-	if !needsSync {
+	independentNeedsSync := force
+	for _, cat := range activeIndependent {
+		if engine.IsStale(cat) {
+			independentNeedsSync = true
+			break
+		}
+	}
+
+	if !archiveNeedsSync && !independentNeedsSync {
 		fmt.Fprintln(out, i18n.T(i18n.ActiveLang, "sync.up_to_date"))
 		return nil
 	}
 
-	fmt.Fprintln(out, i18n.T(i18n.ActiveLang, "sync.syncing"))
-	if err := sapSync.FetchArchive(officialRepoArchive, officialCache, token); err != nil {
-		return fmt.Errorf("sync official content: %w", err)
-	}
-	if err := engine.MarkAllSynced(categories); err != nil {
-		return err
-	}
-	fmt.Fprintln(out, i18n.Tf(i18n.ActiveLang, "sync.updated", map[string]any{"Categories": categories}))
+	if archiveNeedsSync {
+		fmt.Fprintln(out, i18n.T(i18n.ActiveLang, "sync.syncing"))
+		if err := sapSync.FetchArchive(officialRepoArchive, officialCache, token); err != nil {
+			return fmt.Errorf("sync official content: %w", err)
+		}
+		if err := engine.MarkAllSynced(activeArchive); err != nil {
+			return err
+		}
+		fmt.Fprintln(out, i18n.Tf(i18n.ActiveLang, "sync.updated", map[string]any{"Categories": activeArchive}))
 
-	// Phase 2: marker expansion (Bubbletea progress)
-	if err := runMarkerExpansion(officialCache, engine); err != nil {
-		fmt.Fprintf(os.Stderr, "sap-devs: marker expansion warning: %v\n", err)
-		// Non-fatal: sync continues
-	}
+		// Phase 2: marker expansion (Bubbletea progress)
+		if err := runMarkerExpansion(officialCache, engine); err != nil {
+			fmt.Fprintf(os.Stderr, "sap-devs: marker expansion warning: %v\n", err)
+			// Non-fatal: sync continues
+		}
 
-	// Phase 3: events RSS cache
-	if err := runEventsFetch(paths.CacheDir, officialCache, force); err != nil {
-		fmt.Fprintf(os.Stderr, "sap-devs: events sync warning: %v\n", err)
-	}
-
-	// Sync company repo if configured
-	if cfg.CompanyRepo != "" {
-		if !strings.HasPrefix(cfg.CompanyRepo, "https://") {
-			fmt.Fprintln(out, i18n.Tf(i18n.ActiveLang, "sync.warn_https", map[string]any{"URL": cfg.CompanyRepo}))
-		} else {
-			companyCache := filepath.Join(paths.CacheDir, "company")
-			repoURL := strings.TrimRight(cfg.CompanyRepo, "/")
-			companyArchive := repoURL + "/archive/refs/heads/main.zip"
-			fmt.Fprintln(out, i18n.T(i18n.ActiveLang, "sync.syncing_company"))
-			if err := sapSync.FetchArchive(companyArchive, companyCache, token); err != nil {
-				fmt.Fprintln(out, i18n.Tf(i18n.ActiveLang, "sync.warn_company_failed", map[string]any{"Err": err}))
+		// Sync company repo if configured
+		if cfg.CompanyRepo != "" {
+			if !strings.HasPrefix(cfg.CompanyRepo, "https://") {
+				fmt.Fprintln(out, i18n.Tf(i18n.ActiveLang, "sync.warn_https", map[string]any{"URL": cfg.CompanyRepo}))
+			} else {
+				companyCache := filepath.Join(paths.CacheDir, "company")
+				repoURL := strings.TrimRight(cfg.CompanyRepo, "/")
+				companyArchive := repoURL + "/archive/refs/heads/main.zip"
+				fmt.Fprintln(out, i18n.T(i18n.ActiveLang, "sync.syncing_company"))
+				if err := sapSync.FetchArchive(companyArchive, companyCache, token); err != nil {
+					fmt.Fprintln(out, i18n.Tf(i18n.ActiveLang, "sync.warn_company_failed", map[string]any{"Err": err}))
+				}
 			}
 		}
 	}
+
+	// Phase 3: events RSS cache
+	if containsString(activeIndependent, "events") && (force || engine.IsStale("events")) {
+		if err := runEventsFetch(paths.CacheDir, officialCache, force); err != nil {
+			fmt.Fprintf(os.Stderr, "sap-devs: events sync warning: %v\n", err)
+		}
+		_ = engine.MarkSynced("events")
+	}
+
+	// Phase 4: YouTube fetch
+	if containsString(activeIndependent, "youtube") && (force || engine.IsStale("youtube")) {
+		if err := runYouTubeFetch(paths.CacheDir, officialCache, cfg.CompanyRepo, paths.ConfigDir, force, cfg.Sync.YouTube); err != nil {
+			fmt.Fprintf(os.Stderr, "sap-devs: youtube sync warning: %v\n", err)
+		}
+		_ = engine.MarkSynced("youtube")
+	}
+
 	return nil
 }
 
@@ -239,7 +269,102 @@ func runEventsFetch(cacheDir, officialCache string, force bool) error {
 }
 
 func allCategories() []string {
-	return []string{"tips", "tools", "resources", "context", "mcp", "advocates", "events"}
+	return []string{"tips", "tools", "resources", "context", "mcp", "advocates", "events", "youtube"}
+}
+
+func intersectStrings(a, b []string) []string {
+	set := make(map[string]bool, len(b))
+	for _, s := range b {
+		set[s] = true
+	}
+	var out []string
+	for _, s := range a {
+		if set[s] {
+			out = append(out, s)
+		}
+	}
+	return out
+}
+
+func runYouTubeFetch(cacheDir, officialCache, companyRepo, configDir string, force bool, ttl time.Duration) error {
+	apiKey := credentials.ResolveService(configDir, "youtube", []string{"YOUTUBE_API_KEY"})
+
+	scanDirs := []string{officialCache}
+	if companyRepo != "" {
+		scanDirs = append(scanDirs, filepath.Join(filepath.Dir(officialCache), "company"))
+	}
+
+	for _, base := range scanDirs {
+		packsDir := filepath.Join(base, "content", "packs")
+		entries, err := os.ReadDir(packsDir)
+		if err != nil {
+			continue
+		}
+		for _, entry := range entries {
+			if !entry.IsDir() {
+				continue
+			}
+			packID := entry.Name()
+			ytPath := filepath.Join(packsDir, packID, "youtube.yaml")
+			data, err := os.ReadFile(ytPath)
+			if err != nil {
+				continue
+			}
+			var sources []content.YouTubeSource
+			if err := yaml.Unmarshal(data, &sources); err != nil {
+				continue
+			}
+			for _, src := range sources {
+				if src.Type != "playlist" {
+					continue
+				}
+				src.PackID = packID
+				if !force {
+					age := videos.CacheAge(cacheDir, packID, src.ID)
+					if age >= 0 && age < ttl {
+						continue
+					}
+				}
+				fetchAndCacheSource(cacheDir, src, apiKey)
+			}
+		}
+	}
+	return nil
+}
+
+func fetchAndCacheSource(cacheDir string, src content.YouTubeSource, apiKey string) {
+	episodes, err := youtube.Resolve(src, apiKey)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "sap-devs: fetch %s/%s: %v\n", src.PackID, src.ID, err)
+		return
+	}
+	vids := make([]content.Video, 0, len(episodes))
+	for _, ep := range episodes {
+		v := content.Video{
+			ID:          fmt.Sprintf("%s/%s/%s", src.PackID, src.ID, ep.ID),
+			Title:       ep.Title,
+			URL:         ep.URL,
+			VideoID:     ep.ID,
+			Published:   ep.Published,
+			Description: ep.Description,
+			Duration:    ep.Duration,
+			SourceID:    src.ID,
+			PackID:      src.PackID,
+		}
+		tagSet := make(map[string]bool)
+		for _, t := range src.Tags {
+			tagSet[t] = true
+		}
+		for _, t := range ep.Tags {
+			tagSet[t] = true
+		}
+		for t := range tagSet {
+			v.Tags = append(v.Tags, t)
+		}
+		sort.Strings(v.Tags)
+		vids = append(vids, v)
+	}
+	_ = videos.SaveCache(cacheDir, src.PackID, src.ID, vids)
 }
 
 func init() {

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
@@ -40,6 +41,7 @@ var configShowCmd = &cobra.Command{
 		fmt.Fprintln(cmd.OutOrStdout(), i18n.Tf(i18n.ActiveLang, "config.show.sync_resources", map[string]any{"Value": cfg.Sync.Resources}))
 		fmt.Fprintln(cmd.OutOrStdout(), i18n.Tf(i18n.ActiveLang, "config.show.sync_context", map[string]any{"Value": cfg.Sync.Context}))
 		fmt.Fprintln(cmd.OutOrStdout(), i18n.Tf(i18n.ActiveLang, "config.show.sync_mcp", map[string]any{"Value": cfg.Sync.MCP}))
+		fmt.Fprintln(cmd.OutOrStdout(), i18n.Tf(i18n.ActiveLang, "config.show.sync_youtube", map[string]any{"Value": cfg.Sync.YouTube}))
 		fmt.Fprintln(cmd.OutOrStdout(), i18n.Tf(i18n.ActiveLang, "config.show.sync_disabled", map[string]any{"Value": cfg.Sync.Disabled}))
 		tipRotationDisplay := cfg.Tip.Rotation
 		if tipRotationDisplay == "" {
@@ -60,6 +62,8 @@ var configShowCmd = &cobra.Command{
 		// Show token status (masked — never show the full value)
 		tok, loadErr := credentials.Load(paths.ConfigDir)
 		fmt.Fprintln(cmd.OutOrStdout(), i18n.Tf(i18n.ActiveLang, "config.show.github_token", map[string]any{"Value": maskedToken(tok, loadErr, i18n.ActiveLang)}))
+		ytTok, ytLoadErr := credentials.LoadService(paths.ConfigDir, "youtube")
+		fmt.Fprintln(cmd.OutOrStdout(), i18n.Tf(i18n.ActiveLang, "config.show.youtube_token", map[string]any{"Value": maskedToken(ytTok, ytLoadErr, i18n.ActiveLang)}))
 		return nil
 	},
 }
@@ -98,6 +102,12 @@ var configSetCmd = &cobra.Command{
 			cfg.CompanyRepo = args[1]
 		case "language":
 			cfg.Language = args[1]
+		case "sync.youtube":
+			d, parseErr := time.ParseDuration(args[1])
+			if parseErr != nil {
+				return fmt.Errorf("invalid duration %q for %s: %w", args[1], args[0], parseErr)
+			}
+			cfg.Sync.YouTube = d
 		default:
 			return fmt.Errorf("%s", i18n.Tf(i18n.ActiveLang, "config.set.unknown_key", map[string]any{"Key": args[0]}))
 		}
@@ -132,6 +142,7 @@ var configCompanyCmd = &cobra.Command{
 }
 
 var tokenDeleteFlag bool
+var tokenServiceFlag string
 
 var configTokenCmd = &cobra.Command{
 	Use:   "token [value]",
@@ -157,7 +168,12 @@ to a credentials file with restricted permissions.`,
 		}
 
 		if tokenDeleteFlag {
-			err := credentials.Delete(paths.ConfigDir)
+			var err error
+			if tokenServiceFlag != "" {
+				err = credentials.DeleteService(paths.ConfigDir, tokenServiceFlag)
+			} else {
+				err = credentials.Delete(paths.ConfigDir)
+			}
 			if errors.Is(err, credentials.ErrNotFound) {
 				fmt.Fprintln(cmd.OutOrStdout(), i18n.T(i18n.ActiveLang, "config.token.no_token"))
 				return nil
@@ -188,8 +204,14 @@ to a credentials file with restricted permissions.`,
 			}
 		}
 
-		if err := credentials.Store(paths.ConfigDir, token); err != nil {
-			return err
+		var storeErr error
+		if tokenServiceFlag != "" {
+			storeErr = credentials.StoreService(paths.ConfigDir, tokenServiceFlag, token)
+		} else {
+			storeErr = credentials.Store(paths.ConfigDir, token)
+		}
+		if storeErr != nil {
+			return storeErr
 		}
 		fmt.Fprintln(cmd.OutOrStdout(), i18n.T(i18n.ActiveLang, "config.token.stored"))
 		return nil
@@ -198,6 +220,7 @@ to a credentials file with restricted permissions.`,
 
 func init() {
 	configTokenCmd.Flags().BoolVar(&tokenDeleteFlag, "delete", false, "Remove the stored token")
+	configTokenCmd.Flags().StringVar(&tokenServiceFlag, "service", "", "Service to store token for (e.g. youtube)")
 	configCmd.AddCommand(configShowCmd, configSetCmd, configCompanyCmd, configTokenCmd, configLocationCmd, configTipRotationCmd, configEventsCmd)
 	rootCmd.AddCommand(configCmd)
 }

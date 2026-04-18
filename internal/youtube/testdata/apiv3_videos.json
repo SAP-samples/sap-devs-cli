@@ -1,0 +1,14 @@
+{
+  "items": [
+    {
+      "id": "vid001",
+      "contentDetails": { "duration": "PT10M30S" },
+      "snippet": { "tags": ["cap", "tutorial", "sap"] }
+    },
+    {
+      "id": "vid002",
+      "contentDetails": { "duration": "PT45M12S" },
+      "snippet": { "tags": ["cap", "hana", "advanced"] }
+    }
+  ]
+}
