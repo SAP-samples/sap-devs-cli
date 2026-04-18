@@ -239,24 +239,24 @@ func matchesFilters(m Mission, f content.DiscoveryProfileFilters) bool {
 		return true
 	}
 	for _, p := range f.Products {
-		if containsCSV(m.Product, p) {
+		if ContainsCSV(m.Product, p) {
 			return true
 		}
 	}
 	for _, c := range f.Categories {
-		if containsCSV(m.Category, c) {
+		if ContainsCSV(m.Category, c) {
 			return true
 		}
 	}
 	for _, t := range f.FocusTags {
-		if containsCSV(m.FocusTags, t) {
+		if ContainsCSV(m.FocusTags, t) {
 			return true
 		}
 	}
 	return false
 }
 
-func containsCSV(csv, val string) bool {
+func ContainsCSV(csv, val string) bool {
 	for _, v := range strings.Split(csv, ",") {
 		if strings.TrimSpace(v) == val {
 			return true
