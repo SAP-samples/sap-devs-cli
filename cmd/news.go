@@ -216,8 +216,9 @@ func fridayHookMessage(day time.Weekday) string {
 }
 
 var newsHookCmd = &cobra.Command{
-	Use:   "hook",
-	Short: "Print a Friday Developer News reminder (used by session-start hook)",
+	Use:    "hook",
+	Short:  "Print a Friday Developer News reminder (used by session-start hook)",
+	Hidden: true,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if msg := fridayHookMessage(time.Now().Weekday()); msg != "" {
 			fmt.Fprintln(cmd.OutOrStdout(), msg)
