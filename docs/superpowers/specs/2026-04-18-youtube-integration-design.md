@@ -157,11 +157,42 @@ archiveCategories := []string{"tips", "tools", "resources", "context", "mcp", "a
 independentCategories := []string{"events", "youtube"}
 ```
 
-The archive download (phase 1) and marker expansion (phase 2) only run when at least one `archiveCategories` entry is stale (or `force` is set). Phases 3-4 (events, YouTube) each check their own staleness independently via `engine.IsStale(cat) || force` before executing.
+The `ttls` map includes entries for both groups — `ttls["youtube"]` feeds `engine.IsStale("youtube")` in phase 4, not the archive staleness check.
 
-`MarkAllSynced` is called separately for each group: archive categories are marked after phase 2 completes; `"events"` is marked after phase 3; `"youtube"` is marked after phase 4. This means `sap-devs sync --category youtube` resolves API key, fetches playlists, updates cache, and marks `"youtube"` synced — without downloading the archive.
+**Guard logic:** Two separate staleness checks:
 
-When `--category` is set to an independent category, the archive phases are skipped entirely. When `--category` is set to an archive category, only that category is synced (existing behavior) and independent phases are skipped.
+```go
+// Intersect with --category filter if set
+activeArchive := intersect(archiveCategories, categories)
+activeIndependent := intersect(independentCategories, categories)
+
+archiveNeedsSync := force
+for _, cat := range activeArchive {
+    if engine.IsStale(cat) { archiveNeedsSync = true; break }
+}
+
+independentNeedsSync := force
+for _, cat := range activeIndependent {
+    if engine.IsStale(cat) { independentNeedsSync = true; break }
+}
+
+if !archiveNeedsSync && !independentNeedsSync {
+    fmt.Fprintln(out, "up to date")
+    return nil
+}
+```
+
+The "up to date" early-exit fires only when both groups are fresh. Phase 1 (archive download) and phase 2 (marker expansion) only run when `archiveNeedsSync` is true. Phase 3 (events) runs when `"events"` is in `activeIndependent` and `engine.IsStale("events") || force`. Phase 4 (YouTube) runs when `"youtube"` is in `activeIndependent` and `engine.IsStale("youtube") || force`.
+
+`MarkAllSynced` is called separately: archive categories after phase 2; `"events"` after phase 3; `"youtube"` after phase 4.
+
+**`--category` flag interaction:**
+
+- `--category youtube` → `activeArchive` is empty, `archiveNeedsSync` is false, phases 1-2 skipped. Phase 4 runs if YouTube is stale. Phase 3 skipped (events not in filter).
+- `--category tips` → `activeIndependent` is empty, phases 3-4 skipped. Archive downloads if `tips` is stale.
+- No `--category` → all phases evaluated independently.
+
+**Note:** This also fixes a pre-existing gap where `runEventsFetch` (phase 3) currently runs unconditionally after phase 2, even with `--category tips`. The new guard applies consistently to both events and YouTube.
 
 ### Sync phase 4
 
