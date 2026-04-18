@@ -1,0 +1,20 @@
+missions:
+  - id: 3258
+    name: Get Started with SAP Integration Suite
+    featured: true
+  - id: 4441
+    name: Get Started with SAP Build Code and Joule using Generative AI
+    featured: true
+  - id: 4338
+    name: Get Started with SAP Business AI
+    featured: true
+
+services:
+  - id: 05e5c025-fcb9-4953-8489-7018aefe5aa7
+    name: SAP Document Management service, application option
+
+guidance:
+  - id: discover-discover-sap-btp
+    name: Discover SAP BTP
+  - id: prepare-sap-btp-landscape-set-up-and-planning
+    name: SAP BTP Landscape Set Up and Planning

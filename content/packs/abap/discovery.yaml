@@ -1,0 +1,12 @@
+profile_filters:
+  products: ["1002", "1006"]
+  categories: ["appdev"]
+  focus_tags: ["17"]
+
+missions: []
+
+guidance:
+  - id: prepare-extension-use-case-assessment
+    name: Extension Use Case Assessment
+  - id: prepare-extension-technology-assessment
+    name: Extension Technology Assessment
