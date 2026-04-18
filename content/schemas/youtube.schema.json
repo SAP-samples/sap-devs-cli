@@ -1,0 +1,27 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "YouTube Sources",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": ["id", "type", "name"],
+    "properties": {
+      "id": { "type": "string" },
+      "type": { "type": "string", "enum": ["playlist", "video"] },
+      "name": { "type": "string" },
+      "playlist_id": { "type": "string" },
+      "video_id": { "type": "string" },
+      "tags": { "type": "array", "items": { "type": "string" } }
+    },
+    "allOf": [
+      {
+        "if": { "properties": { "type": { "const": "playlist" } } },
+        "then": { "required": ["playlist_id"] }
+      },
+      {
+        "if": { "properties": { "type": { "const": "video" } } },
+        "then": { "required": ["video_id"] }
+      }
+    ]
+  }
+}

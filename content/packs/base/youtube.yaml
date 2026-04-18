@@ -1,0 +1,11 @@
+- id: sap-dev-news
+  type: playlist
+  name: SAP Developer News
+  playlist_id: PL6RpkC85SLQAVBSQXN9522_1jNvPavBgg
+  tags: [news, weekly]
+
+- id: tech-bytes
+  type: playlist
+  name: SAP Tech Bytes
+  playlist_id: PLkzo92owKnVw3l4fqcLoQalyFi9K4-UdY
+  tags: [tutorial, short-form]

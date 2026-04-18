@@ -9,6 +9,7 @@
     "./content/schemas/influencers.schema.json": "**/packs/*/influencers.yaml",
     "./content/schemas/event-types.schema.json": "**/packs/*/event-types.yaml",
     "./content/schemas/event-instances.schema.json": "**/packs/*/event-instances.yaml",
-    "./content/schemas/samples.schema.json": "**/packs/*/samples.yaml"
+    "./content/schemas/samples.schema.json": "**/packs/*/samples.yaml",
+    "./content/schemas/youtube.schema.json": "**/packs/*/youtube.yaml"
   }
 }
