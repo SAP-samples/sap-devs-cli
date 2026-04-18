@@ -94,25 +94,7 @@ i18n infrastructure is complete and all commands are wired (`en` + `de` catalogs
 
 ---
 
-### `sap-devs events`
-
-Surface upcoming SAP community events from the CLI.
-
-**Scope:**
-
-- General event listing and calendaring
-- Dedicated coverage for Devtoberfest (October), SAP TechEd, and CodeJams
-
-**Location-based filtering:**
-
-When a `location` is configured (see `sap-devs config location` above), apply smart filtering to event results:
-
-- Surface in-person events near the user's location (CodeJams, local meetups, regional SAP user groups)
-- Suppress or de-prioritise in-person events in distant regions by default (show with `--all` to override)
-- Retain virtual and global events (online CodeJams, SAP TechEd virtual, Devtoberfest) in all results regardless of location — these are globally accessible and should never be filtered out
-- Events with no location data (i.e. virtual-only) are always included
-
-**Event metadata needed:** `location` field in `events.yaml` (city/country or `virtual`); `scope` field (`local` / `regional` / `global` / `virtual`) to drive filtering logic without requiring geo-distance calculations.
+### `sap-devs events` - DONE ✔️
 
 ---
 
