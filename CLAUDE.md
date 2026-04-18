@@ -97,7 +97,7 @@ On every command invocation (except `update` and dev builds), a background gorou
 | `mcp list/install/status` | Browse and wire SAP MCP servers into AI tool configs |
 | `hook list/install/uninstall/status` | Wire AI tool lifecycle hooks from pack definitions |
 | `resources` | List curated resources from active packs |
-| `news list/latest/open/search/read` | Browse SAP Developer News episodes fetched live from YouTube RSS and SAP Community |
+| `news list/latest/open/search/read/hook` | Browse SAP Developer News episodes fetched live from YouTube RSS and SAP Community; `news hook` prints a Friday reminder for use as a session-start hook |
 | `update` | Self-update the binary |
 | `init` | First-time setup wizard |
 

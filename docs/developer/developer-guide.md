@@ -161,7 +161,9 @@ type BlogPost struct { Title, URL string; Published time.Time }
 type NewsItem struct { Episode youtube.Episode; Community *community.BlogPost }
 ```
 
-**Subcommands:** `list [-n]`, `latest`, `open <id>`, `search <query>`, `read <id> [--plain]`.
+**Subcommands:** `list [-n]`, `latest`, `open <id>`, `search <query>`, `read <id> [--plain]`, `hook`.
+
+**`news hook`:** Prints a Friday reminder message on Fridays, silent otherwise. Designed as a `sessionStart` hook for Claude Code — install with `sap-devs hook install community/friday-developer-news`. The pure helper `fridayHookMessage(day time.Weekday) string` holds all logic and is unit-tested in `cmd/news_test.go`. Note: this is distinct from the Friday tip override in `cmd/tip.go`, which fetches the latest episode live via YouTube RSS; `news hook` prints a static prompt and delegates fetching to the AI.
 
 **Pager resolution** (for `news read`): `$PAGER` env var (split on whitespace to support args like `less -R`) → `exec.LookPath("less")` silent probe → plain print. On Windows, `less` is absent by default; plain print is the expected fallback.
 
