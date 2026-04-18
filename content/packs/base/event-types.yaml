@@ -1,8 +1,8 @@
 - id: codejam
   name: SAP CodeJam
   description: Hands-on workshop series hosted by SAP developer advocates
-  source: rss
-  rss_url: https://community.sap.com/t5/sap-codejam/bg-p/code-jam/rss
+  source: khoros
+  khoros_board_id: codejam-events
   default_scope: local
   tags: [workshop, hands-on, in-person]
 

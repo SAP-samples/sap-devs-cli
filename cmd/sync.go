@@ -230,7 +230,7 @@ func runEventsFetch(cacheDir, officialCache string, force bool) error {
 			continue
 		}
 		for _, et := range types {
-			if et.Source == "rss" && et.RSSURL != "" {
+			if et.Source != "manual" {
 				events.Resolve(et, cacheDir, force)
 			}
 		}

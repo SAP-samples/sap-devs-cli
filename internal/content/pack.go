@@ -113,7 +113,8 @@ type EventType struct {
 	Name         string   `yaml:"name"`
 	Description  string   `yaml:"description,omitempty"`
 	Source       string   `yaml:"source"`
-	RSSURL       string   `yaml:"rss_url,omitempty"`
+	RSSURL        string   `yaml:"rss_url,omitempty"`
+	KhorosBoardID string   `yaml:"khoros_board_id,omitempty"`
 	DefaultScope string   `yaml:"default_scope"`
 	Tags         []string `yaml:"tags,omitempty"`
 	PackID       string   // set at load time
