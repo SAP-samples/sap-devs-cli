@@ -82,18 +82,7 @@ i18n infrastructure is complete and all commands are wired (`en` + `de` catalogs
 
 ## Commands
 
-### `sap-devs news`
-
-Browse and open SAP Developer News episodes from the terminal.
-
-**Subcommands:**
-
-- `news` / `news list` — list recent episodes (default: last 10), most recent first
-- `news latest` — open the most recent episode in the browser immediately
-- `news open <id>` — open a specific episode by ID
-- `news search <query>` — filter by title, description, or tags
-
-**Data:** `news.yaml` per pack (date, title, URL, description, tags), loaded and merged by `ContentLoader`, updated via `sap-devs sync`. Start with static YAML; see YouTube integration below for live fetching.
+### `sap-devs news` - DONE ✔️
 
 ---
 
@@ -161,6 +150,34 @@ Override the daily tip every Friday to always show a promotion for the SAP Devel
 - Add `pinned_weekday: friday` field to the tip data model
 - Add `SelectPinnedTip(packs, weekday)` to `internal/content/tip.go`
 - In `cmd/tip.go`, check `time.Now().Weekday() == time.Friday` before the normal `SelectTip` call; fall through if no pinned tip is found
+
+---
+
+### Friday Developer News hook reminder
+
+On Fridays, fire a hook at AI session start that reminds the user a new SAP Developer News episode is likely out and asks if they want to open it.
+
+**Motivation:** The tip override surfaces the show passively (shell prompt). A hook-based reminder surfaces it *interactively* — the AI asks the user at the moment they're already engaged, which is a far stronger nudge.
+
+**Implementation:**
+
+- Add a `hooks` entry in the relevant pack (e.g. `community`) in `hooks.yaml` (or extend the existing hook schema):
+
+  ```yaml
+  - id: community/friday-developer-news
+    trigger: session-start
+    weekday: friday
+    once_per_day: true
+    message: |
+      📺 It's Friday — a new SAP Developer News episode is likely out!
+      Would you like me to open the latest episode? Run `sap-devs news latest` or just say yes.
+  ```
+
+- `hook install` wires the hook into the AI tool's session-start lifecycle (e.g. Claude Code `UserPromptSubmit`, Cursor system prompt injection).
+- The runtime checks `time.Now().Weekday() == time.Friday` and `once_per_day` deduplication (keyed on date in the cache state file) before emitting the message.
+- `once_per_day: true` ensures the reminder fires only on the first interaction each Friday, not on every message.
+
+**Dependency:** `sap-devs news` command must exist (specifically `news latest`) for the call-to-action to be actionable.
 
 ---
 
