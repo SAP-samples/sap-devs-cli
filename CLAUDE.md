@@ -92,7 +92,7 @@ On every command invocation (except `update` and dev builds), a background gorou
 | `sync` | Fetch latest content from official/company repos |
 | `profile set/list/show` | Manage active developer persona |
 | `config show/set/company` | View and edit `~/.config/sap-devs/config.yaml` |
-| `tip` | Show a random tip; `tip install`/`tip uninstall` wires it into your shell prompt |
+| `tip` | Show a SAP developer tip; on Fridays shows the latest SAP Developer News episode (bypassed by `--new`); `tip install`/`tip uninstall` wires it into your shell prompt |
 | `doctor` | Check local tool versions against pack requirements (`--fix` for install hints) |
 | `mcp list/install/status` | Browse and wire SAP MCP servers into AI tool configs |
 | `hook list/install/uninstall/status` | Wire AI tool lifecycle hooks from pack definitions |

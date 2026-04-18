@@ -165,7 +165,11 @@ type NewsItem struct { Episode youtube.Episode; Community *community.BlogPost }
 
 **Pager resolution** (for `news read`): `$PAGER` env var (split on whitespace to support args like `less -R`) → `exec.LookPath("less")` silent probe → plain print. On Windows, `less` is absent by default; plain print is the expected fallback.
 
-**Static footer constants** in `cmd/news.go`: LinkedIn newsletter URL (always shown); `newsYTMusic` (suppressed when empty).
+**Static footer constants** in `cmd/news.go`: LinkedIn newsletter URL (always shown); `newsYTMusic` (suppressed when empty); `newsPlaylistURL` (playlist watch link — also used by the Friday tip override in `cmd/tip.go`).
+
+**Friday tip override:** On Fridays, `sap-devs tip` calls `fridayNewsOverride()` (`cmd/tip.go`) which fetches `newsPlaylistRSS` via `youtube.FetchPlaylist` and returns the latest episode as a `*content.Tip`. On fetch failure or an empty playlist it falls back to a hardcoded static tip pointing at `newsPlaylistURL`. The override is skipped when `useRandom` is true (`--new` flag or `SAP_DEVS_DEV=1`).
+
+**HTTP User-Agent:** `FetchBlogPosts` and `FetchPostContent` send `User-Agent: Mozilla/5.0 (compatible; sap-devs/1.0)`. SAP Community returns HTTP 403 to bare Go HTTP clients without this header.
 
 ### Credentials
 
