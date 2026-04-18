@@ -32,6 +32,7 @@ type Pack struct {
 	PreambleMD string
 	Hooks      []HookDef
 	Influencers []Influencer
+	Samples     []Sample
 
 	EventTypes     []EventType
 	EventInstances []EventInstance
@@ -105,6 +106,17 @@ type Influencer struct {
 	Focus  []string          `yaml:"focus"`
 	Links  map[string]string `yaml:"links"`
 	PackID string            // set at load time, not in YAML
+}
+
+// Sample is a canonical code sample reference within a pack.
+type Sample struct {
+	ID          string   `yaml:"id"`
+	Label       string   `yaml:"label"`
+	URL         string   `yaml:"url"`
+	Description string   `yaml:"description"`
+	Tags        []string `yaml:"tags"`
+	Inject      bool     `yaml:"inject"`
+	PackID      string   // set at load time, not in YAML
 }
 
 // EventType defines a category of events and its data source.
@@ -249,6 +261,12 @@ func LoadPack(packDir string, lang string) (*Pack, error) {
 		_ = yaml.Unmarshal(data, &pack.Influencers)
 		for i := range pack.Influencers {
 			pack.Influencers[i].PackID = pack.ID
+		}
+	}
+	if data, err := os.ReadFile(filepath.Join(packDir, "samples.yaml")); err == nil {
+		_ = yaml.Unmarshal(data, &pack.Samples)
+		for i := range pack.Samples {
+			pack.Samples[i].PackID = pack.ID
 		}
 	}
 	if data, err := os.ReadFile(filepath.Join(packDir, "event-types.yaml")); err == nil {
