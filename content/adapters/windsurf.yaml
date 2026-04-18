@@ -1,0 +1,10 @@
+id: windsurf
+name: Windsurf
+type: file-inject
+targets:
+  - scope: project
+    path: ".windsurf/rules/sap-developer-context.md"
+    mode: replace-file
+detect:
+  - path: "~/.codeium/windsurf"
+  - command: "windsurf --version"

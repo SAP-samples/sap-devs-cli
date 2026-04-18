@@ -384,33 +384,21 @@ Give each section of `context.md` a verbosity tag so injection density can be co
 
 ## New Adapters
 
-### Zed editor adapter
+### ~~Zed editor adapter~~ — Covered by existing Claude Code adapter
 
-Add support for injecting SAP context into [Zed](https://zed.dev), which supports AI context rules via `.zed/settings.json` and project-level assistant context files.
-
-**Why now:** Zed is growing rapidly in developer communities, particularly among Go and Rust developers. Its AI features (Zed AI, Claude integration) are first-class. Adding an adapter follows the same pattern as the existing Cursor adapter.
-
-**Scope:** `file-inject` adapter targeting `.zed/assistant_context.md` or equivalent; detect Zed by checking for the `zed` binary or `~/.config/zed/settings.json`.
+Zed reads project root files in priority order: `.rules`, `.cursorrules`, `.windsurfrules`, then `CLAUDE.md`, `GEMINI.md`, etc. Since our Claude Code adapter injects into `CLAUDE.md`, Zed users at project scope are already covered. A dedicated `.rules` file would override `CLAUDE.md` and any user-created `.rules`, so no separate adapter is needed.
 
 ---
 
-### Windsurf (Codeium) adapter
+### ~~Windsurf (Codeium) adapter~~ — Done
 
-Add support for injecting SAP context into [Windsurf](https://codeium.com/windsurf) (formerly Codeium), which supports `.windsurf/rules/*.md` — the same pattern as Cursor's `.cursor/rules/*.mdc`.
-
-**Why now:** Windsurf is gaining enterprise traction. The adapter is low-effort given the Cursor adapter already exists and the rule file format is nearly identical.
-
-**Scope:** `file-inject` adapter targeting `.windsurf/rules/sap.md`; detect Windsurf by checking for the `windsurf` binary or `~/.windsurf/` config directory.
+Implemented in `content/adapters/windsurf.yaml`. Project-scope `file-inject` targeting `.windsurf/rules/sap-developer-context.md`. Global scope skipped (single shared file, 6k limit).
 
 ---
 
-### Gemini Code Assist adapter
+### ~~Gemini Code Assist adapter~~ — Done
 
-Add support for injecting SAP context into Google's [Gemini Code Assist](https://cloud.google.com/gemini/docs/codeassist/overview) VS Code extension, which supports workspace-level system prompt injection via a `.gemini/system.md` file (or equivalent).
-
-**Why now:** Gemini Code Assist is gaining adoption in enterprise environments, particularly at SAP customers using Google Cloud. An adapter would cover this segment without any changes to the content system.
-
-**Scope:** `file-inject` adapter targeting `.gemini/system.md`; detect by checking for the Gemini Code Assist extension config in the VS Code extensions directory.
+Implemented in `content/adapters/gemini-code-assist.yaml`. Both global (`~/.gemini/GEMINI.md`) and project (`./GEMINI.md`) scopes via `replace-section`. MCP config wired to `~/.gemini/settings.json`.
 
 ---
 
