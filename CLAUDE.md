@@ -96,6 +96,7 @@ On every command invocation (except `update` and dev builds), a background gorou
 | `doctor` | Check local tool versions against pack requirements (`--fix` for install hints) |
 | `mcp list/install/status` | Browse and wire SAP MCP servers into AI tool configs |
 | `hook list/install/uninstall/status` | Wire AI tool lifecycle hooks from pack definitions |
+| `events` | Browse upcoming SAP community events with location filtering; `events types` lists event categories |
 | `influencers` | Browse SAP community influencers and thought leaders |
 | `resources` | List curated resources from active packs |
 | `news list/latest/open/search/read/hook` | Browse SAP Developer News episodes fetched live from YouTube RSS and SAP Community; `news hook` prints a Friday reminder for use as a session-start hook |
