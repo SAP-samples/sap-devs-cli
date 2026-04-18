@@ -20,7 +20,7 @@ type frontmatter struct {
 }
 
 // Parse parses a full tutorial markdown into a Tutorial struct.
-func Parse(md, slug, repo, branch string) (*Tutorial, error) {
+func Parse(md, slug, repo string) (*Tutorial, error) {
 	fm, body, err := splitFrontmatter(md)
 	if err != nil {
 		return nil, err
@@ -38,15 +38,11 @@ func Parse(md, slug, repo, branch string) (*Tutorial, error) {
 		tut.Steps = parseV1Steps(body)
 	}
 
-	for i := range tut.Steps {
-		tut.Steps[i].Content = ResolveImageURLs(tut.Steps[i].Content, repo, branch, slug)
-	}
-
 	return tut, nil
 }
 
 // ParseFrontmatterOnly extracts metadata without parsing steps.
-func ParseFrontmatterOnly(md, slug, repo, branch string) (*TutorialMeta, error) {
+func ParseFrontmatterOnly(md, slug, repo string) (*TutorialMeta, error) {
 	fm, body, err := splitFrontmatter(md)
 	if err != nil {
 		return nil, err
@@ -207,10 +203,12 @@ const rawBaseURL = "https://raw.githubusercontent.com"
 
 var imageRE = regexp.MustCompile(`!\[([^\]]*)\]\(([^)]+)\)`)
 
-// ResolveImageURLs replaces relative image paths with full GitHub raw content URLs.
+// ResolveImageURLs replaces relative image paths with full GitHub raw content
+// URLs rendered as markdown links so glamour doesn't word-wrap the URL.
 func ResolveImageURLs(content, repo, branch, slug string) string {
 	return imageRE.ReplaceAllStringFunc(content, func(match string) string {
 		parts := imageRE.FindStringSubmatch(match)
+		alt := parts[1]
 		path := parts[2]
 		if strings.HasPrefix(path, "http://") || strings.HasPrefix(path, "https://") {
 			return match
@@ -219,7 +217,11 @@ func ResolveImageURLs(content, repo, branch, slug string) string {
 			return match
 		}
 		path = strings.TrimLeft(path, "/")
-		return fmt.Sprintf("![%s](%s/sap-tutorials/%s/%s/tutorials/%s/%s)", parts[1], rawBaseURL, repo, branch, slug, path)
+		url := fmt.Sprintf("%s/sap-tutorials/%s/%s/tutorials/%s/%s", rawBaseURL, repo, branch, slug, path)
+		if alt != "" {
+			return fmt.Sprintf("[View image: %s](%s)", alt, url)
+		}
+		return fmt.Sprintf("[View image](%s)", url)
 	})
 }
 

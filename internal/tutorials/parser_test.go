@@ -41,7 +41,7 @@ entity Books { key ID : Integer; title : String; }
 `
 
 func TestParseV2_BasicStructure(t *testing.T) {
-	tut, err := tutorials.Parse(sampleV2Markdown, "cap-getting-started", "Tutorials", "main")
+	tut, err := tutorials.Parse(sampleV2Markdown, "cap-getting-started", "Tutorials")
 	require.NoError(t, err)
 	assert.Equal(t, "Getting Started with CAP", tut.Title)
 	assert.Equal(t, "Learn how to create your first CAP project", tut.Description)
@@ -61,14 +61,14 @@ func TestParseV2_BasicStructure(t *testing.T) {
 
 func TestParseV2_TitleFromFrontmatter(t *testing.T) {
 	md := "---\nparser: v2\ntitle: Explicit Title\ntime: 10\ntags: [tutorial>advanced]\nprimary_tag: topic>cloud\n---\n\n### Step One\nContent\n"
-	tut, err := tutorials.Parse(md, "test-slug", "Tutorials", "main")
+	tut, err := tutorials.Parse(md, "test-slug", "Tutorials")
 	require.NoError(t, err)
 	assert.Equal(t, "Explicit Title", tut.Title)
 }
 
 func TestParseV2_URLGeneration(t *testing.T) {
 	md := "---\nparser: v2\ntime: 10\ntags: [tutorial>beginner]\nprimary_tag: topic>cloud\n---\n\n# Title\n\n### Step\nContent\n"
-	tut, err := tutorials.Parse(md, "my-tutorial", "Tutorials", "main")
+	tut, err := tutorials.Parse(md, "my-tutorial", "Tutorials")
 	require.NoError(t, err)
 	assert.Equal(t, "https://developers.sap.com/tutorials/my-tutorial.html", tut.URL)
 }
@@ -91,7 +91,7 @@ Then do this.
 `
 
 func TestParseV1_AccordionSteps(t *testing.T) {
-	tut, err := tutorials.Parse(sampleV1Markdown, "legacy-tutorial", "Tutorials", "main")
+	tut, err := tutorials.Parse(sampleV1Markdown, "legacy-tutorial", "Tutorials")
 	require.NoError(t, err)
 	assert.Equal(t, "Legacy Tutorial", tut.Title)
 	assert.Equal(t, "intermediate", tut.Level)
@@ -103,7 +103,7 @@ func TestParseV1_AccordionSteps(t *testing.T) {
 
 func TestParseFrontmatterOnly(t *testing.T) {
 	md := "---\nparser: v2\ntime: 30\ntags: [tutorial>beginner, topic>cloud]\nprimary_tag: topic>cloud\nauthor_name: Jane Doe\n---\n\n# My Tutorial\n<!-- description --> A description\n\n### Step 1\nContent\n"
-	meta, err := tutorials.ParseFrontmatterOnly(md, "my-slug", "TestRepo", "main")
+	meta, err := tutorials.ParseFrontmatterOnly(md, "my-slug", "TestRepo")
 	require.NoError(t, err)
 	assert.Equal(t, "my-slug", meta.Slug)
 	assert.Equal(t, "My Tutorial", meta.Title)
@@ -117,14 +117,14 @@ func TestParseFrontmatterOnly(t *testing.T) {
 
 func TestParseFrontmatterOnly_SlugFallbackTitle(t *testing.T) {
 	md := "---\ntime: 10\ntags: [tutorial>beginner]\nprimary_tag: x\n---\nNo headings here.\n"
-	meta, err := tutorials.ParseFrontmatterOnly(md, "my-slug", "Repo", "main")
+	meta, err := tutorials.ParseFrontmatterOnly(md, "my-slug", "Repo")
 	require.NoError(t, err)
 	assert.Equal(t, "my-slug", meta.Title)
 }
 
 func TestParseV2_OptionBlocks(t *testing.T) {
 	md := "---\nparser: v2\ntime: 10\ntags: [tutorial>beginner]\nprimary_tag: x\n---\n\n# Test\n\n### Install dependencies\n\n[OPTION BEGIN [Node.js]]\nRun `npm install`.\n[OPTION END]\n\n[OPTION BEGIN [Java]]\nRun `mvn install`.\n[OPTION END]\n"
-	tut, err := tutorials.Parse(md, "test-options", "Tutorials", "main")
+	tut, err := tutorials.Parse(md, "test-options", "Tutorials")
 	require.NoError(t, err)
 	require.Len(t, tut.Steps, 1)
 	assert.Contains(t, tut.Steps[0].Content, "#### Option: Node.js")

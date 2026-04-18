@@ -243,6 +243,18 @@ var tutorialShowCmd = &cobra.Command{
 			return fmt.Errorf("%s", i18n.Tf(i18n.ActiveLang, "tutorial.not_found", map[string]any{"Slug": slug}))
 		}
 
+		// Determine branch from cached repo info
+		branch := "main"
+		repos, repoErr := tutorials.LoadRepoInfo(paths.CacheDir)
+		if repoErr == nil {
+			for _, r := range repos {
+				if r.Name == meta.Repo {
+					branch = r.DefaultBranch
+					break
+				}
+			}
+		}
+
 		// Try to load cached content
 		tut, err := tutorials.LoadContent(paths.CacheDir, slug)
 		if err != nil {
@@ -252,31 +264,24 @@ var tutorialShowCmd = &cobra.Command{
 				token = os.Getenv("GH_TOKEN")
 			}
 
-			// Determine branch from cached repo info
-			branch := "main"
-			repos, repoErr := tutorials.LoadRepoInfo(paths.CacheDir)
-			if repoErr == nil {
-				for _, r := range repos {
-					if r.Name == meta.Repo {
-						branch = r.DefaultBranch
-						break
-					}
-				}
-			}
-
 			client := tutorials.NewClient(tutorials.ClientConfig{Token: token})
 			raw, fetchErr := client.FetchRawMarkdown(meta.Repo, branch, slug)
 			if fetchErr != nil {
 				return fmt.Errorf("fetch tutorial: %w", fetchErr)
 			}
 
-			tut, err = tutorials.Parse(raw, slug, meta.Repo, branch)
+			tut, err = tutorials.Parse(raw, slug, meta.Repo)
 			if err != nil {
 				return fmt.Errorf("parse tutorial: %w", err)
 			}
 
 			// Cache for next time (best-effort)
 			_ = tutorials.SaveContent(paths.CacheDir, tut)
+		}
+
+		// Resolve relative image paths to full GitHub raw URLs
+		for i := range tut.Steps {
+			tut.Steps[i].Content = tutorials.ResolveImageURLs(tut.Steps[i].Content, meta.Repo, branch, slug)
 		}
 
 		if tutorialInteractive {

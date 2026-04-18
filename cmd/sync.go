@@ -539,7 +539,7 @@ func runTutorialsFetch(cacheDir string, force bool) error {
 				if err != nil {
 					return nil
 				}
-				meta, err := tutorials.ParseFrontmatterOnly(md, slug, repo, branch)
+				meta, err := tutorials.ParseFrontmatterOnly(md, slug, repo)
 				if err != nil {
 					return nil
 				}
