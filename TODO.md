@@ -400,22 +400,6 @@ Give each section of `context.md` a verbosity tag so injection density can be co
 
 ### ~~Code sample pinning (`samples.yaml`)~~ — DONE ✔️
 
-A `samples.yaml` per pack that links to specific canonical code files in SAP GitHub sample repositories, so agents can reference concrete, authoritative patterns rather than generating from prose alone.
-
-**Problem:** `resources.yaml` links to docs pages. Agents asked to write a CAP handler, an ABAP RAP behaviour implementation, or a BTP destination lookup generate code from their training data — which may be outdated or suboptimal. Anchoring them to a specific file in `sap-samples/cloud-cap-samples` produces more accurate output.
-
-**YAML structure:**
-
-```yaml
-- id: cap-service-handler
-  label: CAP service handler (Node.js)
-  url: https://github.com/SAP-samples/cloud-cap-samples/blob/main/bookshop/srv/cat-service.js
-  description: Canonical pattern for before/on/after handlers with draft support
-  tags: [cap, node, handler, draft]
-```
-
-**Injection:** A compact `## Canonical Patterns` section; also surfaced via `sap-devs resources --type sample`.
-
 ---
 
 ### BTP active context detection
