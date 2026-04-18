@@ -49,6 +49,7 @@ func (a *Pack) MergeWith(base *Pack) *Pack {
 	merged.Influencers = mergeInfluencers(base.Influencers, a.Influencers, base.ID)
 	merged.EventTypes = mergeEventTypes(base.EventTypes, a.EventTypes, base.ID)
 	merged.EventInstances = mergeEventInstances(base.EventInstances, a.EventInstances, base.ID)
+	merged.Samples = mergeSamples(base.Samples, a.Samples, base.ID)
 
 	// Merged result is not itself additive; a subsequent additive layer will
 	// merge into this result rather than treating it as an additive pack.
@@ -225,6 +226,33 @@ func mergeEventInstances(base, additive []EventInstance, packID string) []EventI
 	}
 	return result
 }
+
+// mergeSamples builds a fresh []Sample: starts with base entries, replaces
+// any entry whose ID matches an additive entry, appends unmatched additive entries.
+// PackID is re-stamped to packID on every entry in the result.
+func mergeSamples(base, additive []Sample, packID string) []Sample {
+	result := make([]Sample, len(base))
+	copy(result, base)
+	for _, a := range additive {
+		replaced := false
+		for i, b := range result {
+			if b.ID == a.ID {
+				result[i] = a
+				replaced = true
+				break
+			}
+		}
+		if !replaced {
+			result = append(result, a)
+		}
+	}
+	for i := range result {
+		result[i].PackID = packID
+	}
+	return result
+}
+
+// mergeMCPServers builds a fresh []MCPServer: starts with base entries, replaces
 // any entry whose ID matches an additive entry, appends unmatched additive entries.
 // PackID is re-stamped to packID on every entry in the result.
 func mergeMCPServers(base, additive []MCPServer, packID string) []MCPServer {

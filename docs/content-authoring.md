@@ -21,7 +21,8 @@ content/packs/<pack-id>/
 ├── tools.yaml         # Tool version requirements checked by `sap-devs doctor`
 ├── resources.yaml     # Curated links shown by `sap-devs resources`
 ├── mcp.yaml           # MCP server definitions wired by `sap-devs mcp install`
-└── hook.yaml          # Hook commands wired by `sap-devs hook install`
+├── hook.yaml          # Hook commands wired by `sap-devs hook install`
+└── samples.yaml       # Canonical code sample references shown by `sap-devs samples`
 ```
 
 Key points:
@@ -29,6 +30,7 @@ Key points:
 - `context.md` is the primary AI context file. Keep it concise — every line you add is injected into the AI's context window on every `sap-devs inject` run.
 - `tips.md` tips are shown one at a time by `sap-devs tip`; they are not injected wholesale, so they can be longer.
 - `tools.yaml` and `resources.yaml` are structured YAML lists; see [docs/content/content-guide.md](content/content-guide.md) for their schemas.
+- `samples.yaml` lists canonical code sample references (GitHub file URLs). Samples with `inject: true` are included in the AI context as a "Canonical Patterns" table.
 
 ---
 
@@ -124,6 +126,7 @@ Use `before` for high-priority notes (e.g., "company policy requires X") that sh
 | `resources.yaml` | Entries with matching `id` replace the official entry; new IDs are appended |
 | `tools.yaml` | Entries with matching `id` replace the official entry; new IDs are appended |
 | `mcp.yaml` | Entries with matching `id` replace the official entry; new IDs are appended |
+| `samples.yaml` | Entries with matching `id` replace the official entry; new IDs are appended |
 | `pack.yaml` metadata | `name`/`description` override if non-empty; `weight` overrides if non-zero; `tags` union-merged; `profiles`/`base`/`overlaps` always come from the official pack |
 
 ### No-base fallback

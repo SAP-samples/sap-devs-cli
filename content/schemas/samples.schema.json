@@ -1,0 +1,32 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Pack Samples",
+  "description": "Schema for sap-devs samples.yaml files (top-level array)",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": ["id", "label", "url", "description", "tags"],
+    "additionalProperties": false,
+    "properties": {
+      "id": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9-]*/[a-z][a-z0-9-]*$",
+        "description": "Sample identifier in format <pack-id>/<slug>, e.g. cap/cat-service-handler"
+      },
+      "label": { "type": "string", "description": "Human-readable sample name" },
+      "url": { "type": "string", "format": "uri", "description": "Full URL to the sample file (typically a GitHub file URL)" },
+      "description": { "type": "string", "description": "What this sample demonstrates" },
+      "tags": {
+        "type": "array",
+        "items": { "type": "string" },
+        "minItems": 1,
+        "description": "Filtering tags for discovery (e.g. cap, node, handler)"
+      },
+      "inject": {
+        "type": "boolean",
+        "default": false,
+        "description": "If true, included in the AI context injection as a canonical pattern"
+      }
+    }
+  }
+}

@@ -8,6 +8,7 @@
     "./content/schemas/hook.schema.json":      "**/packs/*/hook.yaml",
     "./content/schemas/influencers.schema.json": "**/packs/*/influencers.yaml",
     "./content/schemas/event-types.schema.json": "**/packs/*/event-types.yaml",
-    "./content/schemas/event-instances.schema.json": "**/packs/*/event-instances.yaml"
+    "./content/schemas/event-instances.schema.json": "**/packs/*/event-instances.yaml",
+    "./content/schemas/samples.schema.json": "**/packs/*/samples.yaml"
   }
 }

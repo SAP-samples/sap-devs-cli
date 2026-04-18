@@ -1,0 +1,34 @@
+- id: cap/cat-service-handler
+  label: CAP service handler (Node.js)
+  url: https://github.com/SAP-samples/cloud-cap-samples/blob/main/bookshop/srv/cat-service.js
+  description: Canonical pattern for before/on/after handlers with draft support
+  tags: [cap, node, handler, draft]
+  inject: true
+
+- id: cap/custom-logic-java
+  label: CAP custom logic (Java)
+  url: https://github.com/SAP-samples/cloud-cap-samples-java/blob/main/srv/src/main/java/my/bookshop/handlers/CatalogServiceHandler.java
+  description: Java event handler registration with @On/@Before/@After annotations
+  tags: [cap, java, handler]
+  inject: true
+
+- id: cap/cds-schema
+  label: CDS data model
+  url: https://github.com/SAP-samples/cloud-cap-samples/blob/main/bookshop/db/schema.cds
+  description: Entity definitions with associations, compositions, and managed aspects
+  tags: [cap, cds, data-model]
+  inject: false
+
+- id: cap/custom-action
+  label: CAP custom action (Node.js)
+  url: https://github.com/SAP-samples/cloud-cap-samples/blob/main/bookshop/srv/admin-service.js
+  description: Bound and unbound action/function implementation pattern
+  tags: [cap, node, action, function]
+  inject: false
+
+- id: cap/cds-service
+  label: CDS service definition
+  url: https://github.com/SAP-samples/cloud-cap-samples/blob/main/bookshop/srv/cat-service.cds
+  description: Service projection with annotations and access control
+  tags: [cap, cds, service]
+  inject: true
