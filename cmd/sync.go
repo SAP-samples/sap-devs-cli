@@ -9,6 +9,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	gosync "sync"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -19,10 +20,12 @@ import (
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/events"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/i18n"
 	sapSync "github.tools.sap/developer-relations/sap-devs-cli/internal/sync"
+	"github.tools.sap/developer-relations/sap-devs-cli/internal/tutorials"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/ui"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/videos"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/xdg"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/youtube"
+	"golang.org/x/sync/errgroup"
 	"gopkg.in/yaml.v3"
 )
 
@@ -69,12 +72,12 @@ func runSync(ctx context.Context, force bool, out io.Writer) error {
 		"advocates": cfg.Sync.Advocates, "resources": cfg.Sync.Resources,
 		"context": cfg.Sync.Context, "mcp": cfg.Sync.MCP,
 		"events": cfg.Sync.Events, "youtube": cfg.Sync.YouTube,
-		"discovery": cfg.Sync.Discovery,
+		"discovery": cfg.Sync.Discovery, "tutorials": cfg.Sync.Tutorials,
 	}
 	engine := sapSync.NewEngine(paths.CacheDir, 24*time.Hour, ttls)
 
 	archiveCats := []string{"tips", "tools", "resources", "context", "mcp", "advocates"}
-	independentCats := []string{"events", "youtube", "discovery"}
+	independentCats := []string{"events", "youtube", "discovery", "tutorials"}
 
 	activeArchive := intersectStrings(archiveCats, categories)
 	activeIndependent := intersectStrings(independentCats, categories)
@@ -153,6 +156,14 @@ func runSync(ctx context.Context, force bool, out io.Writer) error {
 			fmt.Fprintf(os.Stderr, "sap-devs: discovery sync: %v\n", err)
 		}
 		_ = engine.MarkSynced("discovery")
+	}
+
+	// Phase 6: Tutorials index fetch
+	if containsString(activeIndependent, "tutorials") && (force || engine.IsStale("tutorials")) {
+		if err := runTutorialsFetch(paths.CacheDir, force); err != nil {
+			fmt.Fprintf(os.Stderr, "sap-devs: tutorials sync: %v\n", err)
+		}
+		_ = engine.MarkSynced("tutorials")
 	}
 
 	return nil
@@ -279,7 +290,7 @@ func runEventsFetch(cacheDir, officialCache string, force bool) error {
 }
 
 func allCategories() []string {
-	return []string{"tips", "tools", "resources", "context", "mcp", "advocates", "events", "youtube", "discovery"}
+	return []string{"tips", "tools", "resources", "context", "mcp", "advocates", "events", "youtube", "discovery", "tutorials"}
 }
 
 func intersectStrings(a, b []string) []string {
@@ -421,6 +432,128 @@ func fetchAndCacheSource(cacheDir string, src content.YouTubeSource, apiKey stri
 		vids = append(vids, v)
 	}
 	_ = videos.SaveCache(cacheDir, src.PackID, src.ID, vids)
+}
+
+func runTutorialsFetch(cacheDir string, force bool) error {
+	cachedRepos, _ := tutorials.LoadRepoInfo(cacheDir)
+	cachedSHAs := make(map[string]string)
+	cachedBranches := make(map[string]string)
+	for _, r := range cachedRepos {
+		cachedSHAs[r.Name] = r.TreeSHA
+		cachedBranches[r.Name] = r.DefaultBranch
+	}
+
+	// Tutorials live on public github.com, not github.tools.sap.
+	// Do NOT use credentials.Resolve() here — it targets the enterprise instance.
+	token := os.Getenv("GITHUB_TOKEN")
+	if token == "" {
+		token = os.Getenv("GH_TOKEN")
+	}
+
+	client := tutorials.NewClient(tutorials.ClientConfig{Token: token})
+
+	repoNames, err := client.FetchRepoList()
+	if err != nil {
+		return err
+	}
+
+	// Phase 1: resolve branches + trees (API calls, bounded concurrency)
+	type repoResult struct {
+		info  tutorials.RepoInfo
+		slugs []string
+		reuse bool
+	}
+	results := make([]repoResult, len(repoNames))
+
+	var mu gosync.Mutex
+	g, _ := errgroup.WithContext(context.Background())
+	g.SetLimit(5)
+
+	for i, repo := range repoNames {
+		i, repo := i, repo
+		g.Go(func() error {
+			branch, ok := cachedBranches[repo]
+			if !ok || force {
+				var err error
+				branch, err = client.FetchDefaultBranch(repo)
+				if err != nil {
+					fmt.Fprintf(os.Stderr, "sap-devs: skip repo %s: %v\n", repo, err)
+					return nil
+				}
+			}
+
+			slugs, sha, err := client.FetchRepoTree(repo, branch)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "sap-devs: skip repo %s: %v\n", repo, err)
+				return nil
+			}
+
+			mu.Lock()
+			results[i] = repoResult{
+				info:  tutorials.RepoInfo{Name: repo, DefaultBranch: branch, TreeSHA: sha},
+				slugs: slugs,
+				reuse: !force && cachedSHAs[repo] == sha && sha != "",
+			}
+			mu.Unlock()
+			return nil
+		})
+	}
+	_ = g.Wait()
+
+	// Phase 2: fetch frontmatter for changed repos (CDN, bounded concurrency)
+	var allMeta []tutorials.TutorialMeta
+	var repoInfos []tutorials.RepoInfo
+	existingIndex, _ := tutorials.LoadIndex(cacheDir)
+
+	for _, r := range results {
+		if r.info.Name == "" {
+			continue
+		}
+		repoInfos = append(repoInfos, r.info)
+
+		if r.reuse {
+			for _, m := range existingIndex {
+				if m.Repo == r.info.Name {
+					allMeta = append(allMeta, m)
+				}
+			}
+			continue
+		}
+
+		var repoMeta []tutorials.TutorialMeta
+		var metaMu gosync.Mutex
+		fg, _ := errgroup.WithContext(context.Background())
+		fg.SetLimit(10)
+
+		for _, slug := range r.slugs {
+			slug := slug
+			repo := r.info.Name
+			branch := r.info.DefaultBranch
+			fg.Go(func() error {
+				md, err := client.FetchRawMarkdown(repo, branch, slug)
+				if err != nil {
+					return nil
+				}
+				meta, err := tutorials.ParseFrontmatterOnly(md, slug, repo)
+				if err != nil {
+					return nil
+				}
+				metaMu.Lock()
+				repoMeta = append(repoMeta, *meta)
+				metaMu.Unlock()
+				return nil
+			})
+		}
+		_ = fg.Wait()
+		allMeta = append(allMeta, repoMeta...)
+	}
+
+	allMeta = tutorials.Enrich(allMeta, "sap-devs-cli")
+
+	if err := tutorials.SaveIndex(cacheDir, allMeta); err != nil {
+		return err
+	}
+	return tutorials.SaveRepoInfo(cacheDir, repoInfos)
 }
 
 func init() {
