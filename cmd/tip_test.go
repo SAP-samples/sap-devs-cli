@@ -64,7 +64,7 @@ func TestFormatFridayTip_LongDescriptionTrimmed(t *testing.T) {
 	parts := strings.SplitN(tip.Content, "\n\n", 2)
 	assert.Equal(t, "https://youtu.be/x", parts[0])
 	desc := parts[1]
-	assert.LessOrEqual(t, len([]rune(desc)), 281)
+	assert.Equal(t, 281, len([]rune(desc)))
 	assert.True(t, strings.HasSuffix(desc, "…"))
 }
 
