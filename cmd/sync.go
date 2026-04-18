@@ -12,11 +12,14 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/config"
+	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/credentials"
+	"github.tools.sap/developer-relations/sap-devs-cli/internal/events"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/i18n"
 	sapSync "github.tools.sap/developer-relations/sap-devs-cli/internal/sync"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/ui"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/xdg"
+	"gopkg.in/yaml.v3"
 )
 
 const officialRepoArchive = "https://github.tools.sap/developer-relations/sap-devs-cli/archive/refs/heads/main.zip"
@@ -61,6 +64,7 @@ func runSync(ctx context.Context, force bool, out io.Writer) error {
 		"tips": cfg.Sync.Tips, "tools": cfg.Sync.Tools,
 		"advocates": cfg.Sync.Advocates, "resources": cfg.Sync.Resources,
 		"context": cfg.Sync.Context, "mcp": cfg.Sync.MCP,
+		"events": cfg.Sync.Events,
 	}
 	engine := sapSync.NewEngine(paths.CacheDir, 24*time.Hour, ttls)
 
@@ -90,6 +94,11 @@ func runSync(ctx context.Context, force bool, out io.Writer) error {
 	if err := runMarkerExpansion(officialCache, engine); err != nil {
 		fmt.Fprintf(os.Stderr, "sap-devs: marker expansion warning: %v\n", err)
 		// Non-fatal: sync continues
+	}
+
+	// Phase 3: events RSS cache
+	if err := runEventsFetch(paths.CacheDir, officialCache, force); err != nil {
+		fmt.Fprintf(os.Stderr, "sap-devs: events sync warning: %v\n", err)
 	}
 
 	// Sync company repo if configured
@@ -201,8 +210,36 @@ func runMarkerExpansion(officialCache string, engine *sapSync.Engine) error {
 	return nil
 }
 
+func runEventsFetch(cacheDir, officialCache string, force bool) error {
+	packsDir := filepath.Join(officialCache, "content", "packs")
+	entries, err := os.ReadDir(packsDir)
+	if err != nil {
+		return nil
+	}
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			continue
+		}
+		typesPath := filepath.Join(packsDir, entry.Name(), "event-types.yaml")
+		data, err := os.ReadFile(typesPath)
+		if err != nil {
+			continue
+		}
+		var types []content.EventType
+		if err := yaml.Unmarshal(data, &types); err != nil {
+			continue
+		}
+		for _, et := range types {
+			if et.Source == "rss" && et.RSSURL != "" {
+				events.Resolve(et, cacheDir, force)
+			}
+		}
+	}
+	return nil
+}
+
 func allCategories() []string {
-	return []string{"tips", "tools", "resources", "context", "mcp", "advocates"}
+	return []string{"tips", "tools", "resources", "context", "mcp", "advocates", "events"}
 }
 
 func init() {
