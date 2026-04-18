@@ -439,3 +439,48 @@ func TestRenderContext_Preamble_TwoBasePacks(t *testing.T) {
 	assert.Less(t, p1Idx, ctx2Idx, "preamble 1 before base2 ContextMD")
 	assert.Less(t, p2Idx, capIdx, "preamble 2 before CAP ContextMD")
 }
+
+func TestRenderContext_CanonicalPatterns_AppearsWhenInjectableSamplesExist(t *testing.T) {
+	packs := []*content.Pack{
+		{ID: "cap", ContextMD: "CAP context.", Samples: []content.Sample{
+			{ID: "cap/handler", Label: "CAP handler", URL: "https://github.com/SAP-samples/test/blob/main/handler.js", Description: "Handler pattern", Inject: true},
+			{ID: "cap/schema", Label: "CDS schema", URL: "https://github.com/SAP-samples/test/blob/main/schema.cds", Description: "Schema example", Inject: false},
+		}},
+	}
+	out := content.RenderContext(packs, nil, nil)
+	assert.Contains(t, out, "## Canonical Patterns")
+	assert.Contains(t, out, "CAP handler")
+	assert.Contains(t, out, "Handler pattern")
+	assert.Contains(t, out, "https://github.com/SAP-samples/test/blob/main/handler.js")
+	assert.NotContains(t, out, "CDS schema", "non-injectable samples must not appear")
+}
+
+func TestRenderContext_CanonicalPatterns_OmittedWhenNoInjectableSamples(t *testing.T) {
+	packs := []*content.Pack{
+		{ID: "cap", ContextMD: "CAP context.", Samples: []content.Sample{
+			{ID: "cap/schema", Label: "CDS schema", URL: "https://example.com", Description: "Schema", Inject: false},
+		}},
+	}
+	out := content.RenderContext(packs, nil, nil)
+	assert.NotContains(t, out, "Canonical Patterns")
+}
+
+func TestRenderContext_CanonicalPatterns_OmittedWhenNoSamples(t *testing.T) {
+	packs := []*content.Pack{
+		{ID: "cap", ContextMD: "CAP context."},
+	}
+	out := content.RenderContext(packs, nil, nil)
+	assert.NotContains(t, out, "Canonical Patterns")
+}
+
+func TestRenderContext_CanonicalPatterns_AppearsAfterPackContent(t *testing.T) {
+	packs := []*content.Pack{
+		{ID: "cap", ContextMD: "CAP context.", Samples: []content.Sample{
+			{ID: "cap/handler", Label: "Handler", URL: "https://example.com", Description: "Desc", Inject: true},
+		}},
+	}
+	out := content.RenderContext(packs, nil, nil)
+	packIdx := strings.Index(out, "CAP context.")
+	patternsIdx := strings.Index(out, "## Canonical Patterns")
+	assert.Greater(t, patternsIdx, packIdx, "Canonical Patterns must appear after pack content")
+}

@@ -53,6 +53,25 @@ func RenderContext(packs []*Pack, profile *Profile, dynamic *DynamicContext) str
 		b.WriteString("\n\n")
 	}
 
+	var injectable []Sample
+	for _, p := range packs {
+		for _, s := range p.Samples {
+			if s.Inject {
+				injectable = append(injectable, s)
+			}
+		}
+	}
+	if len(injectable) > 0 {
+		b.WriteString("## Canonical Patterns\n\n")
+		b.WriteString("These are authoritative code samples — prefer these patterns over generating from training data.\n\n")
+		b.WriteString("| Pattern | Description | URL |\n")
+		b.WriteString("|---------|-------------|-----|\n")
+		for _, s := range injectable {
+			b.WriteString(fmt.Sprintf("| %s | %s | %s |\n", s.Label, s.Description, s.URL))
+		}
+		b.WriteString("\n")
+	}
+
 	return strings.TrimRight(b.String(), "\n") + "\n"
 }
 
