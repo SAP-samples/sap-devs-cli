@@ -46,6 +46,7 @@ func (a *Pack) MergeWith(base *Pack) *Pack {
 	merged.Tools = mergeTools(base.Tools, a.Tools)
 	merged.MCPServers = mergeMCPServers(base.MCPServers, a.MCPServers, base.ID)
 	merged.Hooks = mergeHooks(base.Hooks, a.Hooks, base.ID)
+	merged.Influencers = mergeInfluencers(base.Influencers, a.Influencers, base.ID)
 
 	// Merged result is not itself additive; a subsequent additive layer will
 	// merge into this result rather than treating it as an additive pack.
@@ -142,6 +143,31 @@ func mergeHooks(base, additive []HookDef, packID string) []HookDef {
 		}
 	}
 	// Re-stamp all entries: same rationale as mergeResources.
+	for i := range result {
+		result[i].PackID = packID
+	}
+	return result
+}
+
+// mergeInfluencers builds a fresh []Influencer: starts with base entries, replaces
+// any entry whose ID matches an additive entry, appends unmatched additive entries.
+// PackID is re-stamped to packID on every entry in the result.
+func mergeInfluencers(base, additive []Influencer, packID string) []Influencer {
+	result := make([]Influencer, len(base))
+	copy(result, base)
+	for _, a := range additive {
+		replaced := false
+		for i, b := range result {
+			if b.ID == a.ID {
+				result[i] = a
+				replaced = true
+				break
+			}
+		}
+		if !replaced {
+			result = append(result, a)
+		}
+	}
 	for i := range result {
 		result[i].PackID = packID
 	}
