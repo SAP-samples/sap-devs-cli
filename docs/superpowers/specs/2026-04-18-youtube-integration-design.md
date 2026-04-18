@@ -79,7 +79,7 @@ type Video struct {
 }
 ```
 
-**ID format and lookup:** The composite `Video.ID` (`base/sap-dev-news/dQw4w9WgXcQ`) is used internally and displayed in list output. The `videos open` command also accepts a positional index (`videos open 3`) for convenience, matching the `news open` pattern. Both lookup methods are supported by `FindVideo`.
+**ID format and lookup:** The composite `Video.ID` (`base/sap-dev-news/dQw4w9WgXcQ`) is used internally and displayed in list output. The `videos open` command accepts either a composite ID or a positional index (`videos open 3`), matching the `news open` pattern. Numeric parsing and 1-based index lookup happen in the `videos open` command handler; `FindVideo` is strictly composite-ID-only.
 
 Pack gains two new fields: `YouTubeSources []YouTubeSource` and `Videos []Video`. Sources are loaded from YAML at `LoadPack` time. Videos are populated at runtime by resolving sources against the cache.
 
@@ -150,9 +150,18 @@ Default TTL: 6 hours. Cache-with-live-fallback pattern (same as events): try fre
 ttls["youtube"] = cfg.Sync.YouTube
 ```
 
-**TTL independence:** Adding `"youtube"` to `allCategories()` means a stale YouTube TTL contributes to the `needsSync` check in phase 1 — but a stale YouTube alone should NOT trigger a full archive re-download. Phase 4 (`runYouTubeFetch`) checks its own per-source cache freshness independently, just like events. The fix: phase 4 runs conditionally based on `engine.IsStale("youtube") || force`, not unconditionally whenever any category triggers sync. If only YouTube is stale, `runSync` skips the archive download (phase 1) and marker expansion (phase 2) and jumps to the YouTube fetch.
+**TTL independence:** `allCategories()` returns all categories, but `runSync` splits them into two groups:
 
-To implement this, `needsSync` in `runSync` should split archive-dependent categories from independent ones. Categories `"youtube"` and `"events"` can refresh without an archive download; the rest (`tips`, `tools`, `resources`, `context`, `mcp`, `advocates`) require the archive.
+```go
+archiveCategories := []string{"tips", "tools", "resources", "context", "mcp", "advocates"}
+independentCategories := []string{"events", "youtube"}
+```
+
+The archive download (phase 1) and marker expansion (phase 2) only run when at least one `archiveCategories` entry is stale (or `force` is set). Phases 3-4 (events, YouTube) each check their own staleness independently via `engine.IsStale(cat) || force` before executing.
+
+`MarkAllSynced` is called separately for each group: archive categories are marked after phase 2 completes; `"events"` is marked after phase 3; `"youtube"` is marked after phase 4. This means `sap-devs sync --category youtube` resolves API key, fetches playlists, updates cache, and marks `"youtube"` synced — without downloading the archive.
+
+When `--category` is set to an independent category, the archive phases are skipped entirely. When `--category` is set to an archive category, only that category is synced (existing behavior) and independent phases are skipped.
 
 ### Sync phase 4
 
@@ -242,6 +251,8 @@ sap-devs config token <key>                      # existing: stores GitHub token
 ```
 
 `config show` is updated to also display YouTube API key status (configured/not configured) alongside the existing GitHub token status.
+
+The existing `--delete` flag works with `--service`: `config token --delete --service youtube` calls `DeleteService(configDir, "youtube")`. Without `--service`, `--delete` continues to call the existing `Delete` for GitHub tokens.
 
 ### Sync config
 
