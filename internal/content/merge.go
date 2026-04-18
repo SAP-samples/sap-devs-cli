@@ -226,6 +226,7 @@ func mergeEventInstances(base, additive []EventInstance, packID string) []EventI
 	}
 	return result
 }
+
 // mergeSamples builds a fresh []Sample: starts with base entries, replaces
 // any entry whose ID matches an additive entry, appends unmatched additive entries.
 // PackID is re-stamped to packID on every entry in the result.
