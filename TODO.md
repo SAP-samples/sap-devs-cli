@@ -386,19 +386,13 @@ Give each section of `context.md` a verbosity tag so injection density can be co
 
 ### ~~Zed editor adapter~~ — Covered by existing Claude Code adapter
 
-Zed reads project root files in priority order: `.rules`, `.cursorrules`, `.windsurfrules`, then `CLAUDE.md`, `GEMINI.md`, etc. Since our Claude Code adapter injects into `CLAUDE.md`, Zed users at project scope are already covered. A dedicated `.rules` file would override `CLAUDE.md` and any user-created `.rules`, so no separate adapter is needed.
+---
+
+### ~~Windsurf (Codeium) adapter~~ — DONE ✔️
 
 ---
 
-### ~~Windsurf (Codeium) adapter~~ — Done
-
-Implemented in `content/adapters/windsurf.yaml`. Project-scope `file-inject` targeting `.windsurf/rules/sap-developer-context.md`. Global scope skipped (single shared file, 6k limit).
-
----
-
-### ~~Gemini Code Assist adapter~~ — Done
-
-Implemented in `content/adapters/gemini-code-assist.yaml`. Both global (`~/.gemini/GEMINI.md`) and project (`./GEMINI.md`) scopes via `replace-section`. MCP config wired to `~/.gemini/settings.json`.
+### ~~Gemini Code Assist adapter~~ — DONE ✔️
 
 ---
 
