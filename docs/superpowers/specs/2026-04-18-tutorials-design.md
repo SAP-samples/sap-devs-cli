@@ -120,18 +120,22 @@ New sync category `"tutorials"` added to `allCategories()`. Independent category
 ```
 runTutorialsFetch(cacheDir, officialCache, force, ttl)
   │
-  ├─ 1. Fetch repo-groups index
-  │     GET github.com/sap-tutorials/Tutorials/main/config/repository-groups.json
-  │     → maps repo names → tutorial slug lists
+  ├─ 1. Fetch repo list
+  │     GET raw.githubusercontent.com/sap-tutorials/Tutorials/master/config/repository-groups.json
+  │     → flat array of {name, urlBase, description} objects — lists repos in the org
+  │     → does NOT contain slug mappings; slug discovery happens in step 2
   │     → cache as {cacheDir}/tutorials/repository-groups.json
   │
-  ├─ 2. For each repo, list tutorial folders
-  │     GET api.github.com/repos/sap-tutorials/{repo}/git/trees/main?recursive=1
+  ├─ 2. For each repo, resolve default branch + list tutorial folders
+  │     GET api.github.com/repos/sap-tutorials/{repo}
+  │     → read default_branch field (varies: "master" for Tutorials, "main" for others)
+  │     GET api.github.com/repos/sap-tutorials/{repo}/git/trees/{default_branch}?recursive=1
   │     → extract paths matching tutorials/*/
-  │     → 22 API calls total (within unauthenticated rate limit)
+  │     → ~42 API calls total (2 per repo × ~21 repos; within unauthenticated 60/hour limit)
+  │     → cache default_branch per repo to avoid re-fetching on incremental syncs
   │
   ├─ 3. For each slug, fetch frontmatter
-  │     GET raw.githubusercontent.com/sap-tutorials/{repo}/main/tutorials/{slug}/{slug}.md
+  │     GET raw.githubusercontent.com/sap-tutorials/{repo}/{default_branch}/tutorials/{slug}/{slug}.md
   │     → raw.githubusercontent.com is a CDN — no API rate limit
   │     → parse YAML frontmatter only (stop at closing ---)
   │     → extract: title, description, time, tags, primary_tag, author, parser
@@ -161,7 +165,7 @@ tutorials.FetchContent(cacheDir, meta TutorialMeta) (*Tutorial, error)
   ├─ Check cache: {cacheDir}/tutorials/content/{slug}.json
   │   → if exists and fresh, unmarshal and return
   │
-  ├─ GET raw.githubusercontent.com/sap-tutorials/{repo}/main/tutorials/{slug}/{slug}.md
+  ├─ GET raw.githubusercontent.com/sap-tutorials/{repo}/{default_branch}/tutorials/{slug}/{slug}.md
   ├─ Parse full markdown → Tutorial struct (parser v1 or v2)
   ├─ Cache as {cacheDir}/tutorials/content/{slug}.json
   └─ Return *Tutorial
@@ -172,8 +176,8 @@ tutorials.FetchContent(cacheDir, meta TutorialMeta) (*Tutorial, error)
 ```
 ~/.cache/sap-devs/
   tutorials/
-    repository-groups.json         # slug→repo mapping from GitHub
-    tree-shas.json                 # repo→SHA for incremental sync
+    repository-groups.json         # repo list from GitHub
+    repos.json                     # repo → {default_branch, tree_sha} for incremental sync
     index.json                     # []TutorialMeta (~1,290 entries)
     content/
       cap-getting-started.json     # full parsed Tutorial (on demand)
@@ -182,9 +186,9 @@ tutorials.FetchContent(cacheDir, meta TutorialMeta) (*Tutorial, error)
 
 ### 2.4 GitHub Rate Limiting
 
-- **Trees API:** 22 requests per sync (one per repo). Within the 60 req/hour unauthenticated limit.
+- **Repo metadata + Trees API:** ~42 requests per full sync (2 per repo × ~21 repos). Within the 60 req/hour unauthenticated limit. Incremental syncs skip unchanged repos (cached tree SHA), reducing to only changed repos.
 - **Raw content:** Uses `raw.githubusercontent.com` CDN — no API rate limit.
-- **With token:** If `GITHUB_TOKEN` is set, used for API calls (5,000 req/hour). Not required.
+- **With token:** If `GITHUB_TOKEN` is set, used for API calls (5,000 req/hour). Not required. Note: the existing `credentials.Resolve()` targets `github.tools.sap`; tutorials use public `github.com`, so a separate token resolution path checks `GITHUB_TOKEN` / `GH_TOKEN` only.
 
 ## 3. Markdown Parser
 
