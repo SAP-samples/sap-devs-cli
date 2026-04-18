@@ -38,7 +38,7 @@ detect:
 
 - **Project-scope only** — avoids overwriting the shared global rules file
 - **No preamble** — Windsurf rules are plain markdown (no frontmatter like Cursor's `.mdc`)
-- **No `mcp_config`** — Windsurf manages MCP via its own UI, not a writable config file
+- **No `mcp_config`** — Windsurf manages MCP via its own UI, not a writable config file. This means `sap-devs mcp install --tool windsurf` will be a no-op.
 - **Detection** — `~/.codeium/windsurf` directory (created on install) or `windsurf --version` CLI
 
 ### Gemini Code Assist (`content/adapters/gemini-code-assist.yaml`)
@@ -67,14 +67,14 @@ mcp_config:
 
 - **Both scopes** — global at `~/.gemini/GEMINI.md`, project at `./GEMINI.md`
 - **`replace-section`** with `"SAP Developer Context"` fenced markers — preserves user content in GEMINI.md
-- **MCP config** — Gemini CLI reads MCP servers from `~/.gemini/settings.json` under `mcpServers`
-- **Detection** — `~/.gemini` directory or `gemini --version`
+- **MCP config** — Gemini CLI reads MCP servers from `~/.gemini/settings.json` under `mcpServers` (camelCase, verified against Gemini CLI docs)
+- **Detection** — `~/.gemini` directory is the primary signal (created by Gemini CLI install). The `gemini --version` command covers CLI users; Gemini Code Assist VS Code extension users without the CLI are still detected via the directory path.
 
 ## What Doesn't Change
 
 - **No Go code** — `LoadAdapters` auto-discovers any `.yaml` in `content/adapters/`
 - **No i18n** — adapter names come from YAML `name` field
-- **No schema changes** — all fields used are already in the adapter schema
+- **No Go struct changes** — all fields used exist in the `Adapter` struct in `internal/adapter/adapter.go` (no adapter-level JSON Schema file exists in this project; validation is structural via Go unmarshalling)
 - **Existing `gemini.yaml`** — untouched, remains as clipboard-export for the Gemini chatbot
 
 ## Testing
@@ -87,5 +87,5 @@ mcp_config:
 
 ## Documentation Updates
 
-- Update `TODO.md`: mark Zed as covered by Claude Code adapter; mark Windsurf and Gemini Code Assist as done
-- Refresh adapter list in `CLAUDE.md` if needed
+- Update `TODO.md`: mark Zed as "covered by existing Claude Code adapter" (not a separate adapter needed); mark Windsurf and Gemini Code Assist as done
+- Update `CLAUDE.md` Architecture Overview → Adapter System section if the adapter count or listing is referenced
