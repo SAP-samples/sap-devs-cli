@@ -1,0 +1,21 @@
+{
+  "items": [
+    {
+      "snippet": {
+        "title": "Build a CAP App in 10 Minutes",
+        "description": "Quick tutorial on CAP.",
+        "publishedAt": "2026-04-10T12:00:00Z",
+        "resourceId": { "videoId": "vid001" }
+      }
+    },
+    {
+      "snippet": {
+        "title": "CAP with HANA Deep Dive",
+        "description": "Advanced HANA integration.",
+        "publishedAt": "2026-04-08T10:00:00Z",
+        "resourceId": { "videoId": "vid002" }
+      }
+    }
+  ],
+  "nextPageToken": ""
+}
