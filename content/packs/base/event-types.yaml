@@ -1,0 +1,22 @@
+- id: codejam
+  name: SAP CodeJam
+  description: Hands-on workshop series hosted by SAP developer advocates
+  source: rss
+  rss_url: https://community.sap.com/t5/sap-codejam/bg-p/code-jam/rss
+  default_scope: local
+  tags: [workshop, hands-on, in-person]
+
+- id: teched
+  name: SAP TechEd
+  description: Annual SAP technology conference
+  source: manual
+  default_scope: regional
+  tags: [conference, annual]
+
+- id: devtoberfest
+  name: Devtoberfest
+  description: Annual month-long SAP developer learning event
+  source: rss
+  rss_url: https://community.sap.com/t5/devtoberfest/bg-p/devtoberfest/rss
+  default_scope: global
+  tags: [learning, virtual, october]

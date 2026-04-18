@@ -1,0 +1,19 @@
+- id: teched-2026-bangalore
+  type: teched
+  title: SAP TechEd 2026 Bangalore
+  date: "2026-10-21"
+  end_date: "2026-10-23"
+  location: Bangalore, India
+  scope: regional
+  url: https://www.sap.com/events/teched.html
+  tags: [in-person, asia]
+
+- id: teched-2026-virtual
+  type: teched
+  title: SAP TechEd 2026 Virtual
+  date: "2026-11-05"
+  end_date: "2026-11-06"
+  location: virtual
+  scope: virtual
+  url: https://www.sap.com/events/teched.html
+  tags: [virtual, global]

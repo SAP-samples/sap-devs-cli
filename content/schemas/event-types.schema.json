@@ -1,0 +1,20 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Event Types",
+  "description": "Schema for sap-devs event-types.yaml files",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": ["id", "name", "source", "default_scope"],
+    "additionalProperties": false,
+    "properties": {
+      "id": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" },
+      "name": { "type": "string" },
+      "description": { "type": "string" },
+      "source": { "type": "string", "enum": ["rss", "manual"] },
+      "rss_url": { "type": "string", "format": "uri" },
+      "default_scope": { "type": "string", "enum": ["local", "regional", "global", "virtual"] },
+      "tags": { "type": "array", "items": { "type": "string" } }
+    }
+  }
+}
