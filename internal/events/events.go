@@ -10,15 +10,32 @@ import (
 )
 
 const (
-	defaultCacheTTL  = 4 * time.Hour
-	liveFetchTimeout = 3 * time.Second
+	defaultCacheTTL       = 4 * time.Hour
+	liveFetchTimeout      = 3 * time.Second
+	khorosFetchTimeout    = 10 * time.Second
 )
 
-// Resolve returns events for an RSS-sourced event type.
+// Resolve returns events for a remotely-sourced event type (RSS or Khoros).
 // Checks cache freshness first; fetches live if stale; falls back to stale cache on failure.
 // Pass force=true to bypass the TTL check (used by sync --force).
 func Resolve(et content.EventType, cacheDir string, force bool) ([]content.EventInstance, error) {
-	if et.Source != "rss" || et.RSSURL == "" {
+	var fetcher func() ([]content.EventInstance, error)
+	switch et.Source {
+	case "rss":
+		if et.RSSURL == "" {
+			return nil, nil
+		}
+		fetcher = func() ([]content.EventInstance, error) {
+			return FetchRSS(et.RSSURL, et.ID, et.DefaultScope, liveFetchTimeout)
+		}
+	case "khoros":
+		if et.KhorosBoardID == "" {
+			return nil, nil
+		}
+		fetcher = func() ([]content.EventInstance, error) {
+			return FetchKhoros(et.KhorosBoardID, et.ID, et.DefaultScope, khorosFetchTimeout)
+		}
+	default:
 		return nil, nil
 	}
 
@@ -29,7 +46,7 @@ func Resolve(et content.EventType, cacheDir string, force bool) ([]content.Event
 		}
 	}
 
-	evts, err := FetchRSS(et.RSSURL, et.ID, et.DefaultScope, liveFetchTimeout)
+	evts, err := fetcher()
 	if err == nil {
 		_ = SaveCache(cacheDir, et.ID, evts)
 		return evts, nil

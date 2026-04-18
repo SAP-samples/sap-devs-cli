@@ -11,8 +11,9 @@
       "id": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" },
       "name": { "type": "string" },
       "description": { "type": "string" },
-      "source": { "type": "string", "enum": ["rss", "manual"] },
+      "source": { "type": "string", "enum": ["rss", "manual", "khoros"] },
       "rss_url": { "type": "string", "format": "uri" },
+      "khoros_board_id": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" },
       "default_scope": { "type": "string", "enum": ["local", "regional", "global", "virtual"] },
       "tags": { "type": "array", "items": { "type": "string" } }
     }

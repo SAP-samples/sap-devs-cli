@@ -53,7 +53,7 @@ var eventsCmd = &cobra.Command{
 		var allEvents []content.EventInstance
 
 		for _, et := range eventTypes {
-			if et.Source == "rss" {
+			if et.Source != "manual" {
 				resolved, _ := events.Resolve(et, paths.CacheDir, false)
 				allEvents = append(allEvents, resolved...)
 			}
@@ -113,7 +113,7 @@ var eventsOpenCmd = &cobra.Command{
 		eventTypes := content.FlattenEventTypes(packs)
 		var allEvents []content.EventInstance
 		for _, et := range eventTypes {
-			if et.Source == "rss" {
+			if et.Source != "manual" {
 				resolved, _ := events.Resolve(et, paths.CacheDir, false)
 				allEvents = append(allEvents, resolved...)
 			}
@@ -189,7 +189,7 @@ var eventsExportCmd = &cobra.Command{
 		eventTypes := content.FlattenEventTypes(packs)
 		var allEvents []content.EventInstance
 		for _, et := range eventTypes {
-			if et.Source == "rss" {
+			if et.Source != "manual" {
 				resolved, _ := events.Resolve(et, paths.CacheDir, false)
 				allEvents = append(allEvents, resolved...)
 			}
@@ -282,7 +282,7 @@ var eventsHookCmd = &cobra.Command{
 		eventTypes := content.FlattenEventTypes(packs)
 		var allEvents []content.EventInstance
 		for _, et := range eventTypes {
-			if et.Source == "rss" {
+			if et.Source != "manual" {
 				resolved, _ := events.Resolve(et, paths.CacheDir, false)
 				allEvents = append(allEvents, resolved...)
 			}
@@ -322,7 +322,7 @@ var eventsNotifyCmd = &cobra.Command{
 		eventTypes := content.FlattenEventTypes(packs)
 		var allEvents []content.EventInstance
 		for _, et := range eventTypes {
-			if et.Source == "rss" {
+			if et.Source != "manual" {
 				resolved, _ := events.Resolve(et, paths.CacheDir, false)
 				allEvents = append(allEvents, resolved...)
 			}
