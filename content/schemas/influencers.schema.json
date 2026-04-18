@@ -1,0 +1,36 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Pack Influencers",
+  "description": "Schema for sap-devs influencers.yaml files (top-level array)",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": ["id", "name", "role", "org", "focus", "links"],
+    "additionalProperties": false,
+    "properties": {
+      "id": {
+        "type": "string",
+        "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+        "description": "Unique kebab-case identifier for the influencer"
+      },
+      "name": { "type": "string", "description": "Display name" },
+      "role": { "type": "string", "description": "Job title or community role" },
+      "org": { "type": "string", "description": "Organisation" },
+      "focus": {
+        "type": "array",
+        "items": { "type": "string" },
+        "minItems": 1,
+        "description": "Topic tags for profile-based discovery"
+      },
+      "links": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "string",
+          "format": "uri"
+        },
+        "minProperties": 1,
+        "description": "Map of link-type to URL (e.g. blog, github, twitter)"
+      }
+    }
+  }
+}

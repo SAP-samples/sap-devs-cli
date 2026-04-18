@@ -29,6 +29,7 @@ type Pack struct {
 
 	PreambleMD string
 	Hooks      []HookDef
+	Influencers []Influencer
 }
 
 // Resource is a curated link within a pack.
@@ -88,6 +89,17 @@ type HookDef struct {
 	Command string   `yaml:"command"`
 	Tools   []string `yaml:"tools"`
 	PackID  string   // set at load time, not in YAML
+}
+
+// Influencer is a community influencer or thought leader within a pack.
+type Influencer struct {
+	ID     string            `yaml:"id"`
+	Name   string            `yaml:"name"`
+	Role   string            `yaml:"role"`
+	Org    string            `yaml:"org"`
+	Focus  []string          `yaml:"focus"`
+	Links  map[string]string `yaml:"links"`
+	PackID string            // set at load time, not in YAML
 }
 
 type packMetaLocale struct {
@@ -175,6 +187,12 @@ func LoadPack(packDir string, lang string) (*Pack, error) {
 		_ = yaml.Unmarshal(data, &pack.Hooks)
 		for i := range pack.Hooks {
 			pack.Hooks[i].PackID = pack.ID
+		}
+	}
+	if data, err := os.ReadFile(filepath.Join(packDir, "influencers.yaml")); err == nil {
+		_ = yaml.Unmarshal(data, &pack.Influencers)
+		for i := range pack.Influencers {
+			pack.Influencers[i].PackID = pack.ID
 		}
 	}
 	if data, err := os.ReadFile(filepath.Join(packDir, "resources.yaml")); err == nil {
