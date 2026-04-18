@@ -304,5 +304,23 @@
   "init.step6_restart": "  Restart your terminal to see your first tip.",
   "init.step6_already_present": "  Hook already present in your shell profile(s).",
   "init.complete": "\nSetup complete! Run 'sap-devs --help' to explore all commands.",
-  "init.complete_hint": "Run 'sap-devs inject' to re-inject after syncing new content."
+  "init.complete_hint": "Run 'sap-devs inject' to re-inject after syncing new content.",
+
+  "config.show.sync_youtube": "sync.youtube:    {{.Value}}",
+  "config.show.youtube_token": "youtube_api_key: {{.Value}}",
+
+  "videos.short": "Browse SAP YouTube videos",
+  "videos.list.short": "List recent videos for your active profile",
+  "videos.search.short": "Search across all SAP YouTube videos",
+  "videos.search.no_results": "No videos found matching \"{{.Query}}\"",
+  "videos.open.short": "Open a video URL in the default browser",
+  "videos.open.not_found": "Video \"{{.ID}}\" not found.",
+  "videos.open.browser_fail": "Could not open browser: {{.Err}}. URL: {{.URL}}",
+  "videos.open.opening": "Opening: {{.Title}} — {{.URL}}",
+  "videos.no_videos": "No videos cached. Run `sap-devs sync` first.",
+  "videos.col_num": "#",
+  "videos.col_date": "DATE",
+  "videos.col_pack": "PACK",
+  "videos.col_source": "SOURCE",
+  "videos.col_title": "TITLE"
 }

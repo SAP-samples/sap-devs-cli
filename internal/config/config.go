@@ -27,6 +27,7 @@ type SyncConfig struct {
 	Context   time.Duration `yaml:"context"`
 	MCP       time.Duration `yaml:"mcp"`
 	Events    time.Duration `yaml:"events"`
+	YouTube   time.Duration `yaml:"youtube"`
 	Disabled  bool          `yaml:"disabled"`
 }
 
@@ -80,6 +81,7 @@ func Default() *Config {
 			Context:   168 * time.Hour,
 			MCP:       168 * time.Hour,
 			Events:    4 * time.Hour,
+			YouTube:   6 * time.Hour,
 		},
 	}
 }
