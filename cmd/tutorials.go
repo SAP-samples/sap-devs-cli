@@ -243,11 +243,6 @@ var tutorialShowCmd = &cobra.Command{
 			return fmt.Errorf("%s", i18n.Tf(i18n.ActiveLang, "tutorial.not_found", map[string]any{"Slug": slug}))
 		}
 
-		if tutorialInteractive {
-			fmt.Fprintln(cmd.OutOrStdout(), "Interactive TUI mode coming in next task")
-			return nil
-		}
-
 		// Try to load cached content
 		tut, err := tutorials.LoadContent(paths.CacheDir, slug)
 		if err != nil {
@@ -282,6 +277,10 @@ var tutorialShowCmd = &cobra.Command{
 
 			// Cache for next time (best-effort)
 			_ = tutorials.SaveContent(paths.CacheDir, tut)
+		}
+
+		if tutorialInteractive {
+			return runTutorialTUI(tut, paths.DataDir, tutorialStep)
 		}
 
 		// Build markdown output
