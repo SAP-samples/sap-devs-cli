@@ -85,6 +85,8 @@ New category `"learning"` registered in the sync engine with a 7-day default TTL
 
 The raw 5.4MB catalog is NOT persisted — only the filtered ~351-item index.
 
+**Config TTL:** Add a `Sync.Learning` field to `internal/config/` (duration, default 168h) alongside the existing `Sync.Tutorials` etc. Register `"learning"` in `allCategories()` and the `ttls` map in `runSync()`.
+
 ### Cache Layout
 
 ```
@@ -149,7 +151,7 @@ Filters are collected across all active packs via `CollectLearningFilters()`. A 
 
 ### Merge Logic
 
-`mergeLearningRefs()` follows the same additive/override pattern as other pack content. Packs with `additive: true` append/prepend their learning refs; others override by pack ID.
+Learning refs follow the tutorials pattern: refs are simply flattened across active packs (no slug-level merge/dedup in `merge.go`). If the same slug appears in multiple packs, duplicates are deduped by slug when resolving against the index. Additive packs append their refs normally.
 
 ## CLI Commands
 
@@ -175,12 +177,14 @@ sap-devs learning
 **Output (table format):**
 
 ```
-  ★  TITLE                                          LEVEL         DURATION  CERTIFICATION
-  ★  Becoming an SAP BTP Solution Architect          Intermediate  6 hr+     ✓ Certification
-  ★  Developing with SAP CAP                         Beginner      4 hr+     Achievement
+  ★  TITLE                                          LEVEL         DURATION
+  ★  Becoming an SAP BTP Solution Architect          Intermediate  6 hr+
+  ★  Developing with SAP CAP                         Beginner      4 hr+
      Modernizing Integration with SAP Integration..  Beginner      2 hr+
      Implementing Joule Across your Org Landscape    Intermediate  5 hr+
 ```
+
+Note: The catalog JSON does not include a certification/achievement field. If this data is needed later, it can be sourced from the search API's richer response. For now, the table shows title, level, and duration.
 
 Featured journeys (from pack curation) are marked with ★ and sorted first.
 
@@ -252,8 +256,9 @@ Rendered within the existing `file-inject` adapter output, appended after the pa
 | File | Change |
 |------|--------|
 | `internal/content/pack.go` | Add `LearningRefs` and `LearningFilters` fields to `Pack`; load `learning.yaml` in `LoadPack()` |
-| `internal/content/merge.go` | Add `mergeLearningRefs()` |
-| `cmd/sync.go` | Add `runLearningFetch()`, register `"learning"` TTL category |
+| `internal/content/merge.go` | Flatten learning refs across packs (no slug-level merge needed) |
+| `internal/config/config.go` | Add `Sync.Learning` TTL field (default 168h) |
+| `cmd/sync.go` | Add `runLearningFetch()`, register `"learning"` in `allCategories()` and TTL map |
 | `cmd/root.go` | Register `learningCmd` |
 | `internal/adapter/engine.go` | Render featured learning journeys in inject output |
 
