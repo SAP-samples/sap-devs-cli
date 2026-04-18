@@ -105,7 +105,7 @@ var configSetCmd = &cobra.Command{
 		case "sync.youtube":
 			d, parseErr := time.ParseDuration(args[1])
 			if parseErr != nil {
-				return fmt.Errorf("%s", i18n.Tf(i18n.ActiveLang, "config.set.unknown_key", map[string]any{"Key": args[0]}))
+				return fmt.Errorf("invalid duration %q for %s: %w", args[1], args[0], parseErr)
 			}
 			cfg.Sync.YouTube = d
 		default:

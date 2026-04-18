@@ -5,6 +5,7 @@
   "items": {
     "type": "object",
     "required": ["id", "type", "name"],
+    "additionalProperties": false,
     "properties": {
       "id": { "type": "string" },
       "type": { "type": "string", "enum": ["playlist", "video"] },

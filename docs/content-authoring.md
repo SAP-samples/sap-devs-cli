@@ -427,13 +427,11 @@ A pack may include an optional `youtube.yaml` file. It declares video sources fr
 ### `youtube.yaml` schema
 
 ```yaml
-sources:
-  - id: sapdevs-main              # Unique identifier
-    type: playlist                # 'playlist' or 'video'
-    name: SAP Developers Channel  # Display name
-    playlist_id: "PLk0..."        # For playlist type: YouTube playlist ID
-    video_id: "dQw4w9WgXcQ"       # For video type: YouTube video ID
-    description: "SAP Developer..." # Optional description
+- id: sapdevs-main              # Unique identifier
+  type: playlist                # 'playlist' or 'video'
+  name: SAP Developers Channel  # Display name
+  playlist_id: "PLk0..."        # For playlist type: YouTube playlist ID
+  tags: [tutorial, sap]         # Optional tags for filtering
 ```
 
 | Field | Type | Required | Description |
@@ -443,7 +441,7 @@ sources:
 | `name` | string | yes | Display name shown in `sap-devs videos list` output. |
 | `playlist_id` | string | required if `type: playlist` | YouTube playlist ID (e.g. `PLk0Iym...`). Required for playlist sources. |
 | `video_id` | string | required if `type: video` | YouTube video ID (e.g. `dQw4w9WgXcQ`). Required for video sources. |
-| `description` | string | no | Optional description shown in search results and details. |
+| `tags` | string[] | no | Tags for filtering in `sap-devs videos search`. Merged with API-provided tags. |
 
 ### Source types
 
@@ -454,29 +452,27 @@ sources:
 ### Example: youtube.yaml sources
 
 ```yaml
-sources:
-  - id: sapdevs-tutorials
-    type: playlist
-    name: SAP Developers Tutorials
-    playlist_id: PLk0Iym00000...
-    description: Step-by-step SAP development tutorials
+- id: sapdevs-tutorials
+  type: playlist
+  name: SAP Developers Tutorials
+  playlist_id: PLk0Iym00000...
+  tags: [tutorial, sap]
 
-  - id: sapdevs-cap-intro
-    type: video
-    name: CAP in 10 Minutes
-    video_id: dQw4w9WgXcQ
-    description: Quick introduction to SAP CAP framework
+- id: sapdevs-cap-intro
+  type: video
+  name: CAP in 10 Minutes
+  video_id: dQw4w9WgXcQ
+  tags: [cap, intro]
 ```
 
 ### How videos are fetched and cached
 
 During `sap-devs sync`, playlist sources are expanded:
 
-1. The sync engine fetches the playlist's RSS feed (no authentication required).
+1. The sync engine fetches the playlist's RSS feed (no authentication required), or uses the YouTube Data API v3 if an API key is configured.
 2. Each video's metadata (title, duration, published date) is extracted.
-3. Video data is cached alongside the pack in `youtube.cached.yaml`.
-4. If the RSS fetch fails, the previous cached data (if any) is preserved.
-5. Static video sources are validated but not fetched.
+3. Video data is cached as JSON at `~/.cache/sap-devs/youtube/<pack-id>/<source-id>.json`.
+4. If the fetch fails, the previous cached data (if any) is preserved.
 
 The `sap-devs videos` command reads the cached video data and allows browsing, searching, and opening videos in the browser.
 

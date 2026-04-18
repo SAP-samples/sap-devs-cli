@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -138,7 +139,7 @@ func runSync(ctx context.Context, force bool, out io.Writer) error {
 
 	// Phase 4: YouTube fetch
 	if containsString(activeIndependent, "youtube") && (force || engine.IsStale("youtube")) {
-		if err := runYouTubeFetch(paths.CacheDir, officialCache, cfg.CompanyRepo, paths.ConfigDir, force); err != nil {
+		if err := runYouTubeFetch(paths.CacheDir, officialCache, cfg.CompanyRepo, paths.ConfigDir, force, cfg.Sync.YouTube); err != nil {
 			fmt.Fprintf(os.Stderr, "sap-devs: youtube sync warning: %v\n", err)
 		}
 		_ = engine.MarkSynced("youtube")
@@ -285,7 +286,7 @@ func intersectStrings(a, b []string) []string {
 	return out
 }
 
-func runYouTubeFetch(cacheDir, officialCache, companyRepo, configDir string, force bool) error {
+func runYouTubeFetch(cacheDir, officialCache, companyRepo, configDir string, force bool, ttl time.Duration) error {
 	apiKey := credentials.ResolveService(configDir, "youtube", []string{"YOUTUBE_API_KEY"})
 
 	scanDirs := []string{officialCache}
@@ -318,6 +319,12 @@ func runYouTubeFetch(cacheDir, officialCache, companyRepo, configDir string, for
 					continue
 				}
 				src.PackID = packID
+				if !force {
+					age := videos.CacheAge(cacheDir, packID, src.ID)
+					if age >= 0 && age < ttl {
+						continue
+					}
+				}
 				fetchAndCacheSource(cacheDir, src, apiKey)
 			}
 		}
@@ -354,6 +361,7 @@ func fetchAndCacheSource(cacheDir string, src content.YouTubeSource, apiKey stri
 		for t := range tagSet {
 			v.Tags = append(v.Tags, t)
 		}
+		sort.Strings(v.Tags)
 		vids = append(vids, v)
 	}
 	_ = videos.SaveCache(cacheDir, src.PackID, src.ID, vids)
