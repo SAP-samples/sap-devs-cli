@@ -564,3 +564,69 @@ func TestTrimPacks_BudgetFitsWithConstraintsMD(t *testing.T) {
 	require.Len(t, result, 1)
 	assert.Equal(t, "cap", result[0].ID)
 }
+
+func TestRenderContext_ScratchNotes_RenderedAsCurrentContext(t *testing.T) {
+	packs := []*content.Pack{
+		{ID: "cap", ContextMD: "## CAP context."},
+	}
+	dyn := &content.DynamicContext{
+		ScratchNotes: []string{"implementing draft for Books", "HANA only in dev space"},
+	}
+	out := content.RenderContext(packs, nil, dyn)
+	assert.Contains(t, out, "## Current Context")
+	assert.Contains(t, out, "- implementing draft for Books")
+	assert.Contains(t, out, "- HANA only in dev space")
+}
+
+func TestRenderContext_ScratchNotes_BeforeRuntimeContext(t *testing.T) {
+	packs := []*content.Pack{
+		{ID: "cap", ContextMD: "## CAP context."},
+	}
+	now := time.Now()
+	dyn := &content.DynamicContext{
+		CLIVersion:   "1.0.0",
+		LastSynced:   &now,
+		ScratchNotes: []string{"working on auth"},
+	}
+	out := content.RenderContext(packs, nil, dyn)
+	scratchIdx := strings.Index(out, "## Current Context")
+	runtimeIdx := strings.Index(out, "## sap-devs Runtime Context")
+	require.NotEqual(t, -1, scratchIdx, "scratch section must be present")
+	require.NotEqual(t, -1, runtimeIdx, "runtime section must be present")
+	assert.Less(t, scratchIdx, runtimeIdx, "scratch notes must precede runtime context")
+}
+
+func TestRenderContext_ScratchNotes_OmittedWhenEmpty(t *testing.T) {
+	packs := []*content.Pack{
+		{ID: "cap", ContextMD: "## CAP context."},
+	}
+	dyn := &content.DynamicContext{ScratchNotes: nil}
+	out := content.RenderContext(packs, nil, dyn)
+	assert.NotContains(t, out, "## Current Context")
+}
+
+func TestRenderContext_ScratchNotes_SanitizesNewlines(t *testing.T) {
+	packs := []*content.Pack{
+		{ID: "cap", ContextMD: "## CAP context."},
+	}
+	dyn := &content.DynamicContext{
+		ScratchNotes: []string{"line one\nline two", "cr\ronly", "win\r\nstyle"},
+	}
+	out := content.RenderContext(packs, nil, dyn)
+	assert.Contains(t, out, "- line one line two")
+	assert.Contains(t, out, "- cr only")
+	assert.Contains(t, out, "- win style")
+}
+
+func TestRenderContext_ScratchNotes_TruncatesLongNotes(t *testing.T) {
+	packs := []*content.Pack{
+		{ID: "cap", ContextMD: "## CAP context."},
+	}
+	longNote := strings.Repeat("a", 600)
+	dyn := &content.DynamicContext{
+		ScratchNotes: []string{longNote},
+	}
+	out := content.RenderContext(packs, nil, dyn)
+	assert.Contains(t, out, "...")
+	assert.NotContains(t, out, strings.Repeat("a", 501))
+}

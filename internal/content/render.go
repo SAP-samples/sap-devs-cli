@@ -35,6 +35,20 @@ func RenderContext(packs []*Pack, profile *Profile, dynamic *DynamicContext) str
 		b.WriteString(fmt.Sprintf("**Developer Profile:** %s — %s\n\n", profile.Name, profile.Description))
 	}
 
+	if dynamic != nil && len(dynamic.ScratchNotes) > 0 {
+		b.WriteString("## Current Context\n\n")
+		for _, note := range dynamic.ScratchNotes {
+			sanitized := strings.ReplaceAll(note, "\r\n", " ")
+			sanitized = strings.ReplaceAll(sanitized, "\r", " ")
+			sanitized = strings.ReplaceAll(sanitized, "\n", " ")
+			if len(sanitized) > 500 {
+				sanitized = TrimToBytes(sanitized, 500) + "..."
+			}
+			b.WriteString("- " + sanitized + "\n")
+		}
+		b.WriteString("\n")
+	}
+
 	if dynamic != nil {
 		b.WriteString(renderDynamic(dynamic))
 		// renderDynamic ends with \n; add one more for blank line before pack content
