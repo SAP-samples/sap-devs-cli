@@ -1,0 +1,249 @@
+package editor
+
+import (
+	"fmt"
+	"strings"
+
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
+	"github.tools.sap/developer-relations/sap-devs-cli/internal/schema"
+)
+
+// Styles for the list view.
+var (
+	selectedStyle = lipgloss.NewStyle().Background(lipgloss.Color("62")).Foreground(lipgloss.Color("230"))
+	headerStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Bold(true)
+)
+
+// layerBadge returns a styled string label for a content layer.
+func layerBadge(l Layer, isOverride bool) string {
+	var badge string
+	switch l {
+	case LayerOfficial:
+		badge = lipgloss.NewStyle().Foreground(lipgloss.Color("114")).Render("official")
+	case LayerCompany:
+		badge = lipgloss.NewStyle().Foreground(lipgloss.Color("214")).Render("company")
+	case LayerUser:
+		badge = lipgloss.NewStyle().Foreground(lipgloss.Color("208")).Render("user")
+	case LayerProject:
+		badge = lipgloss.NewStyle().Foreground(lipgloss.Color("141")).Render("project")
+	default:
+		badge = l.String()
+	}
+	if isOverride {
+		badge += lipgloss.NewStyle().Foreground(lipgloss.Color("208")).Render(" (override)")
+	}
+	return badge
+}
+
+// listModel is a Bubbletea model for the array content list view.
+type listModel struct {
+	items     []MergedItem
+	columns   []string
+	cursor    int
+	width     int
+	height    int
+	filter    string
+	filtering bool
+	target    *ResolvedFile
+	schema    *schema.Schema
+
+	// Result fields set before quitting.
+	editIndex int  // index of item to edit, or -1
+	addNew    bool // user wants to add a new item
+	deleteIdx int  // index of item to delete, or -1
+	quit      bool // user chose to quit
+	save      bool // user chose to save before quitting
+}
+
+func newListModel(items []MergedItem, columns []string, target *ResolvedFile, s *schema.Schema) listModel {
+	return listModel{
+		items:     items,
+		columns:   columns,
+		target:    target,
+		schema:    s,
+		editIndex: -1,
+		deleteIdx: -1,
+		width:     80,
+		height:    24,
+	}
+}
+
+func (m listModel) Init() tea.Cmd {
+	return nil
+}
+
+func (m listModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		m.width = msg.Width
+		m.height = msg.Height
+
+	case tea.KeyMsg:
+		if m.filtering {
+			return m.updateFilter(msg)
+		}
+		return m.updateNormal(msg)
+	}
+	return m, nil
+}
+
+func (m listModel) updateFilter(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	switch msg.String() {
+	case "enter", "esc":
+		m.filtering = false
+	case "backspace":
+		if len(m.filter) > 0 {
+			m.filter = m.filter[:len(m.filter)-1]
+		}
+	default:
+		if len(msg.String()) == 1 {
+			m.filter += msg.String()
+		}
+	}
+	return m, nil
+}
+
+func (m listModel) updateNormal(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	switch msg.String() {
+	case "q":
+		m.save = true
+		m.quit = true
+		return m, tea.Quit
+	case "esc":
+		m.quit = true
+		return m, tea.Quit
+	case "up", "k":
+		if m.cursor > 0 {
+			m.cursor--
+		}
+	case "down", "j":
+		visible := m.visibleItems()
+		if m.cursor < len(visible)-1 {
+			m.cursor++
+		}
+	case "enter":
+		visible := m.visibleItems()
+		if m.cursor < len(visible) {
+			m.editIndex = visible[m.cursor].originalIndex
+			return m, tea.Quit
+		}
+	case "a":
+		m.addNew = true
+		return m, tea.Quit
+	case "d":
+		visible := m.visibleItems()
+		if m.cursor < len(visible) {
+			idx := visible[m.cursor].originalIndex
+			// Only allow deletion of items in the target layer.
+			if m.items[idx].Layer == m.target.Layer {
+				m.deleteIdx = idx
+				return m, tea.Quit
+			}
+		}
+	case "/":
+		m.filtering = true
+		m.filter = ""
+	}
+	return m, nil
+}
+
+// visibleItem pairs a MergedItem with its original index in the full list.
+type visibleItem struct {
+	originalIndex int
+	item          MergedItem
+}
+
+func (m listModel) visibleItems() []visibleItem {
+	var out []visibleItem
+	for i, item := range m.items {
+		if m.filter != "" {
+			id, _ := item.Data["id"].(string)
+			name, _ := item.Data["name"].(string)
+			title, _ := item.Data["title"].(string)
+			text := strings.ToLower(id + " " + name + " " + title)
+			if !strings.Contains(text, strings.ToLower(m.filter)) {
+				continue
+			}
+		}
+		out = append(out, visibleItem{originalIndex: i, item: item})
+	}
+	return out
+}
+
+func (m listModel) View() string {
+	var sb strings.Builder
+
+	// Header
+	titleStyle := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("114"))
+	sb.WriteString(fmt.Sprintf("\n  %s  Pack: %s  Layer: %s  %d items\n",
+		titleStyle.Render(m.target.Filename),
+		m.target.PackID,
+		m.target.Layer,
+		len(m.items),
+	))
+
+	if m.filtering {
+		sb.WriteString(fmt.Sprintf("  / %s_\n", m.filter))
+	}
+
+	sb.WriteString("\n")
+
+	// Column header row
+	header := "    "
+	for _, col := range m.columns {
+		header += fmt.Sprintf("%-20s", strings.ToUpper(col))
+	}
+	header += "LAYER"
+	sb.WriteString(headerStyle.Render(header))
+	sb.WriteString("\n")
+
+	// Items
+	visible := m.visibleItems()
+	maxVisible := m.height - 8
+	if maxVisible < 5 {
+		maxVisible = 5
+	}
+
+	start := 0
+	if m.cursor >= maxVisible {
+		start = m.cursor - maxVisible + 1
+	}
+
+	for i := start; i < len(visible) && i < start+maxVisible; i++ {
+		vi := visible[i]
+		row := "  "
+		if i == m.cursor {
+			row += "> "
+		} else {
+			row += "  "
+		}
+
+		for _, col := range m.columns {
+			val, _ := vi.item.Data[col].(string)
+			if len(val) > 18 {
+				val = val[:18] + "..."
+			}
+			row += fmt.Sprintf("%-20s", val)
+		}
+
+		row += layerBadge(vi.item.Layer, vi.item.IsOverride)
+
+		if i == m.cursor {
+			sb.WriteString(selectedStyle.Render(row))
+		} else {
+			sb.WriteString(row)
+		}
+		sb.WriteString("\n")
+	}
+
+	// Footer
+	sb.WriteString("\n")
+	footerStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("241"))
+	sb.WriteString(footerStyle.Render(
+		"  up/down navigate  Enter edit  a add  d delete  / filter  q save & quit  Esc quit",
+	))
+	sb.WriteString("\n")
+
+	return sb.String()
+}
