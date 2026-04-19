@@ -624,3 +624,142 @@ go vet ./...
 ```
 
 On Windows, `go test` is blocked by Windows Defender in the `.config` path — use `go build` and `go vet` locally; the CI pipeline on `ubuntu-latest` is the authoritative test runner.
+
+---
+
+## Content Editor
+
+`sap-devs content` provides three subcommands for maintaining pack YAML files without hand-editing raw text:
+
+| Subcommand | Purpose |
+| --- | --- |
+| `content list` | List all YAML content files visible across all active layers |
+| `content edit <file>` | Open an interactive TUI editor for a specific content file |
+| `content validate` | Validate all content YAML files against their JSON schemas |
+
+These commands work against all four content layers (official, company, user, project) and respect the same layer resolution used by `inject` and `sync`.
+
+---
+
+### Editing content in a checkout
+
+When your CWD is a checkout of the official or company content repository, `content edit` operates directly on those files:
+
+```bash
+# List all content files (all layers)
+sap-devs content list
+
+# List content files for a specific pack
+sap-devs content list --pack cap
+
+# Edit the CAP pack's resources file in the current checkout
+sap-devs content edit cap/resources.yaml
+```
+
+The editor opens a schema-driven TUI form. Fields with `enum` schemas render as select dropdowns; URI fields and pattern-constrained fields are validated inline as you type.
+
+Changes are written back to the source file on save. Discard with `Esc` or `Ctrl+C`.
+
+---
+
+### Creating user overrides
+
+If you run `content edit` on an official or company pack file from your home directory (not a content checkout), the editor automatically creates a user-layer override in `%LOCALAPPDATA%/sap-devs/data/` (Windows) or `~/.local/share/sap-devs/` (Linux/macOS).
+
+The override is an additive pack by default — it augments the official content rather than replacing it:
+
+```bash
+# Edit the CAP pack's resources — creates a user-layer override automatically
+sap-devs content edit resources.yaml
+```
+
+The first time you save, the CLI prints the path of the newly created override file so you know where to find it.
+
+---
+
+### Creating project overrides
+
+The editor auto-detects the target layer based on your working directory. To create project-scoped overrides, run the command from a directory with a `.sap-devs/` folder:
+
+```bash
+# From a directory with .sap-devs/, edits go to the project layer
+sap-devs content edit resources.yaml
+```
+
+If `.sap-devs/packs/<pack-id>/resources.yaml` does not exist, the editor creates a new additive pack scaffolded with the correct `pack.yaml` boilerplate.
+
+---
+
+### Schema-driven value help
+
+The TUI editor reads the JSON Schema for each YAML file type from `content/schemas/`. This means:
+
+- **Enum fields** (e.g. `type`, `scope`, `tags`) render as select dropdowns — no need to remember valid values.
+- **URI fields** are validated inline; an invalid URL is flagged before you can save.
+- **Pattern-constrained fields** (e.g. `id` must be lowercase-slug) show an inline error if the value does not match.
+- **Required fields** are highlighted; attempting to save with an empty required field shows an error.
+
+The same schema files power VS Code autocomplete (via `.vscode/settings.json`), so the TUI and editor experience are consistent.
+
+---
+
+### Validation
+
+`content validate` checks all YAML content files in the active layer stack against their schemas. Run it before committing to catch schema violations early:
+
+```bash
+# Validate all content files (all layers)
+sap-devs content validate
+
+# Validate a specific pack only
+sap-devs content validate --pack cap
+
+# Machine-readable JSON output (for CI)
+sap-devs content validate --json
+```
+
+**Exit codes:**
+
+| Code | Meaning |
+| --- | --- |
+| `0` | All files are valid |
+| `1` | One or more files failed validation |
+
+**`--json` output format:**
+
+```json
+{
+  "valid": false,
+  "results": [
+    {
+      "file": "content/packs/cap/resources.yaml",
+      "pack": "cap",
+      "layer": "official",
+      "valid": true,
+      "errors": []
+    },
+    {
+      "file": ".sap-devs/packs/cap/resources.yaml",
+      "pack": "cap",
+      "layer": "project",
+      "valid": false,
+      "errors": ["item[1].type: value 'blog-post' is not one of the allowed enum values"]
+    }
+  ]
+}
+```
+
+Use `--json` in CI pipelines to fail builds on invalid content and surface structured error output to your tooling.
+
+**Practical examples:**
+
+```bash
+# Check everything before opening a PR
+sap-devs content validate
+
+# Quick check for one pack during authoring
+sap-devs content validate --pack cap
+
+# In CI — non-zero exit on failure, JSON for log parsing
+sap-devs content validate --json
+```

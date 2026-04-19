@@ -21,7 +21,7 @@ func TestResolve(t *testing.T) {
 		{"LC_ALL used when LANG empty", "", "", "de", "de"},
 		{"LANG wins over LC_ALL", "", "de", "fr", "de"},
 		{"LANG empty string treated as unset", "", "", "de", "de"},
-		{"unknown LANG falls back to en", "", "fr_FR.UTF-8", "", "en"},
+		{"unknown LANG falls back to en", "", "klingon", "", "en"},
 		{"no input returns en", "", "", "", "en"},
 		{"config de_AT strips to de", "de_AT.UTF-8", "", "", "de"},
 	}
