@@ -116,15 +116,7 @@ Interactive UI for editing and maintaining pack content YAML files (event-types.
 
 ---
 
-### `sap-devs learn`
-
-Guided learning recommendations based on the active profile and experience level.
-
-**Scope:**
-
-- Beginner / intermediate / advanced tier recommendations
-- Recommendations draw from tutorials, docs, CodeJams, and sample projects
-- Likely integrates with or feeds into the Discovery Center and tutorials features below
+### `sap-devs learn` - DONE ✔️
 
 ---
 
