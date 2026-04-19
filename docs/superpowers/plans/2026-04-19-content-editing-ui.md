@@ -250,8 +250,8 @@ func parseField(key string, prop map[string]any, required bool) FieldSpec {
 		if addProps, ok := prop["additionalProperties"].(map[string]any); ok {
 			f.Type = "map"
 			f.MapValueType = strVal(addProps, "type")
-			if fmt := strVal(addProps, "format"); fmt != "" {
-				f.Format = fmt
+			if fmtVal := strVal(addProps, "format"); fmtVal != "" {
+				f.Format = fmtVal
 			}
 		} else if innerProps, ok := prop["properties"].(map[string]any); ok {
 			innerReq := extractStringSlice(prop, "required")
@@ -1445,7 +1445,7 @@ func LoadSingleObject(filePath string) (map[string]any, error) {
 func SaveItems(filePath string, items []MergedItem, targetLayer Layer) error {
 	var toSave []map[string]any
 	for _, item := range items {
-		if item.Layer == targetLayer || item.IsOverride {
+		if item.Layer == targetLayer {
 			toSave = append(toSave, item.Data)
 		}
 	}
@@ -1511,6 +1511,12 @@ git commit -m "feat(editor): add merged view assembly with layer tracking"
 
 - [ ] **Step 1: Write the huh form generator from FieldSpec**
 
+The form generator uses heap-allocated binding structs so huh can write to stable pointers.
+Each field type gets its own binding allocated on the heap and stored in a bindings map.
+After `form.Run()`, the caller collects values from the bindings.
+
+**Known deviation from spec:** Free-form string arrays use comma-separated input (not a custom type+Enter tag input). This is a pragmatic simplification — the spec's "Custom tag input" would require a custom Bubbletea component, which can be added later.
+
 ```go
 package editor
 
@@ -1525,54 +1531,133 @@ import (
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/schema"
 )
 
-// FormResult holds the form field values indexed by key.
-type FormResult map[string]any
+// StringBinding holds a string value for huh form binding.
+type StringBinding struct{ Value string }
 
-// BuildForm creates a huh form from a schema ObjectSpec and current values.
-func BuildForm(spec *schema.ObjectSpec, values map[string]any) (*huh.Form, FormResult) {
-	result := make(FormResult)
-	for k, v := range values {
+// BoolBinding holds a bool value for huh form binding.
+type BoolBinding struct{ Value bool }
+
+// SliceBinding holds a string slice value for huh form binding.
+type SliceBinding struct{ Value []string }
+
+// Bindings maps field keys to their typed binding structs.
+type Bindings struct {
+	Strings map[string]*StringBinding
+	Bools   map[string]*BoolBinding
+	Slices  map[string]*SliceBinding
+	Objects map[string]map[string]any // nested objects (passthrough)
+	Maps    map[string]map[string]any // map fields (passthrough)
+}
+
+func NewBindings() *Bindings {
+	return &Bindings{
+		Strings: make(map[string]*StringBinding),
+		Bools:   make(map[string]*BoolBinding),
+		Slices:  make(map[string]*SliceBinding),
+		Objects: make(map[string]map[string]any),
+		Maps:    make(map[string]map[string]any),
+	}
+}
+
+// ToMap collects all binding values into a flat map[string]any for YAML marshaling.
+func (b *Bindings) ToMap(spec *schema.ObjectSpec) map[string]any {
+	result := make(map[string]any)
+	for k, v := range b.Strings {
+		if strings.HasSuffix(k, "_raw") {
+			continue
+		}
+		result[k] = v.Value
+	}
+	for k, v := range b.Bools {
+		result[k] = v.Value
+	}
+	for k, v := range b.Slices {
+		anySlice := make([]any, len(v.Value))
+		for i, s := range v.Value {
+			anySlice[i] = s
+		}
+		result[k] = anySlice
+	}
+	for k, v := range b.Objects {
 		result[k] = v
 	}
+	for k, v := range b.Maps {
+		result[k] = v
+	}
+	// Resolve comma-separated _raw fields back to arrays
+	for _, f := range spec.Fields {
+		if f.Type == "array" && len(f.ItemEnum) == 0 {
+			if raw, ok := b.Strings[f.Key+"_raw"]; ok {
+				tags := splitTags(raw.Value)
+				anyTags := make([]any, len(tags))
+				for i, t := range tags {
+					anyTags[i] = t
+				}
+				result[f.Key] = anyTags
+			}
+		}
+		// Convert integer strings back to int
+		if f.Type == "integer" {
+			if s, ok := b.Strings[f.Key]; ok && s.Value != "" {
+				if n, err := strconv.Atoi(s.Value); err == nil {
+					result[f.Key] = n
+				}
+			}
+		}
+	}
+	return result
+}
+
+// BuildForm creates a huh form from a schema ObjectSpec and current values.
+func BuildForm(spec *schema.ObjectSpec, values map[string]any) (*huh.Form, *Bindings) {
+	bindings := NewBindings()
 
 	var fields []huh.Field
 	for _, f := range spec.Fields {
-		field := buildField(f, result)
+		// Skip conditional fields whose condition is not met
+		if f.Condition != nil {
+			if current, ok := values[f.Condition.Field]; !ok || current != f.Condition.Value {
+				continue
+			}
+		}
+
+		field := buildField(f, values, bindings)
 		if field != nil {
 			fields = append(fields, field)
 		}
 	}
 
 	group := huh.NewGroup(fields...)
-	form := huh.NewForm(group).WithTheme(huh.ThemeDracula())
-	return form, result
+	form := huh.NewForm(group).WithTheme(huh.ThemeDracula(true))
+	return form, bindings
 }
 
-func buildField(f schema.FieldSpec, result FormResult) huh.Field {
+func buildField(f schema.FieldSpec, values map[string]any, bindings *Bindings) huh.Field {
 	switch f.Type {
 	case "string":
-		return buildStringField(f, result)
+		return buildStringField(f, values, bindings)
 	case "integer":
-		return buildIntegerField(f, result)
+		return buildIntegerField(f, values, bindings)
 	case "boolean":
-		return buildBoolField(f, result)
+		return buildBoolField(f, values, bindings)
 	case "array":
-		return buildArrayField(f, result)
+		return buildArrayField(f, values, bindings)
 	case "object":
-		return buildObjectFields(f, result)
+		return buildObjectFields(f, values, bindings)
 	case "map":
-		return buildMapField(f, result)
+		return buildMapField(f, values, bindings)
 	}
 	return nil
 }
 
-func buildStringField(f schema.FieldSpec, result FormResult) huh.Field {
+func buildStringField(f schema.FieldSpec, values map[string]any, bindings *Bindings) huh.Field {
 	if len(f.Enum) > 0 {
-		current, _ := result[f.Key].(string)
+		current, _ := values[f.Key].(string)
 		if current == "" && f.Default != nil {
 			current, _ = f.Default.(string)
 		}
-		result[f.Key] = current
+		b := &StringBinding{Value: current}
+		bindings.Strings[f.Key] = b
 
 		opts := make([]huh.Option[string], 0, len(f.Enum))
 		for _, e := range f.Enum {
@@ -1583,17 +1668,18 @@ func buildStringField(f schema.FieldSpec, result FormResult) huh.Field {
 			Title(fieldTitle(f)).
 			Description(f.Description).
 			Options(opts...).
-			Value(strPtr(result, f.Key))
+			Value(&b.Value)
 	}
 
-	current, _ := result[f.Key].(string)
-	result[f.Key] = current
+	current, _ := values[f.Key].(string)
+	b := &StringBinding{Value: current}
+	bindings.Strings[f.Key] = b
 
 	input := huh.NewInput().
 		Title(fieldTitle(f)).
 		Description(f.Description).
 		Placeholder(placeholderForField(f)).
-		Value(strPtr(result, f.Key))
+		Value(&b.Value)
 
 	if v := validatorForString(f); v != nil {
 		input = input.Validate(v)
@@ -1602,21 +1688,22 @@ func buildStringField(f schema.FieldSpec, result FormResult) huh.Field {
 	return input
 }
 
-func buildIntegerField(f schema.FieldSpec, result FormResult) huh.Field {
+func buildIntegerField(f schema.FieldSpec, values map[string]any, bindings *Bindings) huh.Field {
 	var current string
-	switch v := result[f.Key].(type) {
+	switch v := values[f.Key].(type) {
 	case float64:
 		current = strconv.Itoa(int(v))
 	case int:
 		current = strconv.Itoa(v)
 	}
-	result[f.Key] = current
+	b := &StringBinding{Value: current}
+	bindings.Strings[f.Key] = b
 
 	return huh.NewInput().
 		Title(fieldTitle(f)).
 		Description(f.Description).
 		Placeholder("0").
-		Value(strPtr(result, f.Key)).
+		Value(&b.Value).
 		Validate(func(s string) error {
 			if s == "" && !f.Required {
 				return nil
@@ -1628,27 +1715,30 @@ func buildIntegerField(f schema.FieldSpec, result FormResult) huh.Field {
 		})
 }
 
-func buildBoolField(f schema.FieldSpec, result FormResult) huh.Field {
-	current, _ := result[f.Key].(bool)
-	result[f.Key] = current
+func buildBoolField(f schema.FieldSpec, values map[string]any, bindings *Bindings) huh.Field {
+	current, _ := values[f.Key].(bool)
+	b := &BoolBinding{Value: current}
+	bindings.Bools[f.Key] = b
 
 	return huh.NewConfirm().
 		Title(fieldTitle(f)).
 		Description(f.Description).
-		Value(boolPtr(result, f.Key))
+		Value(&b.Value)
 }
 
-func buildArrayField(f schema.FieldSpec, result FormResult) huh.Field {
-	rawArr, _ := result[f.Key].([]any)
+func buildArrayField(f schema.FieldSpec, values map[string]any, bindings *Bindings) huh.Field {
+	rawArr, _ := values[f.Key].([]any)
 	var current []string
 	for _, v := range rawArr {
 		if s, ok := v.(string); ok {
 			current = append(current, s)
 		}
 	}
-	result[f.Key] = current
 
 	if len(f.ItemEnum) > 0 {
+		b := &SliceBinding{Value: current}
+		bindings.Slices[f.Key] = b
+
 		opts := make([]huh.Option[string], 0, len(f.ItemEnum))
 		for _, e := range f.ItemEnum {
 			opt := huh.NewOption(e, e)
@@ -1664,16 +1754,17 @@ func buildArrayField(f schema.FieldSpec, result FormResult) huh.Field {
 			Title(fieldTitle(f)).
 			Description(f.Description).
 			Options(opts...).
-			Value(strSlicePtr(result, f.Key))
+			Value(&b.Value)
 	}
 
-	// Free-form string array: use comma-separated input for now
+	// Free-form string array: comma-separated input (spec deviation: not custom tag input)
 	joined := strings.Join(current, ", ")
-	result[f.Key+"_raw"] = joined
+	b := &StringBinding{Value: joined}
+	bindings.Strings[f.Key+"_raw"] = b
 	return huh.NewInput().
 		Title(fieldTitle(f) + " (comma-separated)").
 		Description(f.Description).
-		Value(strPtr(result, f.Key+"_raw")).
+		Value(&b.Value).
 		Validate(func(s string) error {
 			parts := splitTags(s)
 			if f.MinItems > 0 && len(parts) < f.MinItems {
@@ -1683,14 +1774,12 @@ func buildArrayField(f schema.FieldSpec, result FormResult) huh.Field {
 		})
 }
 
-func buildObjectFields(f schema.FieldSpec, result FormResult) huh.Field {
-	// Nested objects are rendered as a Note pointing to sub-form
-	// In the full TUI this triggers a nested form view
-	childObj, ok := result[f.Key].(map[string]any)
+func buildObjectFields(f schema.FieldSpec, values map[string]any, bindings *Bindings) huh.Field {
+	childObj, ok := values[f.Key].(map[string]any)
 	if !ok {
 		childObj = make(map[string]any)
-		result[f.Key] = childObj
 	}
+	bindings.Objects[f.Key] = childObj
 
 	var summary []string
 	for _, child := range f.Children {
@@ -1708,12 +1797,12 @@ func buildObjectFields(f schema.FieldSpec, result FormResult) huh.Field {
 		Description(desc + "\n\nPress Enter to edit nested fields")
 }
 
-func buildMapField(f schema.FieldSpec, result FormResult) huh.Field {
-	mapObj, ok := result[f.Key].(map[string]any)
+func buildMapField(f schema.FieldSpec, values map[string]any, bindings *Bindings) huh.Field {
+	mapObj, ok := values[f.Key].(map[string]any)
 	if !ok {
 		mapObj = make(map[string]any)
-		result[f.Key] = mapObj
 	}
+	bindings.Maps[f.Key] = mapObj
 
 	var summary []string
 	for k, v := range mapObj {
@@ -1784,87 +1873,7 @@ func splitTags(s string) []string {
 	}
 	return out
 }
-
-// ResolveTagsFromRaw converts comma-separated _raw fields back to proper arrays.
-func ResolveTagsFromRaw(spec *schema.ObjectSpec, result FormResult) {
-	for _, f := range spec.Fields {
-		if f.Type == "array" && len(f.ItemEnum) == 0 {
-			if raw, ok := result[f.Key+"_raw"].(string); ok {
-				tags := splitTags(raw)
-				anyTags := make([]any, len(tags))
-				for i, t := range tags {
-					anyTags[i] = t
-				}
-				result[f.Key] = anyTags
-				delete(result, f.Key+"_raw")
-			}
-		}
-	}
-}
-
-// Helper functions for huh value binding
-
-func strPtr(m FormResult, key string) *string {
-	v, _ := m[key].(string)
-	m[key] = v
-	return m[key].(*string)
-}
-
-func boolPtr(m FormResult, key string) *bool {
-	v, _ := m[key].(bool)
-	m[key] = v
-	return m[key].(*bool)
-}
-
-func strSlicePtr(m FormResult, key string) *[]string {
-	v, _ := m[key].([]string)
-	m[key] = v
-	return m[key].(*[]string)
-}
 ```
-
-Note: The `strPtr`/`boolPtr`/`strSlicePtr` helpers need to return stable pointers. The above approach won't work because map values aren't addressable. We need wrapper types. Let me fix that.
-
-- [ ] **Step 1 (revised): Use wrapper types for stable pointers**
-
-Replace the helper functions at the bottom with:
-
-```go
-// Binding holds a typed value for huh form binding.
-type Binding[T any] struct {
-	Value T
-}
-
-// BuildForm creates a huh form from a schema ObjectSpec and current values.
-// Returns the form and a map of key -> *Binding for extracting values after form completion.
-func BuildForm(spec *schema.ObjectSpec, values map[string]any) (*huh.Form, map[string]any) {
-	bindings := make(map[string]any)
-	var fields []huh.Field
-
-	for _, f := range spec.Fields {
-		field := buildField(f, values, bindings)
-		if field != nil {
-			fields = append(fields, field)
-		}
-	}
-
-	group := huh.NewGroup(fields...)
-	form := huh.NewForm(group).WithTheme(huh.ThemeDracula())
-	return form, bindings
-}
-```
-
-Each `buildXxxField` function creates a `Binding[T]` and stores it in the bindings map, passing `&binding.Value` to huh. After form completion, the caller reads `binding.Value` to get the edited values back.
-
-This is complex enough that the implementer should follow the huh v2 documentation examples directly. The key pattern is:
-
-```go
-var myString string
-huh.NewInput().Value(&myString)
-// After form.Run(), myString contains the user's input
-```
-
-So the simplest approach: declare local variables per field, run the form, then collect results.
 
 - [ ] **Step 2: Verify compilation**
 
@@ -2189,12 +2198,7 @@ func runObjectEditor(target *ResolvedFile, s *schema.Schema) error {
 		return err
 	}
 
-	// Merge bindings back into obj
-	for k, v := range bindings {
-		obj[k] = v
-	}
-
-	ResolveTagsFromRaw(s.ObjectSpec, obj)
+	obj = bindings.ToMap(s.ObjectSpec)
 
 	// Validate before saving
 	errs := schema.Validate(s, obj)
@@ -2285,10 +2289,10 @@ func editItem(spec *schema.ObjectSpec, data map[string]any) error {
 		return err
 	}
 
-	for k, v := range bindings {
+	result := bindings.ToMap(spec)
+	for k, v := range result {
 		data[k] = v
 	}
-	ResolveTagsFromRaw(spec, data)
 	return nil
 }
 
@@ -2504,6 +2508,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/editor"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/schema"
+	"github.tools.sap/developer-relations/sap-devs-cli/internal/xdg"
 )
 
 var (
@@ -2640,7 +2645,7 @@ func findSchemasDir(cwd string) string {
 	}
 
 	// Check cache
-	paths, err := xdgPaths()
+	paths, err := xdg.New()
 	if err != nil {
 		return ""
 	}
@@ -2671,7 +2676,7 @@ func countValidationErrors(errs []schema.ValidationError) int {
 }
 ```
 
-Note: `xdgPaths()` should reuse the existing pattern from other commands. Check how xdg.New() is called in existing cmd files and follow that pattern.
+Note: Uses `xdg.New()` from the existing `internal/xdg` package. Ensure the import includes `"github.tools.sap/developer-relations/sap-devs-cli/internal/xdg"`.
 
 - [ ] **Step 2: Verify compilation**
 
