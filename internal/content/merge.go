@@ -59,6 +59,7 @@ func (a *Pack) MergeWith(base *Pack) *Pack {
 	merged.EventTypes = mergeEventTypes(base.EventTypes, a.EventTypes, base.ID)
 	merged.EventInstances = mergeEventInstances(base.EventInstances, a.EventInstances, base.ID)
 	merged.Samples = mergeSamples(base.Samples, a.Samples, base.ID)
+	merged.KnownErrors = mergeKnownErrors(base.KnownErrors, a.KnownErrors, base.ID)
 	merged.YouTubeSources = mergeYouTubeSources(base.YouTubeSources, a.YouTubeSources, base.ID)
 	merged.DiscoveryMissions = mergeDiscoveryMissions(base.DiscoveryMissions, a.DiscoveryMissions, base.ID)
 	merged.DiscoveryServices = mergeDiscoveryServices(base.DiscoveryServices, a.DiscoveryServices, base.ID)
@@ -432,6 +433,31 @@ func mergeLearningRefs(base, additive []LearningRef, packID string) []LearningRe
 		replaced := false
 		for i, b := range result {
 			if b.Slug == a.Slug {
+				result[i] = a
+				replaced = true
+				break
+			}
+		}
+		if !replaced {
+			result = append(result, a)
+		}
+	}
+	for i := range result {
+		result[i].PackID = packID
+	}
+	return result
+}
+
+// mergeKnownErrors builds a fresh []KnownError: starts with base entries, replaces
+// any entry whose ID matches an additive entry, appends unmatched additive entries.
+// PackID is re-stamped to packID on every entry in the result.
+func mergeKnownErrors(base, additive []KnownError, packID string) []KnownError {
+	result := make([]KnownError, len(base))
+	copy(result, base)
+	for _, a := range additive {
+		replaced := false
+		for i, b := range result {
+			if b.ID == a.ID {
 				result[i] = a
 				replaced = true
 				break
