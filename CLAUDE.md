@@ -110,6 +110,7 @@ On every command invocation (except `update` and dev builds), a background gorou
 | `tutorial` | Browse and render SAP tutorials; `tutorial list/search/show/open`; `-i` for interactive step-by-step TUI |
 | `doctor` | Check local tool versions against pack requirements (`--fix` for install hints) |
 | `discovery` | Browse SAP Discovery Center missions, BTP services, and guidance framework; `discovery missions list/search/open`, `discovery services list/search/open`, `discovery guidance/show/open` |
+| `learning` | Browse SAP Learning Journeys; `learning list/search/show/open` |
 | `mcp list/install/status` | Browse and wire SAP MCP servers into AI tool configs |
 | `hook list/install/uninstall/status` | Wire AI tool lifecycle hooks from pack definitions |
 | `events` | Browse upcoming SAP community events with location filtering; `events types` lists event categories |
