@@ -35,6 +35,19 @@ func RenderContext(packs []*Pack, profile *Profile, dynamic *DynamicContext) str
 		b.WriteString(fmt.Sprintf("**Developer Profile:** %s — %s\n\n", profile.Name, profile.Description))
 	}
 
+	if dynamic != nil && len(dynamic.WhatsNew) > 0 {
+		if dynamic.WhatsNewDate != nil {
+			b.WriteString(fmt.Sprintf("## What's New (since last sync, %s)\n\n",
+				dynamic.WhatsNewDate.Format("2006-01-02")))
+		} else {
+			b.WriteString("## What's New\n\n")
+		}
+		for _, entry := range dynamic.WhatsNew {
+			b.WriteString("- " + entry.Text + "\n")
+		}
+		b.WriteString("\n")
+	}
+
 	if dynamic != nil && len(dynamic.ScratchNotes) > 0 {
 		b.WriteString("## Current Context\n\n")
 		for _, note := range dynamic.ScratchNotes {

@@ -630,3 +630,54 @@ func TestRenderContext_ScratchNotes_TruncatesLongNotes(t *testing.T) {
 	assert.Contains(t, out, "...")
 	assert.NotContains(t, out, strings.Repeat("a", 501))
 }
+
+func TestRenderContext_WhatsNew_RenderedWhenPresent(t *testing.T) {
+	syncDate := time.Date(2026, 4, 17, 0, 0, 0, 0, time.UTC)
+	dyn := &content.DynamicContext{
+		WhatsNew: []content.WhatsNewEntry{
+			{Pack: "cap", Text: "CAP 9.8: native SQLite support"},
+			{Pack: "abap", Text: "New Tier-1 API"},
+		},
+		WhatsNewDate: &syncDate,
+	}
+	out := content.RenderContext(nil, nil, dyn)
+	assert.Contains(t, out, "## What's New (since last sync, 2026-04-17)")
+	assert.Contains(t, out, "- CAP 9.8: native SQLite support")
+	assert.Contains(t, out, "- New Tier-1 API")
+}
+
+func TestRenderContext_WhatsNew_OmittedWhenEmpty(t *testing.T) {
+	dyn := &content.DynamicContext{WhatsNew: nil}
+	out := content.RenderContext(nil, nil, dyn)
+	assert.NotContains(t, out, "What's New")
+}
+
+func TestRenderContext_WhatsNew_BeforeScratchNotes(t *testing.T) {
+	syncDate := time.Date(2026, 4, 17, 0, 0, 0, 0, time.UTC)
+	dyn := &content.DynamicContext{
+		WhatsNew:     []content.WhatsNewEntry{{Pack: "cap", Text: "test change"}},
+		WhatsNewDate: &syncDate,
+		ScratchNotes: []string{"working on auth"},
+	}
+	out := content.RenderContext(nil, nil, dyn)
+	whatsNewIdx := strings.Index(out, "## What's New")
+	scratchIdx := strings.Index(out, "## Current Context")
+	require.NotEqual(t, -1, whatsNewIdx, "What's New must be present")
+	require.NotEqual(t, -1, scratchIdx, "scratch notes must be present")
+	assert.Less(t, whatsNewIdx, scratchIdx, "What's New must appear before scratch notes")
+}
+
+func TestRenderContext_WhatsNew_BeforeRuntimeContext(t *testing.T) {
+	syncDate := time.Date(2026, 4, 17, 0, 0, 0, 0, time.UTC)
+	dyn := &content.DynamicContext{
+		CLIVersion:   "1.0.0",
+		WhatsNew:     []content.WhatsNewEntry{{Pack: "cap", Text: "test change"}},
+		WhatsNewDate: &syncDate,
+	}
+	out := content.RenderContext(nil, nil, dyn)
+	whatsNewIdx := strings.Index(out, "## What's New")
+	runtimeIdx := strings.Index(out, "## sap-devs Runtime Context")
+	require.NotEqual(t, -1, whatsNewIdx, "What's New must be present")
+	require.NotEqual(t, -1, runtimeIdx, "runtime section must be present")
+	assert.Less(t, whatsNewIdx, runtimeIdx, "What's New must appear before runtime context")
+}
