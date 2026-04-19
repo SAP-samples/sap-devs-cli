@@ -17,7 +17,14 @@ import (
 
 // --- Project type detection ---
 
+func isolateBTPCF(t *testing.T) {
+	t.Helper()
+	t.Setenv("CF_HOME", t.TempDir())
+	t.Setenv("BTP_CLIENTCONFIG", filepath.Join(t.TempDir(), "nonexistent.json"))
+}
+
 func TestGatherDynamic_ProjectType_CdsrcJson(t *testing.T) {
+	isolateBTPCF(t)
 	dir := t.TempDir()
 	require.NoError(t, os.WriteFile(filepath.Join(dir, ".cdsrc.json"), []byte(`{}`), 0600))
 	ctx := dynamic.GatherDynamic(dynamic.GatherOpts{CWD: dir})
@@ -26,6 +33,7 @@ func TestGatherDynamic_ProjectType_CdsrcJson(t *testing.T) {
 }
 
 func TestGatherDynamic_ProjectType_PackageJsonWithCDS(t *testing.T) {
+	isolateBTPCF(t)
 	dir := t.TempDir()
 	pkg := `{"dependencies":{"@sap/cds":"^7.0.0"}}`
 	require.NoError(t, os.WriteFile(filepath.Join(dir, "package.json"), []byte(pkg), 0600))
@@ -35,6 +43,7 @@ func TestGatherDynamic_ProjectType_PackageJsonWithCDS(t *testing.T) {
 }
 
 func TestGatherDynamic_ProjectType_PackageJsonWithCDSInDevDeps(t *testing.T) {
+	isolateBTPCF(t)
 	dir := t.TempDir()
 	pkg := `{"devDependencies":{"@sap/cds":"^7.0.0"}}`
 	require.NoError(t, os.WriteFile(filepath.Join(dir, "package.json"), []byte(pkg), 0600))
@@ -44,6 +53,7 @@ func TestGatherDynamic_ProjectType_PackageJsonWithCDSInDevDeps(t *testing.T) {
 }
 
 func TestGatherDynamic_ProjectType_MtaYaml(t *testing.T) {
+	isolateBTPCF(t)
 	dir := t.TempDir()
 	require.NoError(t, os.WriteFile(filepath.Join(dir, "mta.yaml"), []byte(`ID: myapp`), 0600))
 	ctx := dynamic.GatherDynamic(dynamic.GatherOpts{CWD: dir})
@@ -52,6 +62,7 @@ func TestGatherDynamic_ProjectType_MtaYaml(t *testing.T) {
 }
 
 func TestGatherDynamic_ProjectType_XsAppJson(t *testing.T) {
+	isolateBTPCF(t)
 	dir := t.TempDir()
 	require.NoError(t, os.WriteFile(filepath.Join(dir, "xs-app.json"), []byte(`{}`), 0600))
 	ctx := dynamic.GatherDynamic(dynamic.GatherOpts{CWD: dir})
@@ -60,6 +71,7 @@ func TestGatherDynamic_ProjectType_XsAppJson(t *testing.T) {
 }
 
 func TestGatherDynamic_ProjectType_PomXmlWithCAPJava(t *testing.T) {
+	isolateBTPCF(t)
 	dir := t.TempDir()
 	require.NoError(t, os.WriteFile(filepath.Join(dir, "pom.xml"), []byte(`<project><groupId>com.sap.cds</groupId></project>`), 0600))
 	ctx := dynamic.GatherDynamic(dynamic.GatherOpts{CWD: dir})
@@ -68,6 +80,7 @@ func TestGatherDynamic_ProjectType_PomXmlWithCAPJava(t *testing.T) {
 }
 
 func TestGatherDynamic_ProjectType_PlainPackageJson(t *testing.T) {
+	isolateBTPCF(t)
 	dir := t.TempDir()
 	require.NoError(t, os.WriteFile(filepath.Join(dir, "package.json"), []byte(`{"name":"myapp"}`), 0600))
 	ctx := dynamic.GatherDynamic(dynamic.GatherOpts{CWD: dir})
@@ -84,6 +97,7 @@ func TestGatherDynamic_ProjectType_EmptyWhenNoFiles(t *testing.T) {
 }
 
 func TestGatherDynamic_ProjectType_CdsrcTakesPriorityOverMtaYaml(t *testing.T) {
+	isolateBTPCF(t)
 	dir := t.TempDir()
 	require.NoError(t, os.WriteFile(filepath.Join(dir, ".cdsrc.json"), []byte(`{}`), 0600))
 	require.NoError(t, os.WriteFile(filepath.Join(dir, "mta.yaml"), []byte(`ID: myapp`), 0600))
