@@ -38,7 +38,7 @@ Content is loaded from up to four layered sources, with later layers overriding 
 3. **User** — `~/.local/share/sap-devs/` (Linux), `%LOCALAPPDATA%/sap-devs/data/` (Windows)
 4. **Project** — `.sap-devs/` in the current working directory
 
-`ContentLoader` ([internal/content/loader.go](internal/content/loader.go)) manages this merge. `LoadPacks()` reads all `content/packs/<name>/` directories; each pack contains: `pack.yaml` (metadata), `context.md` (AI context text), `constraints.md` (AI constraint rules), `tips.md` (H2-delimited tips), `tools.yaml`, `resources.yaml`, `mcp.yaml`, `samples.yaml` (canonical code sample references), `known_errors.yaml` (common SAP error patterns).
+`ContentLoader` ([internal/content/loader.go](internal/content/loader.go)) manages this merge. `LoadPacks()` reads all `content/packs/<name>/` directories; each pack contains: `pack.yaml` (metadata), `context.md` (AI context text), `constraints.md` (AI constraint rules), `tips.md` (H2-delimited tips), `tools.yaml`, `resources.yaml`, `mcp.yaml`, `samples.yaml` (canonical code sample references), `known_errors.yaml` (common SAP error patterns). `context.md` files follow standard H3 section conventions: `Overview`, `Key Concepts`, `Best Practices`, `Anti-patterns`, `Code Examples` (all optional, order enforced by `ValidateContextSections()` in `sections.go`).
 
 **Additive Layers:** Packs with `additive: true` in `pack.yaml` augment (append/prepend) same-ID packs from earlier layers instead of overriding them. `AdditivePosition` controls order (`before`/`after`, default `after`). Merge logic: [internal/content/merge.go](internal/content/merge.go). A `base: true` pack (e.g., `content/packs/base/`) is auto-injected into every profile.
 
