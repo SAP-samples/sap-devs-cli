@@ -189,7 +189,7 @@ The `--stats` table adds a `Verbosity` column showing the effective verbosity fo
 
 ### Adapter YAML
 
-`content/adapters/clipboard.yaml` gets `verbosity: minimal` as proof-of-concept. All other adapters default to `full` (no change needed).
+`content/adapters/chatgpt.yaml` gets `verbosity: minimal` as proof-of-concept (it is the most budget-constrained adapter with `max_bytes: 1400`). All other adapters default to `full` (no change needed).
 
 ## File Changes
 
@@ -207,9 +207,8 @@ The `--stats` table adds a `Verbosity` column showing the effective verbosity fo
 | `internal/content/merge.go` | Per-tier merge for additive packs |
 | `internal/adapter/adapter.go` | `Adapter.Verbosity` field |
 | `internal/adapter/engine.go` | `Options.Verbosity`; per-adapter resolution logic; `renderSectionContent` verbosity threading; add `Verbosity string` to `adapterStats`; populate with the resolved verbosity in both normal and zero-pack early-exit paths; add column to `printStats` |
-| `internal/adapter/status.go` | Verbosity-aware staleness rendering |
 | `cmd/inject.go` | `--verbosity` flag; pass to `Options` |
-| `content/adapters/clipboard.yaml` | Add `verbosity: minimal` |
+| `content/adapters/chatgpt.yaml` | Add `verbosity: minimal` |
 | `content/packs/base/context.md` | Add verbosity markers |
 | `content/packs/cap/context.md` | Add verbosity markers |
 
