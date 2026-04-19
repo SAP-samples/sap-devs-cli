@@ -84,11 +84,11 @@ In `internal/content/pack.go`:
 - `ConstraintsMD string` → `Constraints VerbositySections`
 - `PreambleMD` remains `string` (preambles are always core)
 
-`LoadPack` calls `ParseVerbositySections` when loading `context.md` and `constraints.md`. Verbosity markers in `context.expanded.md` are parsed and honoured identically to `context.md`. Locale variant files (`context.{lang}.md`) follow the same rules — authors of locale files are responsible for adding appropriate verbosity markers.
+`LoadPack` calls `ParseVerbositySections` when loading `context.md` and `constraints.md` (including their locale variants `context.{lang}.md`, `constraints.{lang}.md`, and expanded files `context.expanded.md`). Authors of locale and expanded files are responsible for adding appropriate verbosity markers.
 
 ### Additive Merge
 
-In `internal/content/merge.go`, `MergeWith` for additive packs merges per-tier: the additive pack's `Core` appends to (or prepends before) the base pack's `Core`, and likewise for `Detail` and `Extended`. When one side of a tier is empty, no separator is inserted — the non-empty string is used as-is.
+In `internal/content/merge.go`, `MergeWith` for additive packs merges per-tier: the additive pack's `Core` appends to (or prepends before) the base pack's `Core`, and likewise for `Detail` and `Extended`. When one side of a tier is empty, no separator is inserted — the non-empty string is used as-is. The existing `if a.ContextMD != ""` guard becomes a check on the zero value: `if a.Context != (VerbositySections{})`, applied before iterating tiers.
 
 ### Adapter Changes
 
@@ -206,7 +206,7 @@ The `--stats` table adds a `Verbosity` column showing the effective verbosity fo
 | `internal/content/render.go` | `TrimPacks` gains `verbosity` param |
 | `internal/content/merge.go` | Per-tier merge for additive packs |
 | `internal/adapter/adapter.go` | `Adapter.Verbosity` field |
-| `internal/adapter/engine.go` | `Options.Verbosity`; per-adapter resolution logic; `renderSectionContent` verbosity threading; add `Verbosity string` to `adapterStats`; populate in both normal and zero-pack early-exit paths; add column to `printStats` |
+| `internal/adapter/engine.go` | `Options.Verbosity`; per-adapter resolution logic; `renderSectionContent` verbosity threading; add `Verbosity string` to `adapterStats`; populate with the resolved verbosity in both normal and zero-pack early-exit paths; add column to `printStats` |
 | `internal/adapter/status.go` | Verbosity-aware staleness rendering |
 | `cmd/inject.go` | `--verbosity` flag; pass to `Options` |
 | `content/adapters/clipboard.yaml` | Add `verbosity: minimal` |
