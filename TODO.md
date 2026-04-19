@@ -224,7 +224,7 @@ Expose `sap-devs` as a live MCP server so AI agents can query it on demand durin
 
 ---
 
-### ✅ Project-aware context detection on inject
+### ✅ Project-aware context detection on inject - DONE ✔️
 
 > **Implemented** in `internal/project` package. `Detect()` scans project files at inject time, `Check()` runs health checks. Results flow into `sap-devs inject` (project context section) and `sap-devs doctor` (project health table with `--tools-only`/`--project-only` flags). See [design spec](docs/superpowers/specs/2026-04-19-project-detection-health-check-design.md).
 >
