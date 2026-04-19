@@ -520,6 +520,406 @@ sap-devs init
 
 ---
 
+### `discovery`
+
+Browse the SAP Discovery Center — guided learning missions, BTP service catalog, and the BTP Guidance Framework.
+
+```
+sap-devs discovery [flags]
+sap-devs discovery missions list [flags]
+sap-devs discovery missions search <query> [flags]
+sap-devs discovery missions open <id>
+sap-devs discovery services list [flags]
+sap-devs discovery services search <query>
+sap-devs discovery services open <id>
+sap-devs discovery guidance [flags]
+sap-devs discovery guidance show <id>
+sap-devs discovery guidance open <id>
+```
+
+**Persistent flags (all subcommands):**
+
+| Flag | Description |
+|---|---|
+| `--all` | Bypass profile filtering; show all missions/services |
+| `--force` | Bypass cache and re-fetch from the API |
+| `--count`, `-n` | Limit results (default: 20) |
+
+**`missions` flags:**
+
+| Flag | Description |
+|---|---|
+| `--category <code>` | Filter by category code |
+| `--product <name>` | Filter by product |
+| `--effort <0-3>` | Filter by effort level |
+
+**`services` flags:**
+
+| Flag | Description |
+|---|---|
+| `--category <name>` | Filter by service category |
+| `--deprecated` | Include deprecated services |
+
+**`guidance` flags:**
+
+| Flag | Description |
+|---|---|
+| `--domain <name>` | Filter by domain (e.g., `Extensibility`, `Integration`) |
+
+| Subcommand | Description |
+|---|---|
+| `missions list` | List Discovery Center missions for the active profile |
+| `missions search <query>` | Search missions via the Discovery Center API |
+| `missions open <id>` | Open a mission in the browser |
+| `services list` | List BTP services for the active profile |
+| `services search <query>` | Search the BTP service catalog |
+| `services open <id>` | Open a service in the Discovery Center |
+| `guidance` | List BTP Guidance Framework phases and topics |
+| `guidance show <id>` | Show guidance content for a topic |
+| `guidance open <id>` | Open a guidance topic in the browser |
+
+**Example:**
+
+```bash
+sap-devs discovery missions list
+sap-devs discovery missions search "HANA"
+sap-devs discovery services list --category "Integration"
+sap-devs discovery guidance --domain Extensibility
+```
+
+---
+
+### `events`
+
+Browse upcoming SAP community events (CodeJams, TechEd, Devtoberfest, etc.).
+
+```
+sap-devs events [flags]
+sap-devs events open <id>
+sap-devs events types
+sap-devs events export [flags]
+```
+
+| Flag | Description |
+|---|---|
+| `--all`, `-a` | Show all events regardless of configured location |
+| `--type`, `-t` | Filter by event type ID |
+| `--count`, `-n` | Max events to display (default: 10) |
+
+| Subcommand | Description |
+|---|---|
+| `open <id>` | Open an event URL in the browser |
+| `types` | List available event type IDs |
+| `export` | Export events to a calendar file (ICS/VCS) or generate Google/Outlook URLs |
+
+**Example:**
+
+```bash
+sap-devs events
+sap-devs events --type codejam
+sap-devs events types
+sap-devs events export --format google
+```
+
+---
+
+### `hook`
+
+Manage AI tool lifecycle hooks from pack definitions. Hooks wire commands into AI tool session-start or other lifecycle events.
+
+```
+sap-devs hook list [--all]
+sap-devs hook install [id] [--dry-run]
+sap-devs hook uninstall <id>
+sap-devs hook status
+```
+
+| Subcommand | Description |
+|---|---|
+| `list` | List available hooks (active profile by default; `--all` for all packs) |
+| `install [id]` | Wire a hook (or all profile hooks if no id) into your AI tool configs |
+| `uninstall <id>` | Remove a hook from your AI tool configs |
+| `status` | Show which hooks are installed in your AI tool configs |
+
+**Example:**
+
+```bash
+sap-devs hook list
+sap-devs hook install sap-news-friday
+sap-devs hook status
+```
+
+---
+
+### `influencers`
+
+Browse SAP community influencers and thought leaders.
+
+```
+sap-devs influencers [flags]
+sap-devs influencers open <id> [--link <type>]
+```
+
+| Flag | Description |
+|---|---|
+| `--all`, `-a` | Show all influencers regardless of profile |
+| `--pack`, `-p` | Filter to a specific pack |
+| `--tags`, `-t` | Filter by comma-separated focus tags (OR match) |
+| `--random`, `-r` | Show one random influencer |
+
+**Example:**
+
+```bash
+sap-devs influencers
+sap-devs influencers --tags CAP,BTP
+sap-devs influencers open dj-adams --link blog
+```
+
+---
+
+### `learning`
+
+Browse SAP Learning Journeys from learning.sap.com.
+
+```
+sap-devs learning [flags]
+sap-devs learning list [flags]
+sap-devs learning search <query> [flags]
+sap-devs learning show <slug>
+sap-devs learning open <slug>
+```
+
+**Persistent flags:**
+
+| Flag | Description |
+|---|---|
+| `--all` | Bypass profile filtering |
+| `--level <level>` | Filter by level (`beginner`, `intermediate`, `advanced`) |
+| `--role <role>` | Filter by target role |
+| `--count`, `-n` | Limit results (default: 20) |
+
+**`list` flags:**
+
+| Flag | Description |
+|---|---|
+| `--pack <id>` | Filter to a specific pack's curated journeys |
+
+| Subcommand | Description |
+|---|---|
+| `list` | List learning journeys for the active profile (default subcommand) |
+| `search <query>` | Search journeys via the learning.sap.com API with local fallback |
+| `show <slug>` | Display full details for a learning journey |
+| `open <slug>` | Open a learning journey in the browser |
+
+**Example:**
+
+```bash
+sap-devs learning
+sap-devs learning list --level beginner
+sap-devs learning search "CAP"
+sap-devs learning show cap-learning-journey
+```
+
+---
+
+### `news`
+
+Browse SAP Developer News episodes from the SAP Developers YouTube channel.
+
+```
+sap-devs news [--count <n>]
+sap-devs news list [--count <n>]
+sap-devs news latest
+sap-devs news open <id>
+sap-devs news search <query>
+sap-devs news read <id> [--plain]
+```
+
+| Flag | Description |
+|---|---|
+| `--count`, `-n` | Number of episodes to show (default: 10) |
+
+| Subcommand | Description |
+|---|---|
+| `list` | List recent episodes with YouTube and SAP Community links |
+| `latest` | Open the most recent episode in the browser |
+| `open <id>` | Open a specific episode by list number in the browser |
+| `search <query>` | Search episodes by title or description |
+| `read <id>` | Read the SAP Community blog post for an episode in the terminal |
+
+**Example:**
+
+```bash
+sap-devs news list
+sap-devs news latest
+sap-devs news search "HANA"
+sap-devs news read 3 --plain
+```
+
+---
+
+### `samples`
+
+Browse canonical SAP code samples from the active profile's packs.
+
+```
+sap-devs samples list [flags]
+sap-devs samples search <query>
+sap-devs samples open <id>
+sap-devs samples clone <id>
+```
+
+**`list` flags:**
+
+| Flag | Description |
+|---|---|
+| `--all`, `-a` | Show all samples regardless of profile |
+| `--pack`, `-p` | Filter to a specific pack |
+| `--tags`, `-t` | Filter by comma-separated tags (OR match) |
+
+| Subcommand | Description |
+|---|---|
+| `list` | List samples for the active profile |
+| `search <query>` | Search samples across all packs |
+| `open <id>` | Open a sample URL in the browser |
+| `clone <id>` | Clone the sample's GitHub repository locally |
+
+**Example:**
+
+```bash
+sap-devs samples list
+sap-devs samples search "CAP"
+sap-devs samples clone cap-bookshop
+```
+
+---
+
+### `tutorial`
+
+Browse and render SAP tutorials from the SAP Developers portal.
+
+```
+sap-devs tutorial list [flags]
+sap-devs tutorial search <query> [flags]
+sap-devs tutorial show <slug> [flags]
+sap-devs tutorial open <slug>
+```
+
+**`list` flags:**
+
+| Flag | Description |
+|---|---|
+| `--all`, `-a` | Show all tutorials regardless of profile |
+| `--pack`, `-p` | Filter to a specific pack |
+| `--level`, `-l` | Filter by level (`beginner`, `intermediate`, `advanced`) |
+| `--tags`, `-t` | Comma-separated tags to filter (OR match) |
+
+**`search` flags:**
+
+| Flag | Description |
+|---|---|
+| `--level`, `-l` | Filter results by level |
+| `--tags`, `-t` | Filter results by comma-separated tags |
+
+**`show` flags:**
+
+| Flag | Description |
+|---|---|
+| `--interactive`, `-i` | Interactive step-by-step TUI mode |
+| `--step <n>` | Jump to a specific step number |
+
+| Subcommand | Description |
+|---|---|
+| `list` | List tutorials for the active profile |
+| `search <query>` | Search the full tutorial index across all repos |
+| `show <slug>` | Render a tutorial with steps in the terminal |
+| `open <slug>` | Open a tutorial in the browser |
+
+**Example:**
+
+```bash
+sap-devs tutorial list --level beginner
+sap-devs tutorial search "CAP"
+sap-devs tutorial show cap-service-add-auth -i
+```
+
+---
+
+### `videos`
+
+Browse SAP YouTube videos from pack-curated sources.
+
+```text
+sap-devs videos [flags]
+sap-devs videos list [flags]
+sap-devs videos search <query>
+sap-devs videos open <id>
+```
+
+**`list` flags:**
+
+| Flag | Description |
+|---|---|
+| `--count`, `-n` | Number of videos to show (default: 20) |
+| `--source <id>` | Filter by source ID |
+| `--pack <id>` | Filter by pack ID |
+
+| Subcommand | Description |
+|---|---|
+| `list` | List videos for the active profile, newest first (default subcommand) |
+| `search <query>` | Search videos by title across all packs |
+| `open <id>` | Open a video by list number or ID in the browser |
+
+**Example:**
+
+```bash
+sap-devs videos list
+sap-devs videos search "CAP"
+sap-devs videos open 3
+```
+
+---
+
+### `learn`
+
+Guided learning recommendations combining tutorials, learning journeys, and Discovery Center missions.
+
+```bash
+sap-devs learn [flags]
+sap-devs learn recommend [flags]
+sap-devs learn search <query>
+sap-devs learn path list [flags]
+sap-devs learn path show <path-id>
+sap-devs learn path open <path-id>
+```
+
+| Flag | Description |
+|---|---|
+| `--level` | Filter by experience level (`beginner`, `intermediate`, `advanced`) |
+| `--all` | Bypass profile filtering, show content from all packs |
+| `--count`, `-n` | Max items per section (recommend) or total (search). Default: 10 |
+| `--pack` | Filter to a specific pack (recommend and path list only) |
+
+| Subcommand | Description |
+|---|---|
+| `recommend` | Show recommended content in sections (Journeys / Tutorials / Missions). Default subcommand |
+| `search <query>` | Cross-type search with unified results table |
+| `path list` | List available learning paths (curated + auto-generated) |
+| `path show <id>` | Display a learning path with numbered steps and URLs |
+| `path open <id>` | Open the first step of a learning path in the browser |
+
+**Example:**
+
+```bash
+sap-devs learn                           # show recommendations
+sap-devs learn --level beginner          # filter to beginner content
+sap-devs learn search "CAP deployment"   # cross-type search
+sap-devs learn path list --pack cap      # list CAP learning paths
+sap-devs learn path show cap-getting-started  # show path details
+```
+
+---
+
 ## Configuration
 
 The configuration file is at:
