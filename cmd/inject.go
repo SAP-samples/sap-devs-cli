@@ -199,6 +199,9 @@ into project-level files (CLAUDE.md, .cursorrules, etc.) in the current director
 			}
 		}
 
+		// Read changelog for What's New injection block
+		clEntries, clTime, _ := sapSync.ReadChangelog(paths.CacheDir)
+
 		// Resolve featured learning journeys for injection
 		learningIndex, _ := learning.LoadIndex(paths.CacheDir, learning.CacheTTL)
 		if learningIndex != nil {
@@ -272,6 +275,17 @@ into project-level files (CLAUDE.md, .cursorrules, etc.) in the current director
 			dynCtx.ScratchNotes = notes
 		}
 
+		// Translate sync changelog entries to content WhatsNewEntry for rendering
+		if len(clEntries) > 0 {
+			for _, e := range clEntries {
+				dynCtx.WhatsNew = append(dynCtx.WhatsNew, content.WhatsNewEntry{
+					Pack: e.Pack,
+					Text: e.Text,
+				})
+			}
+			dynCtx.WhatsNewDate = &clTime
+		}
+
 		opts := adapter.Options{
 			Scope:      scope,
 			ToolFilter: injectTool,
@@ -293,6 +307,7 @@ into project-level files (CLAUDE.md, .cursorrules, etc.) in the current director
 			return res.Err
 		}
 		if !injectDryRun {
+			_ = sapSync.ConsumeChangelog(paths.CacheDir)
 			fmt.Fprintln(cmd.OutOrStdout(), i18n.Tf(i18n.ActiveLang, "inject.done", map[string]any{"Scope": scope}))
 			if injectTool == "" {
 				fmt.Fprintln(cmd.OutOrStdout(), i18n.T(i18n.ActiveLang, "inject.hint"))
