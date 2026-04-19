@@ -33,6 +33,15 @@ func (a *Pack) MergeWith(base *Pack) *Pack {
 		}
 	}
 
+	// Constraints: position controls order. Empty additive ConstraintsMD preserves base unchanged.
+	if a.ConstraintsMD != "" {
+		if a.AdditivePosition == "before" {
+			merged.ConstraintsMD = a.ConstraintsMD + "\n\n" + base.ConstraintsMD
+		} else {
+			merged.ConstraintsMD = base.ConstraintsMD + "\n\n" + a.ConstraintsMD
+		}
+	}
+
 	// Tips: both sets kept; position controls order. Always fresh slice.
 	if a.AdditivePosition == "before" {
 		merged.Tips = append(append([]Tip(nil), a.Tips...), base.Tips...)
