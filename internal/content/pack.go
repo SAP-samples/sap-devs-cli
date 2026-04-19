@@ -50,6 +50,7 @@ type Pack struct {
 	LearningFilters *LearningProfileFilters
 
 	LearningForInject []LearningJourneyInjection // populated at inject time
+	LearningPaths     []LearningPathDef
 }
 
 // Resource is a curated link within a pack.
@@ -419,6 +420,16 @@ func LoadPack(packDir string, lang string) (*Pack, error) {
 			pack.LearningRefs[i].PackID = pack.ID
 		}
 		pack.LearningFilters = learn.ProfileFilters
+	}
+	if data, err := os.ReadFile(filepath.Join(packDir, "paths.yaml")); err == nil {
+		var pathsYAML struct {
+			Paths []LearningPathDef `yaml:"paths"`
+		}
+		_ = yaml.Unmarshal(data, &pathsYAML)
+		pack.LearningPaths = pathsYAML.Paths
+		for i := range pack.LearningPaths {
+			pack.LearningPaths[i].PackID = pack.ID
+		}
 	}
 	if data, err := os.ReadFile(filepath.Join(packDir, "event-types.yaml")); err == nil {
 		_ = yaml.Unmarshal(data, &pack.EventTypes)
