@@ -10,9 +10,33 @@ type DynamicContext struct {
 	ActiveProfile   string // profile.Name, or profile.ID, or ""
 	LoadedPackIDs   []string
 	LastSynced      *time.Time
-	ProjectType     string
+	Project         *ProjectInfo
+	ProjectFindings []ProjectFinding
 	WiredMCPServers []WiredMCPEntry
 	Commands        []CommandInfo
+}
+
+// ProjectInfo holds detected facts about the current project, mirroring
+// project.ProjectContext fields needed for rendering. Populated by
+// internal/dynamic at gather time — kept in content to avoid an import cycle
+// (internal/project imports internal/content for pack access).
+type ProjectInfo struct {
+	Type       string
+	CAPVersion string
+	Facts      []ProjectFact
+}
+
+// ProjectFact is a single key/value pair detected from the project.
+type ProjectFact struct {
+	Key   string
+	Value string
+	Warn  string
+}
+
+// ProjectFinding is a single health-check result surfaced during inject.
+type ProjectFinding struct {
+	Severity string // "error", "warning", "info"
+	Message  string
 }
 
 // WiredMCPEntry records SAP MCP servers registered in a specific AI tool's config.

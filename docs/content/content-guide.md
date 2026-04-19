@@ -54,6 +54,9 @@ locales:
   de:
     name: SAP Cloud Application Programming Model
     description: Node.js- und Java-Framework für Cloud-native Business-Anwendungen auf BTP
+versions:
+  "@sap/cds": "9.8.0"             # optional — latest known versions for staleness checks
+  "@sap/cds-dk": "9.8.0"
 ```
 
 > **Note:** `weight` sets the default priority for this pack. Individual profiles can override it in their `packs` list (see [Profiles](#profiles) below).
@@ -67,6 +70,8 @@ locales:
 > **Note:** **`additive`** *(optional bool, default `false`)* — when `true`, this pack augments the lower-layer pack with the same `id` rather than replacing it. Only valid in company, user, or project layers. See [Additive Layers](../content-authoring.md#additive-layers).
 >
 > **Note:** **`additive_position`** *(optional string `"before"` | `"after"`, default `"after"`)* — controls where additive content is inserted relative to the base pack's content. Only meaningful when `additive: true`.
+>
+> **Note:** **`versions`** *(optional map of string → string)* — latest known versions for dependency staleness checks, e.g. `"@sap/cds": "9.8.0"`. Used by `sap-devs doctor` and `sap-devs inject` to flag outdated project dependencies. When multiple packs declare the same key, the highest-weight pack wins.
 
 ### `context.md`
 

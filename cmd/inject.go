@@ -19,6 +19,7 @@ import (
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/dynamic"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/i18n"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/learning"
+	"github.tools.sap/developer-relations/sap-devs-cli/internal/project"
 	sapSync "github.tools.sap/developer-relations/sap-devs-cli/internal/sync"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/xdg"
 )
@@ -239,15 +240,30 @@ into project-level files (CLAUDE.md, .cursorrules, etc.) in the current director
 			return err
 		}
 
+		// Detect project context once — reused by both GatherDynamic and health checks
+		pc, _ := project.Detect(cwd)
+
 		dynCtx := dynamic.GatherDynamic(dynamic.GatherOpts{
-			CWD:          cwd,
-			CLIVersion:   Version,
-			Profile:      activeProfile,
-			Packs:        packs,
-			SyncStateDir: paths.CacheDir,
-			Adapters:     gatheredAdapters,
-			Commands:     cmdInfos,
+			CWD:            cwd,
+			CLIVersion:     Version,
+			Profile:        activeProfile,
+			Packs:          packs,
+			SyncStateDir:   paths.CacheDir,
+			Adapters:       gatheredAdapters,
+			Commands:        cmdInfos,
+			ProjectContext: pc,
 		})
+
+		// Run project health checks and attach findings to dynamic context
+		if pc != nil && pc.Type != "" {
+			findings := project.Check(pc, cwd, packs)
+			for _, f := range findings {
+				dynCtx.ProjectFindings = append(dynCtx.ProjectFindings, content.ProjectFinding{
+					Severity: f.Severity,
+					Message:  f.Message,
+				})
+			}
+		}
 
 		opts := adapter.Options{
 			Scope:      scope,

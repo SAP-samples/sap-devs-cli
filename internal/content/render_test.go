@@ -202,15 +202,21 @@ func TestRenderContext_DynamicSection_NeverSyncedWhenNil(t *testing.T) {
 }
 
 func TestRenderContext_DynamicSection_ProjectTypeShownWhenSet(t *testing.T) {
-	dyn := &content.DynamicContext{ProjectType: "CAP (Node.js)"}
+	dyn := &content.DynamicContext{
+		Project: &content.ProjectInfo{
+			Type:  "CAP (Node.js)",
+			Facts: []content.ProjectFact{{Key: "Project type", Value: "CAP (Node.js)"}},
+		},
+	}
 	out := content.RenderContext(nil, nil, dyn)
-	assert.Contains(t, out, "**Project type:** CAP (Node.js)")
+	assert.Contains(t, out, "**Project Context (detected):**")
+	assert.Contains(t, out, "CAP (Node.js)")
 }
 
 func TestRenderContext_DynamicSection_ProjectTypeOmittedWhenEmpty(t *testing.T) {
-	dyn := &content.DynamicContext{ProjectType: ""}
+	dyn := &content.DynamicContext{Project: nil}
 	out := content.RenderContext(nil, nil, dyn)
-	assert.NotContains(t, out, "Project type")
+	assert.NotContains(t, out, "Project Context")
 }
 
 func TestRenderContext_DynamicSection_MCPServersShown(t *testing.T) {

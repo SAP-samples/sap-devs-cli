@@ -88,6 +88,7 @@ sap-devs-cli/
 │   │   └── catalogs/       # JSON string catalogs per language (en.json, de.json, …)
 │   ├── learn/              # Cross-type learning recommendations, search, and paths
 │   ├── learning/           # Learning journey catalog and search API client
+│   ├── project/            # Project detection and health checks
 │   ├── sync/               # Sync engine — fetches official/company repo zips
 │   ├── tutorials/          # Tutorial fetching, parsing, and search
 │   ├── update/             # Self-update logic
@@ -240,6 +241,19 @@ XDG environment variables (`XDG_CONFIG_HOME`, `XDG_CACHE_HOME`, `XDG_DATA_HOME`)
 - **`LoadPaths()`/`AutoFillPaths()`/`ResolvePaths()`** — curated learning paths from `paths.yaml` + auto-generated paths from featured pack content
 
 Experience level is stored in `config.yaml` as `experience_level` (beginner/intermediate/advanced). Mission effort values map to levels: 0-1→beginner, 2→intermediate, 3→advanced.
+
+### Project Detection & Health Check
+
+`internal/project` provides two entry points consumed by both `cmd/inject.go` and `cmd/doctor.go`:
+
+- **`Detect(cwd string) (*ProjectContext, error)`** — scans well-known files (package.json, pom.xml, mta.yaml, xs-security.json, xs-app.json, chart/helm directories, default-env.json, .cdsrc.json) and returns a `ProjectContext` with typed fields (`Type`, `CAPVersion`, `Database`, `Deployment`, `Auth`) and a `Facts` slice for rendering. No network calls.
+- **`Check(ctx *ProjectContext, cwd string, packs []*content.Pack) []Finding`** — runs four categories of health checks (dependency, version staleness, best-practice, constraint compliance) and returns `[]Finding` with severity (`error`/`warning`/`info`) and optional fix suggestion.
+
+**Inject integration:** `GatherDynamic()` calls `Detect()` and converts to `content.ProjectInfo` (mirror types to avoid `content` ↔ `project` import cycle). `cmd/inject.go` then runs `Check()` and converts findings to `content.ProjectFinding`. The `renderDynamic()` function renders facts as a `**Project Context (detected):**` block with error/warning findings prefixed by ⚠.
+
+**Doctor integration:** `cmd/doctor.go` calls `Detect()` and `Check()` directly. The `--tools-only` flag skips project health; `--project-only` skips tool version checks. `printProjectHealth()` renders findings with severity icons and fix suggestions.
+
+**Version staleness:** `semver.go` provides `CompareVersions()` and `VersionStaleness()` for comparing detected versions against latest known versions from `pack.yaml` `versions` maps. Thresholds: ≥1 major behind → error; ≥2 minor behind → warning.
 
 ---
 
