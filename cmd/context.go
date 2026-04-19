@@ -23,14 +23,14 @@ var contextAddCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		lang := i18n.ActiveLang
+		if strings.TrimSpace(args[0]) == "" {
+			return fmt.Errorf("%s", i18n.T(lang, "context.add.empty"))
+		}
 		cwd, err := os.Getwd()
 		if err != nil {
 			return err
 		}
 		if err := scratch.Add(cwd, args[0]); err != nil {
-			if strings.TrimSpace(args[0]) == "" {
-				return fmt.Errorf("%s", i18n.T(lang, "context.add.empty"))
-			}
 			return err
 		}
 		fmt.Fprintln(cmd.OutOrStdout(), i18n.T(lang, "context.add.done"))
