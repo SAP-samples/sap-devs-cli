@@ -48,6 +48,8 @@ type Pack struct {
 
 	LearningRefs    []LearningRef
 	LearningFilters *LearningProfileFilters
+
+	LearningForInject []LearningJourneyInjection // populated at inject time
 }
 
 // Resource is a curated link within a pack.
@@ -220,6 +222,14 @@ type LearningProfileFilters struct {
 	Products          []string `yaml:"products,omitempty"`
 	ProductCategories []string `yaml:"product_categories,omitempty"`
 	Roles             []string `yaml:"roles,omitempty"`
+}
+
+// LearningJourneyInjection is a pre-resolved learning journey for context injection.
+type LearningJourneyInjection struct {
+	Title    string
+	URL      string
+	Level    string
+	Duration string
 }
 
 // EventType defines a category of events and its data source.
