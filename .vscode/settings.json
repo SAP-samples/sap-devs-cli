@@ -14,6 +14,7 @@
     "./content/schemas/discovery.schema.json": "**/packs/*/discovery.yaml",
     "./content/schemas/tutorials.yaml.schema.json": "**/packs/*/tutorials.yaml",
     "./content/schemas/learning.schema.json": "**/packs/*/learning.yaml",
-    "./content/schemas/paths.yaml.schema.json": "**/packs/*/paths.yaml"
+    "./content/schemas/paths.yaml.schema.json": "**/packs/*/paths.yaml",
+    "./content/schemas/known_errors.schema.json": "**/packs/*/known_errors.yaml"
   }
 }

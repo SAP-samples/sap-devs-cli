@@ -34,6 +34,7 @@ type Pack struct {
 	Hooks         []HookDef
 	Influencers []Influencer
 	Samples      []Sample
+	KnownErrors  []KnownError
 	TutorialRefs []TutorialRef
 
 	EventTypes     []EventType
@@ -135,6 +136,17 @@ type Sample struct {
 	Tags        []string `yaml:"tags"`
 	Inject      bool     `yaml:"inject"`
 	PackID      string   // set at load time, not in YAML
+}
+
+// KnownError is a common SAP error pattern with its cause and fix.
+type KnownError struct {
+	ID      string   `yaml:"id"`
+	Pattern string   `yaml:"pattern"`
+	Cause   string   `yaml:"cause"`
+	Fix     string   `yaml:"fix"`
+	Docs    string   `yaml:"docs,omitempty"`
+	Tags    []string `yaml:"tags,omitempty"`
+	PackID  string
 }
 
 // TutorialRef is a curated tutorial reference in a pack's tutorials.yaml.
@@ -395,6 +407,12 @@ func LoadPack(packDir string, lang string) (*Pack, error) {
 		_ = yaml.Unmarshal(data, &pack.Samples)
 		for i := range pack.Samples {
 			pack.Samples[i].PackID = pack.ID
+		}
+	}
+	if data, err := os.ReadFile(filepath.Join(packDir, "known_errors.yaml")); err == nil {
+		_ = yaml.Unmarshal(data, &pack.KnownErrors)
+		for i := range pack.KnownErrors {
+			pack.KnownErrors[i].PackID = pack.ID
 		}
 	}
 	if data, err := os.ReadFile(filepath.Join(packDir, "tutorials.yaml")); err == nil {

@@ -1,0 +1,32 @@
+- id: abap/amdp-static
+  pattern: "AMDP method must be static"
+  cause: AMDP (ABAP Managed Database Procedure) methods must be declared as static class methods
+  fix: "Change the method definition to `CLASS-METHODS` instead of `METHODS` in the class definition"
+  docs: https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/index.htm?file=abenamdp.htm
+  tags: [amdp, hana, method]
+
+- id: abap/clean-core-access
+  pattern: "Access to SAP object not permitted"
+  cause: Using a non-released SAP object in ABAP Cloud / clean core; only tier-1 released APIs are allowed
+  fix: Find the released API equivalent using the Released Objects app in ADT, or check api.sap.com for the released API
+  docs: https://help.sap.com/docs/abap-cloud/abap-rap/released-apis
+  tags: [clean-core, api, abap-cloud]
+
+- id: abap/cds-activation
+  pattern: "CDS view activation failed"
+  cause: Syntax error or unresolvable dependency in the CDS view definition; common after transport or upgrade
+  fix: Check the CDS view source for syntax errors, verify all referenced data sources exist and are active, run `Activate All` from ADT
+  tags: [cds, activation, adt]
+
+- id: abap/rap-draft-determine-action
+  pattern: "Determination/validation is not allowed for draft instances"
+  cause: RAP determination or validation runs on draft data where it is not expected
+  fix: "Add `on save` trigger to the determination/validation, or check `%is_draft` in the implementation"
+  docs: https://help.sap.com/docs/abap-cloud/abap-rap/determinations
+  tags: [rap, draft, determination]
+
+- id: abap/authority-check-failed
+  pattern: "No authority for this action (PFCG role missing)"
+  cause: User lacks the required PFCG authorization role for the operation
+  fix: "Check transaction SU53 for the missing authorization object, then assign the correct role via PFCG"
+  tags: [authorization, security, pfcg]
