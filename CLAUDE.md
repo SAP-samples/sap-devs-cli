@@ -124,7 +124,7 @@ On every command invocation (except `update` and dev builds), a background gorou
 | `config show/set/company` | View and edit `~/.config/sap-devs/config.yaml` |
 | `tip` | Show a SAP developer tip; on Fridays shows the latest SAP Developer News episode (bypassed by `--new`); `tip install`/`tip uninstall` wires it into your shell prompt |
 | `tutorial` | Browse and render SAP tutorials; `tutorial list/search/show/open`; `-i` for interactive step-by-step TUI |
-| `doctor` | Check local tool versions against pack requirements (`--fix` for install hints) |
+| `doctor` | Check tool versions and project health (`--tools-only`, `--project-only`, `--fix` for install/fix hints) |
 | `discovery` | Browse SAP Discovery Center missions, BTP services, and guidance framework; `discovery missions list/search/open`, `discovery services list/search/open`, `discovery guidance/show/open` |
 | `learning` | Browse SAP Learning Journeys; `learning list/search/show/open` |
 | `learn` | Guided learning recommendations combining tutorials, journeys, and missions; `learn recommend/search`, `learn path list/show/open` |
@@ -138,6 +138,15 @@ On every command invocation (except `update` and dev builds), a background gorou
 | `videos` | Browse SAP YouTube videos; `videos list/search/open` |
 | `update` | Self-update the binary |
 | `init` | First-time setup wizard |
+
+### Project Detection & Health Check
+
+`internal/project` ([internal/project/detect.go](internal/project/detect.go), [internal/project/check.go](internal/project/check.go)) provides two entry points:
+
+- `Detect(cwd)` scans project files (package.json, .mta.yaml, xs-security.json, etc.) and returns a `ProjectContext` with typed fields (CAPVersion, Database, Deployment, Auth) and a `Facts` slice for flexible rendering.
+- `Check(ctx, cwd, packs)` runs health checks (dependency, version staleness, best-practice, constraint compliance) and returns `[]Finding` with severity/fix.
+
+Both are consumed by `cmd/inject.go` (project context injected into AI tools) and `cmd/doctor.go` (health check table output).
 
 ### YAML Schemas
 
