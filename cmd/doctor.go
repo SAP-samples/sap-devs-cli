@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"fmt"
+	"io"
+	"os"
 	"os/exec"
 	"runtime"
 	"strings"
@@ -10,6 +12,7 @@ import (
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/config"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/i18n"
+	"github.tools.sap/developer-relations/sap-devs-cli/internal/project"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/xdg"
 )
 
@@ -18,6 +21,8 @@ const profileActive = "@active"
 
 var doctorProfile string
 var doctorFix bool
+var doctorToolsOnly bool
+var doctorProjectOnly bool
 
 var doctorCmd = &cobra.Command{
 	Use:   "doctor",
@@ -73,26 +78,44 @@ var doctorCmd = &cobra.Command{
 		}
 
 		// Collect all tools across packs
-		var tools []content.ToolDef
-		for _, p := range packs {
-			tools = append(tools, p.Tools...)
+		if !doctorProjectOnly {
+			var tools []content.ToolDef
+			for _, p := range packs {
+				tools = append(tools, p.Tools...)
+			}
+
+			if len(tools) == 0 {
+				fmt.Fprintln(cmd.OutOrStdout(), i18n.T(i18n.ActiveLang, "doctor.no_tools"))
+				return nil
+			}
+
+			results := content.CheckTools(tools, execRunner)
+			printDoctorTable(results, i18n.ActiveLang)
+
+			if doctorFix {
+				printInstallCommands(results)
+			}
+
+			for _, r := range results {
+				if r.Status == content.StatusFail || r.Status == content.StatusMissing {
+					return fmt.Errorf("one or more tools failed the version check")
+				}
+			}
 		}
 
-		if len(tools) == 0 {
-			fmt.Fprintln(cmd.OutOrStdout(), i18n.T(i18n.ActiveLang, "doctor.no_tools"))
-			return nil
-		}
-
-		results := content.CheckTools(tools, execRunner)
-		printDoctorTable(results, i18n.ActiveLang)
-
-		if doctorFix {
-			printInstallCommands(results)
-		}
-
-		for _, r := range results {
-			if r.Status == content.StatusFail || r.Status == content.StatusMissing {
-				return fmt.Errorf("one or more tools failed the version check")
+		// Project health checks
+		if !doctorToolsOnly {
+			cwd, _ := os.Getwd()
+			pc, err := project.Detect(cwd)
+			if err == nil && pc.Type != "" {
+				findings := project.Check(pc, cwd, packs)
+				fmt.Fprintln(cmd.OutOrStdout())
+				printProjectHealth(cmd.OutOrStdout(), pc, findings, i18n.ActiveLang)
+				for _, f := range findings {
+					if f.Severity == "error" {
+						return fmt.Errorf("one or more project health checks failed")
+					}
+				}
 			}
 		}
 		return nil
@@ -182,5 +205,46 @@ func installCommand(tool content.ToolDef, lang string) string {
 func init() {
 	doctorCmd.Flags().StringVar(&doctorProfile, "profile", "", `profile to check ("@active" for configured profile, or a profile ID)`)
 	doctorCmd.Flags().BoolVar(&doctorFix, "fix", false, "print install commands for failed or missing tools")
+	doctorCmd.Flags().BoolVar(&doctorToolsOnly, "tools-only", false, "check tool versions only (skip project health)")
+	doctorCmd.Flags().BoolVar(&doctorProjectOnly, "project-only", false, "check project health only (skip tool versions)")
 	rootCmd.AddCommand(doctorCmd)
+}
+
+func printProjectHealth(w io.Writer, pc *project.ProjectContext, findings []project.Finding, lang string) {
+	header := fmt.Sprintf("%s (%s)", i18n.T(lang, "doctor.project.header"), pc.Type)
+	if pc.Deployment != "" {
+		deployLabel := pc.Deployment
+		if pc.Deployment == "mta-cf" {
+			deployLabel = "MTA to Cloud Foundry"
+		} else if pc.Deployment == "helm-kyma" {
+			deployLabel = "Helm to Kyma"
+		}
+		header += " — " + deployLabel
+	}
+	fmt.Fprintln(w, header)
+	fmt.Fprintln(w, strings.Repeat("─", 55))
+
+	if len(findings) == 0 {
+		fmt.Fprintln(w, i18n.T(lang, "doctor.project.no_findings"))
+		return
+	}
+
+	for _, f := range findings {
+		var icon, sevLabel string
+		switch f.Severity {
+		case "error":
+			icon = "✗"
+			sevLabel = i18n.T(lang, "doctor.project.severity_error")
+		case "warning":
+			icon = "⚠"
+			sevLabel = i18n.T(lang, "doctor.project.severity_warning")
+		default:
+			icon = "ℹ"
+			sevLabel = i18n.T(lang, "doctor.project.severity_info")
+		}
+		fmt.Fprintf(w, "%s %-8s %s\n", icon, sevLabel, f.Message)
+		if f.Fix != "" {
+			fmt.Fprintf(w, "           %s %s\n", i18n.T(lang, "doctor.project.fix_prefix"), f.Fix)
+		}
+	}
 }

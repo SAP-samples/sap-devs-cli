@@ -52,6 +52,8 @@ type Pack struct {
 
 	LearningForInject []LearningJourneyInjection // populated at inject time
 	LearningPaths     []LearningPathDef
+
+	Versions map[string]string
 }
 
 // Resource is a curated link within a pack.
@@ -302,6 +304,7 @@ type packMeta struct {
 	Additive         bool                      `yaml:"additive,omitempty"`
 	AdditivePosition string                    `yaml:"additive_position,omitempty"`
 	Locales          map[string]packMetaLocale `yaml:"locales,omitempty"`
+	Versions         map[string]string         `yaml:"versions,omitempty"`
 }
 
 // LoadPack reads all files from packDir and returns a populated Pack.
@@ -328,6 +331,7 @@ func LoadPack(packDir string, lang string) (*Pack, error) {
 		Base:             meta.Base,
 		Additive:         meta.Additive,
 		AdditivePosition: meta.AdditivePosition,
+		Versions:         meta.Versions,
 	}
 
 	if pack.Additive && pack.AdditivePosition != "before" {

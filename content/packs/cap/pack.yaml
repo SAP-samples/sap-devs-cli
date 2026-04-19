@@ -8,3 +8,6 @@ locales:
   de:
     name: SAP Cloud Application Programming Model
     description: Node.js- und Java-Framework für Cloud-native Business-Anwendungen auf BTP
+versions:
+  "@sap/cds": "9.8.0"
+  "@sap/cds-dk": "9.8.0"

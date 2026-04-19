@@ -224,36 +224,11 @@ Expose `sap-devs` as a live MCP server so AI agents can query it on demand durin
 
 ---
 
-### Project-aware context detection on inject
+### ✅ Project-aware context detection on inject
 
-Detect properties of the current project at inject time and augment the injected block with project-specific facts, so the agent gets "this project" context not just "SAP in general."
-
-**Problem:** A developer working on a CAP project with HANA Cloud on BTP gets the same injected context as one working on a standalone SQLite prototype. The agent can't give version-appropriate or environment-appropriate advice without knowing what it's working with.
-
-**Detection signals (scanned at `inject` time, project scope only):**
-
-| Signal | What to inject |
-| --- | --- |
-| `package.json` with `@sap/cds` | CAP version in use; flag any version-specific behaviours |
-| `xs-security.json` present | XSUAA is in use; inject OAuth2/JWT guidance |
-| `.mta.yaml` present | MTA deployment; inject CF-specific tips |
-| `mta_archives/` present | User has built MTAs; likely deploying to CF |
-| `default-env.json` present | Local CF env simulation; inject hybrid testing tips |
-| `hana` in `package.json` `requires` | HANA Cloud target; inject HANA-specific CDS hints |
-| `.cdsrc.json` present | Custom CDS config; surface key settings that affect behaviour |
-
-**Output:** A `## Project Context` section at the top of the project-scope injected block, e.g.:
-
-```markdown
-## Project Context (detected)
-- CAP version: @sap/cds 9.6.2 (latest: 9.8.0 — update available)
-- Database: SAP HANA Cloud (xs-security.json + hana require detected)
-- Deployment: MTA to Cloud Foundry (.mta.yaml present)
-```
-
-**Implementation note:** Detection runs in `cmd/inject.go` before the adapter engine; results are passed as template variables to the pack renderer. No network calls required.
-
-But also implement a project health check command - that will point out issues in the current project setup, such as missing dependencies, misconfigured files, or unsupported versions based upon the detected project context and the best practices and other info defined in the packs.
+> **Implemented** in `internal/project` package. `Detect()` scans project files at inject time, `Check()` runs health checks. Results flow into `sap-devs inject` (project context section) and `sap-devs doctor` (project health table with `--tools-only`/`--project-only` flags). See [design spec](docs/superpowers/specs/2026-04-19-project-detection-health-check-design.md).
+>
+> **Future work:** ABAP project detection (pending ADT-in-VSCode), UI5 standalone detection, pack-driven checks.yaml, auto-fix mode.
 
 ---
 

@@ -20,7 +20,8 @@ func TestGatherDynamic_ProjectType_CdsrcJson(t *testing.T) {
 	dir := t.TempDir()
 	require.NoError(t, os.WriteFile(filepath.Join(dir, ".cdsrc.json"), []byte(`{}`), 0600))
 	ctx := dynamic.GatherDynamic(dynamic.GatherOpts{CWD: dir})
-	assert.Equal(t, "CAP (Node.js)", ctx.ProjectType)
+	require.NotNil(t, ctx.Project)
+	assert.Equal(t, "CAP (Node.js)", ctx.Project.Type)
 }
 
 func TestGatherDynamic_ProjectType_PackageJsonWithCDS(t *testing.T) {
@@ -28,7 +29,8 @@ func TestGatherDynamic_ProjectType_PackageJsonWithCDS(t *testing.T) {
 	pkg := `{"dependencies":{"@sap/cds":"^7.0.0"}}`
 	require.NoError(t, os.WriteFile(filepath.Join(dir, "package.json"), []byte(pkg), 0600))
 	ctx := dynamic.GatherDynamic(dynamic.GatherOpts{CWD: dir})
-	assert.Equal(t, "CAP (Node.js)", ctx.ProjectType)
+	require.NotNil(t, ctx.Project)
+	assert.Equal(t, "CAP (Node.js)", ctx.Project.Type)
 }
 
 func TestGatherDynamic_ProjectType_PackageJsonWithCDSInDevDeps(t *testing.T) {
@@ -36,40 +38,45 @@ func TestGatherDynamic_ProjectType_PackageJsonWithCDSInDevDeps(t *testing.T) {
 	pkg := `{"devDependencies":{"@sap/cds":"^7.0.0"}}`
 	require.NoError(t, os.WriteFile(filepath.Join(dir, "package.json"), []byte(pkg), 0600))
 	ctx := dynamic.GatherDynamic(dynamic.GatherOpts{CWD: dir})
-	assert.Equal(t, "CAP (Node.js)", ctx.ProjectType)
+	require.NotNil(t, ctx.Project)
+	assert.Equal(t, "CAP (Node.js)", ctx.Project.Type)
 }
 
 func TestGatherDynamic_ProjectType_MtaYaml(t *testing.T) {
 	dir := t.TempDir()
 	require.NoError(t, os.WriteFile(filepath.Join(dir, "mta.yaml"), []byte(`ID: myapp`), 0600))
 	ctx := dynamic.GatherDynamic(dynamic.GatherOpts{CWD: dir})
-	assert.Equal(t, "Multi-target Application (MTA)", ctx.ProjectType)
+	require.NotNil(t, ctx.Project)
+	assert.Equal(t, "Multi-target Application (MTA)", ctx.Project.Type)
 }
 
 func TestGatherDynamic_ProjectType_XsAppJson(t *testing.T) {
 	dir := t.TempDir()
 	require.NoError(t, os.WriteFile(filepath.Join(dir, "xs-app.json"), []byte(`{}`), 0600))
 	ctx := dynamic.GatherDynamic(dynamic.GatherOpts{CWD: dir})
-	assert.Equal(t, "Fiori / BAS app", ctx.ProjectType)
+	require.NotNil(t, ctx.Project)
+	assert.Equal(t, "Fiori / BAS app", ctx.Project.Type)
 }
 
 func TestGatherDynamic_ProjectType_PomXmlWithCAPJava(t *testing.T) {
 	dir := t.TempDir()
 	require.NoError(t, os.WriteFile(filepath.Join(dir, "pom.xml"), []byte(`<project><groupId>com.sap.cds</groupId></project>`), 0600))
 	ctx := dynamic.GatherDynamic(dynamic.GatherOpts{CWD: dir})
-	assert.Equal(t, "CAP (Java)", ctx.ProjectType)
+	require.NotNil(t, ctx.Project)
+	assert.Equal(t, "CAP (Java)", ctx.Project.Type)
 }
 
 func TestGatherDynamic_ProjectType_PlainPackageJson(t *testing.T) {
 	dir := t.TempDir()
 	require.NoError(t, os.WriteFile(filepath.Join(dir, "package.json"), []byte(`{"name":"myapp"}`), 0600))
 	ctx := dynamic.GatherDynamic(dynamic.GatherOpts{CWD: dir})
-	assert.Equal(t, "Node.js", ctx.ProjectType)
+	require.NotNil(t, ctx.Project)
+	assert.Equal(t, "Node.js", ctx.Project.Type)
 }
 
 func TestGatherDynamic_ProjectType_EmptyWhenNoFiles(t *testing.T) {
 	ctx := dynamic.GatherDynamic(dynamic.GatherOpts{CWD: t.TempDir()})
-	assert.Empty(t, ctx.ProjectType)
+	assert.Nil(t, ctx.Project)
 }
 
 func TestGatherDynamic_ProjectType_CdsrcTakesPriorityOverMtaYaml(t *testing.T) {
@@ -77,7 +84,8 @@ func TestGatherDynamic_ProjectType_CdsrcTakesPriorityOverMtaYaml(t *testing.T) {
 	require.NoError(t, os.WriteFile(filepath.Join(dir, ".cdsrc.json"), []byte(`{}`), 0600))
 	require.NoError(t, os.WriteFile(filepath.Join(dir, "mta.yaml"), []byte(`ID: myapp`), 0600))
 	ctx := dynamic.GatherDynamic(dynamic.GatherOpts{CWD: dir})
-	assert.Equal(t, "CAP (Node.js)", ctx.ProjectType)
+	require.NotNil(t, ctx.Project)
+	assert.Equal(t, "CAP (Node.js)", ctx.Project.Type)
 }
 
 // --- Pack freshness ---
@@ -199,5 +207,5 @@ func TestGatherDynamic_NeverPanics_AllZeroOpts(t *testing.T) {
 func TestGatherDynamic_NeverPanics_MissingCWD(t *testing.T) {
 	ctx := dynamic.GatherDynamic(dynamic.GatherOpts{CWD: "/nonexistent/dir/xyz"})
 	require.NotNil(t, ctx)
-	assert.Empty(t, ctx.ProjectType)
+	assert.Nil(t, ctx.Project)
 }

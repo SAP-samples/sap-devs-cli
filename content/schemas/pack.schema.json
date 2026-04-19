@@ -65,6 +65,13 @@
       "enum": ["before", "after"],
       "default": "after",
       "description": "Where additive content is placed relative to the base pack's content"
+    },
+    "versions": {
+      "type": "object",
+      "description": "Latest known versions for staleness checks",
+      "additionalProperties": {
+        "type": "string"
+      }
     }
   },
   "if": {
