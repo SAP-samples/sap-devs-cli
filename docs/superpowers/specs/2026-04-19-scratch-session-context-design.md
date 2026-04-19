@@ -38,7 +38,7 @@ A focused package with three exported functions:
 | Function | Signature | Behavior |
 | --- | --- | --- |
 | `Load` | `Load(dir string) ([]string, error)` | Reads `.sap-devs/scratch.yaml`, returns notes slice. Returns empty slice (no error) if file doesn't exist. |
-| `Add` | `Add(dir, note string) error` | Loads existing notes, appends the new note, writes back. Creates `.sap-devs/` directory if needed. |
+| `Add` | `Add(dir, note string) error` | Trims whitespace; rejects empty/whitespace-only notes with an error. Loads existing notes, appends the new note, writes back. Creates `.sap-devs/` directory if needed. |
 | `Clear` | `Clear(dir string) error` | Removes `.sap-devs/scratch.yaml`. No error if file doesn't exist. |
 
 Internal YAML structure:
@@ -53,10 +53,10 @@ type scratchFile struct {
 
 Cobra command tree:
 
-- `context` (aliases: none; default subcommand: `list`)
-  - `context add <note>` — calls `scratch.Add(cwd, note)`, prints confirmation
+- `context` (aliases: none; parent `RunE` delegates to `list` logic)
+  - `context add <note>` — validates non-empty after trimming, calls `scratch.Add(cwd, note)`, prints confirmation
   - `context list` — calls `scratch.Load(cwd)`, prints bullet list or "no notes" hint
-  - `context clear` — calls `scratch.Clear(cwd)`, prints confirmation
+  - `context clear` — calls `scratch.Clear(cwd)`, prints "no notes to clear" if file doesn't exist, otherwise prints confirmation
 
 All subcommands use `os.Getwd()` for the project directory. No flags needed.
 
@@ -81,33 +81,45 @@ if injectProject {
 }
 ```
 
+Scratch loading is intentionally done in `cmd/inject.go` after `GatherDynamic` returns, not inside `internal/dynamic/gather.go`, because scratch is a project-scope-only concern that does not belong in the general dynamic-gathering pipeline. The adapter engine's scope filter ensures only project-scope adapters run when `--project` is passed, so there is no risk of scratch notes leaking into global-scope output.
+
 Errors are silently ignored (consistent with all other dynamic context gathering).
 
 ### Render phase (`internal/content/render.go`)
 
-In `RenderContext`, before the dynamic section, check for scratch notes:
+In `RenderContext`, before the `renderDynamic` call, check for scratch notes:
 
 ```go
 if dynamic != nil && len(dynamic.ScratchNotes) > 0 {
     b.WriteString("## Current Context\n\n")
     for _, note := range dynamic.ScratchNotes {
-        b.WriteString("- " + note + "\n")
+        // Sanitize: collapse newlines to spaces, cap length
+        sanitized := strings.ReplaceAll(note, "\n", " ")
+        sanitized = strings.ReplaceAll(sanitized, "\r", "")
+        if len(sanitized) > 500 {
+            sanitized = TrimToBytes(sanitized, 500) + "..."
+        }
+        b.WriteString("- " + sanitized + "\n")
     }
     b.WriteString("\n")
 }
 ```
 
-This places `## Current Context` as the first content section after the header and preamble — before `## sap-devs Runtime Context` and all pack content.
+Notes are user-authored free text, so they are sanitized before injection: newlines are collapsed to spaces (to preserve bullet-list structure) and length is capped at 500 bytes per note using the existing `TrimToBytes` helper (which respects UTF-8 rune boundaries).
+
+This places `## Current Context` as the first content section after the header and profile line — before `## sap-devs Runtime Context` and all pack content.
 
 ### Rendering order in injected output
 
+(Matches actual `RenderContext` flow in `render.go`)
+
 1. `# SAP Developer Context` (header)
 2. `**Developer Profile:**` line
-3. Preamble (from base pack `preamble.md`)
-4. **`## Current Context`** (scratch notes, new)
-5. `## sap-devs Runtime Context` (dynamic context)
+3. **`## Current Context`** (scratch notes, new — inserted before `renderDynamic` call)
+4. `## sap-devs Runtime Context` (dynamic context from `renderDynamic`)
+5. Preamble (from base pack `preamble.md`)
 6. `## Constraints` (if any)
-7. Pack context sections
+7. Pack context sections (each pack's `ContextMD`)
 8. `## Canonical Patterns`, `## Recommended Learning Journeys`, `## Known Errors`
 
 ### Uninstall interaction
@@ -131,9 +143,11 @@ Add keys to `en` and `de` catalogs:
 | Key | English |
 | --- | --- |
 | `context.add.done` | `Added note to project context.` |
+| `context.add.empty` | `Note cannot be empty.` |
 | `context.list.empty` | `No scratch notes set. Use "sap-devs context add" to add one.` |
 | `context.list.header` | `Current project context:` |
 | `context.clear.done` | `Cleared all scratch notes.` |
+| `context.clear.empty` | `No scratch notes to clear.` |
 
 ## Testing
 
@@ -153,5 +167,5 @@ Add keys to `en` and `de` catalogs:
 | `internal/content/render_test.go` | Modify — add test for scratch notes rendering |
 | `cmd/inject.go` | Modify — load scratch notes when --project scope |
 | `content/packs/base/context.md` | Modify — add context commands to CLI manifest table |
-| `internal/i18n/catalogs/en.go` | Modify — add context.* keys |
-| `internal/i18n/catalogs/de.go` | Modify — add context.* keys |
+| `internal/i18n/catalogs/en.json` | Modify — add context.* keys |
+| `internal/i18n/catalogs/de.json` | Modify — add context.* keys |
