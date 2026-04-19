@@ -103,20 +103,30 @@ Interactive UI for editing and maintaining pack content YAML files (event-types.
 - Lower the barrier for content contributors who don't want to hand-edit YAML
 - Could be terminal-based (Bubbletea TUI) or a local web UI served from the CLI
 
-**Scope:**
+#### Phase 1 — Terminal UI (TUI) - DONE ✔️
 
-- `sap-devs content edit <file>` — open an interactive editor for a specific content file
-- `sap-devs content validate` — validate all content files against their schemas
-- Support for all content YAML types: pack.yaml, resources.yaml, influencers.yaml, event-types.yaml, event-instances.yaml, mcp.yaml, tools.yaml, hook.yaml
+- ✅ `sap-devs content edit <file>` — schema-driven TUI editor for content YAML files
+- ✅ `sap-devs content validate` — validate all content YAML files against JSON schemas, with `--json` output for CI
+- ✅ `sap-devs content list` — list all content files across active layers with `--pack`/`--layer`/`--json` filtering
+- ✅ Schema-driven forms: enum fields render as select dropdowns, URI/pattern fields get inline validation, required field highlighting
+- ✅ Layer resolution: all 4 layers (official, company, user, project) respected; user-layer overrides auto-created when editing from home directory
 
-Allows for the editing of content checked out from Git (for contributions to the global SAP Developers content repository), or your company's internal content repository, or the local editing of the overridden content in the user's environment. This ensures that content can be easily maintained and updated across different environments and use cases that already been separated and described in this tool.
+#### Phase 2 — TUI Enhancements
 
-Phase 2 - Graphical UI (Optional) to edit the files.
-A cross platform graphical UI in the SAP Fiori design language could provide a more intuitive and visually appealing way to edit content files, leveraging familiar SAP Fiori components and patterns.
+- Undo/redo support within the editor session
+- Diff view showing changes against the lower-layer version before saving
+- Git commit/push integration — commit and push the edited file from within the TUI
+- Drag-and-drop reordering of list entries (e.g. resources, tips)
+- Bulk editing — apply a change across multiple entries at once
+- Content creation wizard — guided flow for adding a new pack from scratch
 
-Phase 3 - Version of both editors that also support work on the config of the tool.
-This phase would allow users to edit the configuration files of the tool itself, providing a unified interface for managing both content and configuration. This could include settings like background sync intervals, language preferences, and other user-specific options.
-This phase would also include the ability to edit the tool's configuration files, such as `config.yaml`, allowing users to customize settings like background sync intervals, language preferences, and other user-specific options directly from the editor.
+#### Phase 3 — Graphical UI (Optional)
+
+A cross-platform graphical UI in the SAP Fiori design language could provide a more intuitive and visually appealing way to edit content files, leveraging familiar SAP Fiori components and patterns.
+
+#### Phase 4 — Config editing
+
+This phase would allow users to edit the configuration files of the tool itself, providing a unified interface for managing both content and configuration. This could include settings like background sync intervals, language preferences, and other user-specific options directly from the editor.
 
 ---
 
