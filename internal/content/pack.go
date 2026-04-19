@@ -29,8 +29,9 @@ type Pack struct {
 	MCPServers []MCPServer
 	Tips       []Tip
 
-	PreambleMD string
-	Hooks      []HookDef
+	PreambleMD    string
+	ConstraintsMD string
+	Hooks         []HookDef
 	Influencers []Influencer
 	Samples      []Sample
 	TutorialRefs []TutorialRef
@@ -364,6 +365,15 @@ func LoadPack(packDir string, lang string) (*Pack, error) {
 	}
 	if data, err := os.ReadFile(filepath.Join(packDir, "preamble.md")); err == nil {
 		pack.PreambleMD = string(data)
+	}
+	constraintsFile := filepath.Join(packDir, "constraints.md")
+	if lang != "" && lang != "en" {
+		if loc := filepath.Join(packDir, "constraints."+lang+".md"); fileExists(loc) {
+			constraintsFile = loc
+		}
+	}
+	if data, err := os.ReadFile(constraintsFile); err == nil {
+		pack.ConstraintsMD = string(data)
 	}
 	if data, err := os.ReadFile(filepath.Join(packDir, "hook.yaml")); err == nil {
 		_ = yaml.Unmarshal(data, &pack.Hooks)

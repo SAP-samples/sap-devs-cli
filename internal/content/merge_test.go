@@ -294,3 +294,36 @@ func TestMergeSamples_AppendsNewIDs(t *testing.T) {
 	assert.Equal(t, "cap/new", got[1].ID)
 	assert.Equal(t, "cap", got[1].PackID)
 }
+
+func TestMergeWith_ConstraintsMD_After(t *testing.T) {
+	base := makePack("cap", "CAP", "", nil, nil)
+	base.ConstraintsMD = "1. Base constraint"
+	additive := &content.Pack{
+		ID: "cap", ConstraintsMD: "2. Additive constraint",
+		Additive: true, AdditivePosition: "after",
+	}
+	result := additive.MergeWith(base)
+	assert.Equal(t, "1. Base constraint\n\n2. Additive constraint", result.ConstraintsMD)
+}
+
+func TestMergeWith_ConstraintsMD_Before(t *testing.T) {
+	base := makePack("cap", "CAP", "", nil, nil)
+	base.ConstraintsMD = "1. Base constraint"
+	additive := &content.Pack{
+		ID: "cap", ConstraintsMD: "2. Additive constraint",
+		Additive: true, AdditivePosition: "before",
+	}
+	result := additive.MergeWith(base)
+	assert.Equal(t, "2. Additive constraint\n\n1. Base constraint", result.ConstraintsMD)
+}
+
+func TestMergeWith_ConstraintsMD_EmptyAdditivePreservesBase(t *testing.T) {
+	base := makePack("cap", "CAP", "", nil, nil)
+	base.ConstraintsMD = "1. Base constraint"
+	additive := &content.Pack{
+		ID: "cap", ConstraintsMD: "",
+		Additive: true, AdditivePosition: "after",
+	}
+	result := additive.MergeWith(base)
+	assert.Equal(t, "1. Base constraint", result.ConstraintsMD)
+}

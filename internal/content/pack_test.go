@@ -324,6 +324,47 @@ func TestLoadPack_YouTubeSourcesEmptyWhenAbsent(t *testing.T) {
 	assert.Empty(t, p.YouTubeSources)
 }
 
+func TestLoadPack_ConstraintsMDLoadedWhenPresent(t *testing.T) {
+	dir := t.TempDir()
+	yaml := "id: cap\nname: CAP\ndescription: CAP\ntags: []\nprofiles: []\nweight: 100\n"
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "pack.yaml"), []byte(yaml), 0644))
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "constraints.md"), []byte("1. Never write raw SQL"), 0644))
+
+	p, err := content.LoadPack(dir, "")
+	require.NoError(t, err)
+	assert.Equal(t, "1. Never write raw SQL", p.ConstraintsMD)
+}
+
+func TestLoadPack_ConstraintsMDEmptyWhenAbsent(t *testing.T) {
+	dir := t.TempDir()
+	yaml := "id: cap\nname: CAP\ndescription: CAP\ntags: []\nprofiles: []\nweight: 100\n"
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "pack.yaml"), []byte(yaml), 0644))
+
+	p, err := content.LoadPack(dir, "")
+	require.NoError(t, err)
+	assert.Empty(t, p.ConstraintsMD)
+}
+
+func TestLoadPack_ConstraintsMDLocaleVariant(t *testing.T) {
+	dir := t.TempDir()
+	yaml := "id: cap\nname: CAP\ndescription: CAP\ntags: []\nprofiles: []\nweight: 100\n"
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "pack.yaml"), []byte(yaml), 0644))
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "constraints.md"), []byte("English constraints"), 0644))
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "constraints.de.md"), []byte("German constraints"), 0644))
+
+	p, err := content.LoadPack(dir, "de")
+	require.NoError(t, err)
+	assert.Equal(t, "German constraints", p.ConstraintsMD)
+
+	p, err = content.LoadPack(dir, "")
+	require.NoError(t, err)
+	assert.Equal(t, "English constraints", p.ConstraintsMD)
+
+	p, err = content.LoadPack(dir, "en")
+	require.NoError(t, err)
+	assert.Equal(t, "English constraints", p.ConstraintsMD)
+}
+
 func makeTempPack(t *testing.T, id, packYAML, contextMD, resourcesYAML, tipsMD string) string {
 	t.Helper()
 	dir := t.TempDir()

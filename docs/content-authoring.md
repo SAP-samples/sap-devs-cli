@@ -16,6 +16,8 @@ content/packs/<pack-id>/
 ├── context.md         # AI context text injected into coding tools
 ├── context.<lang>.md  # Localised AI context (e.g. context.de.md)
 ├── preamble.md        # AI preamble (base pack only)
+├── constraints.md     # Numbered constraint list — things agents should NOT do
+├── constraints.<lang>.md  # Localised constraints
 ├── tips.md            # H2-delimited tips shown by `sap-devs tip`
 ├── tips.<lang>.md     # Localised tips
 ├── tools.yaml         # Tool version requirements checked by `sap-devs doctor`
@@ -69,8 +71,9 @@ A base pack may include an optional `preamble.md` file. When present, its conten
 1. `# SAP Developer Context` header + profile line
 2. `## sap-devs Runtime Context` (dynamic — version, packs, available commands)
 3. **Preamble** — from `base/preamble.md` (this file)
-4. Base pack `context.md`
-5. Technology pack `context.md` files (cap, abap, btp-core, …)
+4. **`## Constraints`** — consolidated from all active packs' `constraints.md`
+5. Base pack `context.md`
+6. Technology pack `context.md` files (cap, abap, btp-core, …)
 
 *Implementation note:* The preamble and `ContextMD` are emitted in two separate loops. The base pack's `ContextMD` is still rendered in the second loop with all other packs — not in the preamble loop. This prevents double-emission.
 
@@ -89,6 +92,41 @@ A base pack may include an optional `preamble.md` file. When present, its conten
 **Authoring contract:** Keep base pack content minimal. Every byte in a base pack is consumed in every inject, for every user, regardless of their configured token budget.
 
 > **`minimal` profile and base packs:** The `minimal` built-in profile includes base packs only. Keeping base pack content lean is therefore a direct budget lever for users who select `minimal` — every extra byte in a base pack is added to the `minimal` profile footprint.
+
+---
+
+## Constraints
+
+A pack may include an optional `constraints.md` file. Its content is a numbered markdown list of things AI agents should NOT do when working with that pack's technology domain.
+
+### Format
+
+```markdown
+1. Never write raw SQL — always use `cds.ql` or CQL
+2. Never use `req.user` without a `@requires` annotation
+```
+
+No YAML, no frontmatter — raw numbered markdown. Each line is one constraint.
+
+### Rendered output
+
+All constraints from all active packs are consolidated into a single `## Constraints` section, placed after the preamble and before the first pack's `context.md` content.
+
+### Localization
+
+Two-step resolution: `constraints.{lang}.md` → `constraints.md`. Unlike `context.md`, there is no `constraints.expanded.md` step.
+
+### Additive layers
+
+`constraints.md` participates in additive merge the same way as `context.md`: company/user/project layer constraints are appended (or prepended, based on `additive_position`) to the official constraints.
+
+### Authoring guidelines
+
+- Keep each constraint to one line — they are rendered as a numbered list.
+- Start each constraint with "Never" to make the prohibition clear.
+- Include the correct alternative after "—" so agents know what to do instead.
+- Universal constraints (e.g. credential storage) belong in the base pack's `constraints.md`.
+- Technology-specific constraints belong in the domain pack.
 
 ---
 
@@ -122,6 +160,7 @@ Use `before` for high-priority notes (e.g., "company policy requires X") that sh
 | File | What happens |
 | --- | --- |
 | `context.md` | Your content is appended or prepended to the official context |
+| `constraints.md` | Your content is appended or prepended to the official constraints |
 | `tips.md` | Both sets of tips are kept; yours are added in the configured position |
 | `resources.yaml` | Entries with matching `id` replace the official entry; new IDs are appended |
 | `tools.yaml` | Entries with matching `id` replace the official entry; new IDs are appended |
