@@ -19,6 +19,7 @@ import (
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/dynamic"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/i18n"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/learning"
+	"github.tools.sap/developer-relations/sap-devs-cli/internal/project"
 	sapSync "github.tools.sap/developer-relations/sap-devs-cli/internal/sync"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/xdg"
 )
@@ -248,6 +249,32 @@ into project-level files (CLAUDE.md, .cursorrules, etc.) in the current director
 			Adapters:     gatheredAdapters,
 			Commands:     cmdInfos,
 		})
+
+		// Run project health checks and attach findings to dynamic context
+		if dynCtx.Project != nil && dynCtx.Project.Type != "" {
+			if pc, err := project.Detect(cwd); err == nil {
+				findings := project.Check(pc, cwd, packs)
+				for _, f := range findings {
+					dynCtx.ProjectFindings = append(dynCtx.ProjectFindings, content.ProjectFinding{
+						Severity: f.Severity,
+						Message:  f.Message,
+					})
+				}
+				versions := make(map[string]string)
+				for _, p := range packs {
+					for k, v := range p.Versions {
+						if _, exists := versions[k]; !exists {
+							versions[k] = v
+						}
+					}
+				}
+				if pc.CAPVersion != "" {
+					if latest, ok := versions["@sap/cds"]; ok {
+						dynCtx.Project.CAPVersion = latest
+					}
+				}
+			}
+		}
 
 		opts := adapter.Options{
 			Scope:      scope,

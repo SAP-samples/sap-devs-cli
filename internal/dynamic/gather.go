@@ -4,11 +4,10 @@ package dynamic
 import (
 	"encoding/json"
 	"os"
-	"path/filepath"
-	"strings"
 
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/adapter"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
+	"github.tools.sap/developer-relations/sap-devs-cli/internal/project"
 	sapSync "github.tools.sap/developer-relations/sap-devs-cli/internal/sync"
 )
 
@@ -47,76 +46,26 @@ func GatherDynamic(opts GatherOpts) *content.DynamicContext {
 		d.LastSynced = sapSync.MostRecentSync(opts.SyncStateDir)
 	}
 
-	// Project type
-	d.ProjectType = detectProjectType(opts.CWD)
+	// Project detection
+	if pc, err := project.Detect(opts.CWD); err == nil && pc.Type != "" {
+		info := &content.ProjectInfo{
+			Type:       pc.Type,
+			CAPVersion: pc.CAPVersion,
+		}
+		for _, f := range pc.Facts {
+			info.Facts = append(info.Facts, content.ProjectFact{
+				Key:   f.Key,
+				Value: f.Value,
+				Warn:  f.Warn,
+			})
+		}
+		d.Project = info
+	}
 
 	// Wired SAP MCP servers
 	d.WiredMCPServers = detectWiredMCP(opts.Adapters, opts.Packs)
 
 	return d
-}
-
-// detectProjectType checks CWD for well-known SAP project indicators.
-// Returns the first match; returns "" if nothing is detected.
-func detectProjectType(cwd string) string {
-	if cwd == "" {
-		return ""
-	}
-
-	// .cdsrc.json — definitive CAP Node.js marker
-	if fileExists(filepath.Join(cwd, ".cdsrc.json")) {
-		return "CAP (Node.js)"
-	}
-
-	// package.json — check for @sap/cds before falling through to plain Node.js
-	pkgPath := filepath.Join(cwd, "package.json")
-	if data, err := os.ReadFile(pkgPath); err == nil {
-		if hasSAPCDS(data) {
-			return "CAP (Node.js)"
-		}
-	}
-
-	// pom.xml — CAP Java
-	if data, err := os.ReadFile(filepath.Join(cwd, "pom.xml")); err == nil {
-		if strings.Contains(string(data), "com.sap.cds") {
-			return "CAP (Java)"
-		}
-	}
-
-	// mta.yaml — Multi-target Application
-	if fileExists(filepath.Join(cwd, "mta.yaml")) {
-		return "Multi-target Application (MTA)"
-	}
-
-	// xs-app.json — Fiori / BAS
-	if fileExists(filepath.Join(cwd, "xs-app.json")) {
-		return "Fiori / BAS app"
-	}
-
-	// Plain package.json — generic Node.js
-	if fileExists(pkgPath) {
-		return "Node.js"
-	}
-
-	return ""
-}
-
-// hasSAPCDS reports whether the package.json data contains @sap/cds in any dependency map.
-func hasSAPCDS(data []byte) bool {
-	var pkg struct {
-		Dependencies    map[string]string `json:"dependencies"`
-		DevDependencies map[string]string `json:"devDependencies"`
-	}
-	if err := json.Unmarshal(data, &pkg); err != nil {
-		return false
-	}
-	if _, ok := pkg.Dependencies["@sap/cds"]; ok {
-		return true
-	}
-	if _, ok := pkg.DevDependencies["@sap/cds"]; ok {
-		return true
-	}
-	return false
 }
 
 // detectWiredMCP reads each adapter's MCP config file and cross-references
@@ -183,9 +132,4 @@ func readMCPServerIDs(path, key string) []string {
 		ids = append(ids, id)
 	}
 	return ids
-}
-
-func fileExists(path string) bool {
-	_, err := os.Stat(path)
-	return err == nil
 }

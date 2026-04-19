@@ -7,3 +7,4 @@ func MergeTools(base, add []ToolDef) []ToolDef                     { return merg
 func MergeMCPServers(base, add []MCPServer, id string) []MCPServer { return mergeMCPServers(base, add, id) }
 func MergeHooks(base, add []HookDef, id string) []HookDef         { return mergeHooks(base, add, id) }
 func MergeSamples(base, add []Sample, id string) []Sample          { return mergeSamples(base, add, id) }
+func RenderDynamic(d *DynamicContext) string                        { return renderDynamic(d) }

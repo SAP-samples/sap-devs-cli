@@ -134,9 +134,17 @@ func renderDynamic(d *DynamicContext) string {
 		b.WriteString("**Last synced:** never — run `sap-devs sync`\n")
 	}
 
-	// Project type (omit if empty)
-	if d.ProjectType != "" {
-		b.WriteString(fmt.Sprintf("**Project type:** %s\n", d.ProjectType))
+	// Project context (omit if no project detected)
+	if d.Project != nil && len(d.Project.Facts) > 0 {
+		b.WriteString("\n**Project Context (detected):**\n")
+		for _, f := range d.Project.Facts {
+			b.WriteString(fmt.Sprintf("- %s: %s\n", f.Key, f.Value))
+		}
+		for _, f := range d.ProjectFindings {
+			if f.Severity == "error" || f.Severity == "warning" {
+				b.WriteString(fmt.Sprintf("- ⚠ %s\n", f.Message))
+			}
+		}
 	}
 
 	// Wired MCP servers (omit if none)
