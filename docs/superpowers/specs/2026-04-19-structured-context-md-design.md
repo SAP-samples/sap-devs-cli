@@ -109,7 +109,7 @@ Retrofit the 4 existing context.md files:
 |------|--------|
 | `internal/content/sections.go` | New: `ValidateContextSections()`, recognized sections list |
 | `internal/content/sections_test.go` | New: unit tests for validation |
-| `internal/content/loader.go` | Call `ValidateContextSections()` in `LoadPack()` |
+| `internal/content/pack.go` | Call `ValidateContextSections()` in `LoadPack()` |
 | `content/packs/cap/context.md` | Retrofit with standard H3 sections |
 | `content/packs/btp-core/context.md` | Retrofit with standard H3 sections |
 | `content/packs/abap/context.md` | Retrofit with standard H3 sections |
