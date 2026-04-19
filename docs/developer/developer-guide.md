@@ -118,7 +118,7 @@ Content is loaded from up to four sources, merged by `id` with later layers over
 3. **User** — `~/.local/share/sap-devs/` (Linux), `%LOCALAPPDATA%/sap-devs/data/` (Windows)
 4. **Project** — `.sap-devs/` in the current working directory
 
-`ContentLoader` (`internal/content/loader.go`) manages the merge. `LoadPacks()` reads all `content/packs/<name>/` directories.
+`ContentLoader` (`internal/content/loader.go`) manages the merge. `LoadPacks()` reads all `content/packs/<name>/` directories. Each pack may contain `context.md` (AI context text), `constraints.md` (AI constraint rules — things agents should NOT do), `preamble.md` (base pack only), and various YAML files.
 
 ### Adapter System
 

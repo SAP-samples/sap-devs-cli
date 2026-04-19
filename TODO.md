@@ -215,7 +215,7 @@ Expose `sap-devs` as a live MCP server so AI agents can query it on demand durin
 
 ---
 
-### Behavioral rules / anti-patterns injection
+### Behavioral rules / anti-patterns injection - DONE ✔️
 
 Complement the existing "what to do" content with explicit "what NOT to do" constraints per pack — injected as a numbered list so agents cannot easily skip past them.
 
