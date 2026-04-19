@@ -9,6 +9,7 @@ import (
 
 	"charm.land/huh/v2"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/schema"
+	"github.tools.sap/developer-relations/sap-devs-cli/internal/theme"
 )
 
 // StringBinding holds a string value for huh form binding.
@@ -119,7 +120,7 @@ func BuildForm(spec *schema.ObjectSpec, values map[string]any) (*huh.Form, *Bind
 	}
 
 	group := huh.NewGroup(fields...)
-	form := huh.NewForm(group).WithTheme(huh.ThemeFunc(huh.ThemeDracula))
+	form := huh.NewForm(group).WithTheme(huh.ThemeFunc(theme.ThemeFiori))
 	return form, bindings
 }
 

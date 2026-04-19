@@ -124,9 +124,10 @@ Interactive UI for editing and maintaining pack content YAML files (event-types.
 
 A cross-platform graphical UI in the SAP Fiori design language could provide a more intuitive and visually appealing way to edit content files, leveraging familiar SAP Fiori components and patterns.
 
-#### Phase 4 — Config editing
+#### Phase 4 — Config editing - DONE ✔️
 
-This phase would allow users to edit the configuration files of the tool itself, providing a unified interface for managing both content and configuration. This could include settings like background sync intervals, language preferences, and other user-specific options directly from the editor.
+- ✅ `sap-devs config edit` — interactive TUI form for all config settings (general, preferences, events, sync TTLs)
+- ✅ SAP Fiori Horizon Evening dark theme applied to all TUI forms and list views
 
 ---
 

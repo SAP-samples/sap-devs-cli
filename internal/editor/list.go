@@ -7,12 +7,13 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/schema"
+	"github.tools.sap/developer-relations/sap-devs-cli/internal/theme"
 )
 
 // Styles for the list view.
 var (
-	selectedStyle = lipgloss.NewStyle().Background(lipgloss.Color("62")).Foreground(lipgloss.Color("230"))
-	headerStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Bold(true)
+	selectedStyle = theme.SelectedStyle()
+	headerStyle   = theme.HeaderStyle()
 )
 
 // layerBadge returns a styled string label for a content layer.
@@ -20,18 +21,18 @@ func layerBadge(l Layer, isOverride bool) string {
 	var badge string
 	switch l {
 	case LayerOfficial:
-		badge = lipgloss.NewStyle().Foreground(lipgloss.Color("114")).Render("official")
+		badge = theme.LayerBadgeOfficial().Render("official")
 	case LayerCompany:
-		badge = lipgloss.NewStyle().Foreground(lipgloss.Color("214")).Render("company")
+		badge = theme.LayerBadgeCompany().Render("company")
 	case LayerUser:
-		badge = lipgloss.NewStyle().Foreground(lipgloss.Color("208")).Render("user")
+		badge = theme.LayerBadgeUser().Render("user")
 	case LayerProject:
-		badge = lipgloss.NewStyle().Foreground(lipgloss.Color("141")).Render("project")
+		badge = theme.LayerBadgeProject().Render("project")
 	default:
 		badge = l.String()
 	}
 	if isOverride {
-		badge += lipgloss.NewStyle().Foreground(lipgloss.Color("208")).Render(" (override)")
+		badge += theme.OverrideSuffix().Render(" (override)")
 	}
 	return badge
 }
