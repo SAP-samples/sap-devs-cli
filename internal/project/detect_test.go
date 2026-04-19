@@ -173,3 +173,59 @@ func TestDetect_HANADatabase(t *testing.T) {
 		t.Errorf("Database = %q, want %q", ctx.Database, "hana")
 	}
 }
+
+func TestDetectCF_ParsesConfigJSON(t *testing.T) {
+	// CF_HOME is the PARENT of .cf/ — the cf CLI reads $CF_HOME/.cf/config.json
+	dir := t.TempDir()
+	cfDir := filepath.Join(dir, ".cf")
+	os.Mkdir(cfDir, 0755)
+	writeFile(t, cfDir, "config.json", `{
+		"Target": "https://api.cf.us10.hana.ondemand.com",
+		"OrganizationFields": {"Name": "MyOrg", "GUID": "xxx"},
+		"SpaceFields": {"Name": "dev", "GUID": "yyy", "AllowSSH": true}
+	}`)
+
+	ctx := &ProjectContext{RawFiles: make(map[string]bool)}
+	t.Setenv("CF_HOME", dir) // parent of .cf/, not the .cf/ dir itself
+	detectCF(ctx)
+
+	if ctx.CFOrg != "MyOrg" {
+		t.Errorf("CFOrg = %q, want %q", ctx.CFOrg, "MyOrg")
+	}
+	if ctx.CFSpace != "dev" {
+		t.Errorf("CFSpace = %q, want %q", ctx.CFSpace, "dev")
+	}
+	if ctx.CFRegion != "us10" {
+		t.Errorf("CFRegion = %q, want %q", ctx.CFRegion, "us10")
+	}
+}
+
+func TestDetectCF_SilentOnMissingConfig(t *testing.T) {
+	ctx := &ProjectContext{RawFiles: make(map[string]bool)}
+	t.Setenv("CF_HOME", "/nonexistent/path")
+	detectCF(ctx)
+
+	if ctx.CFOrg != "" {
+		t.Errorf("CFOrg should be empty, got %q", ctx.CFOrg)
+	}
+}
+
+func TestExtractCFRegion(t *testing.T) {
+	tests := []struct {
+		url  string
+		want string
+	}{
+		{"https://api.cf.us10.hana.ondemand.com", "us10"},
+		{"https://api.cf.eu10.hana.ondemand.com", "eu10"},
+		{"https://api.cf.us10-001.hana.ondemand.com", "us10-001"},
+		{"https://api.cf.ap21.hana.ondemand.com", "ap21"},
+		{"https://some.other.url.com", ""},
+		{"", ""},
+	}
+	for _, tt := range tests {
+		got := extractCFRegion(tt.url)
+		if got != tt.want {
+			t.Errorf("extractCFRegion(%q) = %q, want %q", tt.url, got, tt.want)
+		}
+	}
+}

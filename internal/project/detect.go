@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 )
 
@@ -16,6 +17,9 @@ type ProjectContext struct {
 	Auth          string
 	HasCDSRC      bool
 	HasDefaultEnv bool
+	CFOrg         string
+	CFSpace       string
+	CFRegion      string
 	Facts         []Fact
 	RawFiles      map[string]bool
 }
@@ -37,6 +41,7 @@ func Detect(cwd string) (*ProjectContext, error) {
 	detectAppRouter(cwd, ctx)
 	detectKyma(cwd, ctx)
 	detectDefaultEnv(cwd, ctx)
+	detectCF(ctx)
 	buildFacts(ctx)
 	return ctx, nil
 }
@@ -176,6 +181,59 @@ func buildFacts(ctx *ProjectContext) {
 	if ctx.Auth != "" {
 		ctx.Facts = append(ctx.Facts, Fact{Key: "Auth", Value: "XSUAA (xs-security.json detected)"})
 	}
+}
+
+var reCFRegion = regexp.MustCompile(`api\.cf\.([a-z0-9-]+)\.hana\.ondemand\.com`)
+
+type cfConfig struct {
+	Target             string `json:"Target"`
+	OrganizationFields struct {
+		Name string `json:"Name"`
+	} `json:"OrganizationFields"`
+	SpaceFields struct {
+		Name string `json:"Name"`
+	} `json:"SpaceFields"`
+}
+
+func extractCFRegion(target string) string {
+	m := reCFRegion.FindStringSubmatch(target)
+	if len(m) < 2 {
+		return ""
+	}
+	return m[1]
+}
+
+func detectCF(ctx *ProjectContext) {
+	cfg := readCFConfig()
+	if cfg == nil {
+		return
+	}
+	ctx.CFOrg = cfg.OrganizationFields.Name
+	ctx.CFSpace = cfg.SpaceFields.Name
+	ctx.CFRegion = extractCFRegion(cfg.Target)
+}
+
+func readCFConfig() *cfConfig {
+	cfHome := os.Getenv("CF_HOME")
+	if cfHome == "" {
+		home, err := os.UserHomeDir()
+		if err != nil {
+			return nil
+		}
+		cfHome = home
+	}
+	data, err := os.ReadFile(filepath.Join(cfHome, ".cf", "config.json"))
+	if err != nil {
+		return nil
+	}
+	var cfg cfConfig
+	if json.Unmarshal(data, &cfg) != nil {
+		return nil
+	}
+	if cfg.OrganizationFields.Name == "" {
+		return nil
+	}
+	return &cfg
 }
 
 type packageJSON struct {
