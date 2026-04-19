@@ -1,0 +1,26 @@
+paths:
+  - id: cap-getting-started
+    name: Getting Started with CAP
+    level: beginner
+    description: Build your first CAP application from project creation to deployment
+    steps:
+      - type: journey
+        slug: developing-with-sap-cloud-application-programming-model
+      - type: tutorial
+        slug: cap-getting-started
+      - type: tutorial
+        slug: hana-cloud-cap-create-project
+      - type: mission
+        slug: "4327"
+
+  - id: cap-deployment
+    name: CAP Deployment & Operations
+    level: intermediate
+    description: Deploy and operate CAP applications on SAP BTP Cloud Foundry
+    steps:
+      - type: tutorial
+        slug: cap-service-deploy-to-cf
+      - type: mission
+        slug: "4432"
+      - type: journey
+        slug: becoming-an-sap-btp-solution-architect
