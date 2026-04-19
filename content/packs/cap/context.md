@@ -1,14 +1,26 @@
 ## SAP CAP (Cloud Application Programming Model)
 
+### Overview
+
 CAP is SAP's primary framework for building cloud-native business applications on SAP BTP.
 It uses CDS (Core Data Services) for data and service definitions, Node.js or Java for service logic.
 
-### Key Tools
+### Key Concepts
 - `@sap/cds-dk` — CAP development kit (CLI: `cds`)
 - `cds watch` — local dev server with live reload
 - `cds deploy` — deploy to database / cloud
 
-### CDS Data Modelling
+### Best Practices
+
+- Define entities in `db/schema.cds`, services in `srv/*.cds`
+- Use `cds.ql` for type-safe CQL queries
+- Leverage built-in authentication via `@requires` annotations
+- Always run `cds lint` before committing
+
+<!-- verbosity:detail -->
+### Code Examples
+
+#### CDS Data Modelling
 ```cds
 entity Books : managed {
   key ID     : Integer;
@@ -17,21 +29,13 @@ entity Books : managed {
 }
 ```
 
-<!-- verbosity:detail -->
-### Service Definition
+#### Service Definition
 
 ```cds
 service CatalogService @(path:'/browse') {
   @readonly entity Books as SELECT from my.Books;
 }
 ```
-
-### Best Practices
-
-- Define entities in `db/schema.cds`, services in `srv/*.cds`
-- Use `cds.ql` for type-safe CQL queries
-- Leverage built-in authentication via `@requires` annotations
-- Always run `cds lint` before committing
 
 <!-- verbosity:extended -->
 ### Recent CAP Releases

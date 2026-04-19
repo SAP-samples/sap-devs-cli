@@ -294,7 +294,7 @@ If `btp` CLI is configured and logged in, detect the current target subaccount a
 
 ---
 
-### Structured `context.md` conventions
+### ~~Structured `context.md` conventions~~ — DONE ✔️
 
 Adopt conventional section headings across all pack `context.md` files so content is addressable, selectively includable, and easier for both agents and humans to navigate.
 
