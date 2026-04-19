@@ -24,7 +24,7 @@
 go get charm.land/huh/v2@latest
 ```
 
-Note: huh v2 uses the `charm.land/huh/v2` import path (vanity URL), not `github.com/charmbracelet/huh`.
+Note: huh v2 uses the `charm.land/huh/v2` import path (vanity URL), not `github.com/charmbracelet/huh`. huh v2 may pull in `charm.land/lipgloss/v2` — if so, update `list.go` to use the v2 lipgloss import instead of the existing `github.com/charmbracelet/lipgloss` v1. Verify both compile together after `go get`.
 
 - [ ] **Step 2: Verify compilation**
 
@@ -2260,11 +2260,11 @@ func runArrayEditor(target *ResolvedFile, s *schema.Schema) error {
 			item := &items[result.editIndex]
 			if item.Layer != target.Layer {
 				// Auto-create override copy
-				copy := make(map[string]any)
+				cloned := make(map[string]any)
 				for k, v := range item.Data {
-					copy[k] = v
+					cloned[k] = v
 				}
-				item.Data = copy
+				item.Data = cloned
 				item.Layer = target.Layer
 				item.IsOverride = true
 			}
