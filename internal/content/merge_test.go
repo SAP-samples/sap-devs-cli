@@ -94,7 +94,7 @@ func makePack(id, name, context string, tips []content.Tip, resources []content.
 	return &content.Pack{
 		ID:        id,
 		Name:      name,
-		ContextMD: context,
+		Context:   content.VerbositySections{Core: context},
 		Tips:      tips,
 		Resources: resources,
 		Tags:      []string{"base-tag"},
@@ -112,23 +112,23 @@ func TestMergeWith_GuardReturnBaseWhenNotAdditive(t *testing.T) {
 
 func TestMergeWith_ContextAfter(t *testing.T) {
 	base := makePack("cap", "CAP", "base context", nil, nil)
-	additive := &content.Pack{ID: "cap", ContextMD: "extra context", Additive: true, AdditivePosition: "after"}
+	additive := &content.Pack{ID: "cap", Context: content.VerbositySections{Core: "extra context"}, Additive: true, AdditivePosition: "after"}
 	result := additive.MergeWith(base)
-	assert.Equal(t, "base context\n\nextra context", result.ContextMD)
+	assert.Equal(t, "base context\n\nextra context", result.Context.Core)
 }
 
 func TestMergeWith_ContextBefore(t *testing.T) {
 	base := makePack("cap", "CAP", "base context", nil, nil)
-	additive := &content.Pack{ID: "cap", ContextMD: "extra context", Additive: true, AdditivePosition: "before"}
+	additive := &content.Pack{ID: "cap", Context: content.VerbositySections{Core: "extra context"}, Additive: true, AdditivePosition: "before"}
 	result := additive.MergeWith(base)
-	assert.Equal(t, "extra context\n\nbase context", result.ContextMD)
+	assert.Equal(t, "extra context\n\nbase context", result.Context.Core)
 }
 
 func TestMergeWith_EmptyContextPreservesBase(t *testing.T) {
 	base := makePack("cap", "CAP", "base context", nil, nil)
-	additive := &content.Pack{ID: "cap", ContextMD: "", Additive: true, AdditivePosition: "after"}
+	additive := &content.Pack{ID: "cap", Context: content.VerbositySections{}, Additive: true, AdditivePosition: "after"}
 	result := additive.MergeWith(base)
-	assert.Equal(t, "base context", result.ContextMD)
+	assert.Equal(t, "base context", result.Context.Core)
 }
 
 func TestMergeWith_TipsAfter(t *testing.T) {
@@ -224,7 +224,7 @@ func TestMergeWith_PreambleMDPreservedFromBase(t *testing.T) {
 		ID:         "base",
 		Base:       true,
 		PreambleMD: "> Official preamble.",
-		ContextMD:  "Base context.",
+		Context:    content.VerbositySections{Core: "Base context."},
 	}
 	additive := &content.Pack{
 		ID:         "base",
@@ -295,35 +295,35 @@ func TestMergeSamples_AppendsNewIDs(t *testing.T) {
 	assert.Equal(t, "cap", got[1].PackID)
 }
 
-func TestMergeWith_ConstraintsMD_After(t *testing.T) {
+func TestMergeWith_Constraints_After(t *testing.T) {
 	base := makePack("cap", "CAP", "", nil, nil)
-	base.ConstraintsMD = "1. Base constraint"
+	base.Constraints = content.VerbositySections{Core: "1. Base constraint"}
 	additive := &content.Pack{
-		ID: "cap", ConstraintsMD: "2. Additive constraint",
+		ID: "cap", Constraints: content.VerbositySections{Core: "2. Additive constraint"},
 		Additive: true, AdditivePosition: "after",
 	}
 	result := additive.MergeWith(base)
-	assert.Equal(t, "1. Base constraint\n\n2. Additive constraint", result.ConstraintsMD)
+	assert.Equal(t, "1. Base constraint\n\n2. Additive constraint", result.Constraints.Core)
 }
 
-func TestMergeWith_ConstraintsMD_Before(t *testing.T) {
+func TestMergeWith_Constraints_Before(t *testing.T) {
 	base := makePack("cap", "CAP", "", nil, nil)
-	base.ConstraintsMD = "1. Base constraint"
+	base.Constraints = content.VerbositySections{Core: "1. Base constraint"}
 	additive := &content.Pack{
-		ID: "cap", ConstraintsMD: "2. Additive constraint",
+		ID: "cap", Constraints: content.VerbositySections{Core: "2. Additive constraint"},
 		Additive: true, AdditivePosition: "before",
 	}
 	result := additive.MergeWith(base)
-	assert.Equal(t, "2. Additive constraint\n\n1. Base constraint", result.ConstraintsMD)
+	assert.Equal(t, "2. Additive constraint\n\n1. Base constraint", result.Constraints.Core)
 }
 
-func TestMergeWith_ConstraintsMD_EmptyAdditivePreservesBase(t *testing.T) {
+func TestMergeWith_Constraints_EmptyAdditivePreservesBase(t *testing.T) {
 	base := makePack("cap", "CAP", "", nil, nil)
-	base.ConstraintsMD = "1. Base constraint"
+	base.Constraints = content.VerbositySections{Core: "1. Base constraint"}
 	additive := &content.Pack{
-		ID: "cap", ConstraintsMD: "",
+		ID: "cap", Constraints: content.VerbositySections{},
 		Additive: true, AdditivePosition: "after",
 	}
 	result := additive.MergeWith(base)
-	assert.Equal(t, "1. Base constraint", result.ConstraintsMD)
+	assert.Equal(t, "1. Base constraint", result.Constraints.Core)
 }

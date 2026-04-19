@@ -256,20 +256,9 @@ Implemented: curated `changelog` entries in `pack.yaml`, collected by `sync` int
 
 ---
 
-### Inject verbosity modes with semantic section tagging
+### ~~Inject verbosity modes with semantic section tagging~~ — DONE ✔️
 
-Give each section of `context.md` a verbosity tag so injection density can be controlled per-adapter without arbitrary truncation.
-
-**Problem:** Claude Code's `CLAUDE.md` can be thousands of tokens; a clipboard export for ChatGPT is capped at ~1400 bytes. Currently the same content blob is injected everywhere, either overwhelming small-context tools or under-serving large-context ones. Truncation by byte count is arbitrary and cuts mid-sentence.
-
-**Proposed approach:**
-
-- Tag sections in `context.md` with HTML comments: `<!-- verbosity:core -->`, `<!-- verbosity:detail -->`, `<!-- verbosity:extended -->`
-- Adapter YAML gains a `verbosity` field: `minimal` | `standard` (default) | `full`
-- The renderer includes only sections at or below the adapter's verbosity level
-- `core` = always included (preamble, constraints, CLI manifest); `detail` = best practices and examples; `extended` = release notes, known errors, full resource lists
-
-**Why semantic over byte-count:** The agent gets a coherent, complete picture at whatever fidelity fits the tool — not a truncated fragment.
+Implemented: `<!-- verbosity:core/detail/extended -->` markers in context.md, `VerbositySections` parser, per-adapter `verbosity` field, `--verbosity` CLI flag, synthetic section gating. See [design spec](docs/superpowers/specs/2026-04-19-inject-verbosity-modes-design.md).
 
 ---
 

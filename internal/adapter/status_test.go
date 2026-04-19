@@ -52,9 +52,9 @@ func TestScanOtherSections_MultipleTools(t *testing.T) {
 
 func makePackWithContent(id, contextMD string) *content.Pack {
 	return &content.Pack{
-		ID:        id,
-		Name:      id,
-		ContextMD: contextMD,
+		ID:      id,
+		Name:    id,
+		Context: content.VerbositySections{Core: contextMD},
 	}
 }
 

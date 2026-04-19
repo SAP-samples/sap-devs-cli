@@ -75,7 +75,7 @@ A base pack may include an optional `preamble.md` file. When present, its conten
 5. Base pack `context.md`
 6. Technology pack `context.md` files (cap, abap, btp-core, …)
 
-*Implementation note:* The preamble and `ContextMD` are emitted in two separate loops. The base pack's `ContextMD` is still rendered in the second loop with all other packs — not in the preamble loop. This prevents double-emission.
+*Implementation note:* The preamble and pack context are emitted in two separate loops. The base pack's context is still rendered in the second loop with all other packs — not in the preamble loop. This prevents double-emission.
 
 **Authoring constraints:**
 
@@ -83,7 +83,7 @@ A base pack may include an optional `preamble.md` file. When present, its conten
 - No Markdown headings — it appears before pack content and must not create heading hierarchy collisions.
 - No locale variants — the preamble is intentionally language-neutral (command names don't translate).
 
-**Token budget:** The preamble is exempt from adapter token-budget trimming (same as base pack `ContextMD`). Every byte is unconditionally injected. Keep it short.
+**Token budget:** The preamble is exempt from adapter token-budget trimming (same as base pack context). Every byte is unconditionally injected. Keep it short.
 
 **Layer override:** Only the official base pack's `preamble.md` is used. User, company, and project layer packs cannot override or augment the preamble. The render loop guards on `Pack.Base == true`; only base packs have their `PreambleMD` emitted. An additive pack targeting `id: base` also cannot modify `PreambleMD` — `MergeWith` preserves scalar fields from the base pack.
 

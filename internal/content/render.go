@@ -25,7 +25,7 @@ func escapePipe(s string) string {
 // RenderContext builds the Markdown string injected into AI tool configuration.
 // Packs are rendered in the order provided (caller applies profile weights first).
 // dynamic may be nil; when non-nil a runtime context section is prepended.
-func RenderContext(packs []*Pack, profile *Profile, dynamic *DynamicContext) string {
+func RenderContext(packs []*Pack, profile *Profile, dynamic *DynamicContext, verbosity string) string {
 	var b strings.Builder
 
 	b.WriteString("# SAP Developer Context\n\n")
@@ -68,7 +68,7 @@ func RenderContext(packs []*Pack, profile *Profile, dynamic *DynamicContext) str
 		b.WriteString("\n")
 	}
 
-	// Render preamble from base packs (before all ContextMD)
+	// Render preamble from base packs (before all Context)
 	for _, p := range packs {
 		if p.Base && strings.TrimSpace(p.PreambleMD) != "" {
 			b.WriteString(strings.TrimSpace(p.PreambleMD))
@@ -78,7 +78,7 @@ func RenderContext(packs []*Pack, profile *Profile, dynamic *DynamicContext) str
 
 	var constraints []string
 	for _, p := range packs {
-		if trimmed := strings.TrimSpace(p.ConstraintsMD); trimmed != "" {
+		if trimmed := strings.TrimSpace(p.Constraints.AtLevel(verbosity)); trimmed != "" {
 			constraints = append(constraints, trimmed)
 		}
 	}
@@ -89,10 +89,11 @@ func RenderContext(packs []*Pack, profile *Profile, dynamic *DynamicContext) str
 	}
 
 	for _, p := range packs {
-		if strings.TrimSpace(p.ContextMD) == "" {
+		ctx := strings.TrimSpace(p.Context.AtLevel(verbosity))
+		if ctx == "" {
 			continue
 		}
-		b.WriteString(strings.TrimSpace(p.ContextMD))
+		b.WriteString(ctx)
 		b.WriteString("\n\n")
 	}
 
@@ -104,7 +105,7 @@ func RenderContext(packs []*Pack, profile *Profile, dynamic *DynamicContext) str
 			}
 		}
 	}
-	if len(injectable) > 0 {
+	if len(injectable) > 0 && (verbosity == "standard" || verbosity == "full" || verbosity == "") {
 		b.WriteString("## Canonical Patterns\n\n")
 		b.WriteString("These are authoritative code samples — prefer these patterns over generating from training data.\n\n")
 		b.WriteString("| Pattern | Description | URL |\n")
@@ -122,7 +123,7 @@ func RenderContext(packs []*Pack, profile *Profile, dynamic *DynamicContext) str
 				lj.Title, lj.URL, lj.Level, lj.Duration))
 		}
 	}
-	if len(learningRows) > 0 {
+	if len(learningRows) > 0 && (verbosity == "full" || verbosity == "") {
 		b.WriteString("## Recommended Learning Journeys\n\n")
 		b.WriteString("| Journey | Level | Duration |\n")
 		b.WriteString("|---------|-------|----------|\n")
@@ -136,7 +137,7 @@ func RenderContext(packs []*Pack, profile *Profile, dynamic *DynamicContext) str
 	for _, p := range packs {
 		knownErrors = append(knownErrors, p.KnownErrors...)
 	}
-	if len(knownErrors) > 0 {
+	if len(knownErrors) > 0 && (verbosity == "full" || verbosity == "") {
 		b.WriteString("## Known Errors\n\n")
 		b.WriteString("| Error Pattern | Cause | Fix |\n")
 		b.WriteString("|---|---|---|\n")
@@ -218,7 +219,7 @@ func renderDynamic(d *DynamicContext) string {
 // Packs must already be sorted by weight descending (LoadPacks guarantees this).
 // Base packs (Pack.Base == true) are exempt from both trimming passes and always
 // appear first in the returned slice.
-func TrimPacks(packs []*Pack, maxBytes int) []*Pack {
+func TrimPacks(packs []*Pack, maxBytes int, verbosity string) []*Pack {
 	// Separate base packs — always included, never trimmed, always first.
 	var base, nonBase []*Pack
 	for _, p := range packs {
@@ -228,11 +229,11 @@ func TrimPacks(packs []*Pack, maxBytes int) []*Pack {
 			nonBase = append(nonBase, p)
 		}
 	}
-	return append(base, trimNonBase(nonBase, maxBytes)...)
+	return append(base, trimNonBase(nonBase, maxBytes, verbosity)...)
 }
 
 // trimNonBase applies deduplication and byte-budget enforcement to non-base packs.
-func trimNonBase(packs []*Pack, maxBytes int) []*Pack {
+func trimNonBase(packs []*Pack, maxBytes int, verbosity string) []*Pack {
 	// Pass 1 — deduplication
 	// A pack is dropped if a higher-weight pack it overlaps with is already included.
 	included := make(map[string]bool)
@@ -258,7 +259,7 @@ func trimNonBase(packs []*Pack, maxBytes int) []*Pack {
 	var result []*Pack
 	used := 0
 	for _, p := range deduped {
-		size := len(p.ContextMD) + len(p.ConstraintsMD)
+		size := len(p.Context.AtLevel(verbosity)) + len(p.Constraints.AtLevel(verbosity))
 		if used+size > maxBytes {
 			break
 		}
