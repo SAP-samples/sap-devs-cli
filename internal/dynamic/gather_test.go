@@ -12,6 +12,7 @@ import (
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/adapter"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/dynamic"
+	"github.tools.sap/developer-relations/sap-devs-cli/internal/project"
 )
 
 // --- Project type detection ---
@@ -75,7 +76,10 @@ func TestGatherDynamic_ProjectType_PlainPackageJson(t *testing.T) {
 }
 
 func TestGatherDynamic_ProjectType_EmptyWhenNoFiles(t *testing.T) {
-	ctx := dynamic.GatherDynamic(dynamic.GatherOpts{CWD: t.TempDir()})
+	dir := t.TempDir()
+	t.Setenv("BTP_CLIENTCONFIG", filepath.Join(dir, "nonexistent.json"))
+	t.Setenv("CF_HOME", dir)
+	ctx := dynamic.GatherDynamic(dynamic.GatherOpts{CWD: dir})
 	assert.Nil(t, ctx.Project)
 }
 
@@ -205,7 +209,71 @@ func TestGatherDynamic_NeverPanics_AllZeroOpts(t *testing.T) {
 }
 
 func TestGatherDynamic_NeverPanics_MissingCWD(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("BTP_CLIENTCONFIG", filepath.Join(dir, "nonexistent.json"))
+	t.Setenv("CF_HOME", dir)
 	ctx := dynamic.GatherDynamic(dynamic.GatherOpts{CWD: "/nonexistent/dir/xyz"})
 	require.NotNil(t, ctx)
 	assert.Nil(t, ctx.Project)
+}
+
+// --- BTP context detection ---
+
+func TestGatherDynamic_BTPContext_NoBTPWhenNotConfigured(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("BTP_CLIENTCONFIG", filepath.Join(dir, "nonexistent.json"))
+	t.Setenv("CF_HOME", dir)
+	ctx := dynamic.GatherDynamic(dynamic.GatherOpts{CWD: dir})
+	assert.Nil(t, ctx.Project)
+}
+
+func TestGatherDynamic_BTPContext_PopulatedFromProjectContext(t *testing.T) {
+	pc := &project.ProjectContext{
+		RawFiles:      make(map[string]bool),
+		BTPSubaccount: "trial-abc",
+		BTPRegion:     "eu10",
+		BTPIsTrial:    true,
+		CFOrg:         "MyOrg",
+		CFSpace:       "dev",
+		CFRegion:      "us10",
+	}
+	pc.RebuildFacts()
+
+	ctx := dynamic.GatherDynamic(dynamic.GatherOpts{
+		ProjectContext: pc,
+	})
+
+	require.NotNil(t, ctx.Project)
+	assert.NotEmpty(t, ctx.Project.BTPFacts, "BTPFacts should be populated")
+
+	var hasBTP, hasCF bool
+	for _, f := range ctx.Project.BTPFacts {
+		if f.Key == "BTP subaccount" {
+			hasBTP = true
+		}
+		if f.Key == "Cloud Foundry" {
+			hasCF = true
+		}
+	}
+	assert.True(t, hasBTP, "BTPFacts should contain BTP subaccount")
+	assert.True(t, hasCF, "BTPFacts should contain Cloud Foundry")
+}
+
+func TestGatherDynamic_BTPContext_OnlyBTPNoProjectType(t *testing.T) {
+	pc := &project.ProjectContext{
+		RawFiles: make(map[string]bool),
+		CFOrg:    "MyOrg",
+		CFSpace:  "dev",
+		CFRegion: "us10",
+	}
+	pc.RebuildFacts()
+
+	ctx := dynamic.GatherDynamic(dynamic.GatherOpts{
+		ProjectContext: pc,
+	})
+
+	require.NotNil(t, ctx.Project, "Project should be non-nil when BTP context exists")
+	assert.Empty(t, ctx.Project.Type, "Type should be empty when no project detected")
+	assert.Empty(t, ctx.Project.Facts, "Facts should be empty when no project detected")
+	assert.NotEmpty(t, ctx.Project.BTPFacts, "BTPFacts should be populated")
 }
