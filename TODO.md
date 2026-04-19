@@ -232,33 +232,15 @@ Expose `sap-devs` as a live MCP server so AI agents can query it on demand durin
 
 ---
 
-### ~~Error pattern library~~ ✅ Implemented
+### ~~Error pattern library~~ - DONE ✔️
 
 Implemented as `known_errors.yaml` per pack with `KnownError` struct, loader/merge/render integration, JSON schema, i18n, and `sap-devs errors list/search` CLI commands. Seed data: 7 CAP + 5 ABAP error patterns.
 
 ---
 
-### Agent-readable CLI manifest
+### ~~Agent-readable CLI manifest~~ - DONE ✔️
 
-Add a machine-readable summary of `sap-devs` commands and their output contracts to the injected base-pack block, so agents know exactly what to call and what they'll get back.
-
-**Problem:** The current "Agent Instructions" section says "run `sap-devs resources`" in prose. Agents are better at calling tools when they know the precise interface: what arguments are accepted, what the output looks like, and when to use each command.
-
-**Proposed injected block (in base pack `context.md`):**
-
-```markdown
-## sap-devs CLI Reference (for AI agents)
-
-| Command | When to use | Output |
-| --- | --- | --- |
-| `sap-devs tip [--pack <name>]` | Need a quick best-practice reminder | One actionable tip as plain text |
-| `sap-devs resources [--pack <name>]` | Need links to SAP docs, samples, tutorials | Numbered list with URLs |
-| `sap-devs doctor` | User reports tool version issues | List of tool checks, pass/fail, fix hints |
-| `sap-devs sync --force` | Content may be stale | Fetches latest SAP release notes and content |
-| `sap-devs news` | User asks about recent SAP announcements | List of recent SAP Developer News episodes |
-```
-
-This is low-cost to author and maintain, and meaningfully improves agent precision when deciding which command to run.
+Implemented: added `## sap-devs CLI Reference (for AI agents)` table to `content/packs/base/context.md` with 19 commands covering when-to-use and output contracts.
 
 ---
 
