@@ -42,6 +42,8 @@ Content is loaded from up to four layered sources, with later layers overriding 
 
 **Additive Layers:** Packs with `additive: true` in `pack.yaml` augment (append/prepend) same-ID packs from earlier layers instead of overriding them. `AdditivePosition` controls order (`before`/`after`, default `after`). Merge logic: [internal/content/merge.go](internal/content/merge.go). A `base: true` pack (e.g., `content/packs/base/`) is auto-injected into every profile.
 
+**What's New Injection:** Each pack may include a `changelog` list in `pack.yaml` with human-curated change notes. During `sync`, these entries are collected into `~/.cache/sap-devs/sync-changelog.json`. On the next `inject`, the entries are rendered as a `## What's New` block at the top of the injected context, then the file is deleted (one-shot). See `internal/sync/changelog.go` for the file lifecycle functions.
+
 ### Adapter System
 
 Adapters ([internal/adapter/](internal/adapter/)) define how to push context into a specific AI tool. They are YAML files in `content/adapters/` and support three types:
