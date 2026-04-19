@@ -29,20 +29,22 @@ type LearningJourney struct {
 }
 
 // catalogItem is the raw JSON shape from the catalog download endpoint.
+// Several fields use interface{} because the API returns mixed types
+// (e.g. Duration_in_hours can be a string, number, or null).
 type catalogItem struct {
-	LearningType     string     `json:"Learning_type"`
-	LearningObjectID string     `json:"Learning_object_ID"`
-	Title            string     `json:"Title"`
-	Description      string     `json:"Description"`
-	Level            string     `json:"Level"`
-	DurationInHours  string     `json:"Duration_in_hours"`
-	Role             string     `json:"Role"`
-	Product          string     `json:"LSC_product"`
-	ProductCategory  string     `json:"LSC_product_category"`
-	ProductSubcat    string     `json:"LSC_product_subcategory"`
-	Objectives       string     `json:"Learning_objectives"`
-	AvailableFrom    string     `json:"Content_available_from"`
-	DirectLink       directLink `json:"Direct_link"`
+	LearningType     string      `json:"Learning_type"`
+	LearningObjectID string      `json:"Learning_object_ID"`
+	Title            string      `json:"Title"`
+	Description      string      `json:"Description"`
+	Level            string      `json:"Level"`
+	DurationInHours  interface{} `json:"Duration_in_hours"`
+	Role             string      `json:"Role"`
+	Product          string      `json:"LSC_product"`
+	ProductCategory  string      `json:"LSC_product_category"`
+	ProductSubcat    string      `json:"LSC_product_subcategory"`
+	Objectives       string      `json:"Learning_objectives"`
+	AvailableFrom    string      `json:"Content_available_from"`
+	DirectLink       directLink  `json:"Direct_link"`
 }
 
 type directLink struct {

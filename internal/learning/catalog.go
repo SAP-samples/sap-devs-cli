@@ -61,7 +61,7 @@ func convertCatalogItem(item catalogItem) LearningJourney {
 		Slug:            slug,
 		Description:     item.Description,
 		Level:           item.Level,
-		DurationHours:   item.DurationInHours,
+		DurationHours:   toDurationString(item.DurationInHours),
 		Roles:           roles,
 		Product:         item.Product,
 		ProductCategory: item.ProductCategory,
@@ -69,6 +69,17 @@ func convertCatalogItem(item catalogItem) LearningJourney {
 		Objectives:      item.Objectives,
 		AvailableFrom:   item.AvailableFrom,
 		URL:             item.DirectLink.Hyperlink,
+	}
+}
+
+func toDurationString(v interface{}) string {
+	switch d := v.(type) {
+	case string:
+		return d
+	case float64:
+		return fmt.Sprintf("%.2f", d)
+	default:
+		return ""
 	}
 }
 
