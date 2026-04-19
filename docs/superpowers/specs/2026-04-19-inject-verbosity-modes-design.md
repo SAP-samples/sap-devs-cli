@@ -74,7 +74,7 @@ func ParseVerbositySections(md string) VerbositySections
 func (v VerbositySections) AtLevel(level string) string
 ```
 
-`ParseVerbositySections` scans for `<!-- verbosity:{level} -->` markers and splits the markdown into three buckets. `AtLevel` concatenates the appropriate tiers for a given verbosity level.
+`ParseVerbositySections` scans for `<!-- verbosity:{level} -->` markers and splits the markdown into three buckets. The marker lines themselves are excluded from all bucket strings — they are authoring metadata and never appear in output. `AtLevel` concatenates the appropriate tiers for a given verbosity level.
 
 ### Pack Struct Changes
 
@@ -84,11 +84,11 @@ In `internal/content/pack.go`:
 - `ConstraintsMD string` → `Constraints VerbositySections`
 - `PreambleMD` remains `string` (preambles are always core)
 
-`LoadPack` calls `ParseVerbositySections` when loading `context.md` and `constraints.md`.
+`LoadPack` calls `ParseVerbositySections` when loading `context.md` and `constraints.md`. Verbosity markers in `context.expanded.md` are parsed and honoured identically to `context.md`. Locale variant files (`context.{lang}.md`) follow the same rules — authors of locale files are responsible for adding appropriate verbosity markers.
 
 ### Additive Merge
 
-In `internal/content/merge.go`, `MergeWith` for additive packs merges per-tier: the additive pack's `Core` appends to (or prepends before) the base pack's `Core`, and likewise for `Detail` and `Extended`.
+In `internal/content/merge.go`, `MergeWith` for additive packs merges per-tier: the additive pack's `Core` appends to (or prepends before) the base pack's `Core`, and likewise for `Detail` and `Extended`. When one side of a tier is empty, no separator is inserted — the non-empty string is used as-is.
 
 ### Adapter Changes
 
@@ -132,7 +132,7 @@ Pack content assembly uses `pack.Context.AtLevel(verbosity)` and `pack.Constrain
 
 ### TrimPacks
 
-`TrimPacks` gains a `verbosity` parameter. Budget calculation sums only the bytes that will be rendered at the given verbosity level (using `AtLevel`), not the full pack content.
+`TrimPacks` gains a `verbosity` parameter. Budget calculation sums only the bytes that will be rendered at the given verbosity level (using `AtLevel`), not the full pack content. Concretely, the existing `len(p.ContextMD) + len(p.ConstraintsMD)` becomes `len(p.Context.AtLevel(verbosity)) + len(p.Constraints.AtLevel(verbosity))`.
 
 ```go
 func TrimPacks(packs []*Pack, maxBytes int, verbosity string) []*Pack
@@ -142,13 +142,15 @@ func TrimPacks(packs []*Pack, maxBytes int, verbosity string) []*Pack
 
 `cmd/inject.go` gains `--verbosity` flag (string, default empty). Valid values: `minimal`, `standard`, `full`. Passed into `adapter.Options.Verbosity`.
 
+`--verbosity` is valid with `--status` (affects staleness comparison) and `--dry-run` (affects rendered output preview). It is silently ignored with `--uninstall`.
+
 ### Stats Output
 
 The `--stats` table adds a `Verbosity` column showing the effective verbosity for each adapter.
 
 ### Status / Staleness
 
-`inject --status` renders the comparison content using each adapter's verbosity level for accurate staleness detection.
+`inject --status` renders the comparison content using each adapter's verbosity level for accurate staleness detection. Specifically, `renderSectionContent` (the private helper used by `Status()` to build the comparison string) must resolve and pass the effective verbosity for each adapter using the same chain: CLI flag → adapter YAML → `"full"`.
 
 ## Initial Content Tagging
 
@@ -204,7 +206,7 @@ The `--stats` table adds a `Verbosity` column showing the effective verbosity fo
 | `internal/content/render.go` | `TrimPacks` gains `verbosity` param |
 | `internal/content/merge.go` | Per-tier merge for additive packs |
 | `internal/adapter/adapter.go` | `Adapter.Verbosity` field |
-| `internal/adapter/engine.go` | `Options.Verbosity`; per-adapter resolution logic |
+| `internal/adapter/engine.go` | `Options.Verbosity`; per-adapter resolution logic; `renderSectionContent` verbosity threading; add `Verbosity string` to `adapterStats`; populate in both normal and zero-pack early-exit paths; add column to `printStats` |
 | `internal/adapter/status.go` | Verbosity-aware staleness rendering |
 | `cmd/inject.go` | `--verbosity` flag; pass to `Options` |
 | `content/adapters/clipboard.yaml` | Add `verbosity: minimal` |
