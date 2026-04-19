@@ -411,5 +411,21 @@
   "learn.path_not_found": "Learning path {{.ID}} not found.",
   "learn.step_not_found": "(not found)",
   "learn.invalid_level": "Invalid --level value {{.Level}}. Must be beginner, intermediate, or advanced.",
-  "learn.hint_sync": "Run 'sap-devs sync' to include {{.Type}}."
+  "learn.hint_sync": "Run 'sap-devs sync' to include {{.Type}}.",
+
+  "errors.short": "Bekannte SAP-Fehlermuster durchsuchen",
+  "errors.long": "Bekannte SAP-Fehlermuster mit Ursachen und Lösungen durchsuchen.",
+  "errors.list.short": "Bekannte Fehler für dein aktives Profil auflisten",
+  "errors.search.short": "Alle bekannten Fehlermuster durchsuchen",
+  "errors.search.no_results": "Keine Fehler gefunden für \"{{.Query}}\".",
+  "errors.list.no_profile": "Kein Profil gesetzt — führe 'sap-devs profile set <name>' aus",
+  "errors.list.profile_not_found": "Profil \"{{.ID}}\" nicht gefunden — führe 'sap-devs sync' aus",
+  "errors.none": "Keine bekannten Fehler für dein aktuelles Profil gefunden.",
+  "errors.none_pack": "Keine bekannten Fehler für Pack \"{{.Pack}}\" gefunden.",
+  "errors.none_tags": "Keine bekannten Fehler für Tags {{.Tags}}.",
+  "errors.col_pattern": "MUSTER",
+  "errors.col_cause": "URSACHE",
+  "errors.col_pack": "PACK",
+  "errors.col_fix": "LÖSUNG",
+  "errors.col_docs": "DOKU"
 }
