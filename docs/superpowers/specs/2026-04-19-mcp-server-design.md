@@ -35,12 +35,14 @@ sap-devs mcp serve [--profile <id>]
 ```
 
 The command:
+
 1. Creates a `ContentLoader` (same as `inject` does)
 2. Loads packs, applies profile weights
-3. Fetches news with 5-second timeout (non-critical, empty on failure)
-4. Loads tutorial and learning journey indexes from cache (empty if not synced)
-5. Passes everything to `mcpserver.NewServer()`
-6. Calls `server.ServeStdio(s)` — blocks until the client disconnects
+3. Loads tutorial and learning journey indexes from cache (empty if not synced)
+4. Passes everything to `mcpserver.NewServer()` — news is fetched lazily on first `get_recent_news` call, not at startup
+5. Calls `server.ServeStdio(s)` — blocks until the client disconnects
+
+The `mcp serve` command skips the background update check (same pattern as the `update` command in `root.go`) to avoid the 3-second post-run delay on server shutdown.
 
 ### Dependencies struct
 
@@ -48,10 +50,10 @@ The command:
 type Deps struct {
     Packs            []content.Pack
     Profile          *content.Profile
-    NewsItems        []news.NewsItem        // may be empty
-    TutorialIndex    []tutorials.Tutorial   // may be empty
-    LearningIndex    []learning.Journey     // may be empty
-    Version          string                 // build version for server metadata
+    NewsItems        []news.NewsItem              // may be empty; fetched lazily on first get_recent_news call
+    TutorialIndex    []tutorials.TutorialMeta     // may be empty if not synced
+    LearningIndex    []learning.LearningJourney   // may be empty if not synced
+    Version          string                       // build version for server metadata
 }
 ```
 
@@ -69,34 +71,34 @@ type Deps struct {
 | Tool | Parameters | Returns | Backing function |
 |------|-----------|---------|-----------------|
 | `list_packs` | *(none)* | JSON array of `{id, name, description, tags}` | iterates `Deps.Packs` |
-| `get_context` | `pack` (optional string) | Rendered markdown context for active profile, or a specific pack | `pack.Context` verbosity sections |
-| `get_tip` | `topic` (optional string) | One tip as markdown — random if no topic, tag-filtered if topic given | `content.SelectTip` |
+| `get_context` | `pack` (optional string) | Rendered markdown context at `"full"` verbosity for active profile, or a specific pack | `pack.Context.AtLevel("full")` |
+| `get_tip` | `topic` (optional string) | One tip as markdown — random per call (`time.Now().UnixNano()` seed). If `topic` given, passed as single-element `profileTags` to filter | `content.SelectTip(packs, tags, seed)` |
 
 ### Resource & error tools
 
 | Tool | Parameters | Returns | Backing function |
 |------|-----------|---------|-----------------|
 | `search_resources` | `query` (required string), `pack` (optional string) | JSON array of `{id, title, url, type, tags}` | `content.FlattenResources` + `content.FilterResources` |
-| `get_known_errors` | `pattern` (required string) | JSON array of `{id, pattern, cause, fix, docs, tags}` | `content.FlattenKnownErrors` + `content.FilterKnownErrors` |
+| `get_known_errors` | `query` (required string) | JSON array of `{id, pattern, cause, fix, docs, tags}` | `content.FlattenKnownErrors` + `content.FilterKnownErrors` |
 
 ### News tool
 
 | Tool | Parameters | Returns | Backing function |
 |------|-----------|---------|-----------------|
-| `get_recent_news` | `count` (optional number, default 5) | JSON array of `{title, url, published, community_url}` | `Deps.NewsItems` slice |
+| `get_recent_news` | `count` (optional number, default 5) | JSON array of `{title, url, published, community_url}`. `community_url` is `""` when no matching blog post exists | Lazy-fetched on first call with 5s timeout, then cached for server lifetime |
 
 ### Learning & tutorial tools
 
 | Tool | Parameters | Returns | Backing function |
 |------|-----------|---------|-----------------|
 | `search_tutorials` | `query` (required string) | JSON array of `{slug, title, description, url, tags}` | `tutorials.Search` against cached index |
-| `search_learning_journeys` | `query` (required string) | JSON array of `{slug, title, level, duration, url}` | `learning.SearchLocal` against cached index |
+| `search_learning_journeys` | `query` (required string) | JSON array of `{slug, title, level, duration, url}` | `learning.Search` against cached index |
 
 ### Samples tool
 
 | Tool | Parameters | Returns | Backing function |
 |------|-----------|---------|-----------------|
-| `get_samples` | `pack` (optional string), `query` (optional string) | JSON array of `{id, title, description, url, tags}` | `content.FlattenSamples` + filtering |
+| `get_samples` | `pack` (optional string), `query` (optional string) | JSON array of `{id, label, description, url, tags}` | `content.FlattenSamples` + filtering |
 
 All tools return JSON text via `mcp.NewToolResultText()`. Bad input returns `mcp.NewToolResultError()`. Go-level errors are never returned — the MCP protocol stays clean.
 
@@ -142,11 +144,13 @@ The server is defined in the base pack so it's available to every profile.
 
 No new adapter code needed. The existing `mcp-wire` mechanism handles everything.
 
+**Schema validation:** The existing JSON schema for `mcp.yaml` in `content/schemas/` already covers all fields used in the new entry (`id`, `name`, `description`, `install.command`, `install.args`, `hosts`). No schema changes needed.
+
 ## Error Handling
 
 **Content loading failures:** If packs fail to load (cache empty, never synced), the command prints a helpful error to stderr and exits non-zero before starting the server. The AI tool sees the process die and reports the error.
 
-**News fetch failure:** Attempted with 5-second timeout at startup. If it fails, `Deps.NewsItems` is empty. `get_recent_news` returns an empty JSON array with a note suggesting `sap-devs sync` — not a protocol error.
+**News fetch failure:** `get_recent_news` fetches news lazily on first call (5-second timeout), then caches the result for the server's lifetime. If the fetch fails, returns an empty JSON array with a note suggesting `sap-devs sync` — not a protocol error. This avoids blocking server startup with network I/O while keeping news reasonably fresh per server session.
 
 **Tutorials & learning journeys cache miss:** If the index files from `sap-devs sync` don't exist, the tools return empty results with a message suggesting the user run `sap-devs sync`. No crash.
 
