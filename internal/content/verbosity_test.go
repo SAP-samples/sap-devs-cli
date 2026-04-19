@@ -78,3 +78,11 @@ func TestVerbositySections_AtLevel_EmptyTiers(t *testing.T) {
 	assert.Equal(t, "C.E.", v.AtLevel("full"))
 	assert.Equal(t, "C.", v.AtLevel("standard"))
 }
+
+func TestParseVerbositySections_UnknownMarkerTreatedAsCore(t *testing.T) {
+	md := "A.\n<!-- verbosity:bogus -->\nB.\n"
+	v := content.ParseVerbositySections(md)
+	assert.Equal(t, "A.\nB.\n", v.Core, "unknown marker content falls into core")
+	assert.Empty(t, v.Detail)
+	assert.Empty(t, v.Extended)
+}
