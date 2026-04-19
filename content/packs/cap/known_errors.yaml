@@ -1,0 +1,46 @@
+- id: cap/no-default-db
+  pattern: "No 'default' database configured"
+  cause: No database binding in cds.requires; common in new projects or missing .env
+  fix: "Add `cds.requires.db.kind = sqlite` to package.json for local dev, or bind a HANA service instance for BTP deployment"
+  docs: https://cap.cloud.sap/docs/node.js/databases
+  tags: [database, local-dev]
+
+- id: cap/eisdir
+  pattern: "EISDIR: illegal operation on a directory"
+  cause: cds build or cds watch targeting a directory instead of a file; often caused by stale gen/ folders
+  fix: Check cds.build paths in package.json and remove stale gen/ folders with `rm -rf gen/`
+  tags: [build, filesystem]
+
+- id: cap/no-service-def
+  pattern: "No service definition found in loaded models"
+  cause: No .cds files found in srv/ or the cds model paths are misconfigured
+  fix: Ensure at least one .cds file in srv/ contains a `service` definition, and check that package.json cds.roots includes the correct paths
+  docs: https://cap.cloud.sap/docs/get-started/
+  tags: [service, getting-started]
+
+- id: cap/cannot-find-cds
+  pattern: "Cannot find module '@sap/cds'"
+  cause: "@sap/cds not installed; missing from dependencies or node_modules not populated"
+  fix: "Run `npm install` to install dependencies, or `npm add @sap/cds` if not listed in package.json"
+  tags: [dependencies, getting-started]
+
+- id: cap/hdi-not-bound
+  pattern: "No credentials configured for HDI container"
+  cause: HDI container service not bound to the application; missing service binding on BTP or missing default-env.json locally
+  fix: "Bind the HANA HDI container service to your app (`cf bind-service`), or create a default-env.json with `cds bind --exec -- npm start` for local hybrid testing"
+  docs: https://cap.cloud.sap/docs/guides/databases-hana
+  tags: [database, hana, deployment]
+
+- id: cap/cds-dk-not-found
+  pattern: "cds: command not found"
+  cause: "@sap/cds-dk not installed globally or not in PATH"
+  fix: "Install globally with `npm install -g @sap/cds-dk`, or use `npx cds` to run from local project"
+  docs: https://cap.cloud.sap/docs/get-started/
+  tags: [tools, getting-started]
+
+- id: cap/draft-no-uuid
+  pattern: "Draft requires key element of type UUID"
+  cause: Draft-enabled entity uses a non-UUID key; Fiori draft handling requires UUID-typed keys
+  fix: "Change the key type to `key ID : UUID;` or add `HasActiveEntity` and `HasDraftEntity` aspects"
+  docs: https://cap.cloud.sap/docs/java/fiori-drafts
+  tags: [draft, fiori, cds]

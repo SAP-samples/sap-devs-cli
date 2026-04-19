@@ -205,7 +205,7 @@ Expose `sap-devs` as a live MCP server so AI agents can query it on demand durin
 - `get_context(profile)` — return the full context block for a profile on demand
 - `get_recent_news()` — return latest SAP Developer News episodes
 - `list_packs()` — enumerate available packs so the agent knows what domains are covered
-- `get_known_errors(pattern)` — look up a SAP error message and return cause + fix
+- `get_known_errors(pattern)` — look up a SAP error message and return cause + fix (backing data: `known_errors.yaml` ✅)
 
 **Architecture:**
 
@@ -232,26 +232,9 @@ Expose `sap-devs` as a live MCP server so AI agents can query it on demand durin
 
 ---
 
-### Error pattern library
+### ~~Error pattern library~~ ✅ Implemented
 
-A `known_errors.yaml` per pack listing common SAP error messages, their causes, and fixes — injected as a compact reference and queryable via the MCP server.
-
-**Problem:** When an agent encounters `Error: No 'default' database configured`, `AMDP method must be static`, or `EISDIR: illegal operation on a directory`, it guesses or web-searches. Most SAP errors have well-known, stable fixes that belong in the tool.
-
-**YAML structure:**
-
-```yaml
-- id: cap-no-default-db
-  pattern: "No 'default' database configured"
-  pack: cap
-  cause: No database binding in cds.requires; common in new projects or missing .env
-  fix: Add `cds.requires.db.kind = sqlite` for local dev, or bind a HANA service for BTP
-  docs: https://cap.cloud.sap/docs/node.js/databases
-```
-
-**Injection:** A compact `## Known Errors` section at the bottom of the injected block (or omitted entirely in `minimal` verbosity mode). Also the backing data for `get_known_errors(pattern)` in the MCP server.
-
-**Collection strategy:** Seed from the most frequently asked questions in the SAP Community and CAP GitHub issues. Updated via `sync`.
+Implemented as `known_errors.yaml` per pack with `KnownError` struct, loader/merge/render integration, JSON schema, i18n, and `sap-devs errors list/search` CLI commands. Seed data: 7 CAP + 5 ABAP error patterns.
 
 ---
 

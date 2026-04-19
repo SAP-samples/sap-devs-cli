@@ -1,0 +1,40 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Pack Known Errors",
+  "description": "Schema for sap-devs known_errors.yaml files (top-level array)",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": ["id", "pattern", "cause", "fix"],
+    "additionalProperties": false,
+    "properties": {
+      "id": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9-]*/[a-z][a-z0-9-]*$",
+        "description": "Error identifier in format <pack-id>/<slug>, e.g. cap/no-default-db"
+      },
+      "pattern": {
+        "type": "string",
+        "description": "The error message pattern agents will encounter"
+      },
+      "cause": {
+        "type": "string",
+        "description": "Why this error occurs"
+      },
+      "fix": {
+        "type": "string",
+        "description": "How to resolve this error"
+      },
+      "docs": {
+        "type": "string",
+        "format": "uri",
+        "description": "Link to relevant documentation"
+      },
+      "tags": {
+        "type": "array",
+        "items": { "type": "string" },
+        "description": "Filtering tags (e.g. database, auth, build)"
+      }
+    }
+  }
+}
