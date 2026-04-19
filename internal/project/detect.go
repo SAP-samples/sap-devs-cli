@@ -1,12 +1,15 @@
 package project
 
 import (
+	"context"
 	"encoding/json"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
 	"runtime"
 	"strings"
+	"time"
 )
 
 type ProjectContext struct {
@@ -212,11 +215,39 @@ func extractCFRegion(target string) string {
 func detectCF(ctx *ProjectContext) {
 	cfg := readCFConfig()
 	if cfg == nil {
+		cfCLIFallback(ctx)
 		return
 	}
 	ctx.CFOrg = cfg.OrganizationFields.Name
 	ctx.CFSpace = cfg.SpaceFields.Name
 	ctx.CFRegion = extractCFRegion(cfg.Target)
+}
+
+func parseCFTargetOutput(output string) (org, space, target string) {
+	for _, line := range strings.Split(output, "\n") {
+		line = strings.TrimSpace(line)
+		if strings.HasPrefix(line, "org:") {
+			org = strings.TrimSpace(strings.TrimPrefix(line, "org:"))
+		} else if strings.HasPrefix(line, "space:") {
+			space = strings.TrimSpace(strings.TrimPrefix(line, "space:"))
+		} else if strings.HasPrefix(line, "API endpoint:") {
+			target = strings.TrimSpace(strings.TrimPrefix(line, "API endpoint:"))
+		}
+	}
+	return
+}
+
+func cfCLIFallback(ctx *ProjectContext) {
+	c, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	out, err := exec.CommandContext(c, "cf", "target").Output()
+	if err != nil {
+		return
+	}
+	org, space, target := parseCFTargetOutput(string(out))
+	ctx.CFOrg = org
+	ctx.CFSpace = space
+	ctx.CFRegion = extractCFRegion(target)
 }
 
 func readCFConfig() *cfConfig {
@@ -261,12 +292,37 @@ func extractBTPRegion(subdomain string) string {
 func detectBTP(ctx *ProjectContext) {
 	cfg := readBTPConfig()
 	if cfg == nil {
+		btpCLIFallback(ctx)
 		return
 	}
 	ctx.BTPSubaccount = cfg.TargetHierarchy.SubaccountSubdomain
 	if ctx.BTPSubaccount == "" {
+		btpCLIFallback(ctx)
 		return
 	}
+	ctx.BTPRegion = extractBTPRegion(ctx.BTPSubaccount)
+	ctx.BTPIsTrial = strings.Contains(strings.ToLower(ctx.BTPSubaccount), "trial")
+}
+
+func btpCLIFallback(ctx *ProjectContext) {
+	c, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	out, err := exec.CommandContext(c, "btp", "--format", "json", "target").Output()
+	if err != nil {
+		return
+	}
+	var result struct {
+		SubAccount struct {
+			Subdomain string `json:"subdomain"`
+		} `json:"subAccount"`
+	}
+	if json.Unmarshal(out, &result) != nil {
+		return
+	}
+	if result.SubAccount.Subdomain == "" {
+		return
+	}
+	ctx.BTPSubaccount = result.SubAccount.Subdomain
 	ctx.BTPRegion = extractBTPRegion(ctx.BTPSubaccount)
 	ctx.BTPIsTrial = strings.Contains(strings.ToLower(ctx.BTPSubaccount), "trial")
 }

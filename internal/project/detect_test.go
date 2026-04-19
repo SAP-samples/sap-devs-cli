@@ -330,3 +330,29 @@ func TestExtractBTPRegion(t *testing.T) {
 		}
 	}
 }
+
+func TestParseCFTargetOutput(t *testing.T) {
+	output := `API endpoint:   https://api.cf.us10.hana.ondemand.com
+API version:    3.215.0
+user:           user@example.com
+org:            MyOrg
+space:          dev`
+
+	org, space, target := parseCFTargetOutput(output)
+	if org != "MyOrg" {
+		t.Errorf("org = %q, want %q", org, "MyOrg")
+	}
+	if space != "dev" {
+		t.Errorf("space = %q, want %q", space, "dev")
+	}
+	if target != "https://api.cf.us10.hana.ondemand.com" {
+		t.Errorf("target = %q, want %q", target, "https://api.cf.us10.hana.ondemand.com")
+	}
+}
+
+func TestParseCFTargetOutput_EmptyOnNoMatch(t *testing.T) {
+	org, space, target := parseCFTargetOutput("some random output")
+	if org != "" || space != "" || target != "" {
+		t.Error("should return empty strings on unrecognized output")
+	}
+}
