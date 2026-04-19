@@ -82,15 +82,21 @@ sap-devs-cli/
 │   ├── adapter/            # Adapter engine — pushes context into AI tools
 │   ├── config/             # Config file read/write
 │   ├── content/            # Content loader — merges 4 content layers
+│   ├── credentials/        # Secure token storage (OS keychain + file fallback)
+│   ├── discovery/          # Discovery Center API client and cache
 │   ├── i18n/               # Internationalisation: language resolution, T(), Tf()
 │   │   └── catalogs/       # JSON string catalogs per language (en.json, de.json, …)
+│   ├── learn/              # Cross-type learning recommendations, search, and paths
+│   ├── learning/           # Learning journey catalog and search API client
 │   ├── sync/               # Sync engine — fetches official/company repo zips
+│   ├── tutorials/          # Tutorial fetching, parsing, and search
 │   ├── update/             # Self-update logic
 │   └── xdg/                # Platform-native config/cache/data paths
 ├── content/
 │   ├── adapters/           # Adapter definitions (one YAML per AI tool)
 │   ├── packs/              # Content packs (one directory per pack)
-│   └── profiles/           # Developer persona profiles
+│   ├── profiles/           # Developer persona profiles
+│   └── schemas/            # JSON Schema files for YAML validation
 ├── .github/
 │   ├── workflows/ci.yml    # Test + build on every push/PR
 │   └── workflows/release.yml  # GoReleaser triggered by v* tags
@@ -224,6 +230,16 @@ On every command invocation (except `update` and dev builds), a background gorou
 | Data | `~/.local/share/sap-devs` | `~/Library/Application Support/sap-devs/data` | `%LOCALAPPDATA%/sap-devs/data` |
 
 XDG environment variables (`XDG_CONFIG_HOME`, `XDG_CACHE_HOME`, `XDG_DATA_HOME`) are honoured on Linux.
+
+### Learn
+
+`sap-devs learn` (`cmd/learn.go`, `cmd/learn_search.go`, `cmd/learn_path.go`) is an umbrella command aggregating content from learning journeys, tutorials, and Discovery Center missions. The `internal/learn` package provides:
+
+- **`Recommend()`** — three-tier resolution per content type (featured → pack refs → profile-filtered), level normalization, filtering
+- **`Search()`** — cross-type substring search with title-priority ranking
+- **`LoadPaths()`/`AutoFillPaths()`/`ResolvePaths()`** — curated learning paths from `paths.yaml` + auto-generated paths from featured pack content
+
+Experience level is stored in `config.yaml` as `experience_level` (beginner/intermediate/advanced). Mission effort values map to levels: 0-1→beginner, 2→intermediate, 3→advanced.
 
 ---
 

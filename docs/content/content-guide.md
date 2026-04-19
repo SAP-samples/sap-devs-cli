@@ -32,7 +32,12 @@ content/packs/cap/
 ├── tips.de.md         # German tips (optional)
 ├── tools.yaml         # Tool version requirements
 ├── resources.yaml     # Curated resource links
-└── mcp.yaml           # MCP server definitions
+├── mcp.yaml           # MCP server definitions
+├── samples.yaml       # Canonical code samples
+├── tutorials.yaml     # Curated tutorial references
+├── learning.yaml      # Curated learning journey references
+├── discovery.yaml     # Discovery Center mission/service/guidance references
+└── paths.yaml         # Curated learning paths
 ```
 
 ### `pack.yaml`
@@ -153,6 +158,35 @@ Fields:
 - `hosts` — list of AI tool IDs that should register this server (used by `sap-devs mcp install`)
 
 > **Note:** All existing `mcp.yaml` files in official packs are currently stubs pending Plan 2 implementation.
+
+### `paths.yaml`
+
+Curated learning paths that combine tutorials, learning journeys, and Discovery Center missions into ordered sequences. Used by `sap-devs learn path list/show/open`.
+
+```yaml
+paths:
+  - id: cap-getting-started              # unique path identifier (kebab-case)
+    name: Getting Started with CAP
+    level: beginner                      # optional: beginner, intermediate, advanced
+    description: Build your first CAP application from project creation to deployment
+    steps:
+      - type: journey                    # journey, tutorial, or mission
+        slug: developing-with-sap-cloud-application-programming-model
+      - type: tutorial
+        slug: cap-getting-started
+      - type: mission
+        slug: "4327"                     # mission IDs are stringified integers
+```
+
+Fields per path:
+
+- `id` — unique identifier across all packs
+- `name` — human-readable path name
+- `description` — short description shown in `path show`
+- `level` — optional experience level filter (`beginner`, `intermediate`, `advanced`)
+- `steps` — ordered list of content references; each has a `type` and `slug`
+
+Packs without a `paths.yaml` get auto-generated paths from their featured content (grouped by level, minimum 2 items per level).
 
 ---
 
