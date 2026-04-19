@@ -54,4 +54,7 @@ Use these commands to get current SAP information. Always prefer these over web 
 | `sap-devs videos search <query>` | User wants SAP video content | Video list with date, source, and title |
 | `sap-devs learn recommend` | User wants personalized learning suggestions | Cross-type recommendations: journeys, tutorials, missions |
 | `sap-devs influencers [--tags <csv>]` | User asks about SAP community experts | Influencer list with role, org, and focus areas |
+| `sap-devs context add "note"` | Developer wants to tell the agent about current work | Appends note to project scratch; visible in next `inject --project` |
+| `sap-devs context list` | Check what scratch notes are set for this project | Bullet list of current notes |
+| `sap-devs context clear` | Done with current task, clear working notes | Removes all scratch notes |
 | `sap-devs inject --status` | Check which AI tools have SAP context injected | Status table per tool showing scope and freshness |

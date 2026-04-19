@@ -427,5 +427,17 @@
   "errors.col_cause": "URSACHE",
   "errors.col_pack": "PACK",
   "errors.col_fix": "LÖSUNG",
-  "errors.col_docs": "DOKU"
+  "errors.col_docs": "DOKU",
+
+  "context.short": "Ephemere Projektkontext-Notizen verwalten",
+  "context.long": "Notizen hinzufügen, auflisten oder löschen, die beim Ausführen von\n'sap-devs inject --project' in KI-Tools eingefügt werden. Notizen sind\nprojektbezogen, kurzlebig und in .sap-devs/scratch.yaml gespeichert.",
+  "context.add.short": "Notiz zum Projektkontext hinzufügen",
+  "context.add.done": "Notiz zum Projektkontext hinzugefügt.",
+  "context.add.empty": "Notiz darf nicht leer sein.",
+  "context.list.short": "Aktuelle Notizen anzeigen",
+  "context.list.empty": "Keine Notizen gesetzt. Verwende \"sap-devs context add\" zum Hinzufügen.",
+  "context.list.header": "Aktueller Projektkontext:",
+  "context.clear.short": "Alle Notizen löschen",
+  "context.clear.done": "Alle Notizen gelöscht.",
+  "context.clear.empty": "Keine Notizen zum Löschen vorhanden."
 }

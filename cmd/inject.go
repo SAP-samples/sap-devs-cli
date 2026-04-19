@@ -20,6 +20,7 @@ import (
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/i18n"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/learning"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/project"
+	"github.tools.sap/developer-relations/sap-devs-cli/internal/scratch"
 	sapSync "github.tools.sap/developer-relations/sap-devs-cli/internal/sync"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/xdg"
 )
@@ -263,6 +264,12 @@ into project-level files (CLAUDE.md, .cursorrules, etc.) in the current director
 					Message:  f.Message,
 				})
 			}
+		}
+
+		// Load scratch notes for project-scope injection
+		if injectProject {
+			notes, _ := scratch.Load(cwd)
+			dynCtx.ScratchNotes = notes
 		}
 
 		opts := adapter.Options{

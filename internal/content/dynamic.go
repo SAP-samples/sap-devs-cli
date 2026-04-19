@@ -14,6 +14,7 @@ type DynamicContext struct {
 	ProjectFindings []ProjectFinding
 	WiredMCPServers []WiredMCPEntry
 	Commands        []CommandInfo
+	ScratchNotes    []string
 }
 
 // ProjectInfo holds detected facts about the current project, mirroring

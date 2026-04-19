@@ -244,21 +244,9 @@ Implemented: added `## sap-devs CLI Reference (for AI agents)` table to `content
 
 ---
 
-### Scratch/session context — `sap-devs context add`
+### ~~Scratch/session context — `sap-devs context add`~~ ✅
 
-Let users append ephemeral working notes to the project-scope injected block, giving the AI agent facts specific to the current task rather than just generic SAP knowledge.
-
-**Problem:** The agent knows CAP best practices. It doesn't know "I'm currently implementing draft enablement for the Books entity" or "the HANA service is only bound in the dev space, not test." This working context lives only in the developer's head.
-
-**Commands:**
-
-- `sap-devs context add "currently implementing draft enablement for Books entity"` — appends a note
-- `sap-devs context list` — show current scratch notes
-- `sap-devs context clear` — remove all notes (also cleared by `inject --uninstall`)
-
-**Storage:** A `~/.config/sap-devs/scratch.yaml` per project directory (keyed by absolute path), rendered as a `## Current Context` section at the very top of the project-scope injected block — the first thing the agent reads.
-
-**Design note:** Notes are intentionally ephemeral and human-authored. They are not synced, not versioned, and not shared. Their purpose is to close the gap between "what the pack knows" and "what I'm working on right now."
+Implemented: `context add/list/clear` commands with `.sap-devs/scratch.yaml` storage and `## Current Context` injection in project-scope output.
 
 ---
 
