@@ -21,6 +21,7 @@ import (
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/events"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/i18n"
 	sapSync "github.tools.sap/developer-relations/sap-devs-cli/internal/sync"
+	"github.tools.sap/developer-relations/sap-devs-cli/internal/learning"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/tutorials"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/ui"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/videos"
@@ -74,11 +75,12 @@ func runSync(ctx context.Context, force bool, out io.Writer) error {
 		"context": cfg.Sync.Context, "mcp": cfg.Sync.MCP,
 		"events": cfg.Sync.Events, "youtube": cfg.Sync.YouTube,
 		"discovery": cfg.Sync.Discovery, "tutorials": cfg.Sync.Tutorials,
+		"learning": cfg.Sync.Learning,
 	}
 	engine := sapSync.NewEngine(paths.CacheDir, 24*time.Hour, ttls)
 
 	archiveCats := []string{"tips", "tools", "resources", "context", "mcp", "advocates"}
-	independentCats := []string{"events", "youtube", "discovery", "tutorials"}
+	independentCats := []string{"events", "youtube", "discovery", "tutorials", "learning"}
 
 	activeArchive := intersectStrings(archiveCats, categories)
 	activeIndependent := intersectStrings(independentCats, categories)
@@ -165,6 +167,14 @@ func runSync(ctx context.Context, force bool, out io.Writer) error {
 			fmt.Fprintf(os.Stderr, "sap-devs: tutorials sync: %v\n", err)
 		}
 		_ = engine.MarkSynced("tutorials")
+	}
+
+	// Phase 7: Learning journeys catalog fetch
+	if containsString(activeIndependent, "learning") && (force || engine.IsStale("learning")) {
+		if err := runLearningFetch(paths.CacheDir, force); err != nil {
+			fmt.Fprintf(os.Stderr, "sap-devs: learning sync: %v\n", err)
+		}
+		_ = engine.MarkSynced("learning")
 	}
 
 	return nil
@@ -291,7 +301,7 @@ func runEventsFetch(cacheDir, officialCache string, force bool) error {
 }
 
 func allCategories() []string {
-	return []string{"tips", "tools", "resources", "context", "mcp", "advocates", "events", "youtube", "discovery", "tutorials"}
+	return []string{"tips", "tools", "resources", "context", "mcp", "advocates", "events", "youtube", "discovery", "tutorials", "learning"}
 }
 
 func intersectStrings(a, b []string) []string {
@@ -559,6 +569,23 @@ func runTutorialsFetch(cacheDir string, force bool) error {
 		return err
 	}
 	return tutorials.SaveRepoInfo(cacheDir, repoInfos)
+}
+
+func runLearningFetch(cacheDir string, force bool) error {
+	if !force {
+		if age := learning.IndexCacheAge(cacheDir); age >= 0 && age <= learning.CacheTTL {
+			return nil
+		}
+	}
+	journeys, err := learning.FetchCatalog()
+	if err != nil {
+		if stale, ok := learning.LoadIndexStale(cacheDir); ok {
+			_ = learning.SaveIndex(cacheDir, stale)
+			return nil
+		}
+		return err
+	}
+	return learning.SaveIndex(cacheDir, journeys)
 }
 
 func init() {

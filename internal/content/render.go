@@ -72,6 +72,23 @@ func RenderContext(packs []*Pack, profile *Profile, dynamic *DynamicContext) str
 		b.WriteString("\n")
 	}
 
+	var learningRows []string
+	for _, p := range packs {
+		for _, lj := range p.LearningForInject {
+			learningRows = append(learningRows, fmt.Sprintf("| [%s](%s) | %s | %s |",
+				lj.Title, lj.URL, lj.Level, lj.Duration))
+		}
+	}
+	if len(learningRows) > 0 {
+		b.WriteString("## Recommended Learning Journeys\n\n")
+		b.WriteString("| Journey | Level | Duration |\n")
+		b.WriteString("|---------|-------|----------|\n")
+		for _, row := range learningRows {
+			b.WriteString(row + "\n")
+		}
+		b.WriteString("\n")
+	}
+
 	return strings.TrimRight(b.String(), "\n") + "\n"
 }
 
