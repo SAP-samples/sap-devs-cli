@@ -484,3 +484,60 @@ func TestRenderContext_CanonicalPatterns_AppearsAfterPackContent(t *testing.T) {
 	patternsIdx := strings.Index(out, "## Canonical Patterns")
 	assert.Greater(t, patternsIdx, packIdx, "Canonical Patterns must appear after pack content")
 }
+
+func TestRenderContext_Constraints_AppearsWhenPresent(t *testing.T) {
+	packs := []*content.Pack{
+		{ID: "cap", ContextMD: "CAP context.", ConstraintsMD: "1. Never write raw SQL"},
+	}
+	out := content.RenderContext(packs, nil, nil)
+	assert.Contains(t, out, "## Constraints")
+	assert.Contains(t, out, "1. Never write raw SQL")
+}
+
+func TestRenderContext_Constraints_OmittedWhenEmpty(t *testing.T) {
+	packs := []*content.Pack{
+		{ID: "cap", ContextMD: "CAP context."},
+	}
+	out := content.RenderContext(packs, nil, nil)
+	assert.NotContains(t, out, "## Constraints")
+}
+
+func TestRenderContext_Constraints_AfterPreambleBeforeContext(t *testing.T) {
+	packs := []*content.Pack{
+		{ID: "base", Base: true, PreambleMD: "> Preamble.", ContextMD: "## Base context.", ConstraintsMD: "1. Base constraint"},
+		{ID: "cap", ContextMD: "## CAP context.", ConstraintsMD: "2. CAP constraint"},
+	}
+	out := content.RenderContext(packs, nil, nil)
+	preambleIdx := strings.Index(out, "> Preamble.")
+	constraintsIdx := strings.Index(out, "## Constraints")
+	baseCtxIdx := strings.Index(out, "## Base context.")
+	capCtxIdx := strings.Index(out, "## CAP context.")
+	require.NotEqual(t, -1, preambleIdx)
+	require.NotEqual(t, -1, constraintsIdx)
+	assert.Less(t, preambleIdx, constraintsIdx, "preamble before constraints")
+	assert.Less(t, constraintsIdx, baseCtxIdx, "constraints before base context")
+	assert.Less(t, constraintsIdx, capCtxIdx, "constraints before cap context")
+}
+
+func TestRenderContext_Constraints_MultiplePacksMerged(t *testing.T) {
+	packs := []*content.Pack{
+		{ID: "cap", ContextMD: "CAP context.", ConstraintsMD: "1. CAP constraint"},
+		{ID: "abap", ContextMD: "ABAP context.", ConstraintsMD: "1. ABAP constraint"},
+	}
+	out := content.RenderContext(packs, nil, nil)
+	assert.Contains(t, out, "1. CAP constraint")
+	assert.Contains(t, out, "1. ABAP constraint")
+	assert.Equal(t, 1, strings.Count(out, "## Constraints"))
+}
+
+func TestRenderContext_Constraints_SkipsEmptyPacks(t *testing.T) {
+	packs := []*content.Pack{
+		{ID: "cap", ContextMD: "CAP context.", ConstraintsMD: "1. CAP constraint"},
+		{ID: "btp", ContextMD: "BTP context.", ConstraintsMD: ""},
+		{ID: "abap", ContextMD: "ABAP context.", ConstraintsMD: "  \n  "},
+	}
+	out := content.RenderContext(packs, nil, nil)
+	assert.Contains(t, out, "## Constraints")
+	assert.Contains(t, out, "1. CAP constraint")
+	assert.NotContains(t, out, "\n\n\n\n")
+}

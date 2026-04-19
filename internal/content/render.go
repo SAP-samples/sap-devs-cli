@@ -45,6 +45,18 @@ func RenderContext(packs []*Pack, profile *Profile, dynamic *DynamicContext) str
 		}
 	}
 
+	var constraints []string
+	for _, p := range packs {
+		if trimmed := strings.TrimSpace(p.ConstraintsMD); trimmed != "" {
+			constraints = append(constraints, trimmed)
+		}
+	}
+	if len(constraints) > 0 {
+		b.WriteString("## Constraints\n\n")
+		b.WriteString(strings.Join(constraints, "\n\n"))
+		b.WriteString("\n\n")
+	}
+
 	for _, p := range packs {
 		if strings.TrimSpace(p.ContextMD) == "" {
 			continue
