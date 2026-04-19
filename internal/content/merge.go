@@ -57,6 +57,10 @@ func (a *Pack) MergeWith(base *Pack) *Pack {
 	if a.DiscoveryFilters != nil {
 		merged.DiscoveryFilters = a.DiscoveryFilters
 	}
+	merged.LearningRefs = mergeLearningRefs(base.LearningRefs, a.LearningRefs, base.ID)
+	if a.LearningFilters != nil {
+		merged.LearningFilters = a.LearningFilters
+	}
 
 	// Merged result is not itself additive; a subsequent additive layer will
 	// merge into this result rather than treating it as an additive pack.
@@ -370,6 +374,31 @@ func mergeDiscoveryGuidance(base, additive []DiscoveryGuidanceRef, packID string
 		replaced := false
 		for i, b := range result {
 			if b.ID == a.ID {
+				result[i] = a
+				replaced = true
+				break
+			}
+		}
+		if !replaced {
+			result = append(result, a)
+		}
+	}
+	for i := range result {
+		result[i].PackID = packID
+	}
+	return result
+}
+
+// mergeLearningRefs builds a fresh []LearningRef: starts with base entries,
+// replaces any entry whose Slug matches an additive entry, appends unmatched additive entries.
+// PackID is re-stamped to packID on every entry in the result.
+func mergeLearningRefs(base, additive []LearningRef, packID string) []LearningRef {
+	result := make([]LearningRef, len(base))
+	copy(result, base)
+	for _, a := range additive {
+		replaced := false
+		for i, b := range result {
+			if b.Slug == a.Slug {
 				result[i] = a
 				replaced = true
 				break

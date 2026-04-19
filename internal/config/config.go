@@ -31,6 +31,7 @@ type SyncConfig struct {
 	YouTube   time.Duration `yaml:"youtube"`
 	Discovery time.Duration `yaml:"discovery"`
 	Tutorials time.Duration `yaml:"tutorials"`
+	Learning  time.Duration `yaml:"learning"`
 	Disabled  bool          `yaml:"disabled"`
 }
 
@@ -92,6 +93,7 @@ func Default() *Config {
 			YouTube:   6 * time.Hour,
 			Discovery: 168 * time.Hour, // 7 days
 			Tutorials: 168 * time.Hour, // 7 days
+			Learning:  168 * time.Hour, // 7 days
 		},
 	}
 }

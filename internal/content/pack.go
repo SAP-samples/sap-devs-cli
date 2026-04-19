@@ -45,6 +45,11 @@ type Pack struct {
 	DiscoveryServices []DiscoveryServiceRef
 	DiscoveryGuidance []DiscoveryGuidanceRef
 	DiscoveryFilters  *DiscoveryProfileFilters
+
+	LearningRefs    []LearningRef
+	LearningFilters *LearningProfileFilters
+
+	LearningForInject []LearningJourneyInjection // populated at inject time
 }
 
 // Resource is a curated link within a pack.
@@ -197,6 +202,34 @@ type DiscoveryProfileFilters struct {
 	Products   []string `yaml:"products,omitempty"`
 	Categories []string `yaml:"categories,omitempty"`
 	FocusTags  []string `yaml:"focus_tags,omitempty"`
+}
+
+// LearningYAML is the intermediate struct for unmarshaling learning.yaml.
+type LearningYAML struct {
+	ProfileFilters *LearningProfileFilters `yaml:"profile_filters,omitempty"`
+	Journeys       []LearningRef           `yaml:"journeys,omitempty"`
+}
+
+// LearningRef is a curated learning journey reference in learning.yaml.
+type LearningRef struct {
+	Slug     string `yaml:"slug"`
+	Featured bool   `yaml:"featured,omitempty"`
+	PackID   string // set at load time
+}
+
+// LearningProfileFilters maps a pack to learning.sap.com filter values.
+type LearningProfileFilters struct {
+	Products          []string `yaml:"products,omitempty"`
+	ProductCategories []string `yaml:"product_categories,omitempty"`
+	Roles             []string `yaml:"roles,omitempty"`
+}
+
+// LearningJourneyInjection is a pre-resolved learning journey for context injection.
+type LearningJourneyInjection struct {
+	Title    string
+	URL      string
+	Level    string
+	Duration string
 }
 
 // EventType defines a category of events and its data source.
@@ -377,6 +410,15 @@ func LoadPack(packDir string, lang string) (*Pack, error) {
 			pack.DiscoveryGuidance[i].PackID = pack.ID
 		}
 		pack.DiscoveryFilters = disc.ProfileFilters
+	}
+	if data, err := os.ReadFile(filepath.Join(packDir, "learning.yaml")); err == nil {
+		var learn LearningYAML
+		_ = yaml.Unmarshal(data, &learn)
+		pack.LearningRefs = learn.Journeys
+		for i := range pack.LearningRefs {
+			pack.LearningRefs[i].PackID = pack.ID
+		}
+		pack.LearningFilters = learn.ProfileFilters
 	}
 	if data, err := os.ReadFile(filepath.Join(packDir, "event-types.yaml")); err == nil {
 		_ = yaml.Unmarshal(data, &pack.EventTypes)

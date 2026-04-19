@@ -379,5 +379,12 @@
   "tutorial.col_title": "TITLE",
   "tutorial.col_time": "TIME",
   "tutorial.col_level": "LEVEL",
-  "tutorial.col_pack": "PACK"
+  "tutorial.col_pack": "PACK",
+
+  "learning.short": "Browse SAP Learning Journeys",
+  "learning.long": "Browse, search, and open learning journeys from learning.sap.com",
+  "learning.list.short": "List learning journeys from your active profile",
+  "learning.search.short": "Search learning journeys",
+  "learning.show.short": "Show learning journey details",
+  "learning.open.short": "Open a learning journey in the browser"
 }

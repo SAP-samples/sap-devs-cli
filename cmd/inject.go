@@ -18,6 +18,7 @@ import (
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/dynamic"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/i18n"
+	"github.tools.sap/developer-relations/sap-devs-cli/internal/learning"
 	sapSync "github.tools.sap/developer-relations/sap-devs-cli/internal/sync"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/xdg"
 )
@@ -190,6 +191,29 @@ into project-level files (CLAUDE.md, .cursorrules, etc.) in the current director
 						packs, err = loader.LoadPacks(activeProfile, i18n.ActiveLang)
 						if err != nil {
 							return err
+						}
+					}
+				}
+			}
+		}
+
+		// Resolve featured learning journeys for injection
+		learningIndex, _ := learning.LoadIndex(paths.CacheDir, learning.CacheTTL)
+		if learningIndex != nil {
+			bySlug := make(map[string]learning.LearningJourney, len(learningIndex))
+			for _, j := range learningIndex {
+				bySlug[j.Slug] = j
+			}
+			for _, p := range packs {
+				for _, ref := range p.LearningRefs {
+					if ref.Featured {
+						if j, ok := bySlug[ref.Slug]; ok {
+							p.LearningForInject = append(p.LearningForInject, content.LearningJourneyInjection{
+								Title:    j.Title,
+								URL:      j.URL,
+								Level:    j.Level,
+								Duration: j.DurationHours + " hr",
+							})
 						}
 					}
 				}

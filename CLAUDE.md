@@ -78,6 +78,14 @@ Three content types: **missions** (guided learning paths), **services** (BTP ser
 
 **Pack integration:** Each pack can include a `tutorials.yaml` file with curated `TutorialRef` entries (slug + featured flag). `tutorial list` joins these refs with the cached index for profile-filtered browsing; `tutorial search` searches the full index across all repos.
 
+### Learning Journeys
+
+`sap-devs learning` ([cmd/learning.go](cmd/learning.go)) browses SAP Learning Journeys from learning.sap.com. The `internal/learning` package handles catalog download, caching, local search, and the search API client.
+
+**Sync:** The full catalog JSON (~5.4MB, ~5,100 items) is fetched from `learning.sap.com/service/catalog-download/json` during `sap-devs sync`, filtered to `Learning_type == "Learning Journey"` (~351 items), and cached at `~/.cache/sap-devs/learning/index.json` (7-day TTL). The `search` subcommand uses the `getCards` search API for server-side fuzzy matching, with results cached at 1-hour TTL. Falls back to local substring search if the API is unreachable.
+
+**Pack integration:** Each pack can include a `learning.yaml` file with `profile_filters` (products, product_categories, roles) and curated `LearningRef` entries (slug + featured flag). `learning list` uses a three-tier resolution algorithm: featured refs first, then pack-referenced refs, then profile-filtered journeys from the full index. Featured journeys are also injected into the AI context during `inject`.
+
 ### i18n
 
 `internal/i18n` ([internal/i18n/i18n.go](internal/i18n/i18n.go)) provides CLI string localisation. Language resolution: `lang` config key → `LANG` env var → `LC_ALL` env var → `"en"`. Catalogs for `en` and `de` are embedded at compile time. `T(lang, key)` and `Tf(lang, key, data)` are the public API.
@@ -110,6 +118,7 @@ On every command invocation (except `update` and dev builds), a background gorou
 | `tutorial` | Browse and render SAP tutorials; `tutorial list/search/show/open`; `-i` for interactive step-by-step TUI |
 | `doctor` | Check local tool versions against pack requirements (`--fix` for install hints) |
 | `discovery` | Browse SAP Discovery Center missions, BTP services, and guidance framework; `discovery missions list/search/open`, `discovery services list/search/open`, `discovery guidance/show/open` |
+| `learning` | Browse SAP Learning Journeys; `learning list/search/show/open` |
 | `mcp list/install/status` | Browse and wire SAP MCP servers into AI tool configs |
 | `hook list/install/uninstall/status` | Wire AI tool lifecycle hooks from pack definitions |
 | `events` | Browse upcoming SAP community events with location filtering; `events types` lists event categories |

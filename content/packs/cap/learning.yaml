@@ -1,0 +1,11 @@
+profile_filters:
+  products: ["SAP Business Technology Platform"]
+  product_categories: ["Business Technology Platform"]
+  roles: ["developer", "architect"]
+
+journeys:
+  - slug: developing-with-sap-cloud-application-programming-model
+    featured: true
+  - slug: becoming-an-sap-btp-solution-architect
+    featured: true
+  - slug: modernizing-integration-with-sap-integration-suite
