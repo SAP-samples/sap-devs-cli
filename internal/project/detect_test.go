@@ -6,7 +6,14 @@ import (
 	"testing"
 )
 
+func isolateBTPCF(t *testing.T) {
+	t.Helper()
+	t.Setenv("CF_HOME", t.TempDir())
+	t.Setenv("BTP_CLIENTCONFIG", filepath.Join(t.TempDir(), "nonexistent.json"))
+}
+
 func TestDetect_CAPNodeJS(t *testing.T) {
+	isolateBTPCF(t)
 	dir := t.TempDir()
 	writeFile(t, dir, "package.json", `{
 		"dependencies": {"@sap/cds": "9.6.2"},
@@ -51,6 +58,7 @@ func writeFile(t *testing.T, dir, name, content string) {
 }
 
 func TestDetect_CAPJava(t *testing.T) {
+	isolateBTPCF(t)
 	dir := t.TempDir()
 	writeFile(t, dir, "pom.xml", `<project><dependencies>
 		<dependency><groupId>com.sap.cds</groupId></dependency>
@@ -66,6 +74,7 @@ func TestDetect_CAPJava(t *testing.T) {
 }
 
 func TestDetect_MTA(t *testing.T) {
+	isolateBTPCF(t)
 	dir := t.TempDir()
 	writeFile(t, dir, "mta.yaml", "ID: myapp")
 
@@ -79,6 +88,7 @@ func TestDetect_MTA(t *testing.T) {
 }
 
 func TestDetect_Fiori(t *testing.T) {
+	isolateBTPCF(t)
 	dir := t.TempDir()
 	writeFile(t, dir, "xs-app.json", `{"welcomeFile":"/index.html"}`)
 	writeFile(t, dir, "xs-security.json", `{"xsappname":"myapp"}`)
@@ -96,6 +106,7 @@ func TestDetect_Fiori(t *testing.T) {
 }
 
 func TestDetect_Kyma(t *testing.T) {
+	isolateBTPCF(t)
 	dir := t.TempDir()
 	os.Mkdir(filepath.Join(dir, "chart"), 0755)
 
@@ -109,6 +120,7 @@ func TestDetect_Kyma(t *testing.T) {
 }
 
 func TestDetect_DefaultEnv(t *testing.T) {
+	isolateBTPCF(t)
 	dir := t.TempDir()
 	writeFile(t, dir, "default-env.json", `{}`)
 
@@ -122,9 +134,8 @@ func TestDetect_DefaultEnv(t *testing.T) {
 }
 
 func TestDetect_EmptyDir(t *testing.T) {
+	isolateBTPCF(t)
 	dir := t.TempDir()
-	t.Setenv("CF_HOME", t.TempDir())
-	t.Setenv("BTP_CLIENTCONFIG", filepath.Join(t.TempDir(), "config.json"))
 	ctx, err := Detect(dir)
 	if err != nil {
 		t.Fatal(err)
@@ -138,8 +149,7 @@ func TestDetect_EmptyDir(t *testing.T) {
 }
 
 func TestDetect_EmptyCWD(t *testing.T) {
-	t.Setenv("CF_HOME", t.TempDir())
-	t.Setenv("BTP_CLIENTCONFIG", filepath.Join(t.TempDir(), "config.json"))
+	isolateBTPCF(t)
 	ctx, err := Detect("")
 	if err != nil {
 		t.Fatal(err)
@@ -150,6 +160,7 @@ func TestDetect_EmptyCWD(t *testing.T) {
 }
 
 func TestDetect_PlainNodeJS(t *testing.T) {
+	isolateBTPCF(t)
 	dir := t.TempDir()
 	writeFile(t, dir, "package.json", `{"name":"myapp"}`)
 
@@ -163,6 +174,7 @@ func TestDetect_PlainNodeJS(t *testing.T) {
 }
 
 func TestDetect_HANADatabase(t *testing.T) {
+	isolateBTPCF(t)
 	dir := t.TempDir()
 	writeFile(t, dir, "package.json", `{
 		"dependencies": {"@sap/cds": "9.6.2"},
