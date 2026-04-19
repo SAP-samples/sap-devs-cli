@@ -38,7 +38,7 @@ Content is loaded from up to four layered sources, with later layers overriding 
 3. **User** — `~/.local/share/sap-devs/` (Linux), `%LOCALAPPDATA%/sap-devs/data/` (Windows)
 4. **Project** — `.sap-devs/` in the current working directory
 
-`ContentLoader` ([internal/content/loader.go](internal/content/loader.go)) manages this merge. `LoadPacks()` reads all `content/packs/<name>/` directories; each pack contains: `pack.yaml` (metadata), `context.md` (AI context text), `constraints.md` (AI constraint rules), `tips.md` (H2-delimited tips), `tools.yaml`, `resources.yaml`, `mcp.yaml`, `samples.yaml` (canonical code sample references).
+`ContentLoader` ([internal/content/loader.go](internal/content/loader.go)) manages this merge. `LoadPacks()` reads all `content/packs/<name>/` directories; each pack contains: `pack.yaml` (metadata), `context.md` (AI context text), `constraints.md` (AI constraint rules), `tips.md` (H2-delimited tips), `tools.yaml`, `resources.yaml`, `mcp.yaml`, `samples.yaml` (canonical code sample references), `known_errors.yaml` (common SAP error patterns).
 
 **Additive Layers:** Packs with `additive: true` in `pack.yaml` augment (append/prepend) same-ID packs from earlier layers instead of overriding them. `AdditivePosition` controls order (`before`/`after`, default `after`). Merge logic: [internal/content/merge.go](internal/content/merge.go). A `base: true` pack (e.g., `content/packs/base/`) is auto-injected into every profile.
 
@@ -125,6 +125,7 @@ On every command invocation (except `update` and dev builds), a background gorou
 | `tip` | Show a SAP developer tip; on Fridays shows the latest SAP Developer News episode (bypassed by `--new`); `tip install`/`tip uninstall` wires it into your shell prompt |
 | `tutorial` | Browse and render SAP tutorials; `tutorial list/search/show/open`; `-i` for interactive step-by-step TUI |
 | `doctor` | Check tool versions and project health (`--tools-only`, `--project-only`, `--fix` for install/fix hints) |
+| `errors` | Browse known SAP error patterns; `errors list/search` with `--pack`/`--tags` filtering |
 | `discovery` | Browse SAP Discovery Center missions, BTP services, and guidance framework; `discovery missions list/search/open`, `discovery services list/search/open`, `discovery guidance/show/open` |
 | `learning` | Browse SAP Learning Journeys; `learning list/search/show/open` |
 | `learn` | Guided learning recommendations combining tutorials, journeys, and missions; `learn recommend/search`, `learn path list/show/open` |
@@ -150,7 +151,7 @@ Both are consumed by `cmd/inject.go` (project context injected into AI tools) an
 
 ### YAML Schemas
 
-JSON Schema files in [content/schemas/](content/schemas/) validate `pack.yaml`, `resources.yaml`, `tools.yaml`, `mcp.yaml`, `profile.yaml`, and `samples.yaml`. VS Code integration is wired in [.vscode/settings.json](.vscode/settings.json). Update schemas when adding/changing YAML fields.
+JSON Schema files in [content/schemas/](content/schemas/) validate `pack.yaml`, `resources.yaml`, `tools.yaml`, `mcp.yaml`, `profile.yaml`, `samples.yaml`, and `known_errors.yaml`. VS Code integration is wired in [.vscode/settings.json](.vscode/settings.json). Update schemas when adding/changing YAML fields.
 
 ### Release
 
