@@ -83,7 +83,7 @@ func (e *Engine) Run() RunResult {
 		if maxBytes == 0 && a.MaxTokens > 0 {
 			maxBytes = a.MaxTokens * 4
 		}
-		trimmed := content.TrimPacks(e.packs, maxBytes)
+		trimmed := content.TrimPacks(e.packs, maxBytes, "full")
 		// Note: when base packs exist, TrimPacks always returns at least those packs,
 		// so len(trimmed) == 0 only occurs when no base packs are configured and the
 		// budget is too small for all non-base packs.
@@ -100,7 +100,7 @@ func (e *Engine) Run() RunResult {
 			}
 			continue
 		}
-		ctx := content.RenderContext(trimmed, e.profile, e.opts.Dynamic)
+		ctx := content.RenderContext(trimmed, e.profile, e.opts.Dynamic, "full")
 
 		// Apply format transform (skipped for file-export — ExportFileAndClip handles it internally)
 		var formattedCtx string
@@ -246,11 +246,11 @@ func (e *Engine) renderSectionContent(a Adapter) string {
 	if maxBytes == 0 && a.MaxTokens > 0 {
 		maxBytes = a.MaxTokens * 4
 	}
-	trimmed := content.TrimPacks(e.packs, maxBytes)
+	trimmed := content.TrimPacks(e.packs, maxBytes, "full")
 	if len(trimmed) == 0 && maxBytes > 0 {
 		return ""
 	}
-	ctx := content.RenderContext(trimmed, e.profile, e.opts.Dynamic)
+	ctx := content.RenderContext(trimmed, e.profile, e.opts.Dynamic, "full")
 	return content.FormatOutput(ctx, a.Format)
 }
 

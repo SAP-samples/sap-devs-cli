@@ -16,7 +16,7 @@ func TestRenderContext_BasicPacks(t *testing.T) {
 		{ID: "btp-core", Name: "BTP Core", Context: content.VerbositySections{Core: "## BTP Core\n\nDeploy to Cloud Foundry."}},
 	}
 
-	out := content.RenderContext(packs, nil, nil)
+	out := content.RenderContext(packs, nil, nil, "full")
 
 	assert.Contains(t, out, "Use @sap/cds.")
 	assert.Contains(t, out, "Deploy to Cloud Foundry.")
@@ -34,7 +34,7 @@ func TestRenderContext_WithProfile(t *testing.T) {
 		Description: "Building cloud-native apps with SAP CAP on BTP",
 	}
 
-	out := content.RenderContext(packs, profile, nil)
+	out := content.RenderContext(packs, profile, nil, "full")
 
 	// Exact format check
 	assert.Contains(t, out, "**Developer Profile:** CAP Developer — Building cloud-native apps with SAP CAP on BTP")
@@ -46,7 +46,7 @@ func TestRenderContext_WithProfile(t *testing.T) {
 }
 
 func TestRenderContext_EmptyPacks(t *testing.T) {
-	out := content.RenderContext(nil, nil, nil)
+	out := content.RenderContext(nil, nil, nil, "full")
 	assert.True(t, strings.HasPrefix(out, "# SAP Developer Context\n"))
 	assert.True(t, strings.HasSuffix(out, "\n") && !strings.HasSuffix(out, "\n\n"),
 		"output should end with exactly one newline")
@@ -59,7 +59,7 @@ func TestRenderContext_SkipsEmptyContext(t *testing.T) {
 		{ID: "btp", Name: "BTP", Context: content.VerbositySections{Core: "BTP content."}},
 	}
 
-	out := content.RenderContext(packs, nil, nil)
+	out := content.RenderContext(packs, nil, nil, "full")
 	assert.Contains(t, out, "BTP content.")
 	// The empty pack should not add extra blank lines
 	assert.NotContains(t, out, "\n\n\n")
@@ -67,7 +67,7 @@ func TestRenderContext_SkipsEmptyContext(t *testing.T) {
 
 func TestRenderContext_SingleTrailingNewline(t *testing.T) {
 	packs := []*content.Pack{{ID: "cap", Context: content.VerbositySections{Core: "## CAP\n\nContent.\n\n\n"}}}
-	out := content.RenderContext(packs, nil, nil)
+	out := content.RenderContext(packs, nil, nil, "full")
 	assert.True(t, strings.HasSuffix(out, "\n"), "output should end with a newline")
 	assert.False(t, strings.HasSuffix(out, "\n\n"), "output should not end with double newline")
 }
@@ -77,14 +77,14 @@ func TestTrimPacks_Unconstrained(t *testing.T) {
 		{ID: "cap", Context: content.VerbositySections{Core: "CAP content"}},
 		{ID: "btp-core", Context: content.VerbositySections{Core: "BTP content"}},
 	}
-	result := content.TrimPacks(packs, 0)
+	result := content.TrimPacks(packs, 0, "full")
 	require.Len(t, result, 2)
 	assert.Equal(t, "cap", result[0].ID)
 	assert.Equal(t, "btp-core", result[1].ID)
 }
 
 func TestTrimPacks_EmptyInput(t *testing.T) {
-	result := content.TrimPacks(nil, 0)
+	result := content.TrimPacks(nil, 0, "full")
 	assert.Empty(t, result)
 }
 
@@ -94,7 +94,7 @@ func TestTrimPacks_DeduplicatesOverlappingPack(t *testing.T) {
 		{ID: "cap", Context: content.VerbositySections{Core: "CAP content"}},
 		{ID: "btp-core", Context: content.VerbositySections{Core: "BTP content"}, Overlaps: []string{"cap"}},
 	}
-	result := content.TrimPacks(packs, 0)
+	result := content.TrimPacks(packs, 0, "full")
 	assert.Len(t, result, 1)
 	assert.Equal(t, "cap", result[0].ID)
 }
@@ -104,7 +104,7 @@ func TestTrimPacks_DeduplicatesOnlyWhenHigherWeightPresent(t *testing.T) {
 	packs := []*content.Pack{
 		{ID: "btp-core", Context: content.VerbositySections{Core: "BTP content"}, Overlaps: []string{"cap"}},
 	}
-	result := content.TrimPacks(packs, 0)
+	result := content.TrimPacks(packs, 0, "full")
 	assert.Len(t, result, 1)
 	assert.Equal(t, "btp-core", result[0].ID)
 }
@@ -115,7 +115,7 @@ func TestTrimPacks_BudgetDropsPackThatDoesNotFit(t *testing.T) {
 		{ID: "cap", Context: content.VerbositySections{Core: "12 chars long!"}},
 		{ID: "btp-core", Context: content.VerbositySections{Core: "short"}},
 	}
-	result := content.TrimPacks(packs, 10)
+	result := content.TrimPacks(packs, 10, "full")
 	assert.Empty(t, result)
 }
 
@@ -126,7 +126,7 @@ func TestTrimPacks_BudgetIncludesFittingPacksInOrder(t *testing.T) {
 		{ID: "big", Context: content.VerbositySections{Core: "this is too large for budget"}}, // 28 bytes — doesn't fit → break
 		{ID: "abap", Context: content.VerbositySections{Core: "small"}},           // never reached
 	}
-	result := content.TrimPacks(packs, 20)
+	result := content.TrimPacks(packs, 20, "full")
 	assert.Len(t, result, 1)
 	assert.Equal(t, "cap", result[0].ID)
 }
@@ -137,7 +137,7 @@ func TestTrimPacks_EmptyContextAlwaysFits(t *testing.T) {
 		{ID: "meta", Context: content.VerbositySections{Core: ""}},
 		{ID: "cap", Context: content.VerbositySections{Core: "some content here"}},
 	}
-	result := content.TrimPacks(packs, 5)
+	result := content.TrimPacks(packs, 5, "full")
 	// meta fits (0 bytes), cap doesn't fit (17 bytes > 5), breaks after cap
 	assert.Len(t, result, 1)
 	assert.Equal(t, "meta", result[0].ID)
@@ -149,7 +149,7 @@ func TestTrimPacks_DeduplicateAndBudgetCombined(t *testing.T) {
 		{ID: "btp-core", Context: content.VerbositySections{Core: "btp"}, Overlaps: []string{"cap"}}, // deduped out
 		{ID: "abap", Context: content.VerbositySections{Core: "abap content"}},                // 12 bytes, fits
 	}
-	result := content.TrimPacks(packs, 100)
+	result := content.TrimPacks(packs, 100, "full")
 	require.Len(t, result, 2)
 	assert.Equal(t, "cap", result[0].ID)
 	assert.Equal(t, "abap", result[1].ID)
@@ -157,7 +157,7 @@ func TestTrimPacks_DeduplicateAndBudgetCombined(t *testing.T) {
 
 func TestRenderContext_DynamicSection_NilIsBackwardCompatible(t *testing.T) {
 	packs := []*content.Pack{{ID: "cap", Context: content.VerbositySections{Core: "CAP content."}}}
-	out := content.RenderContext(packs, nil, nil)
+	out := content.RenderContext(packs, nil, nil, "full")
 	assert.Contains(t, out, "CAP content.")
 	assert.NotContains(t, out, "sap-devs Runtime Context")
 }
@@ -169,7 +169,7 @@ func TestRenderContext_DynamicSection_AppearsBeforePackContent(t *testing.T) {
 		ActiveProfile: "CAP Developer",
 		LoadedPackIDs: []string{"cap"},
 	}
-	out := content.RenderContext(packs, nil, dyn)
+	out := content.RenderContext(packs, nil, dyn, "full")
 	dynIdx := strings.Index(out, "sap-devs Runtime Context")
 	packIdx := strings.Index(out, "CAP content.")
 	assert.Greater(t, packIdx, dynIdx, "runtime section must appear before pack content")
@@ -181,7 +181,7 @@ func TestRenderContext_DynamicSection_VersionAndProfile(t *testing.T) {
 		ActiveProfile: "CAP Developer",
 		LoadedPackIDs: []string{"cap", "btp"},
 	}
-	out := content.RenderContext(nil, nil, dyn)
+	out := content.RenderContext(nil, nil, dyn, "full")
 	assert.Contains(t, out, "sap-devs v1.2.3")
 	assert.Contains(t, out, "CAP Developer")
 	assert.Contains(t, out, "cap, btp")
@@ -190,14 +190,14 @@ func TestRenderContext_DynamicSection_VersionAndProfile(t *testing.T) {
 func TestRenderContext_DynamicSection_LastSyncedShown(t *testing.T) {
 	synced := time.Now().Add(-2 * time.Hour)
 	dyn := &content.DynamicContext{LastSynced: &synced}
-	out := content.RenderContext(nil, nil, dyn)
+	out := content.RenderContext(nil, nil, dyn, "full")
 	assert.Contains(t, out, "Last synced:")
 	assert.NotContains(t, out, "never")
 }
 
 func TestRenderContext_DynamicSection_NeverSyncedWhenNil(t *testing.T) {
 	dyn := &content.DynamicContext{}
-	out := content.RenderContext(nil, nil, dyn)
+	out := content.RenderContext(nil, nil, dyn, "full")
 	assert.Contains(t, out, "never")
 }
 
@@ -208,14 +208,14 @@ func TestRenderContext_DynamicSection_ProjectTypeShownWhenSet(t *testing.T) {
 			Facts: []content.ProjectFact{{Key: "Project type", Value: "CAP (Node.js)"}},
 		},
 	}
-	out := content.RenderContext(nil, nil, dyn)
+	out := content.RenderContext(nil, nil, dyn, "full")
 	assert.Contains(t, out, "**Project Context (detected):**")
 	assert.Contains(t, out, "CAP (Node.js)")
 }
 
 func TestRenderContext_DynamicSection_ProjectTypeOmittedWhenEmpty(t *testing.T) {
 	dyn := &content.DynamicContext{Project: nil}
-	out := content.RenderContext(nil, nil, dyn)
+	out := content.RenderContext(nil, nil, dyn, "full")
 	assert.NotContains(t, out, "Project Context")
 }
 
@@ -225,14 +225,14 @@ func TestRenderContext_DynamicSection_MCPServersShown(t *testing.T) {
 			{AdapterName: "Claude Code", ServerIDs: []string{"sap-cap-mcp"}},
 		},
 	}
-	out := content.RenderContext(nil, nil, dyn)
+	out := content.RenderContext(nil, nil, dyn, "full")
 	assert.Contains(t, out, "Claude Code")
 	assert.Contains(t, out, "sap-cap-mcp")
 }
 
 func TestRenderContext_DynamicSection_MCPServersOmittedWhenNone(t *testing.T) {
 	dyn := &content.DynamicContext{}
-	out := content.RenderContext(nil, nil, dyn)
+	out := content.RenderContext(nil, nil, dyn, "full")
 	assert.NotContains(t, out, "Wired SAP MCP servers")
 }
 
@@ -243,7 +243,7 @@ func TestRenderContext_DynamicSection_CommandsListed(t *testing.T) {
 			{Name: "sync", Short: "Pull latest SAP developer content"},
 		},
 	}
-	out := content.RenderContext(nil, nil, dyn)
+	out := content.RenderContext(nil, nil, dyn, "full")
 	assert.Contains(t, out, "`inject`")
 	assert.Contains(t, out, "Push SAP context to your AI tools")
 	assert.Contains(t, out, "`sync`")
@@ -341,7 +341,7 @@ func TestTrimPacks_BasePackSurvivesBudget(t *testing.T) {
 		{ID: "base", Base: true, Context: content.VerbositySections{Core: "12345678901234567890"}},
 		{ID: "cap", Context: content.VerbositySections{Core: "CAP content"}},
 	}
-	result := content.TrimPacks(packs, 5)
+	result := content.TrimPacks(packs, 5, "full")
 	require.Len(t, result, 1)
 	assert.Equal(t, "base", result[0].ID, "base pack must survive even when its content exceeds the budget")
 }
@@ -352,7 +352,7 @@ func TestTrimPacks_BasePackSurvivesDeduplication(t *testing.T) {
 		{ID: "base", Base: true, Context: content.VerbositySections{Core: "base content"}},
 		{ID: "cap", Context: content.VerbositySections{Core: "CAP content"}, Overlaps: []string{"base"}},
 	}
-	result := content.TrimPacks(packs, 0)
+	result := content.TrimPacks(packs, 0, "full")
 	// base pack survives; cap is not dropped either (its overlap target was separated out)
 	require.Len(t, result, 2)
 	assert.Equal(t, "base", result[0].ID)
@@ -365,7 +365,7 @@ func TestTrimPacks_BasePackFirst_NonBasePacksAfter(t *testing.T) {
 		{ID: "base", Base: true, Context: content.VerbositySections{Core: "base content"}},
 		{ID: "abap", Context: content.VerbositySections{Core: "ABAP content"}},
 	}
-	result := content.TrimPacks(packs, 0)
+	result := content.TrimPacks(packs, 0, "full")
 	require.Len(t, result, 3)
 	assert.Equal(t, "base", result[0].ID, "base pack must be first in output")
 }
@@ -379,7 +379,7 @@ func TestTrimPacks_BreakOnOversizePreservedForNonBase(t *testing.T) {
 		{ID: "big", Context: content.VerbositySections{Core: "this is way too large for budget"}},
 		{ID: "small", Context: content.VerbositySections{Core: "hi"}},
 	}
-	result := content.TrimPacks(packs, 10)
+	result := content.TrimPacks(packs, 10, "full")
 	require.Len(t, result, 1, "only base pack survives; big breaks the loop; small never reached")
 	assert.Equal(t, "base", result[0].ID)
 }
@@ -389,7 +389,7 @@ func TestTrimPacks_AllBasePacks_AllSurvive(t *testing.T) {
 		{ID: "base1", Base: true, Context: content.VerbositySections{Core: "base one content"}},
 		{ID: "base2", Base: true, Context: content.VerbositySections{Core: "base two content"}},
 	}
-	result := content.TrimPacks(packs, 5) // tiny budget — ignored for base packs
+	result := content.TrimPacks(packs, 5, "full") // tiny budget — ignored for base packs
 	require.Len(t, result, 2)
 }
 
@@ -397,7 +397,7 @@ func TestRenderContext_Preamble_PrecedesSameBasePackContext(t *testing.T) {
 	packs := []*content.Pack{
 		{ID: "base", Base: true, PreambleMD: "> Preamble.", Context: content.VerbositySections{Core: "## Base context."}},
 	}
-	out := content.RenderContext(packs, nil, nil)
+	out := content.RenderContext(packs, nil, nil, "full")
 	preambleIdx := strings.Index(out, "> Preamble.")
 	baseCtxIdx := strings.Index(out, "## Base context.")
 	require.NotEqual(t, -1, preambleIdx, "preamble must be present")
@@ -409,7 +409,7 @@ func TestRenderContext_Preamble_AppearsBeforeContext(t *testing.T) {
 		{ID: "base", Base: true, PreambleMD: "> Prefer sap-devs.", Context: content.VerbositySections{Core: "## Base context."}},
 		{ID: "cap", Context: content.VerbositySections{Core: "## CAP context."}},
 	}
-	out := content.RenderContext(packs, nil, nil)
+	out := content.RenderContext(packs, nil, nil, "full")
 	preambleIdx := strings.Index(out, "> Prefer sap-devs.")
 	baseCtxIdx := strings.Index(out, "## Base context.")
 	capCtxIdx := strings.Index(out, "## CAP context.")
@@ -422,7 +422,7 @@ func TestRenderContext_Preamble_NonBasePackPreambleSuppressed(t *testing.T) {
 	packs := []*content.Pack{
 		{ID: "cap", Base: false, PreambleMD: "> Should not appear.", Context: content.VerbositySections{Core: "## CAP context."}},
 	}
-	out := content.RenderContext(packs, nil, nil)
+	out := content.RenderContext(packs, nil, nil, "full")
 	assert.NotContains(t, out, "> Should not appear.", "non-base pack preamble must be suppressed")
 	assert.Contains(t, out, "## CAP context.")
 }
@@ -433,7 +433,7 @@ func TestRenderContext_Preamble_TwoBasePacks(t *testing.T) {
 		{ID: "base2", Base: true, PreambleMD: "> Preamble two.", Context: content.VerbositySections{Core: "## Base two context."}},
 		{ID: "cap", Context: content.VerbositySections{Core: "## CAP context."}},
 	}
-	out := content.RenderContext(packs, nil, nil)
+	out := content.RenderContext(packs, nil, nil, "full")
 	p1Idx := strings.Index(out, "> Preamble one.")
 	p2Idx := strings.Index(out, "> Preamble two.")
 	ctx1Idx := strings.Index(out, "## Base one context.")
@@ -453,7 +453,7 @@ func TestRenderContext_CanonicalPatterns_AppearsWhenInjectableSamplesExist(t *te
 			{ID: "cap/schema", Label: "CDS schema", URL: "https://github.com/SAP-samples/test/blob/main/schema.cds", Description: "Schema example", Inject: false},
 		}},
 	}
-	out := content.RenderContext(packs, nil, nil)
+	out := content.RenderContext(packs, nil, nil, "full")
 	assert.Contains(t, out, "## Canonical Patterns")
 	assert.Contains(t, out, "CAP handler")
 	assert.Contains(t, out, "Handler pattern")
@@ -467,7 +467,7 @@ func TestRenderContext_CanonicalPatterns_OmittedWhenNoInjectableSamples(t *testi
 			{ID: "cap/schema", Label: "CDS schema", URL: "https://example.com", Description: "Schema", Inject: false},
 		}},
 	}
-	out := content.RenderContext(packs, nil, nil)
+	out := content.RenderContext(packs, nil, nil, "full")
 	assert.NotContains(t, out, "Canonical Patterns")
 }
 
@@ -475,7 +475,7 @@ func TestRenderContext_CanonicalPatterns_OmittedWhenNoSamples(t *testing.T) {
 	packs := []*content.Pack{
 		{ID: "cap", Context: content.VerbositySections{Core: "CAP context."}},
 	}
-	out := content.RenderContext(packs, nil, nil)
+	out := content.RenderContext(packs, nil, nil, "full")
 	assert.NotContains(t, out, "Canonical Patterns")
 }
 
@@ -485,7 +485,7 @@ func TestRenderContext_CanonicalPatterns_AppearsAfterPackContent(t *testing.T) {
 			{ID: "cap/handler", Label: "Handler", URL: "https://example.com", Description: "Desc", Inject: true},
 		}},
 	}
-	out := content.RenderContext(packs, nil, nil)
+	out := content.RenderContext(packs, nil, nil, "full")
 	packIdx := strings.Index(out, "CAP context.")
 	patternsIdx := strings.Index(out, "## Canonical Patterns")
 	assert.Greater(t, patternsIdx, packIdx, "Canonical Patterns must appear after pack content")
@@ -495,7 +495,7 @@ func TestRenderContext_Constraints_AppearsWhenPresent(t *testing.T) {
 	packs := []*content.Pack{
 		{ID: "cap", Context: content.VerbositySections{Core: "CAP context."}, Constraints: content.VerbositySections{Core: "1. Never write raw SQL"}},
 	}
-	out := content.RenderContext(packs, nil, nil)
+	out := content.RenderContext(packs, nil, nil, "full")
 	assert.Contains(t, out, "## Constraints")
 	assert.Contains(t, out, "1. Never write raw SQL")
 }
@@ -504,7 +504,7 @@ func TestRenderContext_Constraints_OmittedWhenEmpty(t *testing.T) {
 	packs := []*content.Pack{
 		{ID: "cap", Context: content.VerbositySections{Core: "CAP context."}},
 	}
-	out := content.RenderContext(packs, nil, nil)
+	out := content.RenderContext(packs, nil, nil, "full")
 	assert.NotContains(t, out, "## Constraints")
 }
 
@@ -513,7 +513,7 @@ func TestRenderContext_Constraints_AfterPreambleBeforeContext(t *testing.T) {
 		{ID: "base", Base: true, PreambleMD: "> Preamble.", Context: content.VerbositySections{Core: "## Base context."}, Constraints: content.VerbositySections{Core: "1. Base constraint"}},
 		{ID: "cap", Context: content.VerbositySections{Core: "## CAP context."}, Constraints: content.VerbositySections{Core: "2. CAP constraint"}},
 	}
-	out := content.RenderContext(packs, nil, nil)
+	out := content.RenderContext(packs, nil, nil, "full")
 	preambleIdx := strings.Index(out, "> Preamble.")
 	constraintsIdx := strings.Index(out, "## Constraints")
 	baseCtxIdx := strings.Index(out, "## Base context.")
@@ -530,7 +530,7 @@ func TestRenderContext_Constraints_MultiplePacksMerged(t *testing.T) {
 		{ID: "cap", Context: content.VerbositySections{Core: "CAP context."}, Constraints: content.VerbositySections{Core: "1. CAP constraint"}},
 		{ID: "abap", Context: content.VerbositySections{Core: "ABAP context."}, Constraints: content.VerbositySections{Core: "1. ABAP constraint"}},
 	}
-	out := content.RenderContext(packs, nil, nil)
+	out := content.RenderContext(packs, nil, nil, "full")
 	assert.Contains(t, out, "1. CAP constraint")
 	assert.Contains(t, out, "1. ABAP constraint")
 	assert.Equal(t, 1, strings.Count(out, "## Constraints"))
@@ -542,7 +542,7 @@ func TestRenderContext_Constraints_SkipsEmptyPacks(t *testing.T) {
 		{ID: "btp", Context: content.VerbositySections{Core: "BTP context."}, Constraints: content.VerbositySections{Core: ""}},
 		{ID: "abap", Context: content.VerbositySections{Core: "ABAP context."}, Constraints: content.VerbositySections{Core: "  \n  "}},
 	}
-	out := content.RenderContext(packs, nil, nil)
+	out := content.RenderContext(packs, nil, nil, "full")
 	assert.Contains(t, out, "## Constraints")
 	assert.Contains(t, out, "1. CAP constraint")
 	assert.NotContains(t, out, "\n\n\n\n")
@@ -552,7 +552,7 @@ func TestTrimPacks_BudgetIncludesConstraints(t *testing.T) {
 	packs := []*content.Pack{
 		{ID: "cap", Context: content.VerbositySections{Core: "hello"}, Constraints: content.VerbositySections{Core: "constraint"}},
 	}
-	result := content.TrimPacks(packs, 10)
+	result := content.TrimPacks(packs, 10, "full")
 	assert.Empty(t, result, "pack with Context+Constraints exceeding budget must be trimmed")
 }
 
@@ -560,7 +560,7 @@ func TestTrimPacks_BudgetFitsWithConstraints(t *testing.T) {
 	packs := []*content.Pack{
 		{ID: "cap", Context: content.VerbositySections{Core: "hello"}, Constraints: content.VerbositySections{Core: "world"}},
 	}
-	result := content.TrimPacks(packs, 10)
+	result := content.TrimPacks(packs, 10, "full")
 	require.Len(t, result, 1)
 	assert.Equal(t, "cap", result[0].ID)
 }
@@ -572,7 +572,7 @@ func TestRenderContext_ScratchNotes_RenderedAsCurrentContext(t *testing.T) {
 	dyn := &content.DynamicContext{
 		ScratchNotes: []string{"implementing draft for Books", "HANA only in dev space"},
 	}
-	out := content.RenderContext(packs, nil, dyn)
+	out := content.RenderContext(packs, nil, dyn, "full")
 	assert.Contains(t, out, "## Current Context")
 	assert.Contains(t, out, "- implementing draft for Books")
 	assert.Contains(t, out, "- HANA only in dev space")
@@ -588,7 +588,7 @@ func TestRenderContext_ScratchNotes_BeforeRuntimeContext(t *testing.T) {
 		LastSynced:   &now,
 		ScratchNotes: []string{"working on auth"},
 	}
-	out := content.RenderContext(packs, nil, dyn)
+	out := content.RenderContext(packs, nil, dyn, "full")
 	scratchIdx := strings.Index(out, "## Current Context")
 	runtimeIdx := strings.Index(out, "## sap-devs Runtime Context")
 	require.NotEqual(t, -1, scratchIdx, "scratch section must be present")
@@ -601,7 +601,7 @@ func TestRenderContext_ScratchNotes_OmittedWhenEmpty(t *testing.T) {
 		{ID: "cap", Context: content.VerbositySections{Core: "## CAP context."}},
 	}
 	dyn := &content.DynamicContext{ScratchNotes: nil}
-	out := content.RenderContext(packs, nil, dyn)
+	out := content.RenderContext(packs, nil, dyn, "full")
 	assert.NotContains(t, out, "## Current Context")
 }
 
@@ -612,7 +612,7 @@ func TestRenderContext_ScratchNotes_SanitizesNewlines(t *testing.T) {
 	dyn := &content.DynamicContext{
 		ScratchNotes: []string{"line one\nline two", "cr\ronly", "win\r\nstyle"},
 	}
-	out := content.RenderContext(packs, nil, dyn)
+	out := content.RenderContext(packs, nil, dyn, "full")
 	assert.Contains(t, out, "- line one line two")
 	assert.Contains(t, out, "- cr only")
 	assert.Contains(t, out, "- win style")
@@ -626,7 +626,7 @@ func TestRenderContext_ScratchNotes_TruncatesLongNotes(t *testing.T) {
 	dyn := &content.DynamicContext{
 		ScratchNotes: []string{longNote},
 	}
-	out := content.RenderContext(packs, nil, dyn)
+	out := content.RenderContext(packs, nil, dyn, "full")
 	assert.Contains(t, out, "...")
 	assert.NotContains(t, out, strings.Repeat("a", 501))
 }
@@ -640,7 +640,7 @@ func TestRenderContext_WhatsNew_RenderedWhenPresent(t *testing.T) {
 		},
 		WhatsNewDate: &syncDate,
 	}
-	out := content.RenderContext(nil, nil, dyn)
+	out := content.RenderContext(nil, nil, dyn, "full")
 	assert.Contains(t, out, "## What's New (since last sync, 2026-04-17)")
 	assert.Contains(t, out, "- CAP 9.8: native SQLite support")
 	assert.Contains(t, out, "- New Tier-1 API")
@@ -648,7 +648,7 @@ func TestRenderContext_WhatsNew_RenderedWhenPresent(t *testing.T) {
 
 func TestRenderContext_WhatsNew_OmittedWhenEmpty(t *testing.T) {
 	dyn := &content.DynamicContext{WhatsNew: nil}
-	out := content.RenderContext(nil, nil, dyn)
+	out := content.RenderContext(nil, nil, dyn, "full")
 	assert.NotContains(t, out, "What's New")
 }
 
@@ -656,7 +656,7 @@ func TestRenderContext_WhatsNew_NilDate(t *testing.T) {
 	dyn := &content.DynamicContext{
 		WhatsNew: []content.WhatsNewEntry{{Pack: "cap", Text: "test change"}},
 	}
-	out := content.RenderContext(nil, nil, dyn)
+	out := content.RenderContext(nil, nil, dyn, "full")
 	assert.Contains(t, out, "## What's New\n")
 	assert.NotContains(t, out, "since last sync")
 }
@@ -668,7 +668,7 @@ func TestRenderContext_WhatsNew_BeforeScratchNotes(t *testing.T) {
 		WhatsNewDate: &syncDate,
 		ScratchNotes: []string{"working on auth"},
 	}
-	out := content.RenderContext(nil, nil, dyn)
+	out := content.RenderContext(nil, nil, dyn, "full")
 	whatsNewIdx := strings.Index(out, "## What's New")
 	scratchIdx := strings.Index(out, "## Current Context")
 	require.NotEqual(t, -1, whatsNewIdx, "What's New must be present")
@@ -683,10 +683,88 @@ func TestRenderContext_WhatsNew_BeforeRuntimeContext(t *testing.T) {
 		WhatsNew:     []content.WhatsNewEntry{{Pack: "cap", Text: "test change"}},
 		WhatsNewDate: &syncDate,
 	}
-	out := content.RenderContext(nil, nil, dyn)
+	out := content.RenderContext(nil, nil, dyn, "full")
 	whatsNewIdx := strings.Index(out, "## What's New")
 	runtimeIdx := strings.Index(out, "## sap-devs Runtime Context")
 	require.NotEqual(t, -1, whatsNewIdx, "What's New must be present")
 	require.NotEqual(t, -1, runtimeIdx, "runtime section must be present")
 	assert.Less(t, whatsNewIdx, runtimeIdx, "What's New must appear before runtime context")
+}
+
+func TestRenderContext_VerbosityMinimal_ExcludesDetailAndExtended(t *testing.T) {
+	packs := []*content.Pack{
+		{ID: "cap", Context: content.VerbositySections{
+			Core:     "## CAP\n\nCore stuff.",
+			Detail:   "\n\n### Best Practices\n\nDetail stuff.",
+			Extended: "\n\n### Release Notes\n\nExtended stuff.",
+		}},
+	}
+	out := content.RenderContext(packs, nil, nil, "minimal")
+	assert.Contains(t, out, "Core stuff.")
+	assert.NotContains(t, out, "Detail stuff.")
+	assert.NotContains(t, out, "Extended stuff.")
+}
+
+func TestRenderContext_VerbosityStandard_IncludesDetailExcludesExtended(t *testing.T) {
+	packs := []*content.Pack{
+		{ID: "cap", Context: content.VerbositySections{
+			Core:     "## CAP\n\nCore stuff.",
+			Detail:   "\n\n### Best Practices\n\nDetail stuff.",
+			Extended: "\n\n### Release Notes\n\nExtended stuff.",
+		}},
+	}
+	out := content.RenderContext(packs, nil, nil, "standard")
+	assert.Contains(t, out, "Core stuff.")
+	assert.Contains(t, out, "Detail stuff.")
+	assert.NotContains(t, out, "Extended stuff.")
+}
+
+func TestRenderContext_VerbosityFull_IncludesAll(t *testing.T) {
+	packs := []*content.Pack{
+		{ID: "cap", Context: content.VerbositySections{
+			Core:     "## CAP\n\nCore stuff.",
+			Detail:   "\n\n### Best Practices\n\nDetail stuff.",
+			Extended: "\n\n### Release Notes\n\nExtended stuff.",
+		}},
+	}
+	out := content.RenderContext(packs, nil, nil, "full")
+	assert.Contains(t, out, "Core stuff.")
+	assert.Contains(t, out, "Detail stuff.")
+	assert.Contains(t, out, "Extended stuff.")
+}
+
+func TestRenderContext_VerbosityMinimal_ExcludesCanonicalPatterns(t *testing.T) {
+	packs := []*content.Pack{
+		{ID: "cap", Context: content.VerbositySections{Core: "CAP context."}, Samples: []content.Sample{
+			{ID: "cap/handler", Label: "Handler", URL: "https://example.com", Description: "Desc", Inject: true},
+		}},
+	}
+	out := content.RenderContext(packs, nil, nil, "minimal")
+	assert.NotContains(t, out, "Canonical Patterns")
+}
+
+func TestRenderContext_VerbosityMinimal_ExcludesLearningAndKnownErrors(t *testing.T) {
+	packs := []*content.Pack{
+		{ID: "cap", Context: content.VerbositySections{Core: "CAP context."},
+			LearningForInject: []content.LearningJourneyInjection{{Title: "Learn", URL: "https://example.com", Level: "BEGINNER", Duration: "1h"}},
+			KnownErrors: []content.KnownError{{ID: "e1", Pattern: "ERR", Cause: "cause", Fix: "fix"}},
+		},
+	}
+	out := content.RenderContext(packs, nil, nil, "minimal")
+	assert.NotContains(t, out, "Recommended Learning")
+	assert.NotContains(t, out, "Known Errors")
+}
+
+func TestRenderContext_VerbosityStandard_IncludesCanonicalPatternsExcludesExtended(t *testing.T) {
+	packs := []*content.Pack{
+		{ID: "cap", Context: content.VerbositySections{Core: "CAP context."},
+			Samples: []content.Sample{{ID: "s1", Label: "S", URL: "https://example.com", Description: "D", Inject: true}},
+			LearningForInject: []content.LearningJourneyInjection{{Title: "Learn", URL: "https://example.com", Level: "BEGINNER", Duration: "1h"}},
+			KnownErrors: []content.KnownError{{ID: "e1", Pattern: "ERR", Cause: "cause", Fix: "fix"}},
+		},
+	}
+	out := content.RenderContext(packs, nil, nil, "standard")
+	assert.Contains(t, out, "Canonical Patterns")
+	assert.NotContains(t, out, "Recommended Learning")
+	assert.NotContains(t, out, "Known Errors")
 }
