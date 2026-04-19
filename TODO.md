@@ -250,26 +250,9 @@ Implemented: `context add/list/clear` commands with `.sap-devs/scratch.yaml` sto
 
 ---
 
-### "What's changed since last sync" injection block
+### ~~"What's changed since last sync" injection block~~ — DONE ✔️
 
-When `inject` runs after a `sync` that pulled new content, prepend a brief delta note to the injected block so agents in active sessions learn about changes without the user having to tell them.
-
-**Problem:** A developer runs `sap-devs sync` and then `sap-devs inject`. The AI agent's context window is refreshed, but the agent has no signal that anything changed. If the developer doesn't mention "CAP 9.8 is out," the agent continues reasoning from its training data.
-
-**Proposed behaviour:**
-
-- After each `sync`, record a brief human-readable changelog in `~/.cache/sap-devs/sync-changelog.yaml` (generated from diff of fetched content or from a `changelog` field in `pack.yaml`)
-- On the next `inject`, prepend a `## What's New` block containing the last N changes (default: changes since the previous inject)
-- Block is auto-removed after one inject cycle (it's a one-time nudge, not permanent content)
-
-**Example output:**
-
-```markdown
-## What's New (since last sync, 2026-04-17)
-- CAP 9.8: native SQLite support via `cds.requires.db.driver: node` (Node 22.5+)
-- CAP 9.8: new `cds repl --ql` query mode for interactive CQL
-- ABAP: new Tier-1 API released for business partner validation
-```
+Implemented: curated `changelog` entries in `pack.yaml`, collected by `sync` into `sync-changelog.json`, rendered as `## What's New` block by `inject`, consumed after one inject cycle. See [design spec](docs/superpowers/specs/2026-04-19-whats-new-injection-design.md).
 
 ---
 

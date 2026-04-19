@@ -72,6 +72,11 @@
       "additionalProperties": {
         "type": "string"
       }
+    },
+    "changelog": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Human-curated change notes shown once after sync in the injected What's New block"
     }
   },
   "if": {

@@ -15,6 +15,14 @@ type DynamicContext struct {
 	WiredMCPServers []WiredMCPEntry
 	Commands        []CommandInfo
 	ScratchNotes    []string
+	WhatsNew        []WhatsNewEntry
+	WhatsNewDate    *time.Time
+}
+
+// WhatsNewEntry is a single changelog item rendered in the ## What's New block.
+type WhatsNewEntry struct {
+	Pack string
+	Text string
 }
 
 // ProjectInfo holds detected facts about the current project, mirroring

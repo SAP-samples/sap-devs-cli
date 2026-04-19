@@ -121,6 +121,9 @@ func runSync(ctx context.Context, force bool, out io.Writer) error {
 			// Non-fatal: sync continues
 		}
 
+		// Collect changelog entries from official packs
+		changelogDirs := []string{filepath.Join(officialCache, "content", "packs")}
+
 		// Sync company repo if configured
 		if cfg.CompanyRepo != "" {
 			if !strings.HasPrefix(cfg.CompanyRepo, "https://") {
@@ -132,8 +135,20 @@ func runSync(ctx context.Context, force bool, out io.Writer) error {
 				fmt.Fprintln(out, i18n.T(i18n.ActiveLang, "sync.syncing_company"))
 				if err := sapSync.FetchArchive(companyArchive, companyCache, token); err != nil {
 					fmt.Fprintln(out, i18n.Tf(i18n.ActiveLang, "sync.warn_company_failed", map[string]any{"Err": err}))
+				} else {
+					changelogDirs = append(changelogDirs, filepath.Join(companyCache, "content", "packs"))
 				}
 			}
+		}
+
+		// Write changelog file for inject to consume
+		syncedAt := time.Now()
+		clEntries, err := sapSync.CollectChangelog(changelogDirs)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "sap-devs: changelog collection warning: %v\n", err)
+		}
+		if writeErr := sapSync.WriteChangelog(paths.CacheDir, syncedAt, clEntries); writeErr != nil {
+			fmt.Fprintf(os.Stderr, "sap-devs: changelog write warning: %v\n", writeErr)
 		}
 	}
 

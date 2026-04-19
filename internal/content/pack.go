@@ -317,6 +317,7 @@ type packMeta struct {
 	AdditivePosition string                    `yaml:"additive_position,omitempty"`
 	Locales          map[string]packMetaLocale `yaml:"locales,omitempty"`
 	Versions         map[string]string         `yaml:"versions,omitempty"`
+	Changelog        []string                  `yaml:"changelog,omitempty"`
 }
 
 // LoadPack reads all files from packDir and returns a populated Pack.
