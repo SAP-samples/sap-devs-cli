@@ -71,8 +71,9 @@ A base pack may include an optional `preamble.md` file. When present, its conten
 1. `# SAP Developer Context` header + profile line
 2. `## sap-devs Runtime Context` (dynamic — version, packs, available commands)
 3. **Preamble** — from `base/preamble.md` (this file)
-4. Base pack `context.md`
-5. Technology pack `context.md` files (cap, abap, btp-core, …)
+4. **`## Constraints`** — consolidated from all active packs' `constraints.md`
+5. Base pack `context.md`
+6. Technology pack `context.md` files (cap, abap, btp-core, …)
 
 *Implementation note:* The preamble and `ContextMD` are emitted in two separate loops. The base pack's `ContextMD` is still rendered in the second loop with all other packs — not in the preamble loop. This prevents double-emission.
 
