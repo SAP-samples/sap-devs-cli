@@ -67,6 +67,13 @@
   "doctor.status_ok_unverified": "ok (nicht verifiziert)",
   "doctor.status_fail": "FEHLER",
   "doctor.status_missing": "FEHLT",
+  "doctor.project.header": "Projektgesundheit",
+  "doctor.project.no_project": "Kein Projekt im aktuellen Verzeichnis erkannt.",
+  "doctor.project.no_findings": "Keine Probleme gefunden.",
+  "doctor.project.severity_error": "FEHLER",
+  "doctor.project.severity_warning": "WARNUNG",
+  "doctor.project.severity_info": "INFO",
+  "doctor.project.fix_prefix": "Fix:",
 
   "discovery.short": "SAP Discovery Center Inhalte durchsuchen",
   "discovery.long": "Missionen, BTP-Services und Leitfäden aus dem SAP Discovery Center anzeigen.",
