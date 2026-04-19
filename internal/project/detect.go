@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"strings"
 )
 
@@ -17,6 +18,9 @@ type ProjectContext struct {
 	Auth          string
 	HasCDSRC      bool
 	HasDefaultEnv bool
+	BTPSubaccount string
+	BTPRegion     string
+	BTPIsTrial    bool
 	CFOrg         string
 	CFSpace       string
 	CFRegion      string
@@ -41,6 +45,7 @@ func Detect(cwd string) (*ProjectContext, error) {
 	detectAppRouter(cwd, ctx)
 	detectKyma(cwd, ctx)
 	detectDefaultEnv(cwd, ctx)
+	detectBTP(ctx)
 	detectCF(ctx)
 	buildFacts(ctx)
 	return ctx, nil
@@ -184,6 +189,7 @@ func buildFacts(ctx *ProjectContext) {
 }
 
 var reCFRegion = regexp.MustCompile(`api\.cf\.([a-z0-9-]+)\.hana\.ondemand\.com`)
+var reBTPRegion = regexp.MustCompile(`^([a-z]{2}\d{2})`)
 
 type cfConfig struct {
 	Target             string `json:"Target"`
@@ -234,6 +240,70 @@ func readCFConfig() *cfConfig {
 		return nil
 	}
 	return &cfg
+}
+
+type btpConfig struct {
+	TargetHierarchy struct {
+		GlobalAccountSubdomain string `json:"GlobalAccountSubdomain"`
+		SubaccountSubdomain    string `json:"SubaccountSubdomain"`
+	} `json:"TargetHierarchy"`
+	CLIServerURL string `json:"CLIServerURL"`
+}
+
+func extractBTPRegion(subdomain string) string {
+	m := reBTPRegion.FindStringSubmatch(subdomain)
+	if len(m) < 2 {
+		return ""
+	}
+	return m[1]
+}
+
+func detectBTP(ctx *ProjectContext) {
+	cfg := readBTPConfig()
+	if cfg == nil {
+		return
+	}
+	ctx.BTPSubaccount = cfg.TargetHierarchy.SubaccountSubdomain
+	if ctx.BTPSubaccount == "" {
+		return
+	}
+	ctx.BTPRegion = extractBTPRegion(ctx.BTPSubaccount)
+	ctx.BTPIsTrial = strings.Contains(strings.ToLower(ctx.BTPSubaccount), "trial")
+}
+
+func readBTPConfig() *btpConfig {
+	path := os.Getenv("BTP_CLIENTCONFIG")
+	if path == "" {
+		path = defaultBTPConfigPath()
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil
+	}
+	var cfg btpConfig
+	if json.Unmarshal(data, &cfg) != nil {
+		return nil
+	}
+	return &cfg
+}
+
+func defaultBTPConfigPath() string {
+	if runtime.GOOS == "windows" {
+		appdata := os.Getenv("APPDATA")
+		if appdata != "" {
+			return filepath.Join(appdata, "SAP", "btp", "config.json")
+		}
+	}
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return ""
+	}
+	// BTP CLI v2.x uses ~/.config/btp/; older versions used ~/.config/.btp/
+	primary := filepath.Join(home, ".config", "btp", "config.json")
+	if fileExists(primary) {
+		return primary
+	}
+	return filepath.Join(home, ".config", ".btp", "config.json")
 }
 
 type packageJSON struct {

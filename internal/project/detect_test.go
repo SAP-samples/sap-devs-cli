@@ -124,6 +124,7 @@ func TestDetect_DefaultEnv(t *testing.T) {
 func TestDetect_EmptyDir(t *testing.T) {
 	dir := t.TempDir()
 	t.Setenv("CF_HOME", t.TempDir())
+	t.Setenv("BTP_CLIENTCONFIG", filepath.Join(t.TempDir(), "config.json"))
 	ctx, err := Detect(dir)
 	if err != nil {
 		t.Fatal(err)
@@ -138,6 +139,7 @@ func TestDetect_EmptyDir(t *testing.T) {
 
 func TestDetect_EmptyCWD(t *testing.T) {
 	t.Setenv("CF_HOME", t.TempDir())
+	t.Setenv("BTP_CLIENTCONFIG", filepath.Join(t.TempDir(), "config.json"))
 	ctx, err := Detect("")
 	if err != nil {
 		t.Fatal(err)
@@ -228,6 +230,91 @@ func TestExtractCFRegion(t *testing.T) {
 		got := extractCFRegion(tt.url)
 		if got != tt.want {
 			t.Errorf("extractCFRegion(%q) = %q, want %q", tt.url, got, tt.want)
+		}
+	}
+}
+
+func TestDetectBTP_ParsesConfigJSON(t *testing.T) {
+	dir := t.TempDir()
+	writeFile(t, dir, "config.json", `{
+		"TargetHierarchy": {
+			"GlobalAccountSubdomain": "ga-sub",
+			"SubaccountSubdomain": "my-subaccount"
+		},
+		"CLIServerURL": "https://cli.btp.cloud.sap"
+	}`)
+
+	ctx := &ProjectContext{RawFiles: make(map[string]bool)}
+	t.Setenv("BTP_CLIENTCONFIG", filepath.Join(dir, "config.json"))
+	detectBTP(ctx)
+
+	if ctx.BTPSubaccount != "my-subaccount" {
+		t.Errorf("BTPSubaccount = %q, want %q", ctx.BTPSubaccount, "my-subaccount")
+	}
+	if ctx.BTPIsTrial {
+		t.Error("BTPIsTrial should be false for non-trial subaccount")
+	}
+}
+
+func TestDetectBTP_DetectsTrialFromSubdomain(t *testing.T) {
+	dir := t.TempDir()
+	writeFile(t, dir, "config.json", `{
+		"TargetHierarchy": {
+			"SubaccountSubdomain": "eu10-trial-abc123"
+		}
+	}`)
+
+	ctx := &ProjectContext{RawFiles: make(map[string]bool)}
+	t.Setenv("BTP_CLIENTCONFIG", filepath.Join(dir, "config.json"))
+	detectBTP(ctx)
+
+	if !ctx.BTPIsTrial {
+		t.Error("BTPIsTrial should be true when subdomain contains 'trial'")
+	}
+}
+
+func TestDetectBTP_ExtractsRegionFromSubdomain(t *testing.T) {
+	dir := t.TempDir()
+	writeFile(t, dir, "config.json", `{
+		"TargetHierarchy": {
+			"SubaccountSubdomain": "eu10-trial-abc123"
+		}
+	}`)
+
+	ctx := &ProjectContext{RawFiles: make(map[string]bool)}
+	t.Setenv("BTP_CLIENTCONFIG", filepath.Join(dir, "config.json"))
+	detectBTP(ctx)
+
+	if ctx.BTPRegion != "eu10" {
+		t.Errorf("BTPRegion = %q, want %q", ctx.BTPRegion, "eu10")
+	}
+}
+
+func TestDetectBTP_SilentOnMissingConfig(t *testing.T) {
+	ctx := &ProjectContext{RawFiles: make(map[string]bool)}
+	t.Setenv("BTP_CLIENTCONFIG", "/nonexistent/config.json")
+	detectBTP(ctx)
+
+	if ctx.BTPSubaccount != "" {
+		t.Errorf("BTPSubaccount should be empty, got %q", ctx.BTPSubaccount)
+	}
+}
+
+func TestExtractBTPRegion(t *testing.T) {
+	tests := []struct {
+		subdomain string
+		want      string
+	}{
+		{"eu10-trial-abc123", "eu10"},
+		{"us10-mysubaccount", "us10"},
+		{"ap21-prod-xyz", "ap21"},
+		{"my-custom-subdomain", ""},
+		{"", ""},
+	}
+	for _, tt := range tests {
+		got := extractBTPRegion(tt.subdomain)
+		if got != tt.want {
+			t.Errorf("extractBTPRegion(%q) = %q, want %q", tt.subdomain, got, tt.want)
 		}
 	}
 }
