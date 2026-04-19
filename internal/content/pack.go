@@ -409,6 +409,12 @@ func LoadPack(packDir string, lang string) (*Pack, error) {
 			pack.Samples[i].PackID = pack.ID
 		}
 	}
+	if data, err := os.ReadFile(filepath.Join(packDir, "known_errors.yaml")); err == nil {
+		_ = yaml.Unmarshal(data, &pack.KnownErrors)
+		for i := range pack.KnownErrors {
+			pack.KnownErrors[i].PackID = pack.ID
+		}
+	}
 	if data, err := os.ReadFile(filepath.Join(packDir, "tutorials.yaml")); err == nil {
 		_ = yaml.Unmarshal(data, &pack.TutorialRefs)
 		for i := range pack.TutorialRefs {
