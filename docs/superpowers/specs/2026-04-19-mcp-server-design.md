@@ -48,7 +48,7 @@ The `mcp serve` command skips the background update check (same pattern as the `
 
 ```go
 type Deps struct {
-    Packs            []content.Pack
+    Packs            []*content.Pack
     Profile          *content.Profile
     NewsItems        []news.NewsItem              // may be empty; fetched lazily on first get_recent_news call
     TutorialIndex    []tutorials.TutorialMeta     // may be empty if not synced
