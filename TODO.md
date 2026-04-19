@@ -76,7 +76,6 @@ Unsigned `.exe` files downloaded from the internet are blocked or warned about b
 i18n infrastructure is complete and all commands are wired (`en` + `de` catalogs). Remaining work:
 
 - Add more language catalogs beyond `de` — `ja`, `fr`, `es`, `pt` are good candidates (add a JSON file to `internal/i18n/catalogs/`)
-- Content pack localisation — `context.md`, `tips.md` per locale (pattern already exists for `cap` pack)
 
 ---
 
@@ -282,37 +281,11 @@ Implemented: `<!-- verbosity:core/detail/extended -->` markers in context.md, `V
 
 ---
 
-### BTP active context detection
-
-If `btp` CLI is configured and logged in, detect the current target subaccount and space at inject time and include them in the project-scope injected block.
-
-**Problem:** "User is in a BTP trial account, eu10 region, Cloud Foundry space: dev" changes advice significantly — trial limitations apply, productive HANA is unavailable, certain entitlements may not exist. Currently the agent has no idea what BTP environment the developer is targeting.
-
-**Detection:** Run `btp target` (or parse `~/.btp/config.json`) at inject time; include results in the `## Project Context` section alongside the project-aware detection (see above). Silently skip if `btp` is not installed or not logged in.
-
-**Privacy note:** Subaccount name and space name are included; no credentials, no account IDs beyond what the user has already shown by running `btp target`.
+### BTP active context detection - DONE ✔️
 
 ---
 
 ### ~~Structured `context.md` conventions~~ — DONE ✔️
-
-Adopt conventional section headings across all pack `context.md` files so content is addressable, selectively includable, and easier for both agents and humans to navigate.
-
-**Problem:** `context.md` is currently free-form markdown. This makes the verbosity tagging system (above) harder to retrofit, and means agents can't reference sections by name ("the Anti-patterns section says…").
-
-**Proposed standard sections** (not all required in every pack):
-
-| Section | Purpose |
-| --- | --- |
-| `## Overview` | What this technology is and when to use it |
-| `## Key Concepts` | The 3–5 concepts an agent must understand |
-| `## Best Practices` | What to do |
-| `## Anti-patterns` | What not to do (feeds into `constraints.md`) |
-| `## Code Examples` | Short, canonical inline snippets |
-| `## Known Errors` | Common error patterns and fixes |
-| `## Resources` | Key links (supplements `resources.yaml`) |
-
-**Migration:** Apply to new packs immediately; retrofit existing packs incrementally. The schema can be validated as part of `cds lint` equivalent for content.
 
 ---
 
