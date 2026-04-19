@@ -46,3 +46,72 @@ func TestRenderDynamic_NoProject(t *testing.T) {
 		t.Error("should not render project section when no project detected")
 	}
 }
+
+func TestRenderDynamic_BTPEnvironment(t *testing.T) {
+	d := &content.DynamicContext{
+		CLIVersion: "1.5.0",
+		Project: &content.ProjectInfo{
+			Type: "CAP (Node.js)",
+			Facts: []content.ProjectFact{
+				{Key: "Project type", Value: "CAP (Node.js)"},
+			},
+			BTPFacts: []content.ProjectFact{
+				{Key: "BTP subaccount", Value: "trial-abc (eu10, trial)"},
+				{Key: "Cloud Foundry", Value: "MyOrg/dev (us10)"},
+			},
+		},
+	}
+
+	out := content.RenderDynamic(d)
+
+	if !strings.Contains(out, "**BTP Environment (detected):**") {
+		t.Error("missing BTP Environment header")
+	}
+	if !strings.Contains(out, "BTP subaccount: trial-abc (eu10, trial)") {
+		t.Error("missing BTP subaccount fact")
+	}
+	if !strings.Contains(out, "Cloud Foundry: MyOrg/dev (us10)") {
+		t.Error("missing Cloud Foundry fact")
+	}
+	if !strings.Contains(out, "**Project Context (detected):**") {
+		t.Error("project facts should still render")
+	}
+}
+
+func TestRenderDynamic_BTPOnly_NoProjectFacts(t *testing.T) {
+	d := &content.DynamicContext{
+		CLIVersion: "1.5.0",
+		Project: &content.ProjectInfo{
+			BTPFacts: []content.ProjectFact{
+				{Key: "Cloud Foundry", Value: "MyOrg/dev (us10)"},
+			},
+		},
+	}
+
+	out := content.RenderDynamic(d)
+
+	if !strings.Contains(out, "**BTP Environment (detected):**") {
+		t.Error("missing BTP Environment header")
+	}
+	if strings.Contains(out, "**Project Context (detected):**") {
+		t.Error("should not render project context header when no project facts")
+	}
+}
+
+func TestRenderDynamic_NoBTP(t *testing.T) {
+	d := &content.DynamicContext{
+		CLIVersion: "1.5.0",
+		Project: &content.ProjectInfo{
+			Type: "CAP (Node.js)",
+			Facts: []content.ProjectFact{
+				{Key: "Project type", Value: "CAP (Node.js)"},
+			},
+		},
+	}
+
+	out := content.RenderDynamic(d)
+
+	if strings.Contains(out, "BTP Environment") {
+		t.Error("should not render BTP section when no BTP facts")
+	}
+}

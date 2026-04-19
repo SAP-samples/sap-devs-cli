@@ -52,7 +52,7 @@ func GatherDynamic(opts GatherOpts) *content.DynamicContext {
 	if pc == nil {
 		pc, _ = project.Detect(opts.CWD)
 	}
-	if pc != nil && pc.Type != "" {
+	if pc != nil && (pc.Type != "" || pc.HasBTPContext()) {
 		// Enrich with latest known versions from packs before building mirror types
 		if pc.CAPVersion != "" {
 			for _, p := range opts.Packs {
@@ -69,12 +69,14 @@ func GatherDynamic(opts GatherOpts) *content.DynamicContext {
 			Type:       pc.Type,
 			CAPVersion: pc.CAPVersion,
 		}
+		btpKeys := map[string]bool{"BTP subaccount": true, "Cloud Foundry": true}
 		for _, f := range pc.Facts {
-			info.Facts = append(info.Facts, content.ProjectFact{
-				Key:   f.Key,
-				Value: f.Value,
-				Warn:  f.Warn,
-			})
+			pf := content.ProjectFact{Key: f.Key, Value: f.Value, Warn: f.Warn}
+			if btpKeys[f.Key] {
+				info.BTPFacts = append(info.BTPFacts, pf)
+			} else {
+				info.Facts = append(info.Facts, pf)
+			}
 		}
 		d.Project = info
 	}
