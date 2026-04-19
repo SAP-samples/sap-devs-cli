@@ -204,7 +204,7 @@ func trimNonBase(packs []*Pack, maxBytes int) []*Pack {
 	var result []*Pack
 	used := 0
 	for _, p := range deduped {
-		size := len(p.ContextMD)
+		size := len(p.ContextMD) + len(p.ConstraintsMD)
 		if used+size > maxBytes {
 			break
 		}

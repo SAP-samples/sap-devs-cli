@@ -541,3 +541,20 @@ func TestRenderContext_Constraints_SkipsEmptyPacks(t *testing.T) {
 	assert.Contains(t, out, "1. CAP constraint")
 	assert.NotContains(t, out, "\n\n\n\n")
 }
+
+func TestTrimPacks_BudgetIncludesConstraintsMD(t *testing.T) {
+	packs := []*content.Pack{
+		{ID: "cap", ContextMD: "hello", ConstraintsMD: "constraint"},
+	}
+	result := content.TrimPacks(packs, 10)
+	assert.Empty(t, result, "pack with ContextMD+ConstraintsMD exceeding budget must be trimmed")
+}
+
+func TestTrimPacks_BudgetFitsWithConstraintsMD(t *testing.T) {
+	packs := []*content.Pack{
+		{ID: "cap", ContextMD: "hello", ConstraintsMD: "world"},
+	}
+	result := content.TrimPacks(packs, 10)
+	require.Len(t, result, 1)
+	assert.Equal(t, "cap", result[0].ID)
+}
