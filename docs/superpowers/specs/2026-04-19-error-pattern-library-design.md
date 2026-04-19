@@ -128,15 +128,16 @@ In `RenderContext` (internal/content/render.go), after Canonical Patterns and Le
 - Only rendered if any `KnownErrors` exist across all packs
 - `docs` URL omitted from table to save tokens (available via CLI)
 - Errors ordered by pack weight (already sorted)
+- Pipe characters (`|`) in cell values must be escaped to `\|` to prevent table breakage
 - No verbosity gating for now
 
 ## CLI Command
 
-**File:** `cmd/errors.go`
+**File:** `cmd/known_errors.go`
 
 ### `sap-devs errors list`
 
-Lists all known errors from active packs as a table (pattern, cause, pack).
+Lists all known errors from active packs as a table (pattern, cause, pack). Supports `--pack` and `--tags` filtering flags for consistency with other list commands.
 
 ### `sap-devs errors search <query>`
 
@@ -180,11 +181,15 @@ No interactive TUI — filtered text output only.
 |---|---|
 | `internal/content/pack.go` | Add `KnownError` struct, `KnownErrors` field on `Pack` |
 | `internal/content/pack.go` (`LoadPack`) | Load `known_errors.yaml` |
+| `internal/content/known_errors.go` | `FlattenKnownErrors`, `FilterKnownErrors` helpers |
 | `internal/content/merge.go` | Add `mergeKnownErrors`, call in `MergeWith` |
 | `internal/content/render.go` | Render `## Known Errors` table in `RenderContext` |
 | `content/schemas/known_errors.schema.json` | JSON Schema for validation |
 | `.vscode/settings.json` | Wire schema for `known_errors.yaml` |
-| `cmd/errors.go` | `errors list` and `errors search` commands |
+| `cmd/known_errors.go` | `errors list` and `errors search` commands |
 | `cmd/root.go` | Register `errorsCmd` |
 | `content/packs/cap/known_errors.yaml` | Seed CAP errors |
 | `content/packs/abap/known_errors.yaml` | Seed ABAP errors |
+| `internal/i18n/catalogs/en.json` | Add `errors.*` i18n keys |
+| `internal/i18n/catalogs/de.json` | Add `errors.*` German translations |
+| `CLAUDE.md` | Update CLI Commands table and Content Layer docs |
