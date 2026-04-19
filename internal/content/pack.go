@@ -23,14 +23,14 @@ type Pack struct {
 	Additive         bool
 	AdditivePosition string // "before" | "after"; normalised to "after" if empty
 
-	ContextMD  string
+	Context  VerbositySections
 	Resources  []Resource
 	Tools      []ToolDef
 	MCPServers []MCPServer
 	Tips       []Tip
 
-	PreambleMD    string
-	ConstraintsMD string
+	PreambleMD  string
+	Constraints VerbositySections
 	Hooks         []HookDef
 	Influencers []Influencer
 	Samples      []Sample
@@ -378,7 +378,7 @@ func LoadPack(packDir string, lang string) (*Pack, error) {
 		}
 	}
 	if data, err := os.ReadFile(contextFile); err == nil {
-		pack.ContextMD = string(data)
+		pack.Context = ParseVerbositySections(string(data))
 	}
 	if data, err := os.ReadFile(filepath.Join(packDir, "preamble.md")); err == nil {
 		pack.PreambleMD = string(data)
@@ -390,7 +390,7 @@ func LoadPack(packDir string, lang string) (*Pack, error) {
 		}
 	}
 	if data, err := os.ReadFile(constraintsFile); err == nil {
-		pack.ConstraintsMD = string(data)
+		pack.Constraints = ParseVerbositySections(string(data))
 	}
 	if data, err := os.ReadFile(filepath.Join(packDir, "hook.yaml")); err == nil {
 		_ = yaml.Unmarshal(data, &pack.Hooks)

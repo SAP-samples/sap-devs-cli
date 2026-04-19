@@ -29,7 +29,7 @@ weight: 100
 	require.NoError(t, err)
 	assert.Equal(t, "cap", pack.ID)
 	assert.Equal(t, "SAP CAP", pack.Name)
-	assert.Contains(t, pack.ContextMD, "CDS")
+	assert.Contains(t, pack.Context.Core, "CDS")
 	assert.Len(t, pack.Resources, 1)
 	assert.Equal(t, "cap/docs", pack.Resources[0].ID)
 	assert.Len(t, pack.Tips, 1)
@@ -44,7 +44,7 @@ func TestLoadPack_MissingOptionalFilesOK(t *testing.T) {
 	pack, err := content.LoadPack(dir, "")
 	require.NoError(t, err)
 	assert.Equal(t, "abap", pack.ID)
-	assert.Empty(t, pack.ContextMD)
+	assert.Equal(t, content.VerbositySections{}, pack.Context)
 	assert.Empty(t, pack.Tips)
 }
 
@@ -58,22 +58,22 @@ func TestLoadPack_LocaleContextFile(t *testing.T) {
 	// German: locale file used
 	p, err := content.LoadPack(dir, "de")
 	require.NoError(t, err)
-	assert.Equal(t, "German context", p.ContextMD)
+	assert.Equal(t, "German context", p.Context.Core)
 
 	// French: no locale file, falls back to base
 	p, err = content.LoadPack(dir, "fr")
 	require.NoError(t, err)
-	assert.Equal(t, "English context", p.ContextMD)
+	assert.Equal(t, "English context", p.Context.Core)
 
 	// Empty lang: base file used
 	p, err = content.LoadPack(dir, "")
 	require.NoError(t, err)
-	assert.Equal(t, "English context", p.ContextMD)
+	assert.Equal(t, "English context", p.Context.Core)
 
 	// lang="en": base file used (no context.en.md attempted)
 	p, err = content.LoadPack(dir, "en")
 	require.NoError(t, err)
-	assert.Equal(t, "English context", p.ContextMD)
+	assert.Equal(t, "English context", p.Context.Core)
 }
 
 func TestLoadPack_LocaleTipsFile(t *testing.T) {
@@ -143,7 +143,7 @@ func TestLoadPack_PrefersExpandedOverBase(t *testing.T) {
 
 	p, err := content.LoadPack(dir, "")
 	require.NoError(t, err)
-	assert.Equal(t, "expanded content", p.ContextMD)
+	assert.Equal(t, "expanded content", p.Context.Core)
 }
 
 func TestLoadPack_FallsBackToBaseWhenNoExpanded(t *testing.T) {
@@ -154,7 +154,7 @@ func TestLoadPack_FallsBackToBaseWhenNoExpanded(t *testing.T) {
 
 	p, err := content.LoadPack(dir, "")
 	require.NoError(t, err)
-	assert.Equal(t, "static content", p.ContextMD)
+	assert.Equal(t, "static content", p.Context.Core)
 }
 
 func TestLoadPack_LocaleBeatsExpanded(t *testing.T) {
@@ -168,17 +168,17 @@ func TestLoadPack_LocaleBeatsExpanded(t *testing.T) {
 	// German locale wins over expanded
 	p, err := content.LoadPack(dir, "de")
 	require.NoError(t, err)
-	assert.Equal(t, "german", p.ContextMD)
+	assert.Equal(t, "german", p.Context.Core)
 
 	// No locale → expanded wins
 	p, err = content.LoadPack(dir, "")
 	require.NoError(t, err)
-	assert.Equal(t, "expanded", p.ContextMD)
+	assert.Equal(t, "expanded", p.Context.Core)
 
 	// "en" also skips locale branch → expanded wins
 	p, err = content.LoadPack(dir, "en")
 	require.NoError(t, err)
-	assert.Equal(t, "expanded", p.ContextMD)
+	assert.Equal(t, "expanded", p.Context.Core)
 }
 
 func TestLoadPack_OverlapsField(t *testing.T) {
@@ -324,7 +324,7 @@ func TestLoadPack_YouTubeSourcesEmptyWhenAbsent(t *testing.T) {
 	assert.Empty(t, p.YouTubeSources)
 }
 
-func TestLoadPack_ConstraintsMDLoadedWhenPresent(t *testing.T) {
+func TestLoadPack_ConstraintsLoadedWhenPresent(t *testing.T) {
 	dir := t.TempDir()
 	yaml := "id: cap\nname: CAP\ndescription: CAP\ntags: []\nprofiles: []\nweight: 100\n"
 	require.NoError(t, os.WriteFile(filepath.Join(dir, "pack.yaml"), []byte(yaml), 0644))
@@ -332,20 +332,20 @@ func TestLoadPack_ConstraintsMDLoadedWhenPresent(t *testing.T) {
 
 	p, err := content.LoadPack(dir, "")
 	require.NoError(t, err)
-	assert.Equal(t, "1. Never write raw SQL", p.ConstraintsMD)
+	assert.Equal(t, "1. Never write raw SQL", p.Constraints.Core)
 }
 
-func TestLoadPack_ConstraintsMDEmptyWhenAbsent(t *testing.T) {
+func TestLoadPack_ConstraintsEmptyWhenAbsent(t *testing.T) {
 	dir := t.TempDir()
 	yaml := "id: cap\nname: CAP\ndescription: CAP\ntags: []\nprofiles: []\nweight: 100\n"
 	require.NoError(t, os.WriteFile(filepath.Join(dir, "pack.yaml"), []byte(yaml), 0644))
 
 	p, err := content.LoadPack(dir, "")
 	require.NoError(t, err)
-	assert.Empty(t, p.ConstraintsMD)
+	assert.Equal(t, content.VerbositySections{}, p.Constraints)
 }
 
-func TestLoadPack_ConstraintsMDLocaleVariant(t *testing.T) {
+func TestLoadPack_ConstraintsLocaleVariant(t *testing.T) {
 	dir := t.TempDir()
 	yaml := "id: cap\nname: CAP\ndescription: CAP\ntags: []\nprofiles: []\nweight: 100\n"
 	require.NoError(t, os.WriteFile(filepath.Join(dir, "pack.yaml"), []byte(yaml), 0644))
@@ -354,15 +354,15 @@ func TestLoadPack_ConstraintsMDLocaleVariant(t *testing.T) {
 
 	p, err := content.LoadPack(dir, "de")
 	require.NoError(t, err)
-	assert.Equal(t, "German constraints", p.ConstraintsMD)
+	assert.Equal(t, "German constraints", p.Constraints.Core)
 
 	p, err = content.LoadPack(dir, "")
 	require.NoError(t, err)
-	assert.Equal(t, "English constraints", p.ConstraintsMD)
+	assert.Equal(t, "English constraints", p.Constraints.Core)
 
 	p, err = content.LoadPack(dir, "en")
 	require.NoError(t, err)
-	assert.Equal(t, "English constraints", p.ConstraintsMD)
+	assert.Equal(t, "English constraints", p.Constraints.Core)
 }
 
 func makeTempPack(t *testing.T, id, packYAML, contextMD, resourcesYAML, tipsMD string) string {

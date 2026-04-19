@@ -68,7 +68,7 @@ func RenderContext(packs []*Pack, profile *Profile, dynamic *DynamicContext) str
 		b.WriteString("\n")
 	}
 
-	// Render preamble from base packs (before all ContextMD)
+	// Render preamble from base packs (before all Context)
 	for _, p := range packs {
 		if p.Base && strings.TrimSpace(p.PreambleMD) != "" {
 			b.WriteString(strings.TrimSpace(p.PreambleMD))
@@ -78,7 +78,7 @@ func RenderContext(packs []*Pack, profile *Profile, dynamic *DynamicContext) str
 
 	var constraints []string
 	for _, p := range packs {
-		if trimmed := strings.TrimSpace(p.ConstraintsMD); trimmed != "" {
+		if trimmed := strings.TrimSpace(p.Constraints.AtLevel("full")); trimmed != "" {
 			constraints = append(constraints, trimmed)
 		}
 	}
@@ -89,10 +89,11 @@ func RenderContext(packs []*Pack, profile *Profile, dynamic *DynamicContext) str
 	}
 
 	for _, p := range packs {
-		if strings.TrimSpace(p.ContextMD) == "" {
+		ctx := strings.TrimSpace(p.Context.AtLevel("full"))
+		if ctx == "" {
 			continue
 		}
-		b.WriteString(strings.TrimSpace(p.ContextMD))
+		b.WriteString(ctx)
 		b.WriteString("\n\n")
 	}
 
@@ -258,7 +259,7 @@ func trimNonBase(packs []*Pack, maxBytes int) []*Pack {
 	var result []*Pack
 	used := 0
 	for _, p := range deduped {
-		size := len(p.ContextMD) + len(p.ConstraintsMD)
+		size := len(p.Context.AtLevel("full")) + len(p.Constraints.AtLevel("full"))
 		if used+size > maxBytes {
 			break
 		}

@@ -186,7 +186,7 @@ func TestContentLoader_LoadPacks_AdditiveLayer(t *testing.T) {
 	assert.Equal(t, "CAP Project", cap.Name)
 
 	// Context: official + company appended (after); project has no context file — no change
-	assert.Equal(t, "Official context\n\nCompany context", cap.ContextMD)
+	assert.Equal(t, "Official context\n\nCompany context", cap.Context.Core)
 
 	// Tips: all three in order (official, company, project)
 	require.Len(t, cap.Tips, 3)
@@ -255,7 +255,7 @@ func TestContentLoader_LoadPacks_NonAdditiveOverridesAdditiveResult(t *testing.T
 
 	// Non-additive project layer wins — none of official or company content
 	assert.Equal(t, "CAP Project Override", cap.Name)
-	assert.Equal(t, "Project only context", cap.ContextMD)
+	assert.Equal(t, "Project only context", cap.Context.Core)
 	assert.NotContains(t, cap.Tags, "official")
 	assert.NotContains(t, cap.Tags, "company")
 	assert.Contains(t, cap.Tags, "project")
@@ -286,7 +286,7 @@ func TestContentLoader_LoadPacks_AdditivePositionBefore(t *testing.T) {
 	require.NotNil(t, cap)
 
 	// Context: company prepended before official
-	assert.Equal(t, "Company context\n\nOfficial context", cap.ContextMD)
+	assert.Equal(t, "Company context\n\nOfficial context", cap.Context.Core)
 
 	// Tips: company tip first, then official
 	require.Len(t, cap.Tips, 2)

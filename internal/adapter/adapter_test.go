@@ -207,8 +207,8 @@ func TestEngine_PerAdapterBudget(t *testing.T) {
 	fileA := filepath.Join(dir, "a.md")
 
 	packs := []*content.Pack{
-		{ID: "cap", ContextMD: strings.Repeat("x", 1000)},  // 1000 bytes ≈ 250 tokens
-		{ID: "btp", ContextMD: strings.Repeat("y", 1000)},  // 1000 bytes ≈ 250 tokens
+		{ID: "cap", Context: content.VerbositySections{Core: strings.Repeat("x", 1000)}},  // 1000 bytes ≈ 250 tokens
+		{ID: "btp", Context: content.VerbositySections{Core: strings.Repeat("y", 1000)}},  // 1000 bytes ≈ 250 tokens
 	}
 
 	// budget of 500 tokens = 2000 bytes: both packs fit
@@ -234,7 +234,7 @@ func TestEngine_PerAdapterBudget(t *testing.T) {
 func TestEngine_BudgetTooSmall_EmitsWarning(t *testing.T) {
 	var buf bytes.Buffer
 	packs := []*content.Pack{
-		{ID: "cap", ContextMD: strings.Repeat("x", 1000)},
+		{ID: "cap", Context: content.VerbositySections{Core: strings.Repeat("x", 1000)}},
 	}
 	adapters := []adapter.Adapter{
 		{
@@ -256,8 +256,8 @@ func TestEngine_Stats(t *testing.T) {
 	targetFile := filepath.Join(dir, "out.md")
 
 	packs := []*content.Pack{
-		{ID: "cap", ContextMD: "CAP content"},
-		{ID: "btp", ContextMD: "BTP content"},
+		{ID: "cap", Context: content.VerbositySections{Core: "CAP content"}},
+		{ID: "btp", Context: content.VerbositySections{Core: "BTP content"}},
 	}
 	adapters := []adapter.Adapter{
 		{
@@ -286,7 +286,7 @@ func TestEngine_Stats(t *testing.T) {
 }
 
 func TestEngine_NilOutIsSafe(t *testing.T) {
-	packs := []*content.Pack{{ID: "cap", ContextMD: "content"}}
+	packs := []*content.Pack{{ID: "cap", Context: content.VerbositySections{Core: "content"}}}
 	adapters := []adapter.Adapter{
 		{
 			ID:   "test",
@@ -363,7 +363,7 @@ func TestEngine_MaxBytesOverridesMaxTokens(t *testing.T) {
 
 	// Pack is 100 bytes. MaxBytes=50 should trim it out; MaxTokens=1000 (=4000 bytes) would not.
 	packs := []*content.Pack{
-		{ID: "big", ContextMD: strings.Repeat("x", 100)},
+		{ID: "big", Context: content.VerbositySections{Core: strings.Repeat("x", 100)}},
 	}
 	adapters := []adapter.Adapter{
 		{
@@ -390,7 +390,7 @@ func TestEngine_FormatApplied(t *testing.T) {
 	targetFile := filepath.Join(dir, "out.md")
 
 	packs := []*content.Pack{
-		{ID: "cap", ContextMD: "## CAP Section\n\n**Use** `cds watch`.\n"},
+		{ID: "cap", Context: content.VerbositySections{Core: "## CAP Section\n\n**Use** `cds watch`.\n"}},
 	}
 	adapters := []adapter.Adapter{
 		{
@@ -423,7 +423,7 @@ func TestEngine_FileExportType(t *testing.T) {
 	dir := t.TempDir()
 	exportPath := filepath.Join(dir, "ctx.md")
 
-	packs := []*content.Pack{{ID: "cap", ContextMD: "CAP content"}}
+	packs := []*content.Pack{{ID: "cap", Context: content.VerbositySections{Core: "CAP content"}}}
 	adapters := []adapter.Adapter{
 		{
 			ID:         "chatgpt",
@@ -444,7 +444,7 @@ func TestEngine_FileExportSkippedForProjectScope(t *testing.T) {
 	dir := t.TempDir()
 	exportPath := filepath.Join(dir, "ctx.md")
 
-	packs := []*content.Pack{{ID: "cap", ContextMD: "CAP content"}}
+	packs := []*content.Pack{{ID: "cap", Context: content.VerbositySections{Core: "CAP content"}}}
 	adapters := []adapter.Adapter{
 		{
 			ID:         "chatgpt",
@@ -468,7 +468,7 @@ func TestEngine_FileExportWritesRawMarkdown(t *testing.T) {
 	exportPath := filepath.Join(dir, "ctx.md")
 
 	packs := []*content.Pack{
-		{ID: "cap", ContextMD: "## CAP Section\n\n**bold** content\n"},
+		{ID: "cap", Context: content.VerbositySections{Core: "## CAP Section\n\n**bold** content\n"}},
 	}
 	adapters := []adapter.Adapter{
 		{

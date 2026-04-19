@@ -24,21 +24,21 @@ func (a *Pack) MergeWith(base *Pack) *Pack {
 	merged.Profiles = append([]string(nil), base.Profiles...)
 	merged.Overlaps = append([]string(nil), base.Overlaps...)
 
-	// Context: position controls order. Empty additive ContextMD preserves base unchanged.
-	if a.ContextMD != "" {
+	// Context: position controls order. Empty additive Context preserves base unchanged.
+	if a.Context != (VerbositySections{}) {
 		if a.AdditivePosition == "before" {
-			merged.ContextMD = a.ContextMD + "\n\n" + base.ContextMD
+			merged.Context = mergeVerbositySections(a.Context, base.Context)
 		} else {
-			merged.ContextMD = base.ContextMD + "\n\n" + a.ContextMD
+			merged.Context = mergeVerbositySections(base.Context, a.Context)
 		}
 	}
 
-	// Constraints: position controls order. Empty additive ConstraintsMD preserves base unchanged.
-	if a.ConstraintsMD != "" {
+	// Constraints: position controls order. Empty additive Constraints preserves base unchanged.
+	if a.Constraints != (VerbositySections{}) {
 		if a.AdditivePosition == "before" {
-			merged.ConstraintsMD = a.ConstraintsMD + "\n\n" + base.ConstraintsMD
+			merged.Constraints = mergeVerbositySections(a.Constraints, base.Constraints)
 		} else {
-			merged.ConstraintsMD = base.ConstraintsMD + "\n\n" + a.ConstraintsMD
+			merged.Constraints = mergeVerbositySections(base.Constraints, a.Constraints)
 		}
 	}
 
