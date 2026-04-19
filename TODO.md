@@ -114,6 +114,11 @@ Interactive UI for editing and maintaining pack content YAML files (event-types.
 - `sap-devs content validate` — validate all content files against their schemas
 - Support for all content YAML types: pack.yaml, resources.yaml, influencers.yaml, event-types.yaml, event-instances.yaml, mcp.yaml, tools.yaml, hook.yaml
 
+Allows for the editing of content checked out from Git (for contributions to the global SAP Developers content repository), or your company's internal content repository, or the local editing of the overridden content in the user's environment. This ensures that content can be easily maintained and updated across different environments and use cases that already been separated and described in this tool.
+
+Phase 2 - Graphical UI (Optional) to edit the files.
+A cross platform graphical UI in the SAP Fiori design language could provide a more intuitive and visually appealing way to edit content files, leveraging familiar SAP Fiori components and patterns.
+
 ---
 
 ### `sap-devs learn` - DONE ✔️
@@ -151,7 +156,7 @@ Run `sync` and `inject` automatically on a schedule, without any user interactio
 - **Change detection** — skip `inject` if pack hashes are unchanged since last run, to avoid unnecessary file writes and CLAUDE.md noise
 - **Config keys:** `background_sync_interval` (default `6h`), `background_sync_enabled` (default `true` once service is installed)
 
-**Dependency:** Closely coupled with the system tray feature below — the tray app is the natural host for the daemon on desktop platforms.
+**Dependency:** Closely coupled with the system tray feature below — the tray app is the natural host for the daemon on desktop platforms. But we need a script injection option to allow non-GUI environments (e.g., headless servers) to still benefit from automated sync and inject functionality.
 
 ---
 
@@ -217,25 +222,6 @@ Expose `sap-devs` as a live MCP server so AI agents can query it on demand durin
 
 ### Behavioral rules / anti-patterns injection - DONE ✔️
 
-Complement the existing "what to do" content with explicit "what NOT to do" constraints per pack — injected as a numbered list so agents cannot easily skip past them.
-
-**Problem:** `context.md` tells agents best practices. It never tells them which patterns to actively avoid. Agents frequently suggest valid-but-wrong approaches (e.g. raw SQL in CAP, internal ABAP function modules, hardcoded BTP credentials) because the injected content doesn't prohibit them.
-
-**Proposed format:** A `constraints.md` file per pack, separate from `context.md`, rendered as a numbered constraint list in the injected block:
-
-```markdown
-## SAP CAP — Constraints
-
-1. Never write raw SQL — always use `cds.ql` or CQL
-2. Never use `req.user` without a `@requires` annotation on the service
-3. Never import internal `@sap/` packages that aren't in the released API list
-4. Never store credentials in code — always use service bindings or environment variables
-```
-
-**Placement:** Injected immediately after the preamble and before the main context block, so the agent reads constraints before reasoning about the task.
-
-**Content layer support:** `constraints.md` participates in the additive layer system — a company layer can append additional corporate constraints on top of the official ones.
-
 ---
 
 ### Project-aware context detection on inject
@@ -266,6 +252,8 @@ Detect properties of the current project at inject time and augment the injected
 ```
 
 **Implementation note:** Detection runs in `cmd/inject.go` before the adapter engine; results are passed as template variables to the pack renderer. No network calls required.
+
+But also implement a project health check command - that will point out issues in the current project setup, such as missing dependencies, misconfigured files, or unsupported versions based upon the detected project context and the best practices and other info defined in the packs.
 
 ---
 
