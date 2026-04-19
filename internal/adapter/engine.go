@@ -31,6 +31,7 @@ type Options struct {
 	Uninstall  bool
 	// Lang is the active language for i18n. Always use e.opts.Lang inside engine code.
 	Lang       string
+	Verbosity  string // CLI override; empty = use adapter default
 }
 
 // Engine runs injection for a set of adapters, rendering per-adapter with its own budget.
@@ -49,6 +50,7 @@ type adapterStats struct {
 	BudgetBytes  int      // effective budget in bytes; 0 = unconstrained
 	Format       string   // "markdown" | "plain-prose" | ""
 	Trimmed      bool     // true if any packs were dropped by TrimPacks
+	Verbosity    string
 }
 
 // NewEngine constructs an Engine. A nil Out is normalised to io.Discard.
@@ -57,6 +59,19 @@ func NewEngine(adapters []Adapter, packs []*content.Pack, profile *content.Profi
 		opts.Out = io.Discard
 	}
 	return &Engine{adapters: adapters, packs: packs, profile: profile, opts: opts}
+}
+
+// resolveVerbosity returns the effective verbosity for an adapter run.
+// The CLI-level override (opts.Verbosity) takes precedence over the adapter's
+// own setting; if neither is set the default is "full".
+func resolveVerbosity(opts Options, a Adapter) string {
+	if opts.Verbosity != "" {
+		return opts.Verbosity
+	}
+	if a.Verbosity != "" {
+		return a.Verbosity
+	}
+	return "full"
 }
 
 // Run dispatches to the appropriate handler for each adapter.
@@ -83,7 +98,8 @@ func (e *Engine) Run() RunResult {
 		if maxBytes == 0 && a.MaxTokens > 0 {
 			maxBytes = a.MaxTokens * 4
 		}
-		trimmed := content.TrimPacks(e.packs, maxBytes)
+		verbosity := resolveVerbosity(e.opts, a)
+		trimmed := content.TrimPacks(e.packs, maxBytes, verbosity)
 		// Note: when base packs exist, TrimPacks always returns at least those packs,
 		// so len(trimmed) == 0 only occurs when no base packs are configured and the
 		// budget is too small for all non-base packs.
@@ -96,11 +112,12 @@ func (e *Engine) Run() RunResult {
 					BudgetBytes: maxBytes, // resolved value
 					Format:      a.Format,
 					Trimmed:     true,
+					Verbosity:   verbosity,
 				})
 			}
 			continue
 		}
-		ctx := content.RenderContext(trimmed, e.profile, e.opts.Dynamic)
+		ctx := content.RenderContext(trimmed, e.profile, e.opts.Dynamic, verbosity)
 
 		// Apply format transform (skipped for file-export — ExportFileAndClip handles it internally)
 		var formattedCtx string
@@ -150,6 +167,7 @@ func (e *Engine) Run() RunResult {
 				// surviving TrimPacks, this correctly reflects whether non-base packs
 				// were dropped by budget or deduplication.
 				Trimmed:      len(trimmed) < len(e.packs),
+				Verbosity:    verbosity,
 			})
 		}
 	}
@@ -242,15 +260,16 @@ func (e *Engine) renderSectionContent(a Adapter) string {
 	if e.packs == nil {
 		return ""
 	}
+	verbosity := resolveVerbosity(e.opts, a)
 	maxBytes := a.MaxBytes
 	if maxBytes == 0 && a.MaxTokens > 0 {
 		maxBytes = a.MaxTokens * 4
 	}
-	trimmed := content.TrimPacks(e.packs, maxBytes)
+	trimmed := content.TrimPacks(e.packs, maxBytes, verbosity)
 	if len(trimmed) == 0 && maxBytes > 0 {
 		return ""
 	}
-	ctx := content.RenderContext(trimmed, e.profile, e.opts.Dynamic)
+	ctx := content.RenderContext(trimmed, e.profile, e.opts.Dynamic, verbosity)
 	return content.FormatOutput(ctx, a.Format)
 }
 
@@ -359,7 +378,7 @@ func (e *Engine) Status() ([]StatusRow, error) {
 
 func printStats(w io.Writer, stats []adapterStats) {
 	tw := tabwriter.NewWriter(w, 0, 0, 3, ' ', 0)
-	fmt.Fprintln(tw, "Adapter\tPacks included\tTokens (approx)\tBudget (bytes)\tFormat\tStatus")
+	fmt.Fprintln(tw, "Adapter\tPacks included\tTokens (approx)\tBudget (bytes)\tVerbosity\tFormat\tStatus")
 	for _, s := range stats {
 		budget := "unconstrained"
 		if s.BudgetBytes > 0 {
@@ -377,8 +396,8 @@ func printStats(w io.Writer, stats []adapterStats) {
 		if s.Trimmed {
 			status = "trimmed"
 		}
-		fmt.Fprintf(tw, "%s\t%s\t~%d\t%s\t%s\t%s\n",
-			s.AdapterID, packs, s.ApproxTokens, budget, format, status)
+		fmt.Fprintf(tw, "%s\t%s\t~%d\t%s\t%s\t%s\t%s\n",
+			s.AdapterID, packs, s.ApproxTokens, budget, s.Verbosity, format, status)
 	}
 	tw.Flush()
 }

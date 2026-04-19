@@ -18,6 +18,7 @@ type Adapter struct {
 	Instructions string       `yaml:"instructions"`
 	MaxTokens    int          `yaml:"max_tokens,omitempty"`  // 0 = unconstrained
 	MaxBytes     int          `yaml:"max_bytes,omitempty"`   // hard byte ceiling; 0 = unconstrained
+	Verbosity    string       `yaml:"verbosity,omitempty"`   // "minimal" | "standard" | "full"; default "full"
 	ExportPath   string       `yaml:"export_path,omitempty"` // file-export: path to write full context
 	MCPConfig    *MCPConfig   `yaml:"mcp_config,omitempty"`
 	HookConfig   *HookConfig  `yaml:"hook_config,omitempty"`

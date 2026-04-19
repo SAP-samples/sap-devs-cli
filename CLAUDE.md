@@ -44,6 +44,8 @@ Content is loaded from up to four layered sources, with later layers overriding 
 
 **What's New Injection:** Each pack may include a `changelog` list in `pack.yaml` with human-curated change notes. During `sync`, these entries are collected into `~/.cache/sap-devs/sync-changelog.json`. On the next `inject`, the entries are rendered as a `## What's New` block at the top of the injected context, then the file is deleted (one-shot). See `internal/sync/changelog.go` for the file lifecycle functions.
 
+**Verbosity Tagging:** Sections within `context.md` (and `constraints.md`) can be tagged with `<!-- verbosity:core -->`, `<!-- verbosity:detail -->`, or `<!-- verbosity:extended -->` HTML comments. Adapters declare a `verbosity` field (`minimal`/`standard`/`full`, default `full`) that controls which tiers are included. `ParseVerbositySections` ([internal/content/verbosity.go](internal/content/verbosity.go)) splits content at load time; `RenderContext` assembles only the requested tiers.
+
 ### Adapter System
 
 Adapters ([internal/adapter/](internal/adapter/)) define how to push context into a specific AI tool. They are YAML files in `content/adapters/` and support three types:
@@ -52,7 +54,7 @@ Adapters ([internal/adapter/](internal/adapter/)) define how to push context int
 - **`clipboard-export`** — copies context to clipboard (global scope only)
 - **`mcp-wire`** — registers MCP servers in a tool's JSON config (handled by `mcp install`, not `inject`)
 
-The `Engine` ([internal/adapter/engine.go](internal/adapter/engine.go)) iterates adapters, filters by `--tool` flag and scope (`global`/`project`), and dispatches to the appropriate handler.
+The `Engine` ([internal/adapter/engine.go](internal/adapter/engine.go)) iterates adapters, filters by `--tool` flag and scope (`global`/`project`), and dispatches to the appropriate handler. Adapters optionally specify a `verbosity` field to control content density: `minimal` (core only), `standard` (core + detail), or `full` (core + detail + extended, the default).
 
 ### Profiles
 
@@ -120,7 +122,7 @@ On every command invocation (except `update` and dev builds), a background gorou
 
 | Command | Purpose |
 | --- | --- |
-| `inject` | Push rendered context into detected AI tools (`--project` for project scope); `--sync` forces fresh sync, `--no-sync` skips staleness check |
+| `inject` | Push rendered context into detected AI tools (`--project` for project scope); `--sync` forces fresh sync, `--no-sync` skips staleness check, `--verbosity minimal\|standard\|full` overrides adapter verbosity |
 | `sync` | Fetch latest content from official/company repos |
 | `profile set/list/show` | Manage active developer persona |
 | `config show/set/company` | View and edit `~/.config/sap-devs/config.yaml` |

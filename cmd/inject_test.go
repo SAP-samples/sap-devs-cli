@@ -25,7 +25,7 @@ func TestInjectEndToEnd(t *testing.T) {
 
 	// Build packs and run engine with a file-inject adapter targeting our temp file
 	packs := []*content.Pack{
-		{ID: "cap", Name: "CAP", ContextMD: "## SAP CAP\n\nUse @sap/cds for data models."},
+		{ID: "cap", Name: "CAP", Context: content.VerbositySections{Core: "## SAP CAP\n\nUse @sap/cds for data models."}},
 	}
 
 	// Run engine with a file-inject adapter targeting our temp file

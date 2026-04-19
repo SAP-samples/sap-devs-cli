@@ -17,6 +17,7 @@ entity Books : managed {
 }
 ```
 
+<!-- verbosity:detail -->
 ### Service Definition
 
 ```cds
@@ -32,6 +33,7 @@ service CatalogService @(path:'/browse') {
 - Leverage built-in authentication via `@requires` annotations
 - Always run `cds lint` before committing
 
+<!-- verbosity:extended -->
 ### Recent CAP Releases
 
 <!-- sync:fetch url="https://cap.cloud.sap/docs/releases/2026/feb26" format="markdown" selector="main" max_lines="1000" label="CAP Release Notes (feb26)" -->
