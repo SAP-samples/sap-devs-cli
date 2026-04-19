@@ -11,3 +11,6 @@ locales:
 versions:
   "@sap/cds": "9.8.0"
   "@sap/cds-dk": "9.8.0"
+changelog:
+  - "CAP 9.8: native SQLite support via `cds.requires.db.driver: node` (Node 22.5+)"
+  - "CAP 9.8: new `cds repl --ql` query mode for interactive CQL"
