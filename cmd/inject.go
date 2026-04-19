@@ -35,7 +35,8 @@ var (
 	injectUninstall bool
 	injectStatus    bool
 	injectJSON      bool
-	injectVerbose   bool
+	injectVerbose    bool
+	injectVerbosity  string
 )
 
 var injectCmd = &cobra.Command{
@@ -57,6 +58,10 @@ into project-level files (CLAUDE.md, .cursorrules, etc.) in the current director
 
 		if injectStatus && (injectUninstall || injectSync || injectNoSync || injectDryRun || injectStats) {
 			return fmt.Errorf("--status is incompatible with --uninstall, --sync, --no-sync, --dry-run, and --stats")
+		}
+
+		if injectVerbosity != "" && injectVerbosity != "minimal" && injectVerbosity != "standard" && injectVerbosity != "full" {
+			return fmt.Errorf("--verbosity must be minimal, standard, or full")
 		}
 
 		if injectUninstall {
@@ -131,6 +136,7 @@ into project-level files (CLAUDE.md, .cursorrules, etc.) in the current director
 				Scope:      scope,
 				ToolFilter: injectTool,
 				Lang:       lang,
+				Verbosity:  injectVerbosity,
 			}
 			eng := adapter.NewEngine(gatheredAdapters, packs, activeProfile, opts)
 			rows, statusErr := eng.Status()
@@ -296,6 +302,7 @@ into project-level files (CLAUDE.md, .cursorrules, etc.) in the current director
 			Stats:      injectStats,
 			Out:        cmd.OutOrStdout(),
 			Dynamic:    dynCtx,
+			Verbosity:  injectVerbosity,
 		}
 		eng, err := newAdapterEngine(packs, activeProfile, opts)
 		if err != nil {
@@ -451,5 +458,6 @@ func init() {
 	injectCmd.Flags().BoolVar(&injectStatus, "status", false, "report injection state for all detected AI tools")
 	injectCmd.Flags().BoolVar(&injectJSON, "json", false, "output status as JSON (only with --status)")
 	injectCmd.Flags().BoolVar(&injectVerbose, "verbose", false, "show file size and token breakdown (only with --status)")
+	injectCmd.Flags().StringVar(&injectVerbosity, "verbosity", "", "verbosity level: minimal, standard, full (overrides adapter default)")
 	rootCmd.AddCommand(injectCmd)
 }
