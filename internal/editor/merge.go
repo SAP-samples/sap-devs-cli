@@ -97,7 +97,7 @@ func LoadSingleObject(filePath string) (map[string]any, error) {
 // SaveItems marshals items to YAML and writes to filePath.
 // Only items belonging to targetLayer are included in the output file.
 func SaveItems(filePath string, items []MergedItem, targetLayer Layer) error {
-	var toSave []map[string]any
+	toSave := make([]map[string]any, 0)
 	for _, item := range items {
 		if item.Layer == targetLayer {
 			toSave = append(toSave, item.Data)

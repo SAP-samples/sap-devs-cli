@@ -103,8 +103,11 @@ func BuildForm(spec *schema.ObjectSpec, values map[string]any) (*huh.Form, *Bind
 	for _, f := range spec.Fields {
 		// Skip conditional fields whose condition is not met.
 		if f.Condition != nil {
-			currentVal := fmt.Sprintf("%v", values[f.Condition.TriggerField])
-			if currentVal != f.Condition.TriggerConst {
+			triggerVal, ok := values[f.Condition.TriggerField]
+			if !ok {
+				continue
+			}
+			if fmt.Sprintf("%v", triggerVal) != f.Condition.TriggerConst {
 				continue
 			}
 		}

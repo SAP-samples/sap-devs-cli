@@ -1,11 +1,13 @@
 package editor
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/config"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/schema"
@@ -233,16 +235,26 @@ func detectLayer(cwd string) (Layer, string) {
 	return LayerUser, paths.DataDir
 }
 
+func gitRemoteURL(dir string) (string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	out, err := exec.CommandContext(ctx, "git", "-C", dir, "remote", "get-url", "origin").Output()
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimSpace(string(out)), nil
+}
+
 func isOfficialRepo(dir string) bool {
-	out, err := exec.Command("git", "-C", dir, "remote", "get-url", "origin").Output()
+	url, err := gitRemoteURL(dir)
 	if err != nil {
 		return false
 	}
-	return strings.Contains(string(out), officialRepoURL)
+	return strings.Contains(url, officialRepoURL)
 }
 
 func isCompanyRepo(dir string) bool {
-	out, err := exec.Command("git", "-C", dir, "remote", "get-url", "origin").Output()
+	url, err := gitRemoteURL(dir)
 	if err != nil {
 		return false
 	}
@@ -256,7 +268,7 @@ func isCompanyRepo(dir string) bool {
 		return false
 	}
 
-	return strings.Contains(string(out), cfg.CompanyRepo)
+	return strings.Contains(url, cfg.CompanyRepo)
 }
 
 // LayerInfo pairs a Layer with its packs directory on disk.

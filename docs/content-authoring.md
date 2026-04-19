@@ -679,11 +679,11 @@ The first time you save, the CLI prints the path of the newly created override f
 
 ### Creating project overrides
 
-Use `--layer project` to scope the edit to the project layer (`.sap-devs/` in the current working directory). This is useful for team-specific or project-specific content additions:
+The editor auto-detects the target layer based on your working directory. To create project-scoped overrides, run the command from a directory with a `.sap-devs/` folder:
 
 ```bash
-# Edit or create a project-scoped resources.yaml
-sap-devs content edit resources.yaml --layer project
+# From a directory with .sap-devs/, edits go to the project layer
+sap-devs content edit resources.yaml
 ```
 
 If `.sap-devs/packs/<pack-id>/resources.yaml` does not exist, the editor creates a new additive pack scaffolded with the correct `pack.yaml` boilerplate.

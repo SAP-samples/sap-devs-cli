@@ -187,7 +187,9 @@ func parseField(key string, raw map[string]any) FieldSpec {
 	}
 
 	f.Enum = extractStringSlice(raw, "enum")
-	f.Format = strVal(raw, "format")
+	if f.Type != "map" {
+		f.Format = strVal(raw, "format")
+	}
 	f.Pattern = strVal(raw, "pattern")
 
 	// array specifics

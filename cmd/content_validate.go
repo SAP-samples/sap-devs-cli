@@ -170,7 +170,7 @@ func runContentValidate(cmd *cobra.Command, args []string) error {
 	}
 
 	if anyErrors {
-		os.Exit(1)
+		return fmt.Errorf("validation failed: found errors in content files")
 	}
 	return nil
 }
