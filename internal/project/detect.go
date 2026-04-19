@@ -173,6 +173,7 @@ func buildFacts(ctx *ProjectContext) {
 type packageJSON struct {
 	Dependencies    map[string]string `json:"dependencies"`
 	DevDependencies map[string]string `json:"devDependencies"`
+	Scripts         map[string]string `json:"scripts"`
 	CDS             *cdsConfig        `json:"cds"`
 }
 
