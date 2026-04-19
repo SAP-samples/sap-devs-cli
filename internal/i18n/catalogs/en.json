@@ -427,5 +427,17 @@
   "errors.col_cause": "CAUSE",
   "errors.col_pack": "PACK",
   "errors.col_fix": "FIX",
-  "errors.col_docs": "DOCS"
+  "errors.col_docs": "DOCS",
+
+  "context.short": "Manage ephemeral project context notes",
+  "context.long": "Add, list, or clear scratch notes that are injected into AI tools\nwhen running 'sap-devs inject --project'. Notes are per-project,\nephemeral, and stored in .sap-devs/scratch.yaml.",
+  "context.add.short": "Add a scratch note to project context",
+  "context.add.done": "Added note to project context.",
+  "context.add.empty": "Note cannot be empty.",
+  "context.list.short": "List current scratch notes",
+  "context.list.empty": "No scratch notes set. Use \"sap-devs context add\" to add one.",
+  "context.list.header": "Current project context:",
+  "context.clear.short": "Clear all scratch notes",
+  "context.clear.done": "Cleared all scratch notes.",
+  "context.clear.empty": "No scratch notes to clear."
 }
