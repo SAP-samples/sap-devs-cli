@@ -161,17 +161,21 @@ func parseField(key string, raw map[string]any) FieldSpec {
 
 	t := strVal(raw, "type")
 
-	// Check for additionalProperties → map type
+	// Check for additionalProperties → map type (only when it's an object schema, not false)
 	if addPropsRaw, hasAdd := raw["additionalProperties"]; hasAdd && t == "object" {
-		addProps, _ := addPropsRaw.(map[string]any)
-		if addProps != nil {
+		addProps, isObj := addPropsRaw.(map[string]any)
+		if isObj && addProps != nil {
 			f.Type = "map"
 			f.MapValueType = strVal(addProps, "type")
 			if fmtVal := strVal(addProps, "format"); fmtVal != "" {
 				f.Format = fmtVal
 			}
+		} else if raw["properties"] != nil {
+			// additionalProperties: false with properties → regular object
+			f.Type = "object"
+			nested := parseObjectSpec(raw)
+			f.Children = nested.Fields
 		} else {
-			// additionalProperties: false or non-object
 			f.Type = "object"
 		}
 	} else if t == "object" && raw["properties"] != nil {
