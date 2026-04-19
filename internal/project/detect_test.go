@@ -123,6 +123,7 @@ func TestDetect_DefaultEnv(t *testing.T) {
 
 func TestDetect_EmptyDir(t *testing.T) {
 	dir := t.TempDir()
+	t.Setenv("CF_HOME", t.TempDir())
 	ctx, err := Detect(dir)
 	if err != nil {
 		t.Fatal(err)
@@ -136,6 +137,7 @@ func TestDetect_EmptyDir(t *testing.T) {
 }
 
 func TestDetect_EmptyCWD(t *testing.T) {
+	t.Setenv("CF_HOME", t.TempDir())
 	ctx, err := Detect("")
 	if err != nil {
 		t.Fatal(err)
