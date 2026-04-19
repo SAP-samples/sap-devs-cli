@@ -8,6 +8,7 @@ import (
 	"charm.land/huh/v2"
 	"github.com/spf13/cobra"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/config"
+	"github.tools.sap/developer-relations/sap-devs-cli/internal/theme"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/xdg"
 )
 
@@ -115,7 +116,7 @@ var configEditCmd = &cobra.Command{
 		).Title("Sync TTLs")
 
 		form := huh.NewForm(generalGroup, prefsGroup, eventsGroup, syncGroup).
-			WithTheme(huh.ThemeFunc(huh.ThemeDracula))
+			WithTheme(huh.ThemeFunc(theme.ThemeFiori))
 
 		if err := form.Run(); err != nil {
 			if err == huh.ErrUserAborted {
