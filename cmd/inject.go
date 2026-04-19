@@ -200,7 +200,10 @@ into project-level files (CLAUDE.md, .cursorrules, etc.) in the current director
 		}
 
 		// Read changelog for What's New injection block
-		clEntries, clTime, _ := sapSync.ReadChangelog(paths.CacheDir)
+		clEntries, clTime, clErr := sapSync.ReadChangelog(paths.CacheDir)
+		if clErr != nil {
+			fmt.Fprintf(os.Stderr, "sap-devs: read changelog: %v\n", clErr)
+		}
 
 		// Resolve featured learning journeys for injection
 		learningIndex, _ := learning.LoadIndex(paths.CacheDir, learning.CacheTTL)

@@ -652,6 +652,15 @@ func TestRenderContext_WhatsNew_OmittedWhenEmpty(t *testing.T) {
 	assert.NotContains(t, out, "What's New")
 }
 
+func TestRenderContext_WhatsNew_NilDate(t *testing.T) {
+	dyn := &content.DynamicContext{
+		WhatsNew: []content.WhatsNewEntry{{Pack: "cap", Text: "test change"}},
+	}
+	out := content.RenderContext(nil, nil, dyn)
+	assert.Contains(t, out, "## What's New\n")
+	assert.NotContains(t, out, "since last sync")
+}
+
 func TestRenderContext_WhatsNew_BeforeScratchNotes(t *testing.T) {
 	syncDate := time.Date(2026, 4, 17, 0, 0, 0, 0, time.UTC)
 	dyn := &content.DynamicContext{
