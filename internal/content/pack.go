@@ -377,7 +377,11 @@ func LoadPack(packDir string, lang string) (*Pack, error) {
 			contextFile = exp
 		}
 	}
+	isExpanded := strings.HasSuffix(contextFile, "context.expanded.md")
 	if data, err := os.ReadFile(contextFile); err == nil {
+		if !isExpanded {
+			ValidateContextSections(pack.ID, string(data))
+		}
 		pack.Context = ParseVerbositySections(string(data))
 	}
 	if data, err := os.ReadFile(filepath.Join(packDir, "preamble.md")); err == nil {
