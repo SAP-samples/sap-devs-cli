@@ -1,0 +1,7 @@
+profile_filters:
+  products: ["SAP Business Technology Platform"]
+  product_categories: ["Business Technology Platform"]
+
+journeys:
+  - slug: becoming-an-sap-btp-solution-architect
+    featured: true

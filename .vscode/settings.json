@@ -12,6 +12,7 @@
     "./content/schemas/samples.schema.json": "**/packs/*/samples.yaml",
     "./content/schemas/youtube.schema.json": "**/packs/*/youtube.yaml",
     "./content/schemas/discovery.schema.json": "**/packs/*/discovery.yaml",
-    "./content/schemas/tutorials.yaml.schema.json": "**/packs/*/tutorials.yaml"
+    "./content/schemas/tutorials.yaml.schema.json": "**/packs/*/tutorials.yaml",
+    "./content/schemas/learning.schema.json": "**/packs/*/learning.yaml"
   }
 }
