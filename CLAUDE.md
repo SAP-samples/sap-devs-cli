@@ -86,6 +86,14 @@ Three content types: **missions** (guided learning paths), **services** (BTP ser
 
 **Pack integration:** Each pack can include a `learning.yaml` file with `profile_filters` (products, product_categories, roles) and curated `LearningRef` entries (slug + featured flag). `learning list` uses a three-tier resolution algorithm: featured refs first, then pack-referenced refs, then profile-filtered journeys from the full index. Featured journeys are also injected into the AI context during `inject`.
 
+### Learn
+
+`sap-devs learn` ([cmd/learn.go](cmd/learn.go), [cmd/learn_search.go](cmd/learn_search.go), [cmd/learn_path.go](cmd/learn_path.go)) is an umbrella command aggregating content from learning journeys, tutorials, and Discovery Center missions. The `internal/learn` package handles cross-type recommendation (three-tier resolution per type), search (substring match with title-priority ranking), and learning path management (curated from `paths.yaml` + auto-filled from featured pack content).
+
+**Subcommands:** `recommend` (default, sectioned output), `search <query>` (unified cross-type search), `path list/show/open` (curated + auto-generated learning paths).
+
+**Experience level:** Stored in `experience_level` config field. Filters content across all three types using normalized levels (beginner/intermediate/advanced). Mission effort maps to levels: 0-1→beginner, 2→intermediate, 3→advanced.
+
 ### i18n
 
 `internal/i18n` ([internal/i18n/i18n.go](internal/i18n/i18n.go)) provides CLI string localisation. Language resolution: `lang` config key → `LANG` env var → `LC_ALL` env var → `"en"`. Catalogs for `en` and `de` are embedded at compile time. `T(lang, key)` and `Tf(lang, key, data)` are the public API.
@@ -119,6 +127,7 @@ On every command invocation (except `update` and dev builds), a background gorou
 | `doctor` | Check local tool versions against pack requirements (`--fix` for install hints) |
 | `discovery` | Browse SAP Discovery Center missions, BTP services, and guidance framework; `discovery missions list/search/open`, `discovery services list/search/open`, `discovery guidance/show/open` |
 | `learning` | Browse SAP Learning Journeys; `learning list/search/show/open` |
+| `learn` | Guided learning recommendations combining tutorials, journeys, and missions; `learn recommend/search`, `learn path list/show/open` |
 | `mcp list/install/status` | Browse and wire SAP MCP servers into AI tool configs |
 | `hook list/install/uninstall/status` | Wire AI tool lifecycle hooks from pack definitions |
 | `events` | Browse upcoming SAP community events with location filtering; `events types` lists event categories |
