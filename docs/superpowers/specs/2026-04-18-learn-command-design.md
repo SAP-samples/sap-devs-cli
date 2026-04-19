@@ -246,7 +246,10 @@ func FlattenLearningPaths(packs []*Pack) []LearningPathDef
 Parent command + `recommend` subcommand. Pattern matches `cmd/learning.go`:
 - Uses `newContentLoader()` and `config.LoadProfile()` from root.go
 - Loads packs via `loader.LoadPacks(profile, lang)`
-- Loads indexes: `learning.LoadIndex()`, `tutorials.LoadIndex()`, `discovery.LoadMissionCache()`
+- Loads indexes:
+  - `learning.LoadIndex(cacheDir, learning.CacheTTL)` → `([]LearningJourney, bool)`
+  - `tutorials.LoadIndex(cacheDir)` → `([]TutorialMeta, error)` — treat non-nil error as "not cached"
+  - `discovery.LoadCache[[]discovery.Mission](cacheDir, "missions", discovery.CacheTTL)` → `([]Mission, bool)`
 - Missing indexes are tolerated (section skipped with hint message)
 - If all three indexes missing: error "No content cached — run `sap-devs sync` first"
 - Calls `learn.Recommend()`, renders three tabwriter sections
@@ -364,6 +367,7 @@ New `content/schemas/paths.yaml.schema.json` for `paths.yaml` validation. Regist
 - **Empty `paths.yaml`:** treated as no curated paths; auto-fill kicks in
 - **Duplicate slugs across packs:** ResolvePaths resolves against global indexes; same item may appear in multiple paths
 - **`--level` with no `experience_level` config:** no level filtering (show all levels)
+- **Invalid `--level` value:** validate in parent `PersistentPreRunE`; reject values outside `{"beginner", "intermediate", "advanced", ""}`
 - **Unresolved path steps:** shown with "(not found)" marker
 - **All indexes missing:** error with "run `sap-devs sync` first"
 
@@ -392,7 +396,7 @@ New `content/schemas/paths.yaml.schema.json` for `paths.yaml` validation. Regist
 ### Modified files:
 - `internal/config/config.go` — add `ExperienceLevel` field
 - `internal/content/pack.go` — add `LearningPaths` field, `LearningPathDef` type, load `paths.yaml`
-- `internal/content/merge.go` — merge `LearningPaths` in `MergeWith()`
+- `internal/content/merge.go` — merge `LearningPaths` in `MergeWith()` using `LearningPathDef.ID` as the matching key
 - `internal/content/learning.go` (or new `internal/content/paths.go`) — `FlattenLearningPaths()` helper
 - `internal/i18n/catalogs/en.json` — learn command strings
 - `internal/i18n/catalogs/de.json` — learn command strings (German)
