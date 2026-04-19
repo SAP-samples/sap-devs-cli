@@ -386,5 +386,23 @@
   "learning.list.short": "List learning journeys from your active profile",
   "learning.search.short": "Search learning journeys",
   "learning.show.short": "Show learning journey details",
-  "learning.open.short": "Open a learning journey in the browser"
+  "learning.open.short": "Open a learning journey in the browser",
+
+  "learn.short": "Guided learning recommendations",
+  "learn.long": "Recommendations, search, and learning paths combining tutorials, learning journeys, and Discovery Center missions — filtered by your active profile and experience level.",
+  "learn.recommend.short": "Show recommended learning content",
+  "learn.search.short": "Search across tutorials, journeys, and missions",
+  "learn.path.short": "Browse curated learning paths",
+  "learn.path.list.short": "List available learning paths",
+  "learn.path.show.short": "Show learning path details",
+  "learn.path.open.short": "Open a learning path in the browser",
+  "learn.section_journeys": "Learning Journeys",
+  "learn.section_tutorials": "Tutorials",
+  "learn.section_missions": "Discovery Center Missions",
+  "learn.no_content": "No content cached — run 'sap-devs sync' first.",
+  "learn.no_results": "No learning content found.",
+  "learn.path_not_found": "Learning path {{.ID}} not found.",
+  "learn.step_not_found": "(not found)",
+  "learn.invalid_level": "Invalid --level value {{.Level}}. Must be beginner, intermediate, or advanced.",
+  "learn.hint_sync": "Run 'sap-devs sync' to include {{.Type}}."
 }

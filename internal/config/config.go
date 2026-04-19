@@ -16,7 +16,8 @@ type Config struct {
 	Sync        SyncConfig     `yaml:"sync"`
 	Tip         TipConfig      `yaml:"tip,omitempty"`
 	Events      EventsConfig   `yaml:"events,omitempty"`
-	Tutorial    TutorialConfig `yaml:"tutorial,omitempty"`
+	Tutorial        TutorialConfig `yaml:"tutorial,omitempty"`
+	ExperienceLevel string         `yaml:"experience_level,omitempty"`
 }
 
 // SyncConfig controls per-category TTLs for background content refresh.
