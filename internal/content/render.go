@@ -18,6 +18,10 @@ var (
 	reBlankLines  = regexp.MustCompile(`\n{3,}`)
 )
 
+func escapePipe(s string) string {
+	return strings.ReplaceAll(s, "|", "\\|")
+}
+
 // RenderContext builds the Markdown string injected into AI tool configuration.
 // Packs are rendered in the order provided (caller applies profile weights first).
 // dynamic may be nil; when non-nil a runtime context section is prepended.
@@ -97,6 +101,21 @@ func RenderContext(packs []*Pack, profile *Profile, dynamic *DynamicContext) str
 		b.WriteString("|---------|-------|----------|\n")
 		for _, row := range learningRows {
 			b.WriteString(row + "\n")
+		}
+		b.WriteString("\n")
+	}
+
+	var knownErrors []KnownError
+	for _, p := range packs {
+		knownErrors = append(knownErrors, p.KnownErrors...)
+	}
+	if len(knownErrors) > 0 {
+		b.WriteString("## Known Errors\n\n")
+		b.WriteString("| Error Pattern | Cause | Fix |\n")
+		b.WriteString("|---|---|---|\n")
+		for _, e := range knownErrors {
+			b.WriteString(fmt.Sprintf("| %s | %s | %s |\n",
+				escapePipe(e.Pattern), escapePipe(e.Cause), escapePipe(e.Fix)))
 		}
 		b.WriteString("\n")
 	}
