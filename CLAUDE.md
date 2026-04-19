@@ -154,6 +154,8 @@ On every command invocation (except `update` and dev builds), a background gorou
 
 Both are consumed by `cmd/inject.go` (project context injected into AI tools) and `cmd/doctor.go` (health check table output).
 
+- `Detect(cwd)` also checks BTP CLI config (`BTP_CLIENTCONFIG` env var or default path) and CF CLI config (`CF_HOME` env var or `~/.cf/config.json`) for active subaccount/region and org/space. Trial accounts are heuristically flagged. Falls back to `btp target` / `cf target` CLI exec with 3-second timeout. BTP/CF context is rendered as a separate `**BTP Environment (detected):**` section via `BTPFacts` on `ProjectInfo`.
+
 ### YAML Schemas
 
 JSON Schema files in [content/schemas/](content/schemas/) validate `pack.yaml`, `resources.yaml`, `tools.yaml`, `mcp.yaml`, `profile.yaml`, `samples.yaml`, and `known_errors.yaml`. VS Code integration is wired in [.vscode/settings.json](.vscode/settings.json). Update schemas when adding/changing YAML fields.

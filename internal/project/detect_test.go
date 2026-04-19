@@ -6,7 +6,14 @@ import (
 	"testing"
 )
 
+func isolateBTPCF(t *testing.T) {
+	t.Helper()
+	t.Setenv("CF_HOME", t.TempDir())
+	t.Setenv("BTP_CLIENTCONFIG", filepath.Join(t.TempDir(), "nonexistent.json"))
+}
+
 func TestDetect_CAPNodeJS(t *testing.T) {
+	isolateBTPCF(t)
 	dir := t.TempDir()
 	writeFile(t, dir, "package.json", `{
 		"dependencies": {"@sap/cds": "9.6.2"},
@@ -51,6 +58,7 @@ func writeFile(t *testing.T, dir, name, content string) {
 }
 
 func TestDetect_CAPJava(t *testing.T) {
+	isolateBTPCF(t)
 	dir := t.TempDir()
 	writeFile(t, dir, "pom.xml", `<project><dependencies>
 		<dependency><groupId>com.sap.cds</groupId></dependency>
@@ -66,6 +74,7 @@ func TestDetect_CAPJava(t *testing.T) {
 }
 
 func TestDetect_MTA(t *testing.T) {
+	isolateBTPCF(t)
 	dir := t.TempDir()
 	writeFile(t, dir, "mta.yaml", "ID: myapp")
 
@@ -79,6 +88,7 @@ func TestDetect_MTA(t *testing.T) {
 }
 
 func TestDetect_Fiori(t *testing.T) {
+	isolateBTPCF(t)
 	dir := t.TempDir()
 	writeFile(t, dir, "xs-app.json", `{"welcomeFile":"/index.html"}`)
 	writeFile(t, dir, "xs-security.json", `{"xsappname":"myapp"}`)
@@ -96,6 +106,7 @@ func TestDetect_Fiori(t *testing.T) {
 }
 
 func TestDetect_Kyma(t *testing.T) {
+	isolateBTPCF(t)
 	dir := t.TempDir()
 	os.Mkdir(filepath.Join(dir, "chart"), 0755)
 
@@ -109,6 +120,7 @@ func TestDetect_Kyma(t *testing.T) {
 }
 
 func TestDetect_DefaultEnv(t *testing.T) {
+	isolateBTPCF(t)
 	dir := t.TempDir()
 	writeFile(t, dir, "default-env.json", `{}`)
 
@@ -122,6 +134,7 @@ func TestDetect_DefaultEnv(t *testing.T) {
 }
 
 func TestDetect_EmptyDir(t *testing.T) {
+	isolateBTPCF(t)
 	dir := t.TempDir()
 	ctx, err := Detect(dir)
 	if err != nil {
@@ -136,6 +149,7 @@ func TestDetect_EmptyDir(t *testing.T) {
 }
 
 func TestDetect_EmptyCWD(t *testing.T) {
+	isolateBTPCF(t)
 	ctx, err := Detect("")
 	if err != nil {
 		t.Fatal(err)
@@ -146,6 +160,7 @@ func TestDetect_EmptyCWD(t *testing.T) {
 }
 
 func TestDetect_PlainNodeJS(t *testing.T) {
+	isolateBTPCF(t)
 	dir := t.TempDir()
 	writeFile(t, dir, "package.json", `{"name":"myapp"}`)
 
@@ -159,6 +174,7 @@ func TestDetect_PlainNodeJS(t *testing.T) {
 }
 
 func TestDetect_HANADatabase(t *testing.T) {
+	isolateBTPCF(t)
 	dir := t.TempDir()
 	writeFile(t, dir, "package.json", `{
 		"dependencies": {"@sap/cds": "9.6.2"},
@@ -171,5 +187,249 @@ func TestDetect_HANADatabase(t *testing.T) {
 	}
 	if ctx.Database != "hana" {
 		t.Errorf("Database = %q, want %q", ctx.Database, "hana")
+	}
+}
+
+func TestDetectCF_ParsesConfigJSON(t *testing.T) {
+	// CF_HOME is the PARENT of .cf/ — the cf CLI reads $CF_HOME/.cf/config.json
+	dir := t.TempDir()
+	cfDir := filepath.Join(dir, ".cf")
+	os.Mkdir(cfDir, 0755)
+	writeFile(t, cfDir, "config.json", `{
+		"Target": "https://api.cf.us10.hana.ondemand.com",
+		"OrganizationFields": {"Name": "MyOrg", "GUID": "xxx"},
+		"SpaceFields": {"Name": "dev", "GUID": "yyy", "AllowSSH": true}
+	}`)
+
+	ctx := &ProjectContext{RawFiles: make(map[string]bool)}
+	t.Setenv("CF_HOME", dir) // parent of .cf/, not the .cf/ dir itself
+	detectCF(ctx)
+
+	if ctx.CFOrg != "MyOrg" {
+		t.Errorf("CFOrg = %q, want %q", ctx.CFOrg, "MyOrg")
+	}
+	if ctx.CFSpace != "dev" {
+		t.Errorf("CFSpace = %q, want %q", ctx.CFSpace, "dev")
+	}
+	if ctx.CFRegion != "us10" {
+		t.Errorf("CFRegion = %q, want %q", ctx.CFRegion, "us10")
+	}
+}
+
+func TestDetectCF_SilentOnMissingConfig(t *testing.T) {
+	ctx := &ProjectContext{RawFiles: make(map[string]bool)}
+	t.Setenv("CF_HOME", "/nonexistent/path")
+	detectCF(ctx)
+
+	if ctx.CFOrg != "" {
+		t.Errorf("CFOrg should be empty, got %q", ctx.CFOrg)
+	}
+}
+
+func TestExtractCFRegion(t *testing.T) {
+	tests := []struct {
+		url  string
+		want string
+	}{
+		{"https://api.cf.us10.hana.ondemand.com", "us10"},
+		{"https://api.cf.eu10.hana.ondemand.com", "eu10"},
+		{"https://api.cf.us10-001.hana.ondemand.com", "us10-001"},
+		{"https://api.cf.ap21.hana.ondemand.com", "ap21"},
+		{"https://some.other.url.com", ""},
+		{"", ""},
+	}
+	for _, tt := range tests {
+		got := extractCFRegion(tt.url)
+		if got != tt.want {
+			t.Errorf("extractCFRegion(%q) = %q, want %q", tt.url, got, tt.want)
+		}
+	}
+}
+
+func TestDetectBTP_ParsesConfigJSON(t *testing.T) {
+	dir := t.TempDir()
+	writeFile(t, dir, "config.json", `{
+		"TargetHierarchy": {
+			"GlobalAccountSubdomain": "ga-sub",
+			"SubaccountSubdomain": "my-subaccount"
+		},
+		"CLIServerURL": "https://cli.btp.cloud.sap"
+	}`)
+
+	ctx := &ProjectContext{RawFiles: make(map[string]bool)}
+	t.Setenv("BTP_CLIENTCONFIG", filepath.Join(dir, "config.json"))
+	detectBTP(ctx)
+
+	if ctx.BTPSubaccount != "my-subaccount" {
+		t.Errorf("BTPSubaccount = %q, want %q", ctx.BTPSubaccount, "my-subaccount")
+	}
+	if ctx.BTPIsTrial {
+		t.Error("BTPIsTrial should be false for non-trial subaccount")
+	}
+}
+
+func TestDetectBTP_DetectsTrialFromSubdomain(t *testing.T) {
+	dir := t.TempDir()
+	writeFile(t, dir, "config.json", `{
+		"TargetHierarchy": {
+			"SubaccountSubdomain": "eu10-trial-abc123"
+		}
+	}`)
+
+	ctx := &ProjectContext{RawFiles: make(map[string]bool)}
+	t.Setenv("BTP_CLIENTCONFIG", filepath.Join(dir, "config.json"))
+	detectBTP(ctx)
+
+	if !ctx.BTPIsTrial {
+		t.Error("BTPIsTrial should be true when subdomain contains 'trial'")
+	}
+}
+
+func TestDetectBTP_ExtractsRegionFromSubdomain(t *testing.T) {
+	dir := t.TempDir()
+	writeFile(t, dir, "config.json", `{
+		"TargetHierarchy": {
+			"SubaccountSubdomain": "eu10-trial-abc123"
+		}
+	}`)
+
+	ctx := &ProjectContext{RawFiles: make(map[string]bool)}
+	t.Setenv("BTP_CLIENTCONFIG", filepath.Join(dir, "config.json"))
+	detectBTP(ctx)
+
+	if ctx.BTPRegion != "eu10" {
+		t.Errorf("BTPRegion = %q, want %q", ctx.BTPRegion, "eu10")
+	}
+}
+
+func TestDetectBTP_SilentOnMissingConfig(t *testing.T) {
+	ctx := &ProjectContext{RawFiles: make(map[string]bool)}
+	t.Setenv("BTP_CLIENTCONFIG", "/nonexistent/config.json")
+	detectBTP(ctx)
+
+	if ctx.BTPSubaccount != "" {
+		t.Errorf("BTPSubaccount should be empty, got %q", ctx.BTPSubaccount)
+	}
+}
+
+func TestExtractBTPRegion(t *testing.T) {
+	tests := []struct {
+		subdomain string
+		want      string
+	}{
+		{"eu10-trial-abc123", "eu10"},
+		{"us10-mysubaccount", "us10"},
+		{"ap21-prod-xyz", "ap21"},
+		{"my-custom-subdomain", ""},
+		{"", ""},
+	}
+	for _, tt := range tests {
+		got := extractBTPRegion(tt.subdomain)
+		if got != tt.want {
+			t.Errorf("extractBTPRegion(%q) = %q, want %q", tt.subdomain, got, tt.want)
+		}
+	}
+}
+
+func TestParseCFTargetOutput(t *testing.T) {
+	output := `API endpoint:   https://api.cf.us10.hana.ondemand.com
+API version:    3.215.0
+user:           user@example.com
+org:            MyOrg
+space:          dev`
+
+	org, space, target := parseCFTargetOutput(output)
+	if org != "MyOrg" {
+		t.Errorf("org = %q, want %q", org, "MyOrg")
+	}
+	if space != "dev" {
+		t.Errorf("space = %q, want %q", space, "dev")
+	}
+	if target != "https://api.cf.us10.hana.ondemand.com" {
+		t.Errorf("target = %q, want %q", target, "https://api.cf.us10.hana.ondemand.com")
+	}
+}
+
+func TestParseCFTargetOutput_EmptyOnNoMatch(t *testing.T) {
+	org, space, target := parseCFTargetOutput("some random output")
+	if org != "" || space != "" || target != "" {
+		t.Error("should return empty strings on unrecognized output")
+	}
+}
+
+func TestHasBTPContext_TrueWhenBTPSet(t *testing.T) {
+	ctx := &ProjectContext{BTPSubaccount: "my-sub"}
+	if !ctx.HasBTPContext() {
+		t.Error("HasBTPContext should be true when BTPSubaccount is set")
+	}
+}
+
+func TestHasBTPContext_TrueWhenCFSet(t *testing.T) {
+	ctx := &ProjectContext{CFOrg: "MyOrg"}
+	if !ctx.HasBTPContext() {
+		t.Error("HasBTPContext should be true when CFOrg is set")
+	}
+}
+
+func TestHasBTPContext_FalseWhenEmpty(t *testing.T) {
+	ctx := &ProjectContext{}
+	if ctx.HasBTPContext() {
+		t.Error("HasBTPContext should be false when no BTP/CF fields set")
+	}
+}
+
+func TestBuildFacts_IncludesBTPAndCF(t *testing.T) {
+	ctx := &ProjectContext{
+		RawFiles:      make(map[string]bool),
+		BTPSubaccount: "trial-abc",
+		BTPRegion:     "eu10",
+		BTPIsTrial:    true,
+		CFOrg:         "MyOrg",
+		CFSpace:       "dev",
+		CFRegion:      "us10",
+	}
+	buildFacts(ctx)
+
+	var btpFact, cfFact *Fact
+	for i := range ctx.Facts {
+		if ctx.Facts[i].Key == "BTP subaccount" {
+			btpFact = &ctx.Facts[i]
+		}
+		if ctx.Facts[i].Key == "Cloud Foundry" {
+			cfFact = &ctx.Facts[i]
+		}
+	}
+	if btpFact == nil {
+		t.Fatal("missing BTP subaccount fact")
+	}
+	if btpFact.Value != "trial-abc (eu10, trial)" {
+		t.Errorf("BTP fact value = %q, want %q", btpFact.Value, "trial-abc (eu10, trial)")
+	}
+	if cfFact == nil {
+		t.Fatal("missing Cloud Foundry fact")
+	}
+	if cfFact.Value != "MyOrg/dev (us10)" {
+		t.Errorf("CF fact value = %q, want %q", cfFact.Value, "MyOrg/dev (us10)")
+	}
+}
+
+func TestBuildFacts_BTPWithoutRegion(t *testing.T) {
+	ctx := &ProjectContext{
+		RawFiles:      make(map[string]bool),
+		BTPSubaccount: "my-account",
+	}
+	buildFacts(ctx)
+
+	var btpFact *Fact
+	for i := range ctx.Facts {
+		if ctx.Facts[i].Key == "BTP subaccount" {
+			btpFact = &ctx.Facts[i]
+		}
+	}
+	if btpFact == nil {
+		t.Fatal("missing BTP subaccount fact")
+	}
+	if btpFact.Value != "my-account" {
+		t.Errorf("BTP fact value = %q, want %q", btpFact.Value, "my-account")
 	}
 }

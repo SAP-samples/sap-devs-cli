@@ -33,6 +33,7 @@ type ProjectInfo struct {
 	Type       string
 	CAPVersion string
 	Facts      []ProjectFact
+	BTPFacts   []ProjectFact
 }
 
 // ProjectFact is a single key/value pair detected from the project.

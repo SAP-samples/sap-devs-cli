@@ -194,6 +194,14 @@ func renderDynamic(d *DynamicContext) string {
 		}
 	}
 
+	// BTP environment (separate from project context)
+	if d.Project != nil && len(d.Project.BTPFacts) > 0 {
+		b.WriteString("\n**BTP Environment (detected):**\n")
+		for _, f := range d.Project.BTPFacts {
+			b.WriteString(fmt.Sprintf("- %s: %s\n", f.Key, f.Value))
+		}
+	}
+
 	// Wired MCP servers (omit if none)
 	for _, entry := range d.WiredMCPServers {
 		if len(entry.ServerIDs) > 0 {
