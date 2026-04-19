@@ -41,7 +41,12 @@ var learnSearchCmd = &cobra.Command{
 		}
 
 		w := tabwriter.NewWriter(cmd.OutOrStdout(), 0, 0, 2, ' ', 0)
-		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n", "#", "TYPE", "TITLE", "LEVEL", "TIME")
+		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n",
+				i18n.T(i18n.ActiveLang, "learn.col_num"),
+				i18n.T(i18n.ActiveLang, "learn.col_type"),
+				i18n.T(i18n.ActiveLang, "learn.col_title"),
+				i18n.T(i18n.ActiveLang, "learn.col_level"),
+				i18n.T(i18n.ActiveLang, "learn.col_time"))
 		for i, item := range results {
 			typeName := typeLabel(item.Type)
 			title := truncate(item.Title, 50)
@@ -60,11 +65,11 @@ var learnSearchCmd = &cobra.Command{
 func typeLabel(t learn.ItemType) string {
 	switch t {
 	case learn.ItemJourney:
-		return "Journey"
+		return i18n.T(i18n.ActiveLang, "learn.item.journey")
 	case learn.ItemTutorial:
-		return "Tutorial"
+		return i18n.T(i18n.ActiveLang, "learn.item.tutorial")
 	case learn.ItemMission:
-		return "Mission"
+		return i18n.T(i18n.ActiveLang, "learn.item.mission")
 	default:
 		return string(t)
 	}

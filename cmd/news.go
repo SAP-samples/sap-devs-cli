@@ -13,6 +13,7 @@ import (
 	"github.com/pkg/browser"
 	"github.com/spf13/cobra"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/community"
+	"github.tools.sap/developer-relations/sap-devs-cli/internal/i18n"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/news"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/youtube"
 )
@@ -27,7 +28,7 @@ const (
 
 var newsCmd = &cobra.Command{
 	Use:   "news",
-	Short: "Browse SAP Developer News episodes",
+	Short: i18n.T("en", "news.short"),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return newsListCmd.RunE(cmd, args)
 	},
@@ -37,11 +38,11 @@ var newsListN int
 
 var newsListCmd = &cobra.Command{
 	Use:   "list",
-	Short: "List recent SAP Developer News episodes",
+	Short: i18n.T("en", "news.list.short"),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		episodes, err := youtube.FetchPlaylist(newsPlaylistRSS)
 		if err != nil {
-			return fmt.Errorf("could not fetch SAP Developer News: %w", err)
+			return fmt.Errorf("%s: %w", i18n.T(i18n.ActiveLang, "news.error.fetch"), err)
 		}
 		posts, _ := community.FetchBlogPosts(newsCommunityRSS) // failure is silent
 		items := news.Correlate(episodes, posts)
@@ -53,7 +54,12 @@ var newsListCmd = &cobra.Command{
 		items = items[:n]
 
 		w := tabwriter.NewWriter(cmd.OutOrStdout(), 0, 0, 2, ' ', 0)
-		fmt.Fprintln(w, "#\tDATE\tTITLE\tVIDEO\tCOMMUNITY")
+		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n",
+			i18n.T(i18n.ActiveLang, "news.col_num"),
+			i18n.T(i18n.ActiveLang, "news.col_date"),
+			i18n.T(i18n.ActiveLang, "news.col_title"),
+			i18n.T(i18n.ActiveLang, "news.col_video"),
+			i18n.T(i18n.ActiveLang, "news.col_community"))
 		for i, item := range items {
 			com := "--"
 			if item.Community != nil {
@@ -64,9 +70,9 @@ var newsListCmd = &cobra.Command{
 		}
 		w.Flush()
 		fmt.Fprintln(cmd.OutOrStdout())
-		fmt.Fprintf(cmd.OutOrStdout(), "LinkedIn newsletter: %s\n", newsLinkedIn)
+		fmt.Fprintln(cmd.OutOrStdout(), i18n.Tf(i18n.ActiveLang, "news.list.linkedin", map[string]any{"URL": newsLinkedIn}))
 		if newsYTMusic != "" {
-			fmt.Fprintf(cmd.OutOrStdout(), "Listen on YouTube Music: %s\n", newsYTMusic)
+			fmt.Fprintln(cmd.OutOrStdout(), i18n.Tf(i18n.ActiveLang, "news.list.youtube_music", map[string]any{"URL": newsYTMusic}))
 		}
 		return nil
 	},
@@ -74,14 +80,14 @@ var newsListCmd = &cobra.Command{
 
 var newsLatestCmd = &cobra.Command{
 	Use:   "latest",
-	Short: "Open the most recent SAP Developer News episode in the browser",
+	Short: i18n.T("en", "news.latest.short"),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		episodes, err := youtube.FetchPlaylist(newsPlaylistRSS)
 		if err != nil {
-			return fmt.Errorf("could not fetch SAP Developer News: %w", err)
+			return fmt.Errorf("%s: %w", i18n.T(i18n.ActiveLang, "news.error.fetch"), err)
 		}
 		if len(episodes) == 0 {
-			return fmt.Errorf("no episodes found")
+			return fmt.Errorf("%s", i18n.T(i18n.ActiveLang, "news.error.no_episodes"))
 		}
 		if err := browser.OpenURL(episodes[0].URL); err != nil {
 			fmt.Fprintln(cmd.OutOrStdout(), episodes[0].URL)
@@ -92,19 +98,19 @@ var newsLatestCmd = &cobra.Command{
 
 var newsOpenCmd = &cobra.Command{
 	Use:   "open <id>",
-	Short: "Open a specific episode in the browser",
+	Short: i18n.T("en", "news.open.short"),
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		id, err := strconv.Atoi(args[0])
 		if err != nil || id < 1 {
-			return fmt.Errorf("id must be a positive integer (run 'news list' to see IDs)")
+			return fmt.Errorf("%s", i18n.T(i18n.ActiveLang, "news.error.invalid_id"))
 		}
 		episodes, err := youtube.FetchPlaylist(newsPlaylistRSS)
 		if err != nil {
-			return fmt.Errorf("could not fetch SAP Developer News: %w", err)
+			return fmt.Errorf("%s: %w", i18n.T(i18n.ActiveLang, "news.error.fetch"), err)
 		}
 		if id > len(episodes) {
-			return fmt.Errorf("id %d out of range (only %d episodes available)", id, len(episodes))
+			return fmt.Errorf("%s", i18n.Tf(i18n.ActiveLang, "news.error.id_range", map[string]any{"ID": id, "Count": len(episodes)}))
 		}
 		ep := episodes[id-1]
 		if err := browser.OpenURL(ep.URL); err != nil {
@@ -116,13 +122,13 @@ var newsOpenCmd = &cobra.Command{
 
 var newsSearchCmd = &cobra.Command{
 	Use:   "search <query>",
-	Short: "Search SAP Developer News episodes by title or description",
+	Short: i18n.T("en", "news.search.short"),
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		q := strings.ToLower(args[0])
 		episodes, err := youtube.FetchPlaylist(newsPlaylistRSS)
 		if err != nil {
-			return fmt.Errorf("could not fetch SAP Developer News: %w", err)
+			return fmt.Errorf("%s: %w", i18n.T(i18n.ActiveLang, "news.error.fetch"), err)
 		}
 		var matched []youtube.Episode
 		for _, ep := range episodes {
@@ -132,11 +138,14 @@ var newsSearchCmd = &cobra.Command{
 			}
 		}
 		if len(matched) == 0 {
-			fmt.Fprintf(cmd.OutOrStdout(), "No episodes found matching %q\n", args[0])
+			fmt.Fprintln(cmd.OutOrStdout(), i18n.Tf(i18n.ActiveLang, "news.search.no_results", map[string]any{"Query": args[0]}))
 			return nil
 		}
 		w := tabwriter.NewWriter(cmd.OutOrStdout(), 0, 0, 2, ' ', 0)
-		fmt.Fprintln(w, "DATE\tTITLE\tURL")
+		fmt.Fprintf(w, "%s\t%s\t%s\n",
+			i18n.T(i18n.ActiveLang, "news.col_date"),
+			i18n.T(i18n.ActiveLang, "news.col_title"),
+			i18n.T(i18n.ActiveLang, "news.col_url"))
 		for _, ep := range matched {
 			fmt.Fprintf(w, "%s\t%s\t%s\n", ep.Published.Format("2006-01-02"), ep.Title, ep.URL)
 		}
@@ -149,32 +158,32 @@ var newsReadPlain bool
 
 var newsReadCmd = &cobra.Command{
 	Use:   "read <id>",
-	Short: "Read the SAP Community blog post for an episode",
+	Short: i18n.T("en", "news.read.short"),
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		id, err := strconv.Atoi(args[0])
 		if err != nil || id < 1 {
-			return fmt.Errorf("id must be a positive integer (run 'news list' to see IDs)")
+			return fmt.Errorf("%s", i18n.T(i18n.ActiveLang, "news.error.invalid_id"))
 		}
 		episodes, err := youtube.FetchPlaylist(newsPlaylistRSS)
 		if err != nil {
-			return fmt.Errorf("could not fetch SAP Developer News: %w", err)
+			return fmt.Errorf("%s: %w", i18n.T(i18n.ActiveLang, "news.error.fetch"), err)
 		}
 		if id > len(episodes) {
-			return fmt.Errorf("id %d out of range (only %d episodes available)", id, len(episodes))
+			return fmt.Errorf("%s", i18n.Tf(i18n.ActiveLang, "news.error.id_range", map[string]any{"ID": id, "Count": len(episodes)}))
 		}
 		posts, err := community.FetchBlogPosts(newsCommunityRSS)
 		if err != nil {
-			return fmt.Errorf("could not fetch Community posts: %w", err)
+			return fmt.Errorf("%s: %w", i18n.T(i18n.ActiveLang, "news.error.fetch_community"), err)
 		}
 		items := news.Correlate(episodes, posts)
 		item := items[id-1]
 		if item.Community == nil {
-			return fmt.Errorf("no SAP Community post found for episode %d", id)
+			return fmt.Errorf("%s", i18n.Tf(i18n.ActiveLang, "news.error.no_community_post", map[string]any{"ID": id}))
 		}
 		content, err := community.FetchPostContent(item.Community.URL)
 		if err != nil {
-			return fmt.Errorf("could not fetch post content: %w", err)
+			return fmt.Errorf("%s: %w", i18n.T(i18n.ActiveLang, "news.error.fetch_content"), err)
 		}
 		if newsReadPlain {
 			fmt.Fprintln(cmd.OutOrStdout(), content)
@@ -212,12 +221,12 @@ func fridayHookMessage(day time.Weekday) string {
 	if day != time.Friday {
 		return ""
 	}
-	return "📺 It's Friday — a new SAP Developer News episode is likely out!\n\nWould you like me to open the latest episode? Run `sap-devs news latest` or just say yes."
+	return i18n.T(i18n.ActiveLang, "news.hook.friday_message")
 }
 
 var newsHookCmd = &cobra.Command{
 	Use:    "hook",
-	Short:  "Print a Friday Developer News reminder (used by session-start hook)",
+	Short:  i18n.T("en", "news.hook.short"),
 	Hidden: true,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if msg := fridayHookMessage(time.Now().Weekday()); msg != "" {

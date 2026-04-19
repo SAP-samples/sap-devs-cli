@@ -74,11 +74,16 @@ var learnPathListCmd = &cobra.Command{
 		}
 
 		w := tabwriter.NewWriter(cmd.OutOrStdout(), 0, 0, 2, ' ', 0)
-		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n", "NAME", "LEVEL", "STEPS", "PACK", "SOURCE")
-		for _, p := range allPaths {
-			source := "curated"
-			if p.Generated {
-				source = "auto"
+		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n",
+				i18n.T(i18n.ActiveLang, "learn.path.col_name"),
+				i18n.T(i18n.ActiveLang, "learn.path.col_level"),
+				i18n.T(i18n.ActiveLang, "learn.path.col_steps"),
+				i18n.T(i18n.ActiveLang, "learn.path.col_pack"),
+				i18n.T(i18n.ActiveLang, "learn.path.col_source"))
+			for _, p := range allPaths {
+				source := i18n.T(i18n.ActiveLang, "learn.path.source.curated")
+				if p.Generated {
+					source = i18n.T(i18n.ActiveLang, "learn.path.source.auto")
 			}
 			level := titleCaseLevel(p.Level)
 			if level == "" {
@@ -123,9 +128,9 @@ var learnPathShowCmd = &cobra.Command{
 			return fmt.Errorf("%s", i18n.Tf(i18n.ActiveLang, "learn.path_not_found", map[string]any{"ID": args[0]}))
 		}
 
-		source := "curated"
+		source := i18n.T(i18n.ActiveLang, "learn.path.source.curated")
 		if p.Generated {
-			source = "auto"
+			source = i18n.T(i18n.ActiveLang, "learn.path.source.auto")
 		}
 
 		var b strings.Builder
@@ -200,15 +205,15 @@ var learnPathOpenCmd = &cobra.Command{
 		for _, step := range p.Steps {
 			if step.Item != nil && step.Item.URL != "" {
 				if err := browser.OpenURL(step.Item.URL); err != nil {
-					fmt.Fprintf(cmd.OutOrStdout(), "Could not open browser. Visit: %s\n", step.Item.URL)
-					return nil
-				}
-				fmt.Fprintf(cmd.OutOrStdout(), "Opening %s\n", step.Item.URL)
+						fmt.Fprintln(cmd.OutOrStdout(), i18n.Tf(i18n.ActiveLang, "learn.path.open.browser_fail", map[string]any{"URL": step.Item.URL}))
+						return nil
+					}
+					fmt.Fprintln(cmd.OutOrStdout(), i18n.Tf(i18n.ActiveLang, "learn.path.open.opening", map[string]any{"URL": step.Item.URL}))
 				return nil
 			}
 		}
 
-		fmt.Fprintln(cmd.OutOrStdout(), "No resolvable URLs in this path.")
+		fmt.Fprintln(cmd.OutOrStdout(), i18n.T(i18n.ActiveLang, "learn.path.no_urls"))
 		return nil
 	},
 }

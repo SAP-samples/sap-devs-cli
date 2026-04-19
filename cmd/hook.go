@@ -17,7 +17,7 @@ import (
 
 var hookCmd = &cobra.Command{
 	Use:   "hook",
-	Short: "Manage AI tool lifecycle hooks from pack definitions",
+	Short: i18n.T("en", "hook.short"),
 }
 
 // --- hook list ---
@@ -26,7 +26,7 @@ var hookListAll bool
 
 var hookListCmd = &cobra.Command{
 	Use:   "list",
-	Short: "List available hooks",
+	Short: i18n.T("en", "hook.list.short"),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		loader, err := newContentLoader()
 		if err != nil {
@@ -48,14 +48,14 @@ var hookListCmd = &cobra.Command{
 				return err2
 			}
 			if profileCfg.ID == "" {
-				return fmt.Errorf("no active profile — run `sap-devs profile set`")
+				return fmt.Errorf("%s", i18n.T(i18n.ActiveLang, "hook.error.no_profile"))
 			}
 			activeProfile, err2 := loader.FindProfile(profileCfg.ID)
 			if err2 != nil {
 				return err2
 			}
 			if activeProfile == nil {
-				return fmt.Errorf("profile %q not found", profileCfg.ID)
+				return fmt.Errorf("%s", i18n.Tf(i18n.ActiveLang, "hook.error.profile_not_found", map[string]any{"ID": profileCfg.ID}))
 			}
 			packs, err = loader.LoadPacks(activeProfile, i18n.ActiveLang)
 			if err != nil {
@@ -64,10 +64,15 @@ var hookListCmd = &cobra.Command{
 		}
 		hooks := content.FlattenHooks(packs)
 		if len(hooks) == 0 {
-			fmt.Fprintln(cmd.OutOrStdout(), "No hooks found.")
+			fmt.Fprintln(cmd.OutOrStdout(), i18n.T(i18n.ActiveLang, "hook.no_hooks"))
 			return nil
 		}
-		fmt.Fprintf(cmd.OutOrStdout(), "%-30s %-10s %-16s %-32s %s\n", "ID", "PACK", "EVENT", "COMMAND", "TOOLS")
+		fmt.Fprintf(cmd.OutOrStdout(), "%-30s %-10s %-16s %-32s %s\n",
+			i18n.T(i18n.ActiveLang, "hook.col_id"),
+			i18n.T(i18n.ActiveLang, "hook.col_pack"),
+			i18n.T(i18n.ActiveLang, "hook.col_event"),
+			i18n.T(i18n.ActiveLang, "hook.col_command"),
+			i18n.T(i18n.ActiveLang, "hook.col_tools"))
 		fmt.Fprintln(cmd.OutOrStdout(), strings.Repeat("-", 95))
 		for _, h := range hooks {
 			fmt.Fprintf(cmd.OutOrStdout(), "%-30s %-10s %-16s %-32s %s\n",
@@ -81,7 +86,7 @@ var hookListCmd = &cobra.Command{
 
 var hookStatusCmd = &cobra.Command{
 	Use:   "status",
-	Short: "Show which hooks are installed in your AI tool configs",
+	Short: i18n.T("en", "hook.status.short"),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		allAdapters, err := loadAdapters()
 		if err != nil {
@@ -97,11 +102,15 @@ var hookStatusCmd = &cobra.Command{
 		}
 		hooks := content.FlattenHooks(packs)
 		if len(hooks) == 0 {
-			fmt.Fprintln(cmd.OutOrStdout(), "No hooks found.")
+			fmt.Fprintln(cmd.OutOrStdout(), i18n.T(i18n.ActiveLang, "hook.no_hooks"))
 			return nil
 		}
 
-		fmt.Fprintf(cmd.OutOrStdout(), "%-30s %-10s %-14s %s\n", "ID", "PACK", "ADAPTER", "STATUS")
+		fmt.Fprintf(cmd.OutOrStdout(), "%-30s %-10s %-14s %s\n",
+			i18n.T(i18n.ActiveLang, "hook.col_id"),
+			i18n.T(i18n.ActiveLang, "hook.col_pack"),
+			i18n.T(i18n.ActiveLang, "hook.col_adapter"),
+			i18n.T(i18n.ActiveLang, "hook.col_status"))
 		fmt.Fprintln(cmd.OutOrStdout(), strings.Repeat("-", 65))
 
 		for _, h := range hooks {
@@ -115,9 +124,9 @@ var hookStatusCmd = &cobra.Command{
 					continue
 				}
 				installed, err := adapter.HookConfigInstalled(path, a.HookConfig.Key, h.Command)
-				status := "✗ not installed"
+				status := i18n.T(i18n.ActiveLang, "hook.status.not_installed")
 				if err == nil && installed {
-					status = "✓ installed"
+					status = i18n.T(i18n.ActiveLang, "hook.status.installed")
 				}
 				fmt.Fprintf(cmd.OutOrStdout(), "%-30s %-10s %-14s %s\n", h.ID, h.PackID, toolID, status)
 			}
@@ -132,7 +141,7 @@ var hookInstallDryRun bool
 
 var hookInstallCmd = &cobra.Command{
 	Use:   "install [id]",
-	Short: "Wire a hook into your AI tool configs",
+	Short: i18n.T("en", "hook.install.short"),
 	Args:  cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		allAdapters, err := loadAdapters()
@@ -158,7 +167,7 @@ func hookInstallOne(loader *content.ContentLoader, allAdapters []adapter.Adapter
 	}
 	h := content.FindHookDef(packs, id)
 	if h == nil {
-		return fmt.Errorf("hook %q not found", id)
+		return fmt.Errorf("%s", i18n.Tf(i18n.ActiveLang, "hook.error.not_found", map[string]any{"ID": id}))
 	}
 	toolSet := make(map[string]bool)
 	for _, t := range h.Tools {
@@ -166,10 +175,10 @@ func hookInstallOne(loader *content.ContentLoader, allAdapters []adapter.Adapter
 	}
 	detected := detectHookAdapters(allAdapters, toolSet)
 	if len(detected) == 0 {
-		return fmt.Errorf("no detected AI tools support hook %q (tools: %s)", id, strings.Join(h.Tools, ", "))
+		return fmt.Errorf("%s", i18n.Tf(i18n.ActiveLang, "hook.error.no_tools", map[string]any{"ID": id, "Tools": strings.Join(h.Tools, ", ")}))
 	}
 	if len(detected) > 1 {
-		fmt.Printf("Detected AI tools for hook %q:\n", id)
+		fmt.Println(i18n.Tf(i18n.ActiveLang, "hook.detected_header", map[string]any{"ID": id}))
 		for i, a := range detected {
 			p, _ := adapter.ExpandHome(a.HookConfig.Path)
 			fmt.Printf("  %d. %s  (%s)\n", i+1, a.Name, p)
@@ -185,10 +194,10 @@ func hookInstallOne(loader *content.ContentLoader, allAdapters []adapter.Adapter
 			return err
 		}
 		if err := adapter.WriteHookConfig(path, a.HookConfig.Key, h.Command, hookInstallDryRun); err != nil {
-			return fmt.Errorf("install hook to %s: %w", a.Name, err)
+			return fmt.Errorf("%s", i18n.Tf(i18n.ActiveLang, "hook.error.install", map[string]any{"Name": a.Name, "Err": err}))
 		}
 		if !hookInstallDryRun {
-			fmt.Printf("Registered hook %q in %s\n", h.ID, path)
+			fmt.Println(i18n.Tf(i18n.ActiveLang, "hook.install.registered", map[string]any{"ID": h.ID, "Path": path}))
 		}
 	}
 	return nil
@@ -204,14 +213,14 @@ func hookInstallAll(loader *content.ContentLoader, allAdapters []adapter.Adapter
 		return err
 	}
 	if profileCfg.ID == "" {
-		return fmt.Errorf("no active profile — run `sap-devs profile set`")
+		return fmt.Errorf("%s", i18n.T(i18n.ActiveLang, "hook.error.no_profile"))
 	}
 	activeProfile, err := loader.FindProfile(profileCfg.ID)
 	if err != nil {
 		return err
 	}
 	if activeProfile == nil {
-		return fmt.Errorf("profile %q not found", profileCfg.ID)
+		return fmt.Errorf("%s", i18n.Tf(i18n.ActiveLang, "hook.error.profile_not_found", map[string]any{"ID": profileCfg.ID}))
 	}
 	packs, err := loader.LoadPacks(activeProfile, i18n.ActiveLang)
 	if err != nil {
@@ -219,7 +228,7 @@ func hookInstallAll(loader *content.ContentLoader, allAdapters []adapter.Adapter
 	}
 	hooks := content.FlattenHooks(packs)
 	if len(hooks) == 0 {
-		return fmt.Errorf("no hooks to install for active profile")
+		return fmt.Errorf("%s", i18n.T(i18n.ActiveLang, "hook.error.no_hooks_profile"))
 	}
 	toolSet := make(map[string]bool)
 	for _, h := range hooks {
@@ -229,9 +238,9 @@ func hookInstallAll(loader *content.ContentLoader, allAdapters []adapter.Adapter
 	}
 	detected := detectHookAdapters(allAdapters, toolSet)
 	if len(detected) == 0 {
-		return fmt.Errorf("no detected AI tools support these hooks")
+		return fmt.Errorf("%s", i18n.T(i18n.ActiveLang, "hook.error.no_tools_profile"))
 	}
-	fmt.Println("Detected AI tools:")
+	fmt.Println(i18n.T(i18n.ActiveLang, "hook.detected_header_all"))
 	for i, a := range detected {
 		p, _ := adapter.ExpandHome(a.HookConfig.Path)
 		fmt.Printf("  %d. %s  (%s)\n", i+1, a.Name, p)
@@ -251,16 +260,16 @@ func hookInstallAll(loader *content.ContentLoader, allAdapters []adapter.Adapter
 				return err
 			}
 			if err := adapter.WriteHookConfig(path, a.HookConfig.Key, h.Command, hookInstallDryRun); err != nil {
-				return fmt.Errorf("install hook %s to %s: %w", h.ID, a.Name, err)
+				return fmt.Errorf("%s", i18n.Tf(i18n.ActiveLang, "hook.error.install_named", map[string]any{"ID": h.ID, "Name": a.Name, "Err": err}))
 			}
 			if !hookInstallDryRun {
-				fmt.Printf("Registered hook %q in %s\n", h.ID, path)
+				fmt.Println(i18n.Tf(i18n.ActiveLang, "hook.install.registered", map[string]any{"ID": h.ID, "Path": path}))
 				installed++
 			}
 		}
 	}
 	if !hookInstallDryRun {
-		fmt.Printf("Installed %d hook(s) into %d tool(s).\n", installed, len(chosen))
+		fmt.Println(i18n.Tf(i18n.ActiveLang, "hook.install.summary", map[string]any{"Hooks": installed, "Tools": len(chosen)}))
 	}
 	return nil
 }
@@ -269,7 +278,7 @@ func hookInstallAll(loader *content.ContentLoader, allAdapters []adapter.Adapter
 
 var hookUninstallCmd = &cobra.Command{
 	Use:   "uninstall [id]",
-	Short: "Remove a hook from your AI tool configs",
+	Short: i18n.T("en", "hook.uninstall.short"),
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		allAdapters, err := loadAdapters()
@@ -286,7 +295,7 @@ var hookUninstallCmd = &cobra.Command{
 		}
 		h := content.FindHookDef(packs, args[0])
 		if h == nil {
-			return fmt.Errorf("hook %q not found", args[0])
+			return fmt.Errorf("%s", i18n.Tf(i18n.ActiveLang, "hook.error.not_found", map[string]any{"ID": args[0]}))
 		}
 		for _, toolID := range h.Tools {
 			a := findAdapterByID(allAdapters, toolID)
@@ -298,9 +307,9 @@ var hookUninstallCmd = &cobra.Command{
 				return err
 			}
 			if err := adapter.RemoveHookConfig(path, a.HookConfig.Key, h.Command, false); err != nil {
-				return fmt.Errorf("uninstall hook from %s: %w", a.Name, err)
+				return fmt.Errorf("%s", i18n.Tf(i18n.ActiveLang, "hook.error.uninstall", map[string]any{"Name": a.Name, "Err": err}))
 			}
-			fmt.Printf("Removed hook %q from %s\n", h.ID, path)
+			fmt.Println(i18n.Tf(i18n.ActiveLang, "hook.uninstall.removed", map[string]any{"ID": h.ID, "Path": path}))
 		}
 		return nil
 	},
@@ -331,7 +340,7 @@ func pickHookAdapters(adapters []adapter.Adapter) ([]adapter.Adapter, error) {
 	if len(adapters) == 1 {
 		return adapters, nil
 	}
-	fmt.Print("Install into (comma-separated numbers or 'all'): ")
+	fmt.Print(i18n.T(i18n.ActiveLang, "hook.prompt"))
 	reader := bufio.NewReader(os.Stdin)
 	line, err := reader.ReadString('\n')
 	if err != nil {
@@ -349,12 +358,12 @@ func pickHookAdapters(adapters []adapter.Adapter) ([]adapter.Adapter, error) {
 		}
 		n, err := strconv.Atoi(part)
 		if err != nil || n < 1 || n > len(adapters) {
-			return nil, fmt.Errorf("invalid selection: %q", part)
+			return nil, fmt.Errorf("%s", i18n.Tf(i18n.ActiveLang, "hook.error.invalid_selection", map[string]any{"Value": part}))
 		}
 		chosen = append(chosen, adapters[n-1])
 	}
 	if len(chosen) == 0 {
-		return nil, fmt.Errorf("no adapters selected")
+		return nil, fmt.Errorf("%s", i18n.T(i18n.ActiveLang, "hook.error.no_selection"))
 	}
 	return chosen, nil
 }

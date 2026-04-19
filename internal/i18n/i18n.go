@@ -67,11 +67,23 @@ func resolveTag(s string) string {
 	return "en"
 }
 
-// stripTag removes region and encoding suffixes: "de_AT.UTF-8" → "de".
+// stripTag normalises a locale string into a catalog lookup key.
+// It lowercases the input, strips encoding suffixes (.UTF-8, etc.),
+// and converts underscore-separated region tags to hyphenated form
+// when a matching regional catalog exists (e.g. "pt_BR" → "pt-br").
+// Falls back to the base language if no regional catalog is found
+// (e.g. "de_AT" → "de").
 func stripTag(s string) string {
 	s = strings.ToLower(s)
-	if i := strings.IndexAny(s, "_."); i > 0 {
+	if i := strings.IndexByte(s, '.'); i > 0 {
 		s = s[:i]
+	}
+	if i := strings.IndexByte(s, '_'); i > 0 {
+		regional := s[:i] + "-" + s[i+1:]
+		if _, ok := catalogs[regional]; ok {
+			return regional
+		}
+		return s[:i]
 	}
 	return s
 }

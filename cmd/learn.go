@@ -82,7 +82,11 @@ var learnRecommendCmd = &cobra.Command{
 		if len(recs.Journeys) > 0 {
 			fmt.Fprintln(cmd.OutOrStdout(), i18n.T(i18n.ActiveLang, "learn.section_journeys"))
 			w := tabwriter.NewWriter(cmd.OutOrStdout(), 0, 0, 2, ' ', 0)
-			fmt.Fprintf(w, "  %s\t%s\t%s\t%s\n", "FEATURED", "TITLE", "LEVEL", "DURATION")
+			fmt.Fprintf(w, "  %s\t%s\t%s\t%s\n",
+					i18n.T(i18n.ActiveLang, "learn.col_featured"),
+					i18n.T(i18n.ActiveLang, "learn.col_title"),
+					i18n.T(i18n.ActiveLang, "learn.col_level"),
+					i18n.T(i18n.ActiveLang, "learn.col_duration"))
 			for _, item := range recs.Journeys {
 				feat := ""
 				if item.Featured {
@@ -101,7 +105,11 @@ var learnRecommendCmd = &cobra.Command{
 			}
 			fmt.Fprintln(cmd.OutOrStdout(), i18n.T(i18n.ActiveLang, "learn.section_tutorials"))
 			w := tabwriter.NewWriter(cmd.OutOrStdout(), 0, 0, 2, ' ', 0)
-			fmt.Fprintf(w, "  %s\t%s\t%s\t%s\n", "FEATURED", "TITLE", "LEVEL", "TIME")
+			fmt.Fprintf(w, "  %s\t%s\t%s\t%s\n",
+					i18n.T(i18n.ActiveLang, "learn.col_featured"),
+					i18n.T(i18n.ActiveLang, "learn.col_title"),
+					i18n.T(i18n.ActiveLang, "learn.col_level"),
+					i18n.T(i18n.ActiveLang, "learn.col_time"))
 			for _, item := range recs.Tutorials {
 				feat := ""
 				if item.Featured {
@@ -120,7 +128,10 @@ var learnRecommendCmd = &cobra.Command{
 			}
 			fmt.Fprintln(cmd.OutOrStdout(), i18n.T(i18n.ActiveLang, "learn.section_missions"))
 			w := tabwriter.NewWriter(cmd.OutOrStdout(), 0, 0, 2, ' ', 0)
-			fmt.Fprintf(w, "  %s\t%s\t%s\n", "FEATURED", "TITLE", "EFFORT")
+			fmt.Fprintf(w, "  %s\t%s\t%s\n",
+					i18n.T(i18n.ActiveLang, "learn.col_featured"),
+					i18n.T(i18n.ActiveLang, "learn.col_title"),
+					i18n.T(i18n.ActiveLang, "learn.col_effort"))
 			for _, item := range recs.Missions {
 				feat := ""
 				if item.Featured {
@@ -209,11 +220,11 @@ func truncate(s string, max int) string {
 func titleCaseLevel(level string) string {
 	switch level {
 	case "beginner":
-		return "Beginner"
+		return i18n.T(i18n.ActiveLang, "learn.level.beginner")
 	case "intermediate":
-		return "Intermediate"
+		return i18n.T(i18n.ActiveLang, "learn.level.intermediate")
 	case "advanced":
-		return "Advanced"
+		return i18n.T(i18n.ActiveLang, "learn.level.advanced")
 	default:
 		return level
 	}
@@ -222,11 +233,11 @@ func titleCaseLevel(level string) string {
 func effortLabel(level string) string {
 	switch level {
 	case "beginner":
-		return "Easy"
+		return i18n.T(i18n.ActiveLang, "learn.effort.easy")
 	case "intermediate":
-		return "Medium"
+		return i18n.T(i18n.ActiveLang, "learn.effort.medium")
 	case "advanced":
-		return "Hard"
+		return i18n.T(i18n.ActiveLang, "learn.effort.hard")
 	default:
 		return level
 	}

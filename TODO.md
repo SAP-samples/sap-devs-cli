@@ -71,11 +71,7 @@ Unsigned `.exe` files downloaded from the internet are blocked or warned about b
 
 ---
 
-### Multi-lingual content packs
-
-i18n infrastructure is complete and all commands are wired (`en` + `de` catalogs). Remaining work:
-
-- Add more language catalogs beyond `de` — `ja`, `fr`, `es`, `pt` are good candidates (add a JSON file to `internal/i18n/catalogs/`)
+### Multi-lingual content packs - DONE ✔️
 
 ---
 
@@ -118,9 +114,9 @@ Allows for the editing of content checked out from Git (for contributions to the
 Phase 2 - Graphical UI (Optional) to edit the files.
 A cross platform graphical UI in the SAP Fiori design language could provide a more intuitive and visually appealing way to edit content files, leveraging familiar SAP Fiori components and patterns.
 
----
-
-### `sap-devs learn` - DONE ✔️
+Phase 3 - Version of both editors that also support work on the config of the tool.
+This phase would allow users to edit the configuration files of the tool itself, providing a unified interface for managing both content and configuration. This could include settings like background sync intervals, language preferences, and other user-specific options.
+This phase would also include the ability to edit the tool's configuration files, such as `config.yaml`, allowing users to customize settings like background sync intervals, language preferences, and other user-specific options directly from the editor.
 
 ---
 

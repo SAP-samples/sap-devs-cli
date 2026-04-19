@@ -58,7 +58,7 @@ var learningListCmd = &cobra.Command{
 
 		index, ok := learning.LoadIndex(paths.CacheDir, learning.CacheTTL)
 		if !ok {
-			return fmt.Errorf("learning index not cached — run 'sap-devs sync' first")
+			return fmt.Errorf("%s", i18n.T(i18n.ActiveLang, "learning.error.index_not_cached"))
 		}
 
 		refs := content.FlattenLearningRefs(packs)
@@ -80,7 +80,7 @@ var learningListCmd = &cobra.Command{
 		}
 
 		if len(journeys) == 0 {
-			fmt.Fprintln(cmd.OutOrStdout(), "No learning journeys found.")
+			fmt.Fprintln(cmd.OutOrStdout(), i18n.T(i18n.ActiveLang, "learning.list.no_journeys"))
 			return nil
 		}
 
@@ -98,7 +98,11 @@ var learningListCmd = &cobra.Command{
 		}
 
 		w := tabwriter.NewWriter(cmd.OutOrStdout(), 0, 0, 2, ' ', 0)
-		fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", "FEATURED", "TITLE", "LEVEL", "DURATION")
+		fmt.Fprintf(w, "%s\t%s\t%s\t%s\n",
+				i18n.T(i18n.ActiveLang, "learning.col_featured"),
+				i18n.T(i18n.ActiveLang, "learning.col_title"),
+				i18n.T(i18n.ActiveLang, "learning.col_level"),
+				i18n.T(i18n.ActiveLang, "learning.col_duration"))
 		for _, j := range journeys {
 			featured := ""
 			if featuredSlugs[j.Slug] {
@@ -153,7 +157,7 @@ var learningSearchCmd = &cobra.Command{
 		}
 
 		if len(results) == 0 {
-			fmt.Fprintf(cmd.OutOrStdout(), "No learning journeys found for %q.\n", args[0])
+			fmt.Fprintln(cmd.OutOrStdout(), i18n.Tf(i18n.ActiveLang, "learning.search.no_results", map[string]any{"Query": args[0]}))
 			return nil
 		}
 
@@ -164,7 +168,11 @@ var learningSearchCmd = &cobra.Command{
 		results = results[:n]
 
 		w := tabwriter.NewWriter(cmd.OutOrStdout(), 0, 0, 2, ' ', 0)
-		fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", "#", "TITLE", "LEVEL", "DURATION")
+		fmt.Fprintf(w, "%s\t%s\t%s\t%s\n",
+				i18n.T(i18n.ActiveLang, "learning.col_num"),
+				i18n.T(i18n.ActiveLang, "learning.col_title"),
+				i18n.T(i18n.ActiveLang, "learning.col_level"),
+				i18n.T(i18n.ActiveLang, "learning.col_duration"))
 		for i, j := range results {
 			level := formatLevel(j.Level)
 			duration := formatDuration(j.DurationHours)
@@ -191,12 +199,12 @@ var learningShowCmd = &cobra.Command{
 
 		index, ok := learning.LoadIndex(paths.CacheDir, learning.CacheTTL)
 		if !ok {
-			return fmt.Errorf("learning index not cached — run 'sap-devs sync' first")
+			return fmt.Errorf("%s", i18n.T(i18n.ActiveLang, "learning.error.index_not_cached"))
 		}
 
 		j := learning.FindBySlug(index, args[0])
 		if j == nil {
-			return fmt.Errorf("learning journey %q not found", args[0])
+			return fmt.Errorf("%s", i18n.Tf(i18n.ActiveLang, "learning.error.journey_not_found", map[string]any{"Slug": args[0]}))
 		}
 
 		var b strings.Builder
@@ -207,11 +215,11 @@ var learningShowCmd = &cobra.Command{
 			b.WriteString(fmt.Sprintf("**Roles:** %s\n\n", strings.Join(j.Roles, ", ")))
 		}
 		if j.Description != "" {
-			b.WriteString("## Description\n\n")
-			b.WriteString(j.Description + "\n\n")
-		}
-		if j.Objectives != "" {
-			b.WriteString("## Learning Objectives\n\n")
+				b.WriteString(fmt.Sprintf("## %s\n\n", i18n.T(i18n.ActiveLang, "learning.show.section_description")))
+				b.WriteString(j.Description + "\n\n")
+			}
+			if j.Objectives != "" {
+				b.WriteString(fmt.Sprintf("## %s\n\n", i18n.T(i18n.ActiveLang, "learning.show.section_objectives")))
 			b.WriteString(htmlToMarkdown(j.Objectives) + "\n\n")
 		}
 		b.WriteString(fmt.Sprintf("**URL:** %s\n", j.URL))
@@ -238,10 +246,10 @@ var learningOpenCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		url := learning.BaseURL + args[0]
 		if err := browser.OpenURL(url); err != nil {
-			fmt.Fprintf(cmd.OutOrStdout(), "Could not open browser. Visit: %s\n", url)
+			fmt.Fprintln(cmd.OutOrStdout(), i18n.Tf(i18n.ActiveLang, "learning.open.browser_fail", map[string]any{"URL": url}))
 			return nil
 		}
-		fmt.Fprintf(cmd.OutOrStdout(), "Opening %s\n", url)
+		fmt.Fprintln(cmd.OutOrStdout(), i18n.Tf(i18n.ActiveLang, "learning.open.opening", map[string]any{"URL": url}))
 		return nil
 	},
 }
@@ -337,11 +345,11 @@ func filterLearningByPack(journeys []learning.LearningJourney, refs []content.Le
 func formatLevel(level string) string {
 	switch strings.ToUpper(level) {
 	case "BEGINNER":
-		return "Beginner"
+		return i18n.T(i18n.ActiveLang, "learn.level.beginner")
 	case "INTERMEDIATE":
-		return "Intermediate"
+		return i18n.T(i18n.ActiveLang, "learn.level.intermediate")
 	case "ADVANCED":
-		return "Advanced"
+		return i18n.T(i18n.ActiveLang, "learn.level.advanced")
 	default:
 		return level
 	}
