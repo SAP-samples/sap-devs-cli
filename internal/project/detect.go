@@ -141,6 +141,11 @@ func detectDefaultEnv(cwd string, ctx *ProjectContext) {
 	}
 }
 
+// HasBTPContext reports whether any BTP or Cloud Foundry target is detected.
+func (ctx *ProjectContext) HasBTPContext() bool {
+	return ctx.BTPSubaccount != "" || ctx.CFOrg != ""
+}
+
 // RebuildFacts re-derives the Facts slice from the current typed fields.
 // Call this after enriching LatestCAP from pack metadata.
 func (ctx *ProjectContext) RebuildFacts() {
@@ -188,6 +193,26 @@ func buildFacts(ctx *ProjectContext) {
 	}
 	if ctx.Auth != "" {
 		ctx.Facts = append(ctx.Facts, Fact{Key: "Auth", Value: "XSUAA (xs-security.json detected)"})
+	}
+	if ctx.BTPSubaccount != "" {
+		val := ctx.BTPSubaccount
+		if ctx.BTPRegion != "" {
+			val += " (" + ctx.BTPRegion
+			if ctx.BTPIsTrial {
+				val += ", trial"
+			}
+			val += ")"
+		} else if ctx.BTPIsTrial {
+			val += " (trial)"
+		}
+		ctx.Facts = append(ctx.Facts, Fact{Key: "BTP subaccount", Value: val})
+	}
+	if ctx.CFOrg != "" {
+		val := ctx.CFOrg + "/" + ctx.CFSpace
+		if ctx.CFRegion != "" {
+			val += " (" + ctx.CFRegion + ")"
+		}
+		ctx.Facts = append(ctx.Facts, Fact{Key: "Cloud Foundry", Value: val})
 	}
 }
 

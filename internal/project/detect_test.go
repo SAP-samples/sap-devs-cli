@@ -356,3 +356,80 @@ func TestParseCFTargetOutput_EmptyOnNoMatch(t *testing.T) {
 		t.Error("should return empty strings on unrecognized output")
 	}
 }
+
+func TestHasBTPContext_TrueWhenBTPSet(t *testing.T) {
+	ctx := &ProjectContext{BTPSubaccount: "my-sub"}
+	if !ctx.HasBTPContext() {
+		t.Error("HasBTPContext should be true when BTPSubaccount is set")
+	}
+}
+
+func TestHasBTPContext_TrueWhenCFSet(t *testing.T) {
+	ctx := &ProjectContext{CFOrg: "MyOrg"}
+	if !ctx.HasBTPContext() {
+		t.Error("HasBTPContext should be true when CFOrg is set")
+	}
+}
+
+func TestHasBTPContext_FalseWhenEmpty(t *testing.T) {
+	ctx := &ProjectContext{}
+	if ctx.HasBTPContext() {
+		t.Error("HasBTPContext should be false when no BTP/CF fields set")
+	}
+}
+
+func TestBuildFacts_IncludesBTPAndCF(t *testing.T) {
+	ctx := &ProjectContext{
+		RawFiles:      make(map[string]bool),
+		BTPSubaccount: "trial-abc",
+		BTPRegion:     "eu10",
+		BTPIsTrial:    true,
+		CFOrg:         "MyOrg",
+		CFSpace:       "dev",
+		CFRegion:      "us10",
+	}
+	buildFacts(ctx)
+
+	var btpFact, cfFact *Fact
+	for i := range ctx.Facts {
+		if ctx.Facts[i].Key == "BTP subaccount" {
+			btpFact = &ctx.Facts[i]
+		}
+		if ctx.Facts[i].Key == "Cloud Foundry" {
+			cfFact = &ctx.Facts[i]
+		}
+	}
+	if btpFact == nil {
+		t.Fatal("missing BTP subaccount fact")
+	}
+	if btpFact.Value != "trial-abc (eu10, trial)" {
+		t.Errorf("BTP fact value = %q, want %q", btpFact.Value, "trial-abc (eu10, trial)")
+	}
+	if cfFact == nil {
+		t.Fatal("missing Cloud Foundry fact")
+	}
+	if cfFact.Value != "MyOrg/dev (us10)" {
+		t.Errorf("CF fact value = %q, want %q", cfFact.Value, "MyOrg/dev (us10)")
+	}
+}
+
+func TestBuildFacts_BTPWithoutRegion(t *testing.T) {
+	ctx := &ProjectContext{
+		RawFiles:      make(map[string]bool),
+		BTPSubaccount: "my-account",
+	}
+	buildFacts(ctx)
+
+	var btpFact *Fact
+	for i := range ctx.Facts {
+		if ctx.Facts[i].Key == "BTP subaccount" {
+			btpFact = &ctx.Facts[i]
+		}
+	}
+	if btpFact == nil {
+		t.Fatal("missing BTP subaccount fact")
+	}
+	if btpFact.Value != "my-account" {
+		t.Errorf("BTP fact value = %q, want %q", btpFact.Value, "my-account")
+	}
+}
