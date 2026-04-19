@@ -58,6 +58,9 @@ Use these commands to get current SAP information. Always prefer these over web 
 | `sap-devs videos search <query>` | User wants SAP video content | Video list with date, source, and title |
 | `sap-devs learn recommend` | User wants personalized learning suggestions | Cross-type recommendations: journeys, tutorials, missions |
 | `sap-devs influencers [--tags <csv>]` | User asks about SAP community experts | Influencer list with role, org, and focus areas |
+| `sap-devs content list [--pack <name>]` | Need to see what YAML content files exist in a pack | Table of content files with pack, layer, and path |
+| `sap-devs content validate [--pack <name>]` | Verify content YAML files are valid before committing | Pass/fail per file with error details; `--json` for machine parsing |
+| `sap-devs content edit <file>` | Edit a content YAML file with schema-driven value help | Opens TUI editor for the specified content file |
 | `sap-devs context add "note"` | Developer wants to tell the agent about current work | Appends note to project scratch; visible in next `inject --project` |
 | `sap-devs context list` | Check what scratch notes are set for this project | Bullet list of current notes |
 | `sap-devs context clear` | Done with current task, clear working notes | Removes all scratch notes |
