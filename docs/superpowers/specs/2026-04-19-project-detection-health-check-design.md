@@ -151,16 +151,29 @@ Each check function receives the `ProjectContext` (detected facts) and the loade
 
 ### Version Comparison
 
-Latest known versions for staleness checks are stored as fields in `pack.yaml` metadata:
+Latest known versions for staleness checks are stored as a new `versions` map in `pack.yaml` metadata:
 
 ```yaml
-# content/packs/cap/pack.yaml (new fields)
+# content/packs/cap/pack.yaml (new field)
 versions:
   "@sap/cds": "9.8.0"
   "@sap/cds-dk": "9.8.0"
 ```
 
-These are updated during content authoring (manual or sync-triggered). `Detect()` reads the project's installed version; `Check()` compares against the pack's `versions` map. Semver comparison uses a lightweight Go semver library or manual major.minor parsing.
+**Loading path — requires changes to:**
+
+1. `packMeta` struct in `internal/content/pack.go` — add `Versions map[string]string` field
+2. `Pack` struct in `internal/content/pack.go` — add `Versions map[string]string` field
+3. `LoadPack()` in `internal/content/pack.go` — propagate `packMeta.Versions` to `Pack.Versions`
+4. `content/schemas/pack.schema.json` — add `versions` property (object with string values)
+
+**Version resolution:** `Check()` collects `versions` maps from all loaded packs. When multiple packs declare the same key, the highest-weight pack wins. For CAP version staleness specifically, the CAP pack's `versions["@sap/cds"]` is the authoritative latest.
+
+**Semver comparison:** Use manual major.minor.patch parsing (no external dependency). Compare numeric components left-to-right. Staleness thresholds: >2 minor versions behind → warning; >1 major → error.
+
+### Gitignore Parsing
+
+Several health checks (e.g., `default-env.json` not in `.gitignore`) require reading and pattern-matching against `.gitignore`. A small utility function `isGitignored(cwd, filename string) bool` reads `.gitignore` from the project root and checks for exact filename matches. No glob/negation support needed for the initial checks — just line-by-line string comparison.
 
 ## CLI Output
 
@@ -241,14 +254,14 @@ The `## sap-devs Runtime Context` section gains a **Project Context** subsection
 ### DynamicContext Changes
 
 ```go
-// internal/dynamic/types.go (changed field)
+// internal/content/dynamic.go (changed field)
 type DynamicContext struct {
     CLIVersion      string
     ActiveProfile   string
     LoadedPackIDs   []string
-    LastSynced      time.Time
-    Project         *project.ProjectContext // was: ProjectType string
-    WiredMCPServers []WiredMCP
+    LastSynced      *time.Time              // pointer — nil means "never synced"
+    Project         *project.ProjectContext  // was: ProjectType string
+    WiredMCPServers []WiredMCPEntry
     Commands        []CommandInfo
 }
 ```
