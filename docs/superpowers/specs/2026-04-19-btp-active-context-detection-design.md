@@ -41,8 +41,34 @@ No `cwd` parameter — BTP config is global.
 1. Check `BTP_CLIENTCONFIG` env var for custom config path.
 2. Fall back to default path:
    - Linux/macOS: `~/.config/.btp/config.json`
-   - Windows: `%APPDATA%\.btp\config.json`
-3. Parse JSON. Extract `TargetHierarchy.SubaccountSubdomain` (or `SubaccountDisplayName` if available) and region from `CLIURL` or `TargetHierarchy` fields.
+   - Windows: `%APPDATA%\SAP\btp\config.json`
+
+   **Note:** The BTP CLI config path has changed across versions. The paths above reflect the current BTP CLI (v2.x). If the file is not found at the expected path, the CLI fallback handles detection.
+
+3. Parse JSON using a minimal struct. Expected structure:
+
+   ```json
+   {
+     "TargetHierarchy": {
+       "GlobalAccountSubdomain": "ga-subdomain",
+       "SubaccountGUID": "...",
+       "SubaccountSubdomain": "my-trial-subaccount"
+     },
+     "CLIServerURL": "https://cli.btp.cloud.sap"
+   }
+   ```
+   Extract `TargetHierarchy.SubaccountSubdomain` for the subaccount name. Region is extracted from `CLIServerURL` or inferred from the subdomain if it contains a region pattern (e.g., `eu10-trial`).
+
+   Minimal Go struct:
+   ```go
+   type btpConfig struct {
+       TargetHierarchy struct {
+           GlobalAccountSubdomain string `json:"GlobalAccountSubdomain"`
+           SubaccountSubdomain    string `json:"SubaccountSubdomain"`
+       } `json:"TargetHierarchy"`
+       CLIServerURL string `json:"CLIServerURL"`
+   }
+   ```
 4. Silently return if file doesn't exist or JSON structure is unexpected.
 
 **Fallback (CLI):**
@@ -59,8 +85,11 @@ No `cwd` parameter — BTP config is global.
 No `cwd` parameter — CF config is global.
 
 **Primary (config file):**
-1. Read `~/.cf/config.json` (standard location across all platforms).
-2. Parse with a **minimal struct** — only deserialize the fields we need:
+
+1. Check `CF_HOME` env var for custom CF config directory, then fall back to `~/.cf/`.
+2. Read `<cf_home>/config.json` (`~/.cf/config.json` by default — same path on all platforms; on Windows `~` expands to `%USERPROFILE%`).
+3. Parse with a **minimal struct** — only deserialize the fields we need:
+
    ```go
    type cfConfig struct {
        Target             string `json:"Target"`
@@ -72,9 +101,10 @@ No `cwd` parameter — CF config is global.
        } `json:"SpaceFields"`
    }
    ```
-3. **Privacy:** `AccessToken`, `RefreshToken`, and all other credential fields are never deserialized into memory. The minimal struct ensures only names and the API endpoint URL are read.
-4. Extract region from `Target` URL: `https://api.cf.us10.hana.ondemand.com` -> `us10` via regex `api\.cf\.([a-z0-9]+)\.`.
-5. Silently return if file doesn't exist or JSON structure is unexpected.
+
+4. **Privacy:** `AccessToken`, `RefreshToken`, and all other credential fields are never deserialized into memory. The minimal struct ensures only names and the API endpoint URL are read.
+5. Extract region from `Target` URL: `https://api.cf.us10.hana.ondemand.com` -> `us10` via regex `api\.cf\.([a-z0-9]+)\.`.
+6. Silently return if file doesn't exist or JSON structure is unexpected.
 
 **Fallback (CLI):**
 1. Exec `cf target` with a 3-second timeout.
@@ -83,11 +113,15 @@ No `cwd` parameter — CF config is global.
 
 ### Region Extraction
 
-Region is extracted from API endpoint URLs using regex patterns:
-- CF: `https://api.cf.<region>.hana.ondemand.com` -> capture `<region>`
-- BTP: depends on the URL pattern in the config; extract from subdomain or path
+Region is extracted from API endpoint URLs using regex patterns. Concrete URL examples:
 
-Pattern: `(?:api\.cf\.|cli\.btp\.)([a-z0-9-]+)\.`
+- CF Target: `https://api.cf.us10.hana.ondemand.com` -> `us10`
+- CF Target (trial): `https://api.cf.us10-001.hana.ondemand.com` -> `us10-001`
+- BTP CLI: `https://cli.btp.cloud.sap` -> no region (global endpoint; region comes from subdomain)
+
+Pattern for CF: `api\.cf\.([a-z0-9-]+)\.hana\.ondemand\.com`
+
+For BTP, region is best extracted from the subaccount subdomain when it contains a region identifier (e.g., `eu10-trial-abc123` -> `eu10`), or from the `CLIServerURL` if it contains a regional pattern.
 
 ### Fact Rendering in `buildFacts()`
 
@@ -156,6 +190,8 @@ func (ctx *ProjectContext) HasBTPContext() bool {
 }
 ```
 
+**Important:** When `pc.Type == ""` but `pc.HasBTPContext()` is true, `gather.go` must still create a `ProjectInfo` with an empty `Type` field and populate only `BTPFacts`. The `renderDynamic()` function must handle this state: skip the `**Project Context (detected):**` heading when `d.Project.Facts` is empty, but still render `**BTP Environment (detected):**` when `d.Project.BTPFacts` is non-empty.
+
 ### Separate Rendering Section
 
 In `renderDynamic()`, BTP/CF facts render under a separate heading:
@@ -200,6 +236,7 @@ Both global-scope and project-scope inject include BTP/CF detection. The BTP env
 | `internal/content/dynamic.go` | Add `BTPFacts []ProjectFact` to `ProjectInfo` |
 | `internal/content/render.go` | Add `**BTP Environment (detected):**` block in `renderDynamic()` |
 | `internal/dynamic/gather.go` | Update condition to include BTP context; split facts into `Facts` and `BTPFacts` |
+| `cmd/inject.go` | No code change needed — the health-check gate at line 271 (`pc.Type != ""`) must remain unchanged since BTP detection is informational and health checks are project-specific. `ProjectContext` is already passed unconditionally to `GatherDynamic` at line 267. |
 | `CLAUDE.md` | Update Architecture section with BTP detection |
 
 ## Non-Goals
