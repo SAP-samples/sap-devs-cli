@@ -240,39 +240,28 @@ into project-level files (CLAUDE.md, .cursorrules, etc.) in the current director
 			return err
 		}
 
+		// Detect project context once — reused by both GatherDynamic and health checks
+		pc, _ := project.Detect(cwd)
+
 		dynCtx := dynamic.GatherDynamic(dynamic.GatherOpts{
-			CWD:          cwd,
-			CLIVersion:   Version,
-			Profile:      activeProfile,
-			Packs:        packs,
-			SyncStateDir: paths.CacheDir,
-			Adapters:     gatheredAdapters,
-			Commands:     cmdInfos,
+			CWD:            cwd,
+			CLIVersion:     Version,
+			Profile:        activeProfile,
+			Packs:          packs,
+			SyncStateDir:   paths.CacheDir,
+			Adapters:       gatheredAdapters,
+			Commands:        cmdInfos,
+			ProjectContext: pc,
 		})
 
 		// Run project health checks and attach findings to dynamic context
-		if dynCtx.Project != nil && dynCtx.Project.Type != "" {
-			if pc, err := project.Detect(cwd); err == nil {
-				findings := project.Check(pc, cwd, packs)
-				for _, f := range findings {
-					dynCtx.ProjectFindings = append(dynCtx.ProjectFindings, content.ProjectFinding{
-						Severity: f.Severity,
-						Message:  f.Message,
-					})
-				}
-				versions := make(map[string]string)
-				for _, p := range packs {
-					for k, v := range p.Versions {
-						if _, exists := versions[k]; !exists {
-							versions[k] = v
-						}
-					}
-				}
-				if pc.CAPVersion != "" {
-					if latest, ok := versions["@sap/cds"]; ok {
-						dynCtx.Project.CAPVersion = latest
-					}
-				}
+		if pc != nil && pc.Type != "" {
+			findings := project.Check(pc, cwd, packs)
+			for _, f := range findings {
+				dynCtx.ProjectFindings = append(dynCtx.ProjectFindings, content.ProjectFinding{
+					Severity: f.Severity,
+					Message:  f.Message,
+				})
 			}
 		}
 

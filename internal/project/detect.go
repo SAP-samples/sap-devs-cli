@@ -128,10 +128,18 @@ func detectDefaultEnv(cwd string, ctx *ProjectContext) {
 	}
 }
 
+// RebuildFacts re-derives the Facts slice from the current typed fields.
+// Call this after enriching LatestCAP from pack metadata.
+func (ctx *ProjectContext) RebuildFacts() {
+	ctx.Facts = nil
+	buildFacts(ctx)
+}
+
 func buildFacts(ctx *ProjectContext) {
 	if ctx.Type == "" {
-		// Check for plain Node.js as fallback
-		if ctx.RawFiles["package.json"] {
+		if ctx.Deployment == "mta-cf" {
+			ctx.Type = "Multi-target Application (MTA)"
+		} else if ctx.RawFiles["package.json"] {
 			ctx.Type = "Node.js"
 		}
 	}

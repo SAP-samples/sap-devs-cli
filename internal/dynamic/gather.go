@@ -13,13 +13,14 @@ import (
 
 // GatherOpts holds all inputs needed to collect dynamic context at inject time.
 type GatherOpts struct {
-	CWD          string
-	CLIVersion   string
-	Profile      *content.Profile
-	Packs        []*content.Pack
-	SyncStateDir string
-	Adapters     []adapter.Adapter
-	Commands     []content.CommandInfo
+	CWD            string
+	CLIVersion     string
+	Profile        *content.Profile
+	Packs          []*content.Pack
+	SyncStateDir   string
+	Adapters       []adapter.Adapter
+	Commands       []content.CommandInfo
+	ProjectContext *project.ProjectContext // pre-detected; nil = auto-detect
 }
 
 // GatherDynamic collects runtime context from the local environment.
@@ -47,7 +48,23 @@ func GatherDynamic(opts GatherOpts) *content.DynamicContext {
 	}
 
 	// Project detection
-	if pc, err := project.Detect(opts.CWD); err == nil && pc.Type != "" {
+	pc := opts.ProjectContext
+	if pc == nil {
+		pc, _ = project.Detect(opts.CWD)
+	}
+	if pc != nil && pc.Type != "" {
+		// Enrich with latest known versions from packs before building mirror types
+		if pc.CAPVersion != "" {
+			for _, p := range opts.Packs {
+				if v, ok := p.Versions["@sap/cds"]; ok {
+					pc.LatestCAP = v
+					break
+				}
+			}
+			if pc.LatestCAP != "" {
+				pc.RebuildFacts()
+			}
+		}
 		info := &content.ProjectInfo{
 			Type:       pc.Type,
 			CAPVersion: pc.CAPVersion,
