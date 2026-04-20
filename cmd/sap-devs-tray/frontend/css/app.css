@@ -290,3 +290,342 @@ body {
 @keyframes spin {
     to { transform: rotate(360deg); }
 }
+
+/* ── Config Editor ── */
+
+body.config-editor {
+    width: auto;
+    max-height: none;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.config-header {
+    padding: 14px 20px;
+    background: var(--sapBrandColor, #0a6ed1);
+    color: #fff;
+}
+
+.config-title {
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.config-form {
+    flex: 1;
+    overflow-y: auto;
+    padding-bottom: 60px;
+}
+
+.cfg-panel {
+    background: var(--sapGroup_ContentBackground, #fff);
+    border-bottom: 1px solid var(--sapGroup_ContentBorderColor, #d9d9d9);
+}
+
+.cfg-panel-header {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    cursor: pointer;
+    gap: 8px;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+.cfg-panel-header:hover {
+    background: var(--sapList_Hover_Background, #f5f6f7);
+}
+
+.cfg-chevron {
+    font-size: 11px;
+    color: var(--sapContent_LabelColor, #6a6d70);
+    transition: transform 0.15s;
+}
+
+.cfg-panel.collapsed .cfg-chevron {
+    transform: rotate(-90deg);
+}
+
+.cfg-panel.collapsed .cfg-panel-body {
+    display: none;
+}
+
+.cfg-panel-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--sapTextColor, #32363a);
+}
+
+.cfg-panel-body {
+    padding: 0 16px 16px;
+}
+
+.cfg-field {
+    margin-bottom: 14px;
+}
+
+.cfg-field:last-child {
+    margin-bottom: 0;
+}
+
+.cfg-field label {
+    display: block;
+    font-size: 12px;
+    color: var(--sapContent_LabelColor, #6a6d70);
+    margin-bottom: 4px;
+}
+
+.cfg-field .fd-input,
+.cfg-field select.fd-input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 6px 10px;
+    border: 1px solid var(--sapField_BorderColor, #89919a);
+    border-radius: 4px;
+    font-size: 13px;
+    font-family: inherit;
+    background: var(--sapField_Background, #fff);
+    color: var(--sapField_TextColor, #32363a);
+}
+
+.cfg-field .fd-input:focus,
+.cfg-field select.fd-input:focus {
+    outline: none;
+    border-color: var(--sapField_Active_BorderColor, #0a6ed1);
+    box-shadow: 0 0 0 1px var(--sapField_Active_BorderColor, #0a6ed1);
+}
+
+.cfg-field .fd-input.has-error {
+    border-color: var(--sapNegativeColor, #bb0000);
+}
+
+.cfg-hint {
+    display: block;
+    font-size: 11px;
+    color: var(--sapContent_LabelColor, #6a6d70);
+    margin-top: 4px;
+}
+
+.cfg-error {
+    display: block;
+    font-size: 11px;
+    color: var(--sapNegativeColor, #bb0000);
+    margin-top: 2px;
+}
+
+.cfg-warning {
+    display: block;
+    font-size: 11px;
+    color: var(--sapCriticalColor, #e76500);
+    margin-top: 2px;
+}
+
+.cfg-location-row {
+    display: flex;
+    gap: 8px;
+    align-items: start;
+}
+
+.cfg-typeahead-wrap {
+    flex: 1;
+    position: relative;
+}
+
+.cfg-typeahead-list {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: var(--sapGroup_ContentBackground, #fff);
+    border: 1px solid var(--sapField_BorderColor, #89919a);
+    border-top: none;
+    border-radius: 0 0 4px 4px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.12);
+    z-index: 10;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.cfg-typeahead-item {
+    padding: 8px 10px;
+    font-size: 13px;
+    cursor: pointer;
+    color: var(--sapTextColor, #32363a);
+}
+
+.cfg-typeahead-item:hover,
+.cfg-typeahead-item.highlighted {
+    background: var(--sapList_Hover_Background, #e8f0fe);
+}
+
+.cfg-suffix-input {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.cfg-suffix-input .fd-input {
+    flex: 1;
+}
+
+.cfg-suffix {
+    font-size: 12px;
+    color: var(--sapContent_LabelColor, #6a6d70);
+    flex-shrink: 0;
+}
+
+.cfg-row-2col {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.cfg-row-2col .cfg-field {
+    flex: 1;
+    margin-bottom: 0;
+}
+
+.cfg-grid-2col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 6px;
+}
+
+.cfg-grid-2col .cfg-field {
+    margin-bottom: 0;
+}
+
+.cfg-switch-row {
+    margin-bottom: 14px;
+}
+
+.cfg-switch-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+}
+
+.cfg-switch-label input[type="checkbox"] {
+    display: none;
+}
+
+.cfg-switch-track {
+    width: 36px;
+    height: 20px;
+    background: var(--sapNeutralBackground, #bcc3ca);
+    border-radius: 10px;
+    position: relative;
+    flex-shrink: 0;
+    transition: background 0.15s;
+}
+
+.cfg-switch-label input:checked + .cfg-switch-track {
+    background: var(--sapBrandColor, #0a6ed1);
+}
+
+.cfg-switch-thumb {
+    width: 16px;
+    height: 16px;
+    background: #fff;
+    border-radius: 50%;
+    position: absolute;
+    left: 2px;
+    top: 2px;
+    transition: left 0.15s;
+}
+
+.cfg-switch-label input:checked + .cfg-switch-track .cfg-switch-thumb {
+    left: 18px;
+}
+
+.cfg-switch-text {
+    font-size: 13px;
+    color: var(--sapTextColor, #32363a);
+}
+
+.cfg-service-section {
+    margin-bottom: 4px;
+}
+
+.cfg-service-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.cfg-service-title {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--sapTextColor, #32363a);
+}
+
+.cfg-service-desc {
+    display: block;
+    font-size: 11px;
+    color: var(--sapContent_LabelColor, #6a6d70);
+}
+
+.cfg-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.cfg-badge.installed {
+    color: #fff;
+    background: var(--sapPositiveColor, #256f3a);
+}
+
+.cfg-badge.not-installed {
+    color: var(--sapNeutralColor, #6a6d70);
+    background: var(--sapNeutralBackground, #eaecee);
+}
+
+.cfg-btn-danger {
+    border-color: var(--sapNegativeColor, #bb0000) !important;
+    color: var(--sapNegativeColor, #bb0000) !important;
+    background: transparent !important;
+}
+
+.cfg-btn-danger:hover {
+    background: rgba(187, 0, 0, 0.06) !important;
+}
+
+.cfg-divider {
+    height: 1px;
+    background: var(--sapGroup_ContentBorderColor, #d9d9d9);
+    margin: 16px 0;
+}
+
+.cfg-save-bar {
+    position: sticky;
+    bottom: 0;
+    padding: 12px 16px;
+    background: var(--sapGroup_ContentBackground, #fff);
+    border-top: 2px solid var(--sapGroup_ContentBorderColor, #d9d9d9);
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 12px;
+}
+
+.cfg-save-status {
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.cfg-save-status.success {
+    color: var(--sapPositiveColor, #256f3a);
+}
+
+.cfg-save-status.error {
+    color: var(--sapNegativeColor, #bb0000);
+}
