@@ -1,15 +1,53 @@
 package main
 
 import (
+	_ "embed"
 	"encoding/json"
 	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
+	"sync"
 	"time"
 
 	"gopkg.in/yaml.v3"
 )
+
+//go:embed data/cities.json
+var citiesData []byte
+
+// cityEntry is a single city record from cities.json.
+type cityEntry struct {
+	Name    string  `json:"name"`
+	Country string  `json:"country"`
+	Lat     float64 `json:"lat"`
+	Lon     float64 `json:"lon"`
+}
+
+var (
+	citiesOnce  sync.Once
+	citiesCache []cityEntry
+)
+
+// loadCities lazily parses cities.json exactly once.
+func loadCities() []cityEntry {
+	citiesOnce.Do(func() {
+		_ = json.Unmarshal(citiesData, &citiesCache)
+	})
+	return citiesCache
+}
+
+// supportedLanguages is the fixed list of languages exposed to the frontend.
+var supportedLanguages = []map[string]string{
+	{"code": "", "label": "(auto-detect from OS)"},
+	{"code": "en", "label": "English"},
+	{"code": "de", "label": "Deutsch"},
+	{"code": "es", "label": "Español"},
+	{"code": "fr", "label": "Français"},
+	{"code": "ja", "label": "日本語"},
+	{"code": "pt-br", "label": "Português (BR)"},
+}
 
 // trayConfig mirrors internal/config.Config with identical YAML tags.
 // Duplicated because the tray binary is a separate Go module that cannot
@@ -341,3 +379,69 @@ func validateConfigInput(input configJSON) map[string]string {
 
 	return errs
 }
+
+// ── Task 3: Input assistance APIs ────────────────────────────────────────────
+
+// handleCities returns up to 10 city name prefix-matches for ?q=<prefix>.
+func (s *Server) handleCities(w http.ResponseWriter, r *http.Request) {
+	q := strings.ToLower(r.URL.Query().Get("q"))
+	cities := loadCities()
+
+	var matches []cityEntry
+	for _, c := range cities {
+		if strings.HasPrefix(strings.ToLower(c.Name), q) {
+			matches = append(matches, c)
+			if len(matches) == 10 {
+				break
+			}
+		}
+	}
+	if matches == nil {
+		matches = []cityEntry{}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(matches)
+}
+
+// handleLanguages returns the hardcoded list of supported languages.
+func (s *Server) handleLanguages(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(supportedLanguages)
+}
+
+// handleDetectLocation calls ip-api.com to detect the user's city and country.
+func (s *Server) handleDetectLocation(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	client := &http.Client{Timeout: 3 * time.Second}
+	resp, err := client.Get("http://ip-api.com/json")
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadGateway)
+		json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+		return
+	}
+	defer resp.Body.Close()
+
+	var result struct {
+		City    string `json:"city"`
+		Country string `json:"country"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadGateway)
+		json.NewEncoder(w).Encode(map[string]string{"error": "failed to parse location response"})
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{
+		"city":    result.City,
+		"country": result.Country,
+	})
+}
+
