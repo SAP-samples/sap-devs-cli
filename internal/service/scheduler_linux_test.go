@@ -13,7 +13,7 @@ func TestLinuxServiceUnit(t *testing.T) {
 	s := &linuxScheduler{cacheDir: "/tmp/test"}
 	unit := s.generateServiceUnit("/usr/local/bin/sap-devs")
 	assert.Contains(t, unit, "ExecStart=/bin/sh")
-	assert.Contains(t, unit, "/usr/local/bin/sap-devs sync")
+	assert.Contains(t, unit, `"/usr/local/bin/sap-devs" sync`)
 	assert.Contains(t, unit, "sap-devs background sync")
 }
 
