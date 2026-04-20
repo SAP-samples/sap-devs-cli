@@ -198,3 +198,70 @@ func TestWizardState_Summary(t *testing.T) {
 		t.Error("summary missing tips.md")
 	}
 }
+
+func TestBuildMetadataMap(t *testing.T) {
+	t.Run("non-additive", func(t *testing.T) {
+		m := buildMetadataMap("my-pack", "My Pack", "A description", "cap, btp", "50", false, "")
+		if m["id"] != "my-pack" {
+			t.Errorf("id = %v", m["id"])
+		}
+		tags, ok := m["tags"].([]any)
+		if !ok || len(tags) != 2 {
+			t.Errorf("tags = %v", m["tags"])
+		}
+		if m["weight"] != 50 {
+			t.Errorf("weight = %v (type %T)", m["weight"], m["weight"])
+		}
+		if _, hasPos := m["additive_position"]; hasPos {
+			t.Error("additive_position should be omitted when additive is false")
+		}
+	})
+
+	t.Run("additive", func(t *testing.T) {
+		m := buildMetadataMap("my-pack", "My Pack", "A description", "cap", "50", true, "before")
+		if m["additive"] != true {
+			t.Errorf("additive = %v", m["additive"])
+		}
+		if m["additive_position"] != "before" {
+			t.Errorf("additive_position = %v", m["additive_position"])
+		}
+	})
+
+	t.Run("default weight", func(t *testing.T) {
+		m := buildMetadataMap("my-pack", "My Pack", "Desc", "tag", "", false, "")
+		if m["weight"] != 50 {
+			t.Errorf("weight = %v, want 50", m["weight"])
+		}
+	})
+
+	t.Run("custom weight", func(t *testing.T) {
+		m := buildMetadataMap("my-pack", "My Pack", "Desc", "tag", "100", false, "")
+		if m["weight"] != 100 {
+			t.Errorf("weight = %v, want 100", m["weight"])
+		}
+	})
+}
+
+func TestResolvePackDir(t *testing.T) {
+	tests := []struct {
+		layer  Layer
+		cwd    string
+		packID string
+		expect string
+	}{
+		{LayerOfficial, "/repo", "my-pack", filepath.Join("/repo", "content", "packs", "my-pack")},
+		{LayerCompany, "/company", "my-pack", filepath.Join("/company", "content", "packs", "my-pack")},
+		{LayerProject, "/project", "my-pack", filepath.Join("/project", ".sap-devs", "packs", "my-pack")},
+	}
+	for _, tt := range tests {
+		t.Run(tt.layer.String(), func(t *testing.T) {
+			got, err := resolvePackDir(tt.layer, tt.cwd, tt.packID)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if got != tt.expect {
+				t.Errorf("resolvePackDir(%v, %q, %q) = %q, want %q", tt.layer, tt.cwd, tt.packID, got, tt.expect)
+			}
+		})
+	}
+}

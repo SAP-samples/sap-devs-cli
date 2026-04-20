@@ -1,13 +1,20 @@
 package editor
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 
+	"charm.land/huh/v2"
 	"gopkg.in/yaml.v3"
+
+	"github.tools.sap/developer-relations/sap-devs-cli/internal/schema"
+	"github.tools.sap/developer-relations/sap-devs-cli/internal/theme"
+	"github.tools.sap/developer-relations/sap-devs-cli/internal/xdg"
 )
 
 var rePackID = regexp.MustCompile(`^[a-z][a-z0-9-]*$`)
@@ -123,4 +130,305 @@ func checkPackConflict(packDir string) error {
 		return fmt.Errorf("pack directory already exists: %s\nUse 'sap-devs content edit' to modify existing packs", packDir)
 	}
 	return nil
+}
+
+// --- Task 2: Layer detection form + resolvePackDir ---
+
+func resolvePackDir(layer Layer, cwd, packID string) (string, error) {
+	switch layer {
+	case LayerOfficial, LayerCompany:
+		return filepath.Join(cwd, "content", "packs", packID), nil
+	case LayerProject:
+		return filepath.Join(cwd, ".sap-devs", "packs", packID), nil
+	case LayerUser:
+		paths, err := xdg.New()
+		if err != nil {
+			return "", fmt.Errorf("cannot resolve user data directory: %w", err)
+		}
+		return filepath.Join(paths.DataDir, "packs", packID), nil
+	}
+	return "", fmt.Errorf("unknown layer: %v", layer)
+}
+
+func availableLayers(cwd string) []Layer {
+	var layers []Layer
+	if _, err := os.Stat(filepath.Join(cwd, "content", "packs")); err == nil {
+		if isOfficialRepo(cwd) {
+			layers = append(layers, LayerOfficial)
+		}
+		if isCompanyRepo(cwd) {
+			layers = append(layers, LayerCompany)
+		}
+	}
+	layers = append(layers, LayerUser, LayerProject)
+	return layers
+}
+
+func runLayerForm(cwd string) (Layer, error) {
+	detected, _ := detectLayer(cwd)
+	available := availableLayers(cwd)
+
+	layerStr := detected.String()
+	opts := make([]huh.Option[string], 0, len(available))
+	for _, l := range available {
+		opts = append(opts, huh.NewOption(l.String(), l.String()))
+	}
+
+	form := huh.NewForm(
+		huh.NewGroup(
+			huh.NewSelect[string]().
+				Title("Content layer").
+				Description("Where should the new pack be created?").
+				Options(opts...).
+				Value(&layerStr),
+		),
+	).WithTheme(huh.ThemeFunc(theme.ThemeFiori))
+
+	if err := form.Run(); err != nil {
+		return 0, err
+	}
+
+	switch layerStr {
+	case "official":
+		return LayerOfficial, nil
+	case "company":
+		return LayerCompany, nil
+	case "user":
+		return LayerUser, nil
+	case "project":
+		return LayerProject, nil
+	}
+	return LayerUser, nil
+}
+
+// --- Task 3: Pack metadata form (two-phase additive) ---
+
+func buildMetadataMap(id, name, description, tagsRaw, weightRaw string, additive bool, additivePosition string) map[string]any {
+	tags := splitTags(tagsRaw)
+	anyTags := make([]any, len(tags))
+	for i, t := range tags {
+		anyTags[i] = t
+	}
+
+	weight := 50
+	if weightRaw != "" {
+		if n, err := strconv.Atoi(weightRaw); err == nil {
+			weight = n
+		}
+	}
+
+	m := map[string]any{
+		"id":          id,
+		"name":        name,
+		"description": description,
+		"tags":        anyTags,
+		"weight":      weight,
+	}
+
+	if additive {
+		m["additive"] = true
+		if additivePosition != "" {
+			m["additive_position"] = additivePosition
+		} else {
+			m["additive_position"] = "after"
+		}
+	}
+
+	return m
+}
+
+type metadataFormResult struct {
+	ID          string
+	Name        string
+	Description string
+	TagsRaw     string
+	WeightRaw   string
+	Additive    bool
+}
+
+func runMetadataForm() (*metadataFormResult, error) {
+	r := &metadataFormResult{WeightRaw: "50"}
+
+	form := huh.NewForm(
+		huh.NewGroup(
+			huh.NewInput().
+				Title("Pack ID *").
+				Placeholder("my-pack").
+				Value(&r.ID).
+				Validate(func(s string) error {
+					if s == "" {
+						return fmt.Errorf("required")
+					}
+					if !validPackID(s) {
+						return fmt.Errorf("must match ^[a-z][a-z0-9-]*$")
+					}
+					return nil
+				}),
+			huh.NewInput().
+				Title("Name *").
+				Placeholder("My Content Pack").
+				Value(&r.Name).
+				Validate(func(s string) error {
+					if strings.TrimSpace(s) == "" {
+						return fmt.Errorf("required")
+					}
+					return nil
+				}),
+			huh.NewInput().
+				Title("Description *").
+				Placeholder("A brief description of this pack").
+				Value(&r.Description).
+				Validate(func(s string) error {
+					if strings.TrimSpace(s) == "" {
+						return fmt.Errorf("required")
+					}
+					return nil
+				}),
+			huh.NewInput().
+				Title("Tags *").
+				Placeholder("tag1, tag2, tag3").
+				Value(&r.TagsRaw).
+				Validate(func(s string) error {
+					parts := splitTags(s)
+					if len(parts) == 0 {
+						return fmt.Errorf("at least one tag required")
+					}
+					return nil
+				}),
+			huh.NewInput().
+				Title("Weight").
+				Placeholder("50").
+				Value(&r.WeightRaw).
+				Validate(func(s string) error {
+					if s == "" {
+						return nil
+					}
+					if _, err := strconv.Atoi(s); err != nil {
+						return fmt.Errorf("must be an integer")
+					}
+					return nil
+				}),
+			huh.NewConfirm().
+				Title("Additive").
+				Description("Augment same-ID pack from a lower layer instead of replacing it?").
+				Value(&r.Additive),
+		),
+	).WithTheme(huh.ThemeFunc(theme.ThemeFiori))
+
+	if err := form.Run(); err != nil {
+		return nil, err
+	}
+	return r, nil
+}
+
+func runAdditivePositionForm() (string, error) {
+	position := "after"
+	form := huh.NewForm(
+		huh.NewGroup(
+			huh.NewSelect[string]().
+				Title("Additive position").
+				Description("Where should additive content appear relative to the base pack?").
+				Options(
+					huh.NewOption("after", "after"),
+					huh.NewOption("before", "before"),
+				).
+				Value(&position),
+		),
+	).WithTheme(huh.ThemeFunc(theme.ThemeFiori))
+
+	if err := form.Run(); err != nil {
+		return "", err
+	}
+	return position, nil
+}
+
+// --- Task 4: Content file selection form ---
+
+type contentFileOption struct {
+	Filename    string
+	Description string
+}
+
+var defaultContentFiles = []contentFileOption{
+	{"resources.yaml", "Curated links and documentation"},
+	{"tools.yaml", "Required/recommended developer tools"},
+	{"mcp.yaml", "MCP server definitions"},
+	{"samples.yaml", "Canonical code sample references"},
+	{"known_errors.yaml", "Common error patterns with fixes"},
+	{"tips.md", "Developer tips (H2-delimited)"},
+	{"constraints.md", "Behavioral rules for AI agents"},
+}
+
+func runContentFileForm() ([]string, error) {
+	var selected []string
+
+	opts := make([]huh.Option[string], 0, len(defaultContentFiles))
+	for _, f := range defaultContentFiles {
+		opts = append(opts, huh.NewOption(
+			fmt.Sprintf("%s — %s", f.Filename, f.Description),
+			f.Filename,
+		))
+	}
+
+	form := huh.NewForm(
+		huh.NewGroup(
+			huh.NewMultiSelect[string]().
+				Title("Content files to scaffold").
+				Description("Select files to include in the pack (Space to toggle, Enter to confirm)").
+				Options(opts...).
+				Value(&selected),
+		),
+	).WithTheme(huh.ThemeFunc(theme.ThemeFiori))
+
+	if err := form.Run(); err != nil {
+		return nil, err
+	}
+	return selected, nil
+}
+
+// --- Task 5: Initial entry collection via BuildForm ---
+
+func isMarkdownFile(filename string) bool {
+	return filename == "tips.md" || filename == "constraints.md"
+}
+
+func collectInitialEntries(schemasDir string, selectedFiles []string) (map[string]map[string]any, error) {
+	entries := make(map[string]map[string]any)
+
+	for _, filename := range selectedFiles {
+		if isMarkdownFile(filename) {
+			continue
+		}
+
+		schemaName, ok := schema.SchemaForFile(filename)
+		if !ok {
+			fmt.Fprintf(os.Stderr, "Warning: no schema found for %s, skipping initial entry\n", filename)
+			continue
+		}
+
+		s, err := schema.Load(schemasDir, schemaName)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Warning: cannot load schema for %s: %v\n", filename, err)
+			continue
+		}
+
+		if s.ItemSpec == nil {
+			continue
+		}
+
+		fmt.Printf("\n  Initial entry for %s (Esc to skip):\n\n", filename)
+
+		form, bindings := BuildForm(s.ItemSpec, make(map[string]any))
+		if err := form.Run(); err != nil {
+			if errors.Is(err, huh.ErrUserAborted) {
+				continue
+			}
+			return nil, err
+		}
+
+		entry := bindings.ToMap(s.ItemSpec)
+		entries[filename] = entry
+	}
+
+	return entries, nil
 }
