@@ -36,6 +36,7 @@ var trayInstallCmd = &cobra.Command{
 			CacheDir: paths.CacheDir,
 			Token:    credentials.Resolve(paths.ConfigDir),
 			Version:  Version,
+			RepoURL:  repoURL,
 		}
 
 		out := cmd.OutOrStdout()
@@ -83,9 +84,11 @@ var trayUninstallCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		mgr := &trayctl.Manager{CacheDir: paths.CacheDir, Version: Version}
+		mgr := &trayctl.Manager{CacheDir: paths.CacheDir, Version: Version, RepoURL: repoURL}
 
-		mgr.UnregisterAutostart()
+		if err := mgr.UnregisterAutostart(); err != nil {
+			fmt.Fprintf(cmd.ErrOrStderr(), "Warning: could not remove autostart entry: %v\n", err)
+		}
 		if err := mgr.Uninstall(); err != nil {
 			return err
 		}

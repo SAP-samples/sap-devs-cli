@@ -14,14 +14,23 @@ import (
 )
 
 const (
-	repoURL          = "https://github.com/SAP-samples/sap-devs-cli"
-	maxDownloadBytes = 200 * 1024 * 1024
+	defaultRepoURL   = "https://github.com/SAP-samples/sap-devs-cli"
+	maxDownloadBytes = 200 * 1024 * 1024 // 200 MB
 )
 
+// Manager handles downloading, verifying, starting, and stopping the tray binary.
 type Manager struct {
 	CacheDir string
-	Token    string
-	Version  string
+	Token    string // optional GitHub token for authenticated downloads
+	Version  string // CLI version — tray release must match
+	RepoURL  string // defaults to defaultRepoURL if empty
+}
+
+func (m *Manager) repoURL() string {
+	if m.RepoURL != "" {
+		return m.RepoURL
+	}
+	return defaultRepoURL
 }
 
 func binaryName() string {
@@ -43,23 +52,31 @@ func (m *Manager) binDir() string {
 	return filepath.Join(m.CacheDir, "bin")
 }
 
+// BinaryPath returns the full path to the tray binary.
 func (m *Manager) BinaryPath() string {
 	return filepath.Join(m.binDir(), binaryName())
 }
 
+// IsInstalled checks if the tray binary exists on disk.
 func (m *Manager) IsInstalled() bool {
 	_, err := os.Stat(m.BinaryPath())
 	return err == nil
 }
 
+// Install downloads and verifies the tray binary from GitHub Releases.
+// Stops any running tray instance before overwriting.
 func (m *Manager) Install() error {
 	if m.Version == "" || m.Version == "dev" {
 		return fmt.Errorf("tray install requires a release build of sap-devs (current: %s)", m.Version)
 	}
 
+	if m.IsInstalled() {
+		_ = m.Stop()
+	}
+
 	asset := assetName(m.Version)
 	tagName := "v" + m.Version
-	downloadURL := repoURL + "/releases/download/" + tagName + "/"
+	downloadURL := m.repoURL() + "/releases/download/" + tagName + "/"
 
 	checksumData, err := httpGet(downloadURL+"tray-checksums.txt", m.Token)
 	if err != nil {
@@ -95,6 +112,7 @@ func (m *Manager) Install() error {
 	return nil
 }
 
+// Verify runs the tray binary with --version to check it executes successfully.
 func (m *Manager) Verify() error {
 	cmd := exec.Command(m.BinaryPath(), "--version")
 	out, err := cmd.CombinedOutput()
@@ -104,11 +122,13 @@ func (m *Manager) Verify() error {
 	return nil
 }
 
+// Uninstall stops the tray and removes the binary.
 func (m *Manager) Uninstall() error {
 	_ = m.Stop()
 	return os.Remove(m.BinaryPath())
 }
 
+// Start launches the tray process in the background.
 func (m *Manager) Start() error {
 	if !m.IsInstalled() {
 		return fmt.Errorf("tray is not installed — run `sap-devs tray install` first")
@@ -116,9 +136,13 @@ func (m *Manager) Start() error {
 	cmd := exec.Command(m.BinaryPath())
 	cmd.Stdout = nil
 	cmd.Stderr = nil
-	return cmd.Start()
+	if err := cmd.Start(); err != nil {
+		return err
+	}
+	return cmd.Process.Release()
 }
 
+// Stop terminates the running tray process.
 func (m *Manager) Stop() error {
 	var cmd *exec.Cmd
 	switch runtime.GOOS {
@@ -130,15 +154,19 @@ func (m *Manager) Stop() error {
 	return cmd.Run()
 }
 
+// IsRunning checks whether the tray process is currently running.
 func (m *Manager) IsRunning() bool {
-	var cmd *exec.Cmd
 	switch runtime.GOOS {
 	case "windows":
-		cmd = exec.Command("tasklist", "/fi", "imagename eq sap-devs-tray.exe", "/nh")
+		cmd := exec.Command("tasklist", "/fi", "imagename eq sap-devs-tray.exe", "/fo", "csv", "/nh")
+		out, err := cmd.Output()
+		if err != nil {
+			return false
+		}
+		return strings.Contains(string(out), "sap-devs-tray.exe")
 	default:
-		cmd = exec.Command("pgrep", "-f", "sap-devs-tray")
+		return exec.Command("pgrep", "-f", "sap-devs-tray").Run() == nil
 	}
-	return cmd.Run() == nil
 }
 
 func httpGet(url, token string) ([]byte, error) {

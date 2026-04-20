@@ -51,7 +51,7 @@ var updateCmd = &cobra.Command{
 
 		fmt.Fprintln(cmd.OutOrStdout(), i18n.Tf(i18n.ActiveLang, "update.done", map[string]any{"TagName": rel.TagName}))
 
-		mgr := &trayctl.Manager{CacheDir: paths.CacheDir, Version: rel.Version, Token: token}
+		mgr := &trayctl.Manager{CacheDir: paths.CacheDir, Version: rel.Version, Token: token, RepoURL: repoURL}
 		if mgr.IsInstalled() {
 			fmt.Fprintln(cmd.OutOrStdout(), "Updating tray companion...")
 			if err := mgr.Install(); err != nil {
