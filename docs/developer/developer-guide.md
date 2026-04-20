@@ -88,6 +88,7 @@ sap-devs-cli/
 │   │   └── catalogs/       # JSON string catalogs per language (en.json, de.json, …)
 │   ├── learn/              # Cross-type learning recommendations, search, and paths
 │   ├── learning/           # Learning journey catalog and search API client
+│   ├── mcpserver/          # Built-in MCP server (sap-devs mcp serve)
 │   ├── project/            # Project detection and health checks
 │   ├── sync/               # Sync engine — fetches official/company repo zips
 │   ├── tutorials/          # Tutorial fetching, parsing, and search
@@ -254,6 +255,34 @@ Experience level is stored in `config.yaml` as `experience_level` (beginner/inte
 **Doctor integration:** `cmd/doctor.go` calls `Detect()` and `Check()` directly. The `--tools-only` flag skips project health; `--project-only` skips tool version checks. `printProjectHealth()` renders findings with severity icons and fix suggestions.
 
 **Version staleness:** `semver.go` provides `CompareVersions()` and `VersionStaleness()` for comparing detected versions against latest known versions from `pack.yaml` `versions` maps. Thresholds: ≥1 major behind → error; ≥2 minor behind → warning.
+
+### Built-in MCP Server
+
+`sap-devs mcp serve` (`cmd/mcp_serve.go`) starts a built-in MCP (Model Context Protocol) server on stdio, exposing SAP developer knowledge as live tools for AI agents. The server uses the `mark3labs/mcp-go` SDK.
+
+**Package:** `internal/mcpserver/` — thin handler adapters that delegate to existing content, news, tutorial, and learning packages.
+
+**Architecture:**
+
+```text
+cmd/mcp_serve.go          → Cobra subcommand: loads packs, builds Deps, calls NewServer + ServeStdio
+internal/mcpserver/
+├── server.go             → NewServer(): creates mcp-go MCPServer, registers all tool groups
+├── tools_content.go      → list_packs, get_context, get_tip
+├── tools_resources.go    → search_resources
+├── tools_errors.go       → get_known_errors
+├── tools_news.go         → get_recent_news (lazy fetch with sync.Once + timeout)
+├── tools_learn.go        → search_tutorials, search_learning_journeys
+└── tools_samples.go      → get_samples
+```
+
+**Deps struct:** Injected at startup — holds `[]*content.Pack`, `*content.Profile`, `[]tutorials.TutorialMeta`, `[]learning.LearningJourney`, and `Version string`. No global state.
+
+**News fetching:** The `newsFetcher` struct uses `sync.Once` to lazily fetch YouTube RSS + SAP Community RSS on first `get_recent_news` call, with a 5-second timeout. A `sync.Mutex` protects the cached result from data races.
+
+**Self-install:** `content/packs/base/mcp.yaml` defines a `sap-devs-server` entry so `sap-devs mcp install sap-devs-server` wires the built-in server into AI tool configs.
+
+**9 tools:** `list_packs`, `get_context`, `get_tip`, `search_resources`, `get_known_errors`, `get_recent_news`, `search_tutorials`, `search_learning_journeys`, `get_samples`.
 
 ---
 
