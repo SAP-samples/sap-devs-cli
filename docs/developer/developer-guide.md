@@ -13,6 +13,8 @@ This guide covers everything you need to build, test, and release the `sap-devs`
   sudo apt-get install -y libx11-dev
   ```
 
+- **Tray binary only:** C compiler (`gcc`) — required for CGO (Wails v3). Not needed for the main CLI.
+
 ---
 
 ## Clone & Build
@@ -78,6 +80,7 @@ CI runs on a self-hosted `Linux X64` runner and is the authoritative test runner
 ```bash
 sap-devs-cli/
 ├── cmd/                    # Cobra command definitions (one file per command)
+│   └── sap-devs-tray/     # Optional GUI tray binary (separate go.mod, Wails v3)
 ├── internal/
 │   ├── adapter/            # Adapter engine — pushes context into AI tools
 │   ├── config/             # Config file read/write
@@ -90,7 +93,9 @@ sap-devs-cli/
 │   ├── learning/           # Learning journey catalog and search API client
 │   ├── mcpserver/          # Built-in MCP server (sap-devs mcp serve)
 │   ├── project/            # Project detection and health checks
+│   ├── service/            # OS-native background scheduler (systemd/launchd/schtasks)
 │   ├── sync/               # Sync engine — fetches official/company repo zips
+│   ├── trayctl/            # Tray binary lifecycle (download, checksum, start/stop, autostart)
 │   ├── tutorials/          # Tutorial fetching, parsing, and search
 │   ├── update/             # Self-update logic
 │   └── xdg/                # Platform-native config/cache/data paths
@@ -101,7 +106,8 @@ sap-devs-cli/
 │   └── schemas/            # JSON Schema files for YAML validation
 ├── .github/
 │   ├── workflows/ci.yml    # Test + build on every push/PR
-│   └── workflows/release.yml  # GoReleaser triggered by v* tags
+│   ├── workflows/release.yml      # GoReleaser triggered by v* tags
+│   └── workflows/release-tray.yml # Tray binary multi-platform build
 ├── .goreleaser.yml         # Cross-platform release configuration
 ├── go.mod / go.sum
 └── main.go
@@ -284,6 +290,73 @@ internal/mcpserver/
 
 **9 tools:** `list_packs`, `get_context`, `get_tip`, `search_resources`, `get_known_errors`, `get_recent_news`, `search_tutorials`, `search_learning_journeys`, `get_samples`.
 
+### OS-Native Scheduler
+
+`internal/service/` provides a `Scheduler` interface with platform implementations behind build tags — no CGO, no new dependencies. `service.New(cacheDir)` returns the platform-appropriate implementation.
+
+**Interface:**
+
+```go
+type Scheduler interface {
+    Install(interval time.Duration, binaryPath string) error
+    Uninstall() error
+    Status() (*Status, error)  // Installed, LastRun, NextRun
+}
+```
+
+**Platform implementations:**
+
+| Platform | Mechanism | Config file | Build tag |
+| --- | --- | --- | --- |
+| Windows | Task Scheduler (`schtasks`) | — (registry-based) | `scheduler_windows.go` |
+| macOS | launchd plist | `~/Library/LaunchAgents/com.sap-devs.sync.plist` | `scheduler_darwin.go` |
+| Linux | systemd user timer | `~/.config/systemd/user/sap-devs-sync.{service,timer}` | `scheduler_linux.go` |
+
+Each implementation runs `sap-devs sync && sap-devs inject --no-sync` on the configured interval. Output is redirected to `~/.cache/sap-devs/daemon.log`.
+
+**CLI commands** (`cmd/service.go`):
+
+- `sap-devs service install` — registers the scheduler with the OS (reads `config.Service.Interval`, default 6h)
+- `sap-devs service uninstall` — removes the scheduler registration
+- `sap-devs service status` — shows installed state, last run, and next run
+
+### Tray Companion
+
+The tray companion is an optional GUI binary (`sap-devs-tray`) managed by the main CLI. Two packages handle this:
+
+**`internal/trayctl/`** — manages the tray binary lifecycle from the main CLI:
+
+| File | Responsibility |
+|---|---|
+| `manager.go` | Download from GitHub Releases, SHA256 checksum verification, start/stop process, version check |
+| `autostart.go` | Cross-platform login startup: Windows Registry (`HKCU\...\Run`), macOS LaunchAgent plist, Linux XDG `.desktop` file |
+| `extract.go` | Archive extraction (`.zip` for Windows, `.tar.gz` for macOS/Linux) |
+
+The tray binary is stored at `~/.cache/sap-devs/bin/sap-devs-tray`.
+
+**CLI commands** (`cmd/tray.go`):
+
+- `sap-devs tray install` — downloads version-matched binary, verifies checksum, optionally registers autostart
+- `sap-devs tray uninstall` — removes binary and autostart registration
+- `sap-devs tray start` / `stop` — process control
+- `sap-devs tray status` — shows install state, running/stopped, autostart enabled/disabled
+
+**`cmd/sap-devs-tray/`** — the Wails v3 tray binary (separate Go module):
+
+| File | Responsibility |
+|---|---|
+| `main.go` | Entry point, flag parsing, version display |
+| `app.go` | Wails application setup: system tray icon, context menu, webview panel (400×550, frameless, auto-dismiss) |
+| `server.go` | Embedded HTTP server on `127.0.0.1` (random port, session-token auth): `/api/state`, `/api/sync`, `/api/sync-log`, `/api/inject`, `/api/hide` |
+| `state.go` | Reads shared state files (`sync-state.json`, `config.yaml`, `profile.yaml`) to build dashboard data |
+| `frontend/` | SAP Fiori-themed dashboard: Fundamental Styles with `sap_horizon`/`sap_horizon_dark` themes, auto-switching via OS preference |
+
+**Dashboard features:** sync status with last/next sync and pack count, active profile with avatar and pack list, injected tool detection (Claude Code, Cursor, GitHub Copilot, Windsurf, Gemini Code Assist), live sync log streaming, Sync Now / Inject Now action buttons.
+
+**Tray menu:** Sync Now, Inject Now, Open Terminal (platform-aware), Quit. Primary click opens the dashboard panel positioned near the tray icon.
+
+> **Alpha disclaimer:** Wails v3 is in alpha. The tray is strictly optional — all CLI features work without it. If Wails v3 breaks, only the tray binary is affected.
+
 ---
 
 ## Adding a Command
@@ -354,6 +427,32 @@ A `checksums.txt` (SHA256) is included in the release assets.
 1. Go to the GitHub Releases page and verify all platform artifacts are present.
 2. Verify `checksums.txt` is attached.
 3. Test by downloading and running `sap-devs --version` on at least one platform.
+
+### Tray Binary Release
+
+The tray binary has its own release workflow at `.github/workflows/release-tray.yml`, triggered by the same `v*` tags. It builds `sap-devs-tray` for all platforms with CGO enabled:
+
+| Platform | Architecture | Archive format |
+| --- | --- | --- |
+| Linux | amd64, arm64 | `.tar.gz` |
+| macOS | amd64, arm64 | `.tar.gz` |
+| Windows | amd64 | `.zip` |
+
+Archive naming: `sap-devs-tray_<version>_<os>_<arch>.<ext>`. Per-artifact SHA256 checksums are generated and aggregated into `tray-checksums.txt`. The main CLI's `internal/trayctl/Manager` downloads these artifacts and verifies checksums at install time.
+
+Version is injected via:
+```
+-ldflags "-X main.version=<tag>"
+```
+
+**Building locally (Windows):** Use `build.ps1`, which builds both the main CLI and the tray binary (requires `gcc` for CGO).
+
+**Building locally (macOS/Linux):**
+
+```bash
+cd cmd/sap-devs-tray
+CGO_ENABLED=1 go build -ldflags "-X main.version=dev" -o sap-devs-tray .
+```
 
 ---
 

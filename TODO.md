@@ -234,54 +234,17 @@ A cross-platform graphical UI in the SAP Fiori design language could provide a m
 
 ## Background Automation & System Tray
 
-### Scheduled background sync and inject
+### ~~Scheduled background sync and inject~~ — DONE ✔️
 
-Run `sync` and `inject` automatically on a schedule, without any user interaction, so content stays up to date silently in the background.
-
-**Problem:** Users must remember to run `sap-devs sync` and `sap-devs inject` to keep AI tools current. Most won't. The tool should do this for them.
-
-**Proposed approach:**
-
-- **Daemon / background service** — a long-running process (or OS-scheduled task) that wakes on a configurable interval (e.g. every 6h), runs `sync` if the cache is stale, then `inject` if anything changed
-- **Platform integration options:**
-  - **Linux/macOS:** `systemd` user unit or `launchd` plist; `sap-devs service install/uninstall` writes the unit file and enables it
-  - **Windows:** Windows Task Scheduler entry; `sap-devs service install` registers a scheduled task that runs at login and every N hours
-- **Silent by default** — no terminal output; errors written to a rotating log in the cache directory (`~/.cache/sap-devs/daemon.log`)
-- **`sap-devs service status`** — show last-run time, next-run time, and whether the service is registered
-- **Change detection** — skip `inject` if pack hashes are unchanged since last run, to avoid unnecessary file writes and CLAUDE.md noise
-- **Config keys:** `background_sync_interval` (default `6h`), `background_sync_enabled` (default `true` once service is installed)
-
-**Dependency:** Closely coupled with the system tray feature below — the tray app is the natural host for the daemon on desktop platforms. But we need a script injection option to allow non-GUI environments (e.g., headless servers) to still benefit from automated sync and inject functionality.
+Implemented as OS-native scheduler in `internal/service/` with platform-specific implementations behind build tags: Windows Task Scheduler (`schtasks`), macOS launchd (plist), Linux systemd (user timer). CLI: `sap-devs service install/uninstall/status`. Config key: `service.interval` (default 6h). Logs to `~/.cache/sap-devs/daemon.log`. See [design spec](docs/superpowers/specs/2026-04-20-system-tray-design.md) and [implementation plan](docs/superpowers/plans/2026-04-20-system-tray-1-os-scheduler.md).
 
 ---
 
-### System tray icon (OS-appropriate visual interaction)
+### ~~System tray icon~~ — DONE ✔️
 
-A persistent system-tray (or menu-bar) icon that surfaces tool status, triggers sync/inject on demand, and can start with OS login — making `sap-devs` a first-class background companion rather than a one-shot CLI.
+Implemented as a separate Wails v3 binary (`sap-devs-tray`) in `cmd/sap-devs-tray/` with its own `go.mod` — the main CLI stays CGO-free. The tray binary provides a system tray icon with context menu (Sync, Inject, Open Terminal, Quit) and a Fiori-themed webview dashboard panel showing sync status, active profile with packs, and injected tool detection. The main CLI manages the tray lifecycle via `internal/trayctl/` (download from GitHub Releases with SHA256 verification, start/stop, cross-platform autostart registration). CLI: `sap-devs tray install/uninstall/start/stop/status`. See [design spec](docs/superpowers/specs/2026-04-20-system-tray-design.md) and implementation plans ([lifecycle](docs/superpowers/plans/2026-04-20-system-tray-2-tray-lifecycle.md), [binary](docs/superpowers/plans/2026-04-20-system-tray-3-wails-binary.md)).
 
-**Problem:** Background automation is invisible. Users have no way to know whether content is current, whether sync failed, or what profile is active — without opening a terminal. A tray icon gives them a glanceable status and a right-click menu for common actions.
-
-**Proposed approach:**
-
-- **Host process:** a small GUI binary (`sap-devs-tray` or a sub-command `sap-devs tray`) that embeds the tray icon and drives the background scheduler
-- **Cross-platform tray library options (Go):**
-  - [`getlantern/systray`](https://github.com/getlantern/systray) — widely used, supports Windows, macOS, Linux (via AppIndicator)
-  - [`fyne-io/fyne`](https://github.com/fyne-io/fyne) — heavier but full GUI toolkit if richer UI is needed later
-- **Tray menu (v1 scope):**
-  - Status line: "Last synced: 2h ago" / "Up to date" / "Sync failed"
-  - Active profile name
-  - Actions: **Sync now**, **Inject now**, **Open terminal**, **Settings**
-  - **Quit**
-- **Icon states:** idle (colour), syncing (animated or alternate icon), error (red badge)
-- **OS startup:** `sap-devs tray --install-startup` writes the appropriate autostart entry (macOS `LaunchAgents`, Windows `HKCU\...\Run`, Linux `~/.config/autostart/`)
-- **Notifications:** optional desktop notifications on sync completion or error (OS notification API via `gen2brain/beeep` or similar)
-- **Architecture note:** This takes `sap-devs` into GUI / CGO territory for the first time. The tray binary should be a separate build target in GoReleaser to keep the main CLI binary free of CGO dependencies.
-
-**Open questions:**
-
-- Separate binary vs. sub-command (`sap-devs tray`)? Separate binary is cleaner for CGO isolation but adds distribution complexity.
-- Should the tray host the scheduler, or should it be a thin UI on top of an OS service (systemd/launchd/Task Scheduler)?
-- What richer UI surfaces are worth adding later — a mini dashboard, pack browser, tip popover?
+> **Alpha disclaimer:** Wails v3 is in alpha. The tray is strictly optional — all CLI features work without it.
 
 ---
 
