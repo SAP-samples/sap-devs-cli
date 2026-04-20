@@ -13,6 +13,7 @@ import (
 	gosync "sync"
 	"time"
 
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/spf13/cobra"
 	"github.com/SAP-samples/sap-devs-cli/internal/config"
 	"github.com/SAP-samples/sap-devs-cli/internal/content"
@@ -20,14 +21,15 @@ import (
 	"github.com/SAP-samples/sap-devs-cli/internal/discovery"
 	"github.com/SAP-samples/sap-devs-cli/internal/events"
 	"github.com/SAP-samples/sap-devs-cli/internal/i18n"
-	sapSync "github.com/SAP-samples/sap-devs-cli/internal/sync"
 	"github.com/SAP-samples/sap-devs-cli/internal/learning"
+	sapSync "github.com/SAP-samples/sap-devs-cli/internal/sync"
 	"github.com/SAP-samples/sap-devs-cli/internal/tutorials"
 	"github.com/SAP-samples/sap-devs-cli/internal/ui"
 	"github.com/SAP-samples/sap-devs-cli/internal/videos"
 	"github.com/SAP-samples/sap-devs-cli/internal/xdg"
 	"github.com/SAP-samples/sap-devs-cli/internal/youtube"
 	"golang.org/x/sync/errgroup"
+	"golang.org/x/term"
 	"gopkg.in/yaml.v3"
 )
 
@@ -43,6 +45,90 @@ var syncCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return runSync(cmd.Context(), syncForce, cmd.OutOrStdout())
 	},
+}
+
+// categoryToPhase maps independent sync categories to their PhaseID.
+var categoryToPhase = map[string]ui.PhaseID{
+	"events":    ui.PhaseEvents,
+	"youtube":   ui.PhaseYouTube,
+	"discovery": ui.PhaseDiscovery,
+	"tutorials": ui.PhaseTutorials,
+	"learning":  ui.PhaseLearning,
+}
+
+// syncPlan holds pre-computed state for a sync run.
+type syncPlan struct {
+	visiblePhases []ui.PhaseID
+	archiveNeeded bool
+	companyNeeded bool
+	activeArchive []string
+	activeIndep   []string
+	indepPhases   map[string]ui.PhaseID
+	force         bool
+	officialCache string
+	cfg           *config.Config
+	paths         *xdg.Paths
+	engine        *sapSync.Engine
+	token         string
+}
+
+// buildSyncPlan checks staleness for each category and builds the list of visible phases.
+func buildSyncPlan(cfg *config.Config, paths *xdg.Paths, engine *sapSync.Engine, token string, force bool) *syncPlan {
+	categories := allCategories()
+	if syncCategory != "" {
+		categories = []string{syncCategory}
+	}
+
+	archiveCats := []string{"tips", "tools", "resources", "context", "mcp", "advocates"}
+	independentCats := []string{"events", "youtube", "discovery", "tutorials", "learning"}
+
+	activeArchive := intersectStrings(archiveCats, categories)
+	activeIndep := intersectStrings(independentCats, categories)
+
+	plan := &syncPlan{
+		activeArchive: activeArchive,
+		activeIndep:   activeIndep,
+		indepPhases:   make(map[string]ui.PhaseID),
+		force:         force,
+		officialCache: filepath.Join(paths.CacheDir, "official"),
+		cfg:           cfg,
+		paths:         paths,
+		engine:        engine,
+		token:         token,
+	}
+
+	// Check archive block staleness
+	plan.archiveNeeded = force
+	for _, cat := range activeArchive {
+		if engine.IsStale(cat) {
+			plan.archiveNeeded = true
+			break
+		}
+	}
+
+	if plan.archiveNeeded {
+		plan.visiblePhases = append(plan.visiblePhases, ui.PhaseContent)
+		if cfg.CompanyRepo != "" {
+			plan.companyNeeded = true
+			plan.visiblePhases = append(plan.visiblePhases, ui.PhaseCompany)
+		}
+		// Markers phase is always included when archive syncs
+		plan.visiblePhases = append(plan.visiblePhases, ui.PhaseMarkers)
+	}
+
+	// Check each independent category
+	for _, cat := range activeIndep {
+		if force || engine.IsStale(cat) {
+			pid, ok := categoryToPhase[cat]
+			if !ok {
+				continue
+			}
+			plan.visiblePhases = append(plan.visiblePhases, pid)
+			plan.indepPhases[cat] = pid
+		}
+	}
+
+	return plan
 }
 
 // runSync is the shared sync implementation used by both the sync command and inline inject sync.
@@ -62,13 +148,6 @@ func runSync(ctx context.Context, force bool, out io.Writer) error {
 	}
 
 	token := credentials.Resolve(paths.ConfigDir)
-	categories := allCategories()
-	// Apply --category filter when called directly from syncCmd (syncCategory is set by the flag)
-	if syncCategory != "" {
-		categories = []string{syncCategory}
-	}
-
-	officialCache := filepath.Join(paths.CacheDir, "official")
 	ttls := map[string]time.Duration{
 		"tips": cfg.Sync.Tips, "tools": cfg.Sync.Tools,
 		"advocates": cfg.Sync.Advocates, "resources": cfg.Sync.Resources,
@@ -79,126 +158,243 @@ func runSync(ctx context.Context, force bool, out io.Writer) error {
 	}
 	engine := sapSync.NewEngine(paths.CacheDir, 24*time.Hour, ttls)
 
-	archiveCats := []string{"tips", "tools", "resources", "context", "mcp", "advocates"}
-	independentCats := []string{"events", "youtube", "discovery", "tutorials", "learning"}
+	plan := buildSyncPlan(cfg, paths, engine, token, force)
 
-	activeArchive := intersectStrings(archiveCats, categories)
-	activeIndependent := intersectStrings(independentCats, categories)
-
-	archiveNeedsSync := force
-	for _, cat := range activeArchive {
-		if engine.IsStale(cat) {
-			archiveNeedsSync = true
-			break
-		}
-	}
-	independentNeedsSync := force
-	for _, cat := range activeIndependent {
-		if engine.IsStale(cat) {
-			independentNeedsSync = true
-			break
-		}
-	}
-
-	if !archiveNeedsSync && !independentNeedsSync {
+	// Fast path: everything is up to date
+	if len(plan.visiblePhases) == 0 {
 		fmt.Fprintln(out, i18n.T(i18n.ActiveLang, "sync.up_to_date"))
 		return nil
 	}
 
-	if archiveNeedsSync {
-		fmt.Fprintln(out, i18n.T(i18n.ActiveLang, "sync.syncing"))
-		if err := sapSync.FetchArchive(officialRepoArchive, officialCache, token); err != nil {
-			return fmt.Errorf("sync official content: %w", err)
-		}
-		if err := engine.MarkAllSynced(activeArchive); err != nil {
-			return err
-		}
-		fmt.Fprintln(out, i18n.Tf(i18n.ActiveLang, "sync.updated", map[string]any{"Categories": activeArchive}))
+	// Detect TTY to choose between Bubbletea and plain text output
+	isTTY := false
+	if f, ok := out.(*os.File); ok {
+		isTTY = term.IsTerminal(int(f.Fd()))
+	}
 
-		// Phase 2: marker expansion (Bubbletea progress)
-		if err := runMarkerExpansion(officialCache, engine); err != nil {
-			fmt.Fprintf(os.Stderr, "sap-devs: marker expansion warning: %v\n", err)
-			// Non-fatal: sync continues
+	if isTTY {
+		return runSyncTTY(plan)
+	}
+	return runSyncPlain(plan, out)
+}
+
+// indepPhase pairs a category with its PhaseID and fetch function.
+type indepPhase struct {
+	cat string
+	id  ui.PhaseID
+	fn  func() (string, error)
+}
+
+// syncWorker runs in a goroutine and drives all sync phases, sending messages
+// to the Bubbletea program for progress display.
+func syncWorker(plan *syncPlan, p *tea.Program) {
+	var fatalErr error
+	defer func() {
+		p.Send(ui.SyncDoneMsg{FatalErr: fatalErr})
+	}()
+
+	// --- Archive block ---
+	if plan.archiveNeeded {
+		// Phase: content
+		p.Send(ui.PhaseStartMsg{ID: ui.PhaseContent})
+		if err := sapSync.FetchArchive(officialRepoArchive, plan.officialCache, plan.token); err != nil {
+			fatalErr = fmt.Errorf("sync official content: %w", err)
+			p.Send(ui.PhaseDoneMsg{ID: ui.PhaseContent, Err: fatalErr})
+			return
 		}
+		if err := plan.engine.MarkAllSynced(plan.activeArchive); err != nil {
+			fatalErr = err
+			p.Send(ui.PhaseDoneMsg{ID: ui.PhaseContent, Err: fatalErr})
+			return
+		}
+		p.Send(ui.PhaseDoneMsg{ID: ui.PhaseContent})
 
-		// Collect changelog entries from official packs
-		changelogDirs := []string{filepath.Join(officialCache, "content", "packs")}
-
-		// Sync company repo if configured
-		if cfg.CompanyRepo != "" {
-			if !strings.HasPrefix(cfg.CompanyRepo, "https://") {
-				fmt.Fprintln(out, i18n.Tf(i18n.ActiveLang, "sync.warn_https", map[string]any{"URL": cfg.CompanyRepo}))
+		// Phase: company
+		companySynced := false
+		if plan.companyNeeded {
+			p.Send(ui.PhaseStartMsg{ID: ui.PhaseCompany})
+			if !strings.HasPrefix(plan.cfg.CompanyRepo, "https://") {
+				p.Send(ui.PhaseDoneMsg{ID: ui.PhaseCompany, Err: fmt.Errorf("company repo must use https://")})
 			} else {
-				companyCache := filepath.Join(paths.CacheDir, "company")
-				repoURL := strings.TrimRight(cfg.CompanyRepo, "/")
+				companyCache := filepath.Join(plan.paths.CacheDir, "company")
+				repoURL := strings.TrimRight(plan.cfg.CompanyRepo, "/")
 				companyArchive := repoURL + "/archive/refs/heads/main.zip"
-				fmt.Fprintln(out, i18n.T(i18n.ActiveLang, "sync.syncing_company"))
-				if err := sapSync.FetchArchive(companyArchive, companyCache, token); err != nil {
-					fmt.Fprintln(out, i18n.Tf(i18n.ActiveLang, "sync.warn_company_failed", map[string]any{"Err": err}))
+				if err := sapSync.FetchArchive(companyArchive, companyCache, plan.token); err != nil {
+					p.Send(ui.PhaseDoneMsg{ID: ui.PhaseCompany, Err: err})
 				} else {
-					changelogDirs = append(changelogDirs, filepath.Join(companyCache, "content", "packs"))
+					companySynced = true
+					p.Send(ui.PhaseDoneMsg{ID: ui.PhaseCompany})
 				}
 			}
 		}
 
-		// Write changelog file for inject to consume
+		// Phase: markers
+		p.Send(ui.PhaseStartMsg{ID: ui.PhaseMarkers})
+		if err := runMarkerExpansion(plan.officialCache, plan.engine, p); err != nil {
+			p.Send(ui.PhaseDoneMsg{ID: ui.PhaseMarkers, Err: err})
+		} else {
+			p.Send(ui.PhaseDoneMsg{ID: ui.PhaseMarkers})
+		}
+
+		// Changelog (hidden — no phase messages)
+		changelogDirs := []string{filepath.Join(plan.officialCache, "content", "packs")}
+		if companySynced {
+			companyCache := filepath.Join(plan.paths.CacheDir, "company")
+			changelogDirs = append(changelogDirs, filepath.Join(companyCache, "content", "packs"))
+		}
 		syncedAt := time.Now()
 		clEntries, err := sapSync.CollectChangelog(changelogDirs)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "sap-devs: changelog collection warning: %v\n", err)
 		}
-		if writeErr := sapSync.WriteChangelog(paths.CacheDir, syncedAt, clEntries); writeErr != nil {
+		if writeErr := sapSync.WriteChangelog(plan.paths.CacheDir, syncedAt, clEntries); writeErr != nil {
 			fmt.Fprintf(os.Stderr, "sap-devs: changelog write warning: %v\n", writeErr)
 		}
 	}
 
-	// Phase 3: events RSS cache
-	if containsString(activeIndependent, "events") && (force || engine.IsStale("events")) {
-		if err := runEventsFetch(paths.CacheDir, officialCache, force); err != nil {
-			fmt.Fprintf(os.Stderr, "sap-devs: events sync warning: %v\n", err)
+	// --- Independent phases ---
+	phases := buildIndepPhases(plan)
+	for _, ip := range phases {
+		p.Send(ui.PhaseStartMsg{ID: ip.id})
+		_, err := ip.fn()
+		if err != nil {
+			p.Send(ui.PhaseDoneMsg{ID: ip.id, Err: err})
+		} else {
+			_ = plan.engine.MarkSynced(ip.cat)
+			p.Send(ui.PhaseDoneMsg{ID: ip.id})
 		}
-		_ = engine.MarkSynced("events")
+	}
+}
+
+// buildIndepPhases returns the list of independent phases to run.
+func buildIndepPhases(plan *syncPlan) []indepPhase {
+	var phases []indepPhase
+	for _, cat := range plan.activeIndep {
+		pid, ok := plan.indepPhases[cat]
+		if !ok {
+			continue
+		}
+		cat := cat // capture loop variable
+		var fn func() (string, error)
+		switch cat {
+		case "events":
+			fn = func() (string, error) {
+				return "", runEventsFetch(plan.paths.CacheDir, plan.officialCache, plan.force)
+			}
+		case "youtube":
+			fn = func() (string, error) {
+				return "", runYouTubeFetch(plan.paths.CacheDir, plan.officialCache, plan.cfg.CompanyRepo, plan.paths.ConfigDir, plan.force, plan.cfg.Sync.YouTube)
+			}
+		case "discovery":
+			fn = func() (string, error) {
+				return "", runDiscoveryFetch(plan.paths.CacheDir, plan.force)
+			}
+		case "tutorials":
+			fn = func() (string, error) {
+				return "", runTutorialsFetch(plan.paths.CacheDir, plan.force)
+			}
+		case "learning":
+			fn = func() (string, error) {
+				return "", runLearningFetch(plan.paths.CacheDir, plan.force)
+			}
+		default:
+			continue
+		}
+		phases = append(phases, indepPhase{cat: cat, id: pid, fn: fn})
+	}
+	return phases
+}
+
+// runSyncTTY runs the sync with the Bubbletea inline progress display.
+func runSyncTTY(plan *syncPlan) error {
+	p, model := ui.RunSyncProgress(plan.visiblePhases)
+
+	go syncWorker(plan, p)
+
+	if _, err := p.Run(); err != nil {
+		return fmt.Errorf("progress display: %w", err)
+	}
+	return model.FatalErr()
+}
+
+// runSyncPlain runs the sync with plain text progress output (non-TTY).
+func runSyncPlain(plan *syncPlan, out io.Writer) error {
+	fmt.Fprintln(out, i18n.T(i18n.ActiveLang, "sync.syncing"))
+
+	// --- Archive block ---
+	if plan.archiveNeeded {
+		if err := sapSync.FetchArchive(officialRepoArchive, plan.officialCache, plan.token); err != nil {
+			ui.PrintPlainProgress(out, ui.PhaseContent, "failed", "", err)
+			return fmt.Errorf("sync official content: %w", err)
+		}
+		if err := plan.engine.MarkAllSynced(plan.activeArchive); err != nil {
+			ui.PrintPlainProgress(out, ui.PhaseContent, "failed", "", err)
+			return err
+		}
+		ui.PrintPlainProgress(out, ui.PhaseContent, "done", "", nil)
+
+		// Company
+		companySynced := false
+		if plan.companyNeeded {
+			if !strings.HasPrefix(plan.cfg.CompanyRepo, "https://") {
+				ui.PrintPlainProgress(out, ui.PhaseCompany, "failed", "", fmt.Errorf("company repo must use https://"))
+			} else {
+				companyCache := filepath.Join(plan.paths.CacheDir, "company")
+				repoURL := strings.TrimRight(plan.cfg.CompanyRepo, "/")
+				companyArchive := repoURL + "/archive/refs/heads/main.zip"
+				if err := sapSync.FetchArchive(companyArchive, companyCache, plan.token); err != nil {
+					ui.PrintPlainProgress(out, ui.PhaseCompany, "failed", "", err)
+				} else {
+					companySynced = true
+					ui.PrintPlainProgress(out, ui.PhaseCompany, "done", "", nil)
+				}
+			}
+		}
+
+		// Markers (silent in plain mode — no Bubbletea program)
+		if err := runMarkerExpansion(plan.officialCache, plan.engine, nil); err != nil {
+			ui.PrintPlainProgress(out, ui.PhaseMarkers, "failed", "", err)
+		} else {
+			ui.PrintPlainProgress(out, ui.PhaseMarkers, "done", "", nil)
+		}
+
+		// Changelog (hidden)
+		changelogDirs := []string{filepath.Join(plan.officialCache, "content", "packs")}
+		if companySynced {
+			companyCache := filepath.Join(plan.paths.CacheDir, "company")
+			changelogDirs = append(changelogDirs, filepath.Join(companyCache, "content", "packs"))
+		}
+		syncedAt := time.Now()
+		clEntries, err := sapSync.CollectChangelog(changelogDirs)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "sap-devs: changelog collection warning: %v\n", err)
+		}
+		if writeErr := sapSync.WriteChangelog(plan.paths.CacheDir, syncedAt, clEntries); writeErr != nil {
+			fmt.Fprintf(os.Stderr, "sap-devs: changelog write warning: %v\n", writeErr)
+		}
 	}
 
-	// Phase 4: YouTube fetch
-	if containsString(activeIndependent, "youtube") && (force || engine.IsStale("youtube")) {
-		if err := runYouTubeFetch(paths.CacheDir, officialCache, cfg.CompanyRepo, paths.ConfigDir, force, cfg.Sync.YouTube); err != nil {
-			fmt.Fprintf(os.Stderr, "sap-devs: youtube sync warning: %v\n", err)
+	// --- Independent phases ---
+	phases := buildIndepPhases(plan)
+	for _, ip := range phases {
+		err := func() error { _, e := ip.fn(); return e }()
+		if err != nil {
+			ui.PrintPlainProgress(out, ip.id, "failed", "", err)
+			fmt.Fprintf(os.Stderr, "sap-devs: %s sync: %v\n", ip.cat, err)
+		} else {
+			_ = plan.engine.MarkSynced(ip.cat)
+			ui.PrintPlainProgress(out, ip.id, "done", "", nil)
 		}
-		_ = engine.MarkSynced("youtube")
-	}
-
-	// Phase 5: Discovery Center fetch
-	if containsString(activeIndependent, "discovery") && (force || engine.IsStale("discovery")) {
-		if err := runDiscoveryFetch(paths.CacheDir, force); err != nil {
-			fmt.Fprintf(os.Stderr, "sap-devs: discovery sync: %v\n", err)
-		}
-		_ = engine.MarkSynced("discovery")
-	}
-
-	// Phase 6: Tutorials index fetch
-	if containsString(activeIndependent, "tutorials") && (force || engine.IsStale("tutorials")) {
-		if err := runTutorialsFetch(paths.CacheDir, force); err != nil {
-			fmt.Fprintf(os.Stderr, "sap-devs: tutorials sync: %v\n", err)
-		}
-		_ = engine.MarkSynced("tutorials")
-	}
-
-	// Phase 7: Learning journeys catalog fetch
-	if containsString(activeIndependent, "learning") && (force || engine.IsStale("learning")) {
-		if err := runLearningFetch(paths.CacheDir, force); err != nil {
-			fmt.Fprintf(os.Stderr, "sap-devs: learning sync: %v\n", err)
-		}
-		_ = engine.MarkSynced("learning")
 	}
 
 	return nil
 }
 
 // runMarkerExpansion scans all official-layer packs for sync:fetch markers,
-// fetches them in parallel with a Bubbletea progress display, and writes
-// context.expanded.md alongside each context.md.
-func runMarkerExpansion(officialCache string, engine *sapSync.Engine) error {
+// fetches them in parallel, and writes context.expanded.md alongside each context.md.
+// When p is non-nil, it sends SetMarkersMsg and MarkerDoneMsg to the Bubbletea program.
+// When p is nil (plain text path), markers are fetched silently.
+func runMarkerExpansion(officialCache string, engine *sapSync.Engine, p *tea.Program) error {
 	packsDir := filepath.Join(officialCache, "content", "packs")
 	entries, err := os.ReadDir(packsDir)
 	if err != nil {
@@ -237,8 +433,63 @@ func runMarkerExpansion(officialCache string, engine *sapSync.Engine) error {
 		return nil
 	}
 
-	// Fetch all markers in parallel with progress display
-	results, fetchErrs := ui.RunMarkerExpansion(allMarkers)
+	// Build marker items for UI and send to Bubbletea
+	if p != nil {
+		items := make([]ui.MarkerItem, len(allMarkers))
+		for i, m := range allMarkers {
+			label := m.Label
+			if label == "" {
+				label = m.URL
+			}
+			items[i] = ui.MarkerItem{
+				PackID: m.PackID,
+				Index:  m.Index,
+				Label:  label,
+				State:  "fetching",
+			}
+		}
+		p.Send(ui.SetMarkersMsg{Items: items})
+	}
+
+	// Fetch all markers in parallel (max 4 concurrent)
+	results := make(map[string]string)
+	fetchErrs := make(map[string]error)
+	var mu gosync.Mutex
+	sem := make(chan struct{}, 4)
+	var wg gosync.WaitGroup
+
+	for _, m := range allMarkers {
+		wg.Add(1)
+		go func(m sapSync.Marker) {
+			defer wg.Done()
+			sem <- struct{}{}
+			defer func() { <-sem }()
+
+			content, err := sapSync.FetchMarker(m, nil)
+			label := m.Label
+			if label == "" {
+				label = m.URL
+			}
+			key := m.PackID + "::" + strconv.Itoa(m.Index)
+			if err != nil {
+				mu.Lock()
+				fetchErrs[key] = err
+				mu.Unlock()
+				if p != nil {
+					p.Send(ui.MarkerDoneMsg{PackID: m.PackID, Index: m.Index, Label: label, Err: err})
+				}
+				return
+			}
+			mu.Lock()
+			results[key] = content
+			mu.Unlock()
+			lineCount := strings.Count(content, "\n") + 1
+			if p != nil {
+				p.Send(ui.MarkerDoneMsg{PackID: m.PackID, Index: m.Index, Label: label, Lines: lineCount})
+			}
+		}(m)
+	}
+	wg.Wait()
 
 	// Record marker states and write expanded files
 	for packID, contextContent := range packContexts {
@@ -254,8 +505,8 @@ func runMarkerExpansion(officialCache string, engine *sapSync.Engine) error {
 		packResults := make(map[int]string)
 		for _, m := range packMarkers {
 			key := m.PackID + "::" + strconv.Itoa(m.Index)
-			if content, ok := results[key]; ok {
-				packResults[m.Index] = content
+			if c, ok := results[key]; ok {
+				packResults[m.Index] = c
 			}
 		}
 
