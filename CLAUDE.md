@@ -128,9 +128,13 @@ On every command invocation (except `update` and dev builds), a background gorou
 
 ### Tray Binary (Optional)
 
-`sap-devs-tray` is an optional GUI companion built with Wails v3 (alpha). It lives in `cmd/sap-devs-tray/` with its own `go.mod` — the main CLI never imports Wails. The tray binary provides a system tray icon and a Fiori-themed webview dashboard panel using SAP Fundamental Styles (`sap_horizon` / `sap_horizon_dark` themes, auto-switching via OS preference).
+`sap-devs-tray` is an optional GUI companion built with Wails v3 (alpha). It lives in `cmd/sap-devs-tray/` with its own `go.mod` — the main CLI never imports Wails. The tray binary provides a system tray icon, a Fiori-themed webview dashboard panel, and a GUI config editor, all using SAP Fundamental Styles (`sap_horizon` / `sap_horizon_dark` themes, auto-switching via OS preference).
 
-**Architecture:** The tray reads shared state files (`sync-state.json`, `config.yaml`) written by the main CLI. An embedded HTTP server bound to `127.0.0.1` (session-token-protected) serves the dashboard frontend. The main CLI manages the tray lifecycle via `internal/trayctl/` (download from GitHub Releases, start/stop, autostart registration).
+**Architecture:** The tray reads shared state files (`sync-state.json`, `config.yaml`) written by the main CLI. An embedded HTTP server bound to `127.0.0.1` (session-token-protected) serves the frontend. The main CLI manages the tray lifecycle via `internal/trayctl/` (download from GitHub Releases, start/stop, autostart registration).
+
+**Config Editor:** A separate webview window (`config.html`, 520×700) opened from the tray context menu "Config..." or the dashboard's gear button. Five collapsible Fiori panels (General, Preferences, Events, Sync TTLs, Service & Tray) mirror `sap-devs config edit` TUI. Features: city typeahead with 647-city embedded database (`data/cities.json`, copied from `internal/geo/` at build time), IP-based location auto-detect via ip-api.com, client-side validation (URL, integer, Go duration), service/autostart install/uninstall via subprocess calls to the main CLI binary. Backend in `config.go`, frontend in `config.html` + `js/config.js`.
+
+**API endpoints (16 total):** `/api/state`, `/api/sync`, `/api/sync-log`, `/api/inject`, `/api/hide`, `/api/config` (GET/PUT), `/api/cities`, `/api/languages`, `/api/detect-location`, `/api/service-status`, `/api/service-install`, `/api/service-uninstall`, `/api/autostart-install`, `/api/autostart-uninstall`, `/api/open-config`.
 
 **Alpha disclaimer:** Wails v3 is in alpha. The tray is strictly optional — all CLI features work without it. If Wails v3 breaks, only the tray binary is affected.
 

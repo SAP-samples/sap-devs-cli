@@ -346,14 +346,19 @@ The tray binary is stored at `~/.cache/sap-devs/bin/sap-devs-tray`.
 | File | Responsibility |
 |---|---|
 | `main.go` | Entry point, flag parsing, version display |
-| `app.go` | Wails application setup: system tray icon, context menu, webview panel (400×550, frameless, auto-dismiss) |
-| `server.go` | Embedded HTTP server on `127.0.0.1` (random port, session-token auth): `/api/state`, `/api/sync`, `/api/sync-log`, `/api/inject`, `/api/hide` |
+| `app.go` | Wails application setup: system tray icon, context menu, webview panel (400×550, frameless, auto-dismiss), config editor window (520×700) |
+| `server.go` | Embedded HTTP server on `127.0.0.1` (random port, session-token auth): 16 API endpoints for dashboard, config CRUD, service management |
+| `config.go` | Config loading/saving, validation, city typeahead (647-city embedded DB), IP-based location detection, language list, service/autostart management via subprocess |
 | `state.go` | Reads shared state files (`sync-state.json`, `config.yaml`, `profile.yaml`) to build dashboard data |
-| `frontend/` | SAP Fiori-themed dashboard: Fundamental Styles with `sap_horizon`/`sap_horizon_dark` themes, auto-switching via OS preference |
+| `frontend/` | SAP Fiori-themed UI: Fundamental Styles with `sap_horizon`/`sap_horizon_dark` themes, auto-switching via OS preference |
+| `frontend/config.html` | Config editor page with 5 collapsible panels, sticky save bar |
+| `frontend/js/config.js` | Config editor logic: form population, typeahead, validation, save, service/autostart actions |
 
-**Dashboard features:** sync status with last/next sync and pack count, active profile with avatar and pack list, injected tool detection (Claude Code, Cursor, GitHub Copilot, Windsurf, Gemini Code Assist), live sync log streaming, Sync Now / Inject Now action buttons.
+**Dashboard features:** sync status with last/next sync and pack count, active profile with avatar and pack list, injected tool detection (Claude Code, Cursor, GitHub Copilot, Windsurf, Gemini Code Assist), live sync log streaming, Sync Now / Inject Now / Config action buttons.
 
-**Tray menu:** Sync Now, Inject Now, Open Terminal (platform-aware), Quit. Primary click opens the dashboard panel positioned near the tray icon.
+**Config editor features:** five collapsible Fiori panels (General, Preferences, Events, Sync TTLs, Service & Tray), city typeahead with 200ms debounce, IP-based location auto-detect via ip-api.com, client-side validation (URL format, integer ranges, Go duration syntax), service install/uninstall and autostart management via subprocess calls to the main CLI binary, sticky save bar with success/error feedback.
+
+**Tray menu:** Sync Now, Inject Now, Config..., Open Terminal (platform-aware), Quit. Primary click opens the dashboard panel positioned near the tray icon.
 
 > **Alpha disclaimer:** Wails v3 is in alpha. The tray is strictly optional — all CLI features work without it. If Wails v3 breaks, only the tray binary is affected.
 

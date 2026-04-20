@@ -6,7 +6,7 @@ Ideas and planned features for `sap-devs`. These are not commitments or a roadma
 
 ## Release & Distribution
 
-### ~~Migrate to github.com/SAP-samples~~ (Done)
+### ~~Migrate to github.com/SAP-samples~~ DONE ✔️
 
 Repository migrated from `github.tools.sap/developer-relations/sap-devs-cli` to `github.com/SAP-samples/sap-devs-cli`. Full git history preserved. All import paths, runtime URLs, CI workflows, and documentation updated.
 
@@ -122,12 +122,6 @@ Research publishing `sap-devs` as a GitHub Copilot Extension, making SAP context
 
 ---
 
-### GitHub Packages — not planned
-
-GitHub Packages (Go module proxy) is **not a priority**. `sap-devs` is a CLI binary, not a Go library — the target audience (SAP/CAP/Node.js developers) won't use `go install`. GitHub Releases via GoReleaser is the correct artifact host for binary distribution. Revisit only if a Go library extraction becomes relevant.
-
----
-
 ### Windows code signing for unsigned binary distribution
 
 Unsigned `.exe` files downloaded from the internet are blocked or warned about by Windows SmartScreen. Investigate free signing options for OSS.
@@ -209,14 +203,25 @@ Interactive UI for editing and maintaining pack content YAML files (event-types.
 - Bulk editing — apply a change across multiple entries at once - DONE ✔️
 - Content creation wizard — guided flow for adding a new pack from scratch - DONE ✔️
 
-#### Phase 3 — Graphical UI (Optional)
+#### Phase 3 — Graphical UI (Optional) - DONE ✔️
 
 A cross-platform graphical UI in the SAP Fiori design language could provide a more intuitive and visually appealing way to edit content files, leveraging familiar SAP Fiori components and patterns.
 
 #### Phase 4 — Config editing - DONE ✔️
 
+##### TUI config editor - DONE ✔️
+
 - ✅ `sap-devs config edit` — interactive TUI form for all config settings (general, preferences, events, sync TTLs)
 - ✅ SAP Fiori Horizon Evening dark theme applied to all TUI forms and list views
+
+##### GUI config editor (tray) - DONE ✔️
+
+- ✅ Webview-based config editor in `sap-devs-tray` — opened from tray context menu "Config..." or dashboard gear button
+- ✅ Five collapsible Fiori panels: General, Preferences, Events, Sync TTLs, Service & Tray
+- ✅ City typeahead with 647-city embedded database, IP-based location auto-detect via ip-api.com
+- ✅ Client-side validation (URL format, integer ranges, Go duration syntax)
+- ✅ Service install/uninstall and autostart management via subprocess calls to `sap-devs` CLI
+- ✅ Sticky save bar with success/error feedback
 
 ---
 
