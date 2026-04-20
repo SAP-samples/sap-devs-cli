@@ -141,3 +141,21 @@ func TestTipRotation_MissingKeyLoadsEmpty(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "", cfg.Tip.Rotation)
 }
+
+func TestServiceConfig_Defaults(t *testing.T) {
+	dir := t.TempDir()
+	cfg, err := config.Load(dir)
+	require.NoError(t, err)
+	assert.Equal(t, 6*time.Hour, cfg.Service.Interval)
+}
+
+func TestServiceConfig_RoundTrip(t *testing.T) {
+	dir := t.TempDir()
+	cfg := config.Default()
+	cfg.Service.Interval = 12 * time.Hour
+	require.NoError(t, cfg.Save(dir))
+
+	loaded, err := config.Load(dir)
+	require.NoError(t, err)
+	assert.Equal(t, 12*time.Hour, loaded.Service.Interval)
+}
