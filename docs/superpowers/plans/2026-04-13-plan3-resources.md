@@ -103,7 +103,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
+	"github.com/SAP-samples/sap-devs-cli/internal/content"
 )
 
 // fixture builds an in-memory pack slice for testing without touching the filesystem.
@@ -319,7 +319,7 @@ git commit -m "chore: add github.com/pkg/browser dependency"
 **Files:**
 - Create: `cmd/resources.go`
 
-Study `cmd/profile.go` for the subcommand registration pattern and `cmd/tip.go` for the profile-loading pattern before writing this file. The module path is `github.tools.sap/developer-relations/sap-devs-cli`.
+Study `cmd/profile.go` for the subcommand registration pattern and `cmd/tip.go` for the profile-loading pattern before writing this file. The module path is `github.com/SAP-samples/sap-devs-cli`.
 
 - [ ] **Step 1: Create `cmd/resources.go`**
 
@@ -332,9 +332,9 @@ import (
 
 	"github.com/pkg/browser"
 	"github.com/spf13/cobra"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/config"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/xdg"
+	"github.com/SAP-samples/sap-devs-cli/internal/config"
+	"github.com/SAP-samples/sap-devs-cli/internal/content"
+	"github.com/SAP-samples/sap-devs-cli/internal/xdg"
 )
 
 var resourcesCmd = &cobra.Command{

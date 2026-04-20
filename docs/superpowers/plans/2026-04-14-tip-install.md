@@ -13,7 +13,7 @@
 ## Notes for the Implementer
 
 - **Windows:** `go test` always fails locally (Windows Defender blocks test binary execution). Use `go build ./...` + `go vet ./...` locally. CI (ubuntu-latest GitHub Actions) is the authoritative test runner for `go test`.
-- **Module path:** `github.tools.sap/developer-relations/sap-devs-cli` — use this prefix for all internal imports.
+- **Module path:** `github.com/SAP-samples/sap-devs-cli` — use this prefix for all internal imports.
 - **Spec:** `docs/superpowers/specs/2026-04-14-tip-install-design.md`
 
 ---
@@ -668,14 +668,14 @@ import (
 
 	"github.com/charmbracelet/glamour"
 	"github.com/spf13/cobra"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/config"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/i18n"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/xdg"
+	"github.com/SAP-samples/sap-devs-cli/internal/config"
+	"github.com/SAP-samples/sap-devs-cli/internal/content"
+	"github.com/SAP-samples/sap-devs-cli/internal/i18n"
+	"github.com/SAP-samples/sap-devs-cli/internal/xdg"
 )
 ```
 
-Add `"github.tools.sap/developer-relations/sap-devs-cli/internal/shellhook"` to the internal imports group.
+Add `"github.com/SAP-samples/sap-devs-cli/internal/shellhook"` to the internal imports group.
 
 - [ ] **Step 2: Define `tipInstallCmd` and `tipUninstallCmd` in `cmd/tip.go`**
 
@@ -772,7 +772,7 @@ The existing `addShellHook()` (lines 131–150) stops at the **first** matching 
 
 - [ ] **Step 1: Add the `shellhook` import to `cmd/init.go`**
 
-Add `"github.tools.sap/developer-relations/sap-devs-cli/internal/shellhook"` to the import block. The `"os"` import must stay — it is still used for `os.Stdin.Fd()`.
+Add `"github.com/SAP-samples/sap-devs-cli/internal/shellhook"` to the import block. The `"os"` import must stay — it is still used for `os.Stdin.Fd()`.
 
 - [ ] **Step 2: Replace the `addShellHook()` call site**
 

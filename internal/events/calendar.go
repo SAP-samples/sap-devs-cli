@@ -6,7 +6,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
+	"github.com/SAP-samples/sap-devs-cli/internal/content"
 )
 
 // GoogleCalendarURL returns a URL that opens Google Calendar with the event pre-filled.

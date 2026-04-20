@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
+	"github.com/SAP-samples/sap-devs-cli/internal/content"
 )
 
 // CheckUpcoming returns events whose date is within the next N days.

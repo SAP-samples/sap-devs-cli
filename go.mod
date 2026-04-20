@@ -1,4 +1,4 @@
-module github.tools.sap/developer-relations/sap-devs-cli
+module github.com/SAP-samples/sap-devs-cli
 
 go 1.26.1
 

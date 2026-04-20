@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"charm.land/huh/v2"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/schema"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/theme"
+	"github.com/SAP-samples/sap-devs-cli/internal/schema"
+	"github.com/SAP-samples/sap-devs-cli/internal/theme"
 )
 
 // BulkSetField opens a form to pick a field and value for bulk assignment.

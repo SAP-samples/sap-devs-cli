@@ -12,9 +12,9 @@ import (
 	"charm.land/huh/v2"
 	"gopkg.in/yaml.v3"
 
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/schema"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/theme"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/xdg"
+	"github.com/SAP-samples/sap-devs-cli/internal/schema"
+	"github.com/SAP-samples/sap-devs-cli/internal/theme"
+	"github.com/SAP-samples/sap-devs-cli/internal/xdg"
 )
 
 var rePackID = regexp.MustCompile(`^[a-z][a-z0-9-]*$`)

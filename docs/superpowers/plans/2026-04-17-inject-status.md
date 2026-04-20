@@ -26,7 +26,7 @@
 
 ## Key Context for Every Task
 
-**Module path:** `github.tools.sap/developer-relations/sap-devs-cli`
+**Module path:** `github.com/SAP-samples/sap-devs-cli`
 
 **Working directory for all commands:** the worktree root (e.g. `.worktrees/feat/inject-status/`)
 
@@ -94,7 +94,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/adapter"
+	"github.com/SAP-samples/sap-devs-cli/internal/adapter"
 )
 
 func TestEstimateTokens_Empty(t *testing.T) {
@@ -339,8 +339,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/adapter"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
+	"github.com/SAP-samples/sap-devs-cli/internal/adapter"
+	"github.com/SAP-samples/sap-devs-cli/internal/content"
 )
 ```
 

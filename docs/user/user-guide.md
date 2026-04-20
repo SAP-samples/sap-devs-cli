@@ -8,7 +8,7 @@
 
 ### Download
 
-Go to the [GitHub Releases page](https://github.tools.sap/developer-relations/sap-devs-cli/releases) and download the archive for your platform:
+Go to the [GitHub Releases page](https://github.com/SAP-samples/sap-devs-cli/releases) and download the archive for your platform:
 
 | Platform | Architecture | File |
 |---|---|---|
@@ -196,9 +196,9 @@ cursor        cap, btp-core           ~500              2000 tokens    trimmed
 
 ### Authentication
 
-`sap-devs sync` fetches content from `github.tools.sap`, which requires a Personal Access Token if you are inside the SAP corporate network.
+`sap-devs sync` fetches content from `github.com/SAP-samples`, which requires a Personal Access Token if you are inside the SAP corporate network.
 
-**When you need a token:** Only when syncing from `github.tools.sap` on the SAP corporate network. If you are outside SAP, no token is needed.
+**When you need a token:** Only when syncing from `github.com/SAP-samples` on the SAP corporate network. If you are outside SAP, no token is needed.
 
 **Token resolution order** (first match wins):
 

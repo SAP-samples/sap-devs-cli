@@ -6,8 +6,8 @@ import (
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/learning"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/tutorials"
+	"github.com/SAP-samples/sap-devs-cli/internal/learning"
+	"github.com/SAP-samples/sap-devs-cli/internal/tutorials"
 )
 
 func registerLearnTools(s *server.MCPServer, deps Deps) {

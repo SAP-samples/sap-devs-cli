@@ -4,8 +4,8 @@ import (
 	"strings"
 	"time"
 
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/community"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/youtube"
+	"github.com/SAP-samples/sap-devs-cli/internal/community"
+	"github.com/SAP-samples/sap-devs-cli/internal/youtube"
 )
 
 // NewsItem pairs a YouTube episode with its matched Community blog post (if any).

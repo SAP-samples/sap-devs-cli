@@ -41,7 +41,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
+	"github.com/SAP-samples/sap-devs-cli/internal/content"
 )
 
 func TestParseConstraint_GTE_Satisfied(t *testing.T) {
@@ -335,7 +335,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
+	"github.com/SAP-samples/sap-devs-cli/internal/content"
 )
 ```
 
@@ -450,7 +450,7 @@ git commit -m "feat: add CheckTool and CheckTools with Runner abstraction"
 **Files:**
 - Create: `cmd/doctor.go`
 
-Study `cmd/resources.go` for the Cobra subcommand pattern and `cmd/root.go` for `newContentLoader`. The module path is `github.tools.sap/developer-relations/sap-devs-cli`.
+Study `cmd/resources.go` for the Cobra subcommand pattern and `cmd/root.go` for `newContentLoader`. The module path is `github.com/SAP-samples/sap-devs-cli`.
 
 - [ ] **Step 1: Create `cmd/doctor.go`**
 
@@ -464,9 +464,9 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/config"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/xdg"
+	"github.com/SAP-samples/sap-devs-cli/internal/config"
+	"github.com/SAP-samples/sap-devs-cli/internal/content"
+	"github.com/SAP-samples/sap-devs-cli/internal/xdg"
 )
 
 // profileActive is the sentinel value for --profile that means "use the configured profile".

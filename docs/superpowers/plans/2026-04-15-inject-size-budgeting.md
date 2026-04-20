@@ -376,8 +376,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/adapter"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
+	"github.com/SAP-samples/sap-devs-cli/internal/adapter"
+	"github.com/SAP-samples/sap-devs-cli/internal/content"
 )
 ```
 
@@ -501,7 +501,7 @@ import (
 	"strings"
 	"text/tabwriter"
 
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
+	"github.com/SAP-samples/sap-devs-cli/internal/content"
 )
 
 // Options controls inject scope, filtering, dry-run, and stats behaviour.
@@ -714,8 +714,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/adapter"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
+	"github.com/SAP-samples/sap-devs-cli/internal/adapter"
+	"github.com/SAP-samples/sap-devs-cli/internal/content"
 )
 
 // TestInjectEndToEnd tests ReplaceSection → file content round-trip
@@ -788,7 +788,7 @@ func newAdapterEngine(packs []*content.Pack, profile *content.Profile, opts adap
 }
 ```
 
-Ensure `"github.tools.sap/developer-relations/sap-devs-cli/internal/content"` is in the `root.go` imports (it should already be present).
+Ensure `"github.com/SAP-samples/sap-devs-cli/internal/content"` is in the `root.go` imports (it should already be present).
 
 - [ ] **Step 4: Update `cmd/inject.go`**
 

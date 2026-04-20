@@ -52,10 +52,10 @@ func Load(configDir string) (string, error) { return loadForUser(configDir, keyr
 func Delete(configDir string) error { return deleteForUser(configDir, keyringUser) }
 
 // Resolve returns the best available token using the full priority chain:
-// GITHUB_TOOLS_SAP_TOKEN -> GH_TOKEN -> GITHUB_TOKEN -> keychain/file -> "".
+// GH_TOKEN -> GITHUB_TOKEN -> GITHUB_TOOLS_SAP_TOKEN (legacy) -> keychain/file -> "".
 // Never returns an error.
 func Resolve(configDir string) string {
-	for _, env := range []string{"GITHUB_TOOLS_SAP_TOKEN", "GH_TOKEN", "GITHUB_TOKEN"} {
+	for _, env := range []string{"GH_TOKEN", "GITHUB_TOKEN", "GITHUB_TOOLS_SAP_TOKEN"} {
 		if v := os.Getenv(env); v != "" {
 			return v
 		}

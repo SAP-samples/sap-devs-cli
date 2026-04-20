@@ -14,24 +14,24 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/config"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/credentials"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/discovery"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/events"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/i18n"
-	sapSync "github.tools.sap/developer-relations/sap-devs-cli/internal/sync"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/learning"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/tutorials"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/ui"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/videos"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/xdg"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/youtube"
+	"github.com/SAP-samples/sap-devs-cli/internal/config"
+	"github.com/SAP-samples/sap-devs-cli/internal/content"
+	"github.com/SAP-samples/sap-devs-cli/internal/credentials"
+	"github.com/SAP-samples/sap-devs-cli/internal/discovery"
+	"github.com/SAP-samples/sap-devs-cli/internal/events"
+	"github.com/SAP-samples/sap-devs-cli/internal/i18n"
+	sapSync "github.com/SAP-samples/sap-devs-cli/internal/sync"
+	"github.com/SAP-samples/sap-devs-cli/internal/learning"
+	"github.com/SAP-samples/sap-devs-cli/internal/tutorials"
+	"github.com/SAP-samples/sap-devs-cli/internal/ui"
+	"github.com/SAP-samples/sap-devs-cli/internal/videos"
+	"github.com/SAP-samples/sap-devs-cli/internal/xdg"
+	"github.com/SAP-samples/sap-devs-cli/internal/youtube"
 	"golang.org/x/sync/errgroup"
 	"gopkg.in/yaml.v3"
 )
 
-const officialRepoArchive = "https://github.tools.sap/developer-relations/sap-devs-cli/archive/refs/heads/main.zip"
+const officialRepoArchive = "https://github.com/SAP-samples/sap-devs-cli/archive/refs/heads/main.zip"
 
 var syncForce bool
 var syncCategory string
@@ -469,8 +469,7 @@ func runTutorialsFetch(cacheDir string, force bool) error {
 		cachedBranches[r.Name] = r.DefaultBranch
 	}
 
-	// Tutorials live on public github.com, not github.tools.sap.
-	// Do NOT use credentials.Resolve() here — it targets the enterprise instance.
+	// Tutorials use the public GitHub API (github.com/sap-tutorials org).
 	token := os.Getenv("GITHUB_TOKEN")
 	if token == "" {
 		token = os.Getenv("GH_TOKEN")

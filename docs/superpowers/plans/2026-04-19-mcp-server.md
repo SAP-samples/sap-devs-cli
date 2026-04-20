@@ -91,8 +91,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/mcpserver"
+	"github.com/SAP-samples/sap-devs-cli/internal/content"
+	"github.com/SAP-samples/sap-devs-cli/internal/mcpserver"
 )
 
 func TestNewServer_RegistersAllTools(t *testing.T) {
@@ -125,9 +125,9 @@ package mcpserver
 import (
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/learning"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/tutorials"
+	"github.com/SAP-samples/sap-devs-cli/internal/content"
+	"github.com/SAP-samples/sap-devs-cli/internal/learning"
+	"github.com/SAP-samples/sap-devs-cli/internal/tutorials"
 )
 
 type Deps struct {
@@ -253,7 +253,7 @@ import (
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
+	"github.com/SAP-samples/sap-devs-cli/internal/content"
 )
 
 func TestListPacks(t *testing.T) {
@@ -300,7 +300,7 @@ import (
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
+	"github.com/SAP-samples/sap-devs-cli/internal/content"
 )
 
 func registerContentTools(s *server.MCPServer, deps Deps) {
@@ -521,7 +521,7 @@ import (
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
+	"github.com/SAP-samples/sap-devs-cli/internal/content"
 )
 
 func TestSearchResources(t *testing.T) {
@@ -570,7 +570,7 @@ import (
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
+	"github.com/SAP-samples/sap-devs-cli/internal/content"
 )
 
 func registerResourceTools(s *server.MCPServer, deps Deps) {
@@ -674,7 +674,7 @@ import (
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
+	"github.com/SAP-samples/sap-devs-cli/internal/content"
 )
 
 func TestGetKnownErrors(t *testing.T) {
@@ -713,7 +713,7 @@ import (
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
+	"github.com/SAP-samples/sap-devs-cli/internal/content"
 )
 
 func registerErrorTools(s *server.MCPServer, deps Deps) {
@@ -804,8 +804,8 @@ import (
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/news"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/youtube"
+	"github.com/SAP-samples/sap-devs-cli/internal/news"
+	"github.com/SAP-samples/sap-devs-cli/internal/youtube"
 )
 
 func TestGetRecentNews_WithItems(t *testing.T) {
@@ -844,9 +844,9 @@ import (
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/community"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/news"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/youtube"
+	"github.com/SAP-samples/sap-devs-cli/internal/community"
+	"github.com/SAP-samples/sap-devs-cli/internal/news"
+	"github.com/SAP-samples/sap-devs-cli/internal/youtube"
 )
 
 const (
@@ -973,8 +973,8 @@ import (
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/learning"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/tutorials"
+	"github.com/SAP-samples/sap-devs-cli/internal/learning"
+	"github.com/SAP-samples/sap-devs-cli/internal/tutorials"
 )
 
 func TestSearchTutorials(t *testing.T) {
@@ -1029,8 +1029,8 @@ import (
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/learning"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/tutorials"
+	"github.com/SAP-samples/sap-devs-cli/internal/learning"
+	"github.com/SAP-samples/sap-devs-cli/internal/tutorials"
 )
 
 func registerLearnTools(s *server.MCPServer, deps Deps) {
@@ -1162,7 +1162,7 @@ import (
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
+	"github.com/SAP-samples/sap-devs-cli/internal/content"
 )
 
 func TestGetSamples(t *testing.T) {
@@ -1200,7 +1200,7 @@ import (
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
+	"github.com/SAP-samples/sap-devs-cli/internal/content"
 )
 
 func registerSampleTools(s *server.MCPServer, deps Deps) {
@@ -1292,13 +1292,13 @@ import (
 
 	"github.com/mark3labs/mcp-go/server"
 	"github.com/spf13/cobra"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/config"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/i18n"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/learning"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/mcpserver"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/tutorials"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/xdg"
+	"github.com/SAP-samples/sap-devs-cli/internal/config"
+	"github.com/SAP-samples/sap-devs-cli/internal/content"
+	"github.com/SAP-samples/sap-devs-cli/internal/i18n"
+	"github.com/SAP-samples/sap-devs-cli/internal/learning"
+	"github.com/SAP-samples/sap-devs-cli/internal/mcpserver"
+	"github.com/SAP-samples/sap-devs-cli/internal/tutorials"
+	"github.com/SAP-samples/sap-devs-cli/internal/xdg"
 )
 
 var mcpServeProfile string

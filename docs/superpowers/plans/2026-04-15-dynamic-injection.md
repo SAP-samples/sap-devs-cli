@@ -417,9 +417,9 @@ import (
 
     "github.com/stretchr/testify/assert"
     "github.com/stretchr/testify/require"
-    "github.tools.sap/developer-relations/sap-devs-cli/internal/adapter"
-    "github.tools.sap/developer-relations/sap-devs-cli/internal/content"
-    "github.tools.sap/developer-relations/sap-devs-cli/internal/dynamic"
+    "github.com/SAP-samples/sap-devs-cli/internal/adapter"
+    "github.com/SAP-samples/sap-devs-cli/internal/content"
+    "github.com/SAP-samples/sap-devs-cli/internal/dynamic"
 )
 
 // --- Project type detection ---
@@ -619,9 +619,9 @@ import (
     "path/filepath"
     "strings"
 
-    "github.tools.sap/developer-relations/sap-devs-cli/internal/adapter"
-    "github.tools.sap/developer-relations/sap-devs-cli/internal/content"
-    "github.tools.sap/developer-relations/sap-devs-cli/internal/sync"
+    "github.com/SAP-samples/sap-devs-cli/internal/adapter"
+    "github.com/SAP-samples/sap-devs-cli/internal/content"
+    "github.com/SAP-samples/sap-devs-cli/internal/sync"
 )
 
 // GatherOpts holds all inputs needed to collect dynamic context at inject time.
@@ -873,7 +873,7 @@ The final wiring. Gathers the cobra command list and dynamic context, then passe
 
 - [ ] **Step 1: Add the `dynamic` import and gather call**
 
-In `cmd/inject.go`, add `"github.tools.sap/developer-relations/sap-devs-cli/internal/dynamic"` to the import block.
+In `cmd/inject.go`, add `"github.com/SAP-samples/sap-devs-cli/internal/dynamic"` to the import block.
 
 After the `packs, err = loader.LoadPacks(...)` reload block and before `opts := adapter.Options{...}`, insert:
 

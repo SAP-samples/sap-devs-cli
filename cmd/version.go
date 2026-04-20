@@ -5,7 +5,7 @@ import (
 	"runtime"
 
 	"github.com/spf13/cobra"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/i18n"
+	"github.com/SAP-samples/sap-devs-cli/internal/i18n"
 )
 
 // Version is set at build time via -ldflags.

@@ -3,9 +3,9 @@ package learn
 import (
 	"testing"
 
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/discovery"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/learning"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/tutorials"
+	"github.com/SAP-samples/sap-devs-cli/internal/discovery"
+	"github.com/SAP-samples/sap-devs-cli/internal/learning"
+	"github.com/SAP-samples/sap-devs-cli/internal/tutorials"
 )
 
 func TestSearch_TitleMatchFirst(t *testing.T) {

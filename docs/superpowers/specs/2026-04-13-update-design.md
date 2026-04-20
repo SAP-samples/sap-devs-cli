@@ -22,7 +22,7 @@ This feature has two parts that ship together:
 ### goreleaser (`.goreleaser.yml`)
 
 - Builds binaries for: `linux/amd64`, `linux/arm64`, `darwin/amd64`, `darwin/arm64`, `windows/amd64`
-- Sets version via `ldflags`: `-X github.tools.sap/developer-relations/sap-devs-cli/cmd.Version={{ .Version }}`
+- Sets version via `ldflags`: `-X github.com/SAP-samples/sap-devs-cli/cmd.Version={{ .Version }}`
 - Generates `checksums.txt` (SHA256) alongside the release assets
 - Asset naming: goreleaser default strips the leading `v` from the version in archive names. The name template produces: `sap-devs_<version>_<OS>_<arch>.tar.gz` where `<version>` has no `v` prefix (e.g. `sap-devs_1.2.0_linux_amd64.tar.gz`). Windows uses `.zip`.
 - Archives contain the binary only (no README or LICENSE in archive)
@@ -55,7 +55,7 @@ func CheckLatest(repoURL, currentVersion string) (*Release, bool, error)
 ```
 
 - Calls `https://api.github.com/repos/<owner>/<repo>/releases/latest` with header `Accept: application/vnd.github+json`
-- `repoURL` is the full repo URL (e.g. `https://github.tools.sap/developer-relations/sap-devs-cli`) — owner/repo are parsed from it by splitting the path
+- `repoURL` is the full repo URL (e.g. `https://github.com/SAP-samples/sap-devs-cli`) — owner/repo are parsed from it by splitting the path
 - Version comparison: normalize both versions to `major.minor.patch` by trimming a leading `v`, split on `.`, compare as integers field by field. No external semver library — avoids adding a new dependency.
 - Returns an error on network failure or unparseable response
 
@@ -109,7 +109,7 @@ Manual flow:
 `repoURL` is a package-level constant defined in `cmd/update.go`, accessible to all files in `package cmd`:
 
 ```go
-const repoURL = "https://github.tools.sap/developer-relations/sap-devs-cli"
+const repoURL = "https://github.com/SAP-samples/sap-devs-cli"
 ```
 
 `Version` already exists as a `var` in `cmd/version.go` (`var Version = "dev"`). Do **not** redeclare it in `cmd/update.go` — it is set by `-ldflags` at build time and must remain a `var` for that injection to work.

@@ -2,7 +2,7 @@ name: CI
 on: [push, pull_request]
 jobs:
   test:
-    runs-on: [self-hosted, Linux, X64]
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - name: Install X11 dev headers (required by golang.design/x/clipboard)
@@ -13,4 +13,4 @@ jobs:
       - run: go test ./...
       - run: |
           VERSION=$(git describe --tags --always --dirty)
-          go build -ldflags "-X github.tools.sap/developer-relations/sap-devs-cli/cmd.Version=${VERSION}" -o sap-devs .
+          go build -ldflags "-X github.com/SAP-samples/sap-devs-cli/cmd.Version=${VERSION}" -o sap-devs .

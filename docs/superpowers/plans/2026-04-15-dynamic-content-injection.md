@@ -62,7 +62,7 @@ import (
 
     "github.com/stretchr/testify/assert"
     "github.com/stretchr/testify/require"
-    sapSync "github.tools.sap/developer-relations/sap-devs-cli/internal/sync"
+    sapSync "github.com/SAP-samples/sap-devs-cli/internal/sync"
 )
 
 func TestLoadSyncState_EmptyDir(t *testing.T) {
@@ -413,7 +413,7 @@ import (
 
     "github.com/stretchr/testify/assert"
     "github.com/stretchr/testify/require"
-    sapSync "github.tools.sap/developer-relations/sap-devs-cli/internal/sync"
+    sapSync "github.com/SAP-samples/sap-devs-cli/internal/sync"
 )
 
 func TestScanMarkers_Basic(t *testing.T) {
@@ -784,7 +784,7 @@ import (
     "sync"
 
     tea "github.com/charmbracelet/bubbletea"
-    sapSync "github.tools.sap/developer-relations/sap-devs-cli/internal/sync"
+    sapSync "github.com/SAP-samples/sap-devs-cli/internal/sync"
 )
 
 // MarkerDoneMsg is sent by fetch goroutines when a marker fetch completes.
@@ -965,15 +965,15 @@ import (
     "time"
 
     "github.com/spf13/cobra"
-    "github.tools.sap/developer-relations/sap-devs-cli/internal/config"
-    "github.tools.sap/developer-relations/sap-devs-cli/internal/credentials"
-    "github.tools.sap/developer-relations/sap-devs-cli/internal/i18n"
-    sapSync "github.tools.sap/developer-relations/sap-devs-cli/internal/sync"
-    "github.tools.sap/developer-relations/sap-devs-cli/internal/ui"
-    "github.tools.sap/developer-relations/sap-devs-cli/internal/xdg"
+    "github.com/SAP-samples/sap-devs-cli/internal/config"
+    "github.com/SAP-samples/sap-devs-cli/internal/credentials"
+    "github.com/SAP-samples/sap-devs-cli/internal/i18n"
+    sapSync "github.com/SAP-samples/sap-devs-cli/internal/sync"
+    "github.com/SAP-samples/sap-devs-cli/internal/ui"
+    "github.com/SAP-samples/sap-devs-cli/internal/xdg"
 )
 
-const officialRepoArchive = "https://github.tools.sap/developer-relations/sap-devs-cli/archive/refs/heads/main.zip"
+const officialRepoArchive = "https://github.com/SAP-samples/sap-devs-cli/archive/refs/heads/main.zip"
 
 var syncForce bool
 var syncCategory string
@@ -1297,12 +1297,12 @@ import (
 
     "github.com/spf13/cobra"
     "golang.org/x/term"
-    "github.tools.sap/developer-relations/sap-devs-cli/internal/adapter"
-    "github.tools.sap/developer-relations/sap-devs-cli/internal/config"
-    "github.tools.sap/developer-relations/sap-devs-cli/internal/content"
-    "github.tools.sap/developer-relations/sap-devs-cli/internal/i18n"
-    sapSync "github.tools.sap/developer-relations/sap-devs-cli/internal/sync"
-    "github.tools.sap/developer-relations/sap-devs-cli/internal/xdg"
+    "github.com/SAP-samples/sap-devs-cli/internal/adapter"
+    "github.com/SAP-samples/sap-devs-cli/internal/config"
+    "github.com/SAP-samples/sap-devs-cli/internal/content"
+    "github.com/SAP-samples/sap-devs-cli/internal/i18n"
+    sapSync "github.com/SAP-samples/sap-devs-cli/internal/sync"
+    "github.com/SAP-samples/sap-devs-cli/internal/xdg"
 )
 
 var (

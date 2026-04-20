@@ -9,9 +9,9 @@ import (
 	"strings"
 	"time"
 
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/config"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/schema"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/xdg"
+	"github.com/SAP-samples/sap-devs-cli/internal/config"
+	"github.com/SAP-samples/sap-devs-cli/internal/schema"
+	"github.com/SAP-samples/sap-devs-cli/internal/xdg"
 )
 
 // Layer describes which content layer is being edited.
@@ -49,7 +49,7 @@ type ResolvedFile struct {
 	PackDir    string // directory containing the pack
 }
 
-const officialRepoURL = "github.tools.sap/developer-relations/sap-devs-cli"
+const officialRepoURL = "github.com/SAP-samples/sap-devs-cli"
 
 // ResolveEditTarget determines the file path and layer for a content edit
 // request. arg can be a direct path (starts with ./, .sap-devs/, or content/),

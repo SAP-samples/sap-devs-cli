@@ -2,14 +2,9 @@ project_name: sap-devs
 
 version: 2
 
-github_urls:
-  api: https://github.tools.sap/api/v3/
-  upload: https://github.tools.sap/
-  download: https://github.tools.sap/
-
 release:
   github:
-    owner: developer-relations
+    owner: SAP-samples
     name: sap-devs-cli
 
 builds:
@@ -28,7 +23,7 @@ builds:
       - goos: windows
         goarch: arm64
     ldflags:
-      - -X github.tools.sap/developer-relations/sap-devs-cli/cmd.Version={{ .Version }}
+      - -X github.com/SAP-samples/sap-devs-cli/cmd.Version={{ .Version }}
 
 archives:
   - id: archives
