@@ -2,6 +2,7 @@ package ui
 
 import (
 	"fmt"
+	"io"
 	"strings"
 	"time"
 
@@ -247,4 +248,34 @@ func (m *syncModel) View() string {
 // FatalErr returns the fatal error from the sync worker, if any.
 func (m *syncModel) FatalErr() error {
 	return m.fatalErr
+}
+
+// RunSyncProgress starts the Bubbletea inline program for sync progress.
+// Returns the syncModel (to extract fatalErr) and the program so the caller
+// can launch a goroutine that sends messages.
+func RunSyncProgress(visiblePhases []PhaseID) (*tea.Program, *syncModel) {
+	m := newSyncModel(visiblePhases)
+	p := tea.NewProgram(m)
+	return p, m
+}
+
+// PrintPlainProgress writes a single non-TTY progress line for one phase.
+func PrintPlainProgress(out io.Writer, id PhaseID, status string, summary string, err error) {
+	label := phaseLabels[id]
+	switch status {
+	case "done":
+		if summary != "" {
+			fmt.Fprintf(out, "  ✓ %s  %s\n", label, summary)
+		} else {
+			fmt.Fprintf(out, "  ✓ %s\n", label)
+		}
+	case "failed":
+		if err != nil {
+			fmt.Fprintf(out, "  ✗ %s  %v\n", label, err)
+		} else {
+			fmt.Fprintf(out, "  ✗ %s\n", label)
+		}
+	case "skipped":
+		fmt.Fprintf(out, "  ─ %s  skipped (fresh)\n", label)
+	}
 }

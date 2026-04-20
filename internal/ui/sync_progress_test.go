@@ -91,3 +91,27 @@ func TestSyncModel_View_ContainsExpectedPhaseLabels(t *testing.T) {
 		assert.True(t, strings.Contains(view, label), "expected view to contain %q", label)
 	}
 }
+
+func TestPrintPlainProgress_Done(t *testing.T) {
+	var buf strings.Builder
+	PrintPlainProgress(&buf, PhaseEvents, "done", "2 event types", nil)
+	out := buf.String()
+	assert.Contains(t, out, "events")
+	assert.Contains(t, out, "2 event types")
+}
+
+func TestPrintPlainProgress_Failed(t *testing.T) {
+	var buf strings.Builder
+	PrintPlainProgress(&buf, PhaseDiscovery, "failed", "", fmt.Errorf("timeout"))
+	out := buf.String()
+	assert.Contains(t, out, "discovery")
+	assert.Contains(t, out, "timeout")
+}
+
+func TestPrintPlainProgress_Skipped(t *testing.T) {
+	var buf strings.Builder
+	PrintPlainProgress(&buf, PhaseTutorials, "skipped", "", nil)
+	out := buf.String()
+	assert.Contains(t, out, "tutorials")
+	assert.Contains(t, out, "skipped")
+}
