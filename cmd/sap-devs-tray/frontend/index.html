@@ -13,44 +13,60 @@
     <div class="panel-header">
         <svg class="logo" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
             <rect width="28" height="28" rx="6" fill="var(--sapBrandColor, #0a6ed1)"/>
-            <text x="14" y="19" text-anchor="middle" font-size="14" font-weight="700" fill="#fff" font-family="72, Segoe UI, system-ui">S</text>
+            <text x="14" y="19" text-anchor="middle" font-size="14" font-weight="700" fill="#fff" font-family="72, Segoe UI, system-ui">&#9889;</text>
         </svg>
-        <span class="title">sap-devs</span>
+        <div class="header-text">
+            <span class="title">sap-devs</span>
+            <span class="subtitle">SAP Developer Companion</span>
+        </div>
         <span class="version" id="version">v...</span>
         <button type="button" class="close-btn" id="btn-close" title="Close">&times;</button>
     </div>
 
     <div class="status-card">
-        <div class="card-title">Sync Status</div>
-        <div class="card-row">
-            <span class="label">Status</span>
+        <div class="card-header">
+            <span class="card-title">Sync Status</span>
             <span class="badge-neutral" id="sync-status-badge">Loading...</span>
         </div>
-        <div class="card-row">
-            <span class="label">Last synced</span>
-            <span class="value" id="last-synced">&mdash;</span>
-        </div>
-        <div class="card-row">
-            <span class="label">Content categories</span>
-            <span class="value" id="pack-count">&mdash;</span>
+        <div class="stat-row">
+            <div class="stat-box">
+                <span class="stat-label">Last Synced</span>
+                <span class="stat-value" id="last-synced">&mdash;</span>
+            </div>
+            <div class="stat-box">
+                <span class="stat-label">Next Sync</span>
+                <span class="stat-value" id="next-sync">&mdash;</span>
+            </div>
+            <div class="stat-box">
+                <span class="stat-label">Packs</span>
+                <span class="stat-value" id="pack-count">&mdash;</span>
+            </div>
         </div>
     </div>
 
     <div class="profile-card">
-        <div class="card-title">Profile</div>
-        <div class="card-row">
-            <span class="label">Active profile</span>
-            <span class="value" id="profile-name">&mdash;</span>
-        </div>
-        <div class="card-row">
-            <span class="label">Profile ID</span>
-            <span class="value" id="profile-id">&mdash;</span>
+        <div class="card-title">Active Profile</div>
+        <div class="profile-row">
+            <div class="profile-avatar" id="profile-avatar">?</div>
+            <div class="profile-info">
+                <span class="profile-name" id="profile-name">&mdash;</span>
+                <span class="profile-packs" id="profile-packs">&mdash;</span>
+            </div>
         </div>
     </div>
 
+    <div class="tools-card" id="tools-card">
+        <div class="card-title">Injected Tools</div>
+        <div id="tools-list"></div>
+    </div>
+
+    <div class="sync-log hidden" id="sync-log">
+        <pre id="sync-log-text"></pre>
+    </div>
+
     <div class="action-buttons">
-        <button type="button" class="fd-button fd-button--emphasized" id="btn-sync">Sync Now</button>
-        <button type="button" class="fd-button" id="btn-inject">Inject Now</button>
+        <button type="button" class="fd-button fd-button--emphasized" id="btn-sync">&#8635; Sync Now</button>
+        <button type="button" class="fd-button" id="btn-inject">&#8635; Inject Now</button>
     </div>
 
     <script src="js/app.js"></script>

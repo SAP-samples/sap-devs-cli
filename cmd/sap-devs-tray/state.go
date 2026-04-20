@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"time"
 
 	"gopkg.in/yaml.v3"
@@ -14,6 +15,7 @@ type DashboardState struct {
 	Version string       `json:"version"`
 	Profile ProfileState `json:"profile"`
 	Sync    SyncState    `json:"sync"`
+	Tools   []ToolState  `json:"tools"`
 }
 
 type ProfileState struct {
@@ -29,13 +31,56 @@ type SyncState struct {
 	Status     string    `json:"status"`
 }
 
+type ToolState struct {
+	Name     string `json:"name"`
+	Injected bool   `json:"injected"`
+}
+
 func ReadState(configDir, cacheDir string) *DashboardState {
+	home, _ := os.UserHomeDir()
+	cfg := readConfig(configDir)
+	syncSt := readSyncState(cacheDir)
+	syncSt.NextSync = calcNextSync(syncSt.LastSynced, cfg.serviceInterval())
+
 	state := &DashboardState{
 		Version: version,
-		Sync:    readSyncState(cacheDir),
-		Profile: readProfile(configDir),
+		Sync:    syncSt,
+		Profile: readProfile(configDir, cacheDir),
+		Tools:   detectTools(home),
 	}
 	return state
+}
+
+type configFile struct {
+	Service struct {
+		Interval string `yaml:"interval"`
+	} `yaml:"service"`
+}
+
+func (c configFile) serviceInterval() time.Duration {
+	if c.Service.Interval != "" {
+		if d, err := time.ParseDuration(c.Service.Interval); err == nil {
+			return d
+		}
+	}
+	return 6 * time.Hour
+}
+
+func readConfig(configDir string) configFile {
+	data, err := os.ReadFile(filepath.Join(configDir, "config.yaml"))
+	if err != nil {
+		return configFile{}
+	}
+	var cfg configFile
+	_ = yaml.Unmarshal(data, &cfg)
+	return cfg
+}
+
+func calcNextSync(lastSynced time.Time, interval time.Duration) time.Time {
+	if lastSynced.IsZero() {
+		return time.Time{}
+	}
+	return lastSynced.Add(interval)
 }
 
 func readSyncState(cacheDir string) SyncState {
@@ -70,7 +115,7 @@ func readSyncState(cacheDir string) SyncState {
 	return st
 }
 
-func readProfile(configDir string) ProfileState {
+func readProfile(configDir, cacheDir string) ProfileState {
 	path := filepath.Join(configDir, "profile.yaml")
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -82,7 +127,32 @@ func readProfile(configDir string) ProfileState {
 	if err := yaml.Unmarshal(data, &p); err != nil || p.ID == "" {
 		return ProfileState{ID: "unknown"}
 	}
-	return ProfileState{ID: p.ID, Name: profileDisplayName(p.ID)}
+	packs := readProfilePacks(cacheDir, p.ID)
+	return ProfileState{ID: p.ID, Name: profileDisplayName(p.ID), Packs: packs}
+}
+
+func readProfilePacks(cacheDir, profileID string) []string {
+	if profileID == "minimal" {
+		return []string{"base"}
+	}
+	path := filepath.Join(cacheDir, "official", "content", "profiles", profileID+".yaml")
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil
+	}
+	var prof struct {
+		Packs []struct {
+			ID string `yaml:"id"`
+		} `yaml:"packs"`
+	}
+	if err := yaml.Unmarshal(data, &prof); err != nil {
+		return nil
+	}
+	result := []string{"base"}
+	for _, p := range prof.Packs {
+		result = append(result, p.ID)
+	}
+	return result
 }
 
 func profileDisplayName(id string) string {
@@ -97,6 +167,33 @@ func profileDisplayName(id string) string {
 		return name
 	}
 	return id
+}
+
+func detectTools(home string) []ToolState {
+	tools := []struct {
+		name string
+		path string
+	}{
+		{"Claude Code", filepath.Join(home, ".claude", "CLAUDE.md")},
+		{"Cursor", filepath.Join(home, ".cursor", "rules", "sap-developer-context.mdc")},
+		{"GitHub Copilot", filepath.Join(home, ".github", "copilot-instructions.md")},
+		{"Windsurf", filepath.Join(home, ".windsurf", "rules", "sap.md")},
+		{"Gemini Code Assist", filepath.Join(home, ".gemini", "system.md")},
+	}
+	var result []ToolState
+	for _, t := range tools {
+		injected := fileContains(t.path, "sap-devs")
+		result = append(result, ToolState{Name: t.name, Injected: injected})
+	}
+	return result
+}
+
+func fileContains(path, substr string) bool {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return false
+	}
+	return strings.Contains(string(data), substr)
 }
 
 func defaultConfigDir() string {

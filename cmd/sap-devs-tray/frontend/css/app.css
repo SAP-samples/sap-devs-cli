@@ -1,6 +1,6 @@
 :root {
     --panel-width: 400px;
-    --panel-max-height: 550px;
+    --panel-max-height: 600px;
 }
 
 body {
@@ -15,51 +15,72 @@ body {
 }
 
 .panel-header {
-    padding: 16px 20px;
+    padding: 14px 20px;
     display: flex;
     align-items: center;
-    gap: 12px;
-    border-bottom: 1px solid var(--sapGroup_ContentBorderColor, #d9d9d9);
+    gap: 10px;
+    background: var(--sapBrandColor, #0a6ed1);
+    color: #fff;
 }
 
 .panel-header .logo {
     width: 28px;
     height: 28px;
+    flex-shrink: 0;
+}
+
+.panel-header .header-text {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
 }
 
 .panel-header .title {
-    font-size: 16px;
-    font-weight: 600;
+    font-size: 15px;
+    font-weight: 700;
+    color: #fff;
+}
+
+.panel-header .subtitle {
+    font-size: 11px;
+    color: rgba(255,255,255,0.8);
 }
 
 .panel-header .version {
+    margin-left: auto;
     font-size: 12px;
-    color: var(--sapContent_LabelColor, #6a6d70);
+    color: rgba(255,255,255,0.8);
 }
 
 .panel-header .close-btn {
-    margin-left: auto;
     background: none;
     border: none;
     font-size: 18px;
     cursor: pointer;
-    color: var(--sapContent_LabelColor, #6a6d70);
+    color: rgba(255,255,255,0.8);
     padding: 2px 6px;
     border-radius: 4px;
     line-height: 1;
 }
 
 .panel-header .close-btn:hover {
-    background: var(--sapNeutralBackground, #eaecee);
-    color: var(--sapTextColor, #32363a);
+    background: rgba(255,255,255,0.2);
+    color: #fff;
 }
 
 .status-card, .profile-card, .tools-card {
-    margin: 0 16px 12px;
+    margin: 12px 16px 0;
     padding: 14px;
     border-radius: 12px;
     background: var(--sapGroup_ContentBackground, #fff);
     border: 1px solid var(--sapGroup_ContentBorderColor, #d9d9d9);
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
 }
 
 .card-title {
@@ -68,39 +89,139 @@ body {
     text-transform: uppercase;
     letter-spacing: 0.5px;
     color: var(--sapContent_LabelColor, #6a6d70);
-    margin-bottom: 10px;
 }
 
-.card-row {
+.stat-row {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 4px 0;
+    gap: 8px;
 }
 
-.card-row .label {
-    font-size: 13px;
+.stat-box {
+    flex: 1;
+    text-align: center;
+    padding: 8px 4px;
+    border-radius: 8px;
+    background: var(--sapGroup_TitleBackground, #f5f6f7);
+    border: 1px solid var(--sapGroup_ContentBorderColor, #d9d9d9);
+}
+
+.stat-label {
+    display: block;
+    font-size: 11px;
     color: var(--sapContent_LabelColor, #6a6d70);
+    margin-bottom: 4px;
 }
 
-.card-row .value {
-    font-size: 13px;
+.stat-value {
+    display: block;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.profile-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 10px;
+}
+
+.profile-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--sapBrandColor, #0a6ed1);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.profile-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.profile-name {
+    font-size: 14px;
     font-weight: 600;
 }
 
-.badge-positive {
+.profile-packs {
+    font-size: 12px;
+    color: var(--sapContent_LabelColor, #6a6d70);
+}
+
+.tool-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: var(--sapGroup_TitleBackground, #f5f6f7);
+    border: 1px solid var(--sapGroup_ContentBorderColor, #d9d9d9);
+    margin-top: 6px;
+}
+
+.tool-row:first-child {
+    margin-top: 10px;
+}
+
+.tool-name {
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.tool-status {
+    font-size: 12px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.tool-status .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.tool-status.injected {
     color: var(--sapPositiveColor, #256f3a);
-    background: var(--sapPositiveElementColor, #e8f5e9);
-    padding: 2px 8px;
+}
+
+.tool-status.injected .dot {
+    background: var(--sapPositiveColor, #256f3a);
+}
+
+.tool-status.not-detected {
+    color: var(--sapContent_LabelColor, #6a6d70);
+}
+
+.tool-status.not-detected .dot {
+    border: 1.5px solid var(--sapContent_LabelColor, #6a6d70);
+    background: transparent;
+    width: 5px;
+    height: 5px;
+}
+
+.badge-positive {
+    color: #fff;
+    background: var(--sapPositiveColor, #256f3a);
+    padding: 3px 10px;
     border-radius: 4px;
     font-size: 12px;
     font-weight: 600;
 }
 
 .badge-warning {
-    color: var(--sapCriticalColor, #e76500);
-    background: var(--sapCriticalBackground, #fff3b8);
-    padding: 2px 8px;
+    color: #fff;
+    background: var(--sapCriticalColor, #e76500);
+    padding: 3px 10px;
     border-radius: 4px;
     font-size: 12px;
     font-weight: 600;
@@ -109,14 +230,38 @@ body {
 .badge-neutral {
     color: var(--sapNeutralColor, #6a6d70);
     background: var(--sapNeutralBackground, #eaecee);
-    padding: 2px 8px;
+    padding: 3px 10px;
     border-radius: 4px;
     font-size: 12px;
     font-weight: 600;
 }
 
+.hidden {
+    display: none;
+}
+
+.sync-log {
+    margin: 8px 16px 0;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: var(--sapShell_Background, #12171c);
+    border: 1px solid var(--sapGroup_ContentBorderColor, #d9d9d9);
+    max-height: 140px;
+    overflow-y: auto;
+}
+
+.sync-log pre {
+    margin: 0;
+    font-family: 'Cascadia Code', 'Consolas', 'SF Mono', monospace;
+    font-size: 11px;
+    line-height: 1.5;
+    color: #d4d4d4;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
 .action-buttons {
-    margin: 4px 16px 16px;
+    margin: 12px 16px 16px;
     display: flex;
     gap: 8px;
 }
@@ -134,7 +279,7 @@ body {
     display: inline-block;
     width: 12px;
     height: 12px;
-    border: 2px solid var(--sapContent_LabelColor, #6a6d70);
+    border: 2px solid currentColor;
     border-top-color: transparent;
     border-radius: 50%;
     animation: spin 0.8s linear infinite;

@@ -25,14 +25,16 @@ func startApp(srv *Server) error {
 	})
 
 	panel := app.Window.NewWithOptions(application.WebviewWindowOptions{
-		Name:          "sap-devs Dashboard",
-		Width:         400,
-		Height:        550,
-		URL:           srv.PanelURL(),
-		Frameless:     true,
-		AlwaysOnTop:   true,
-		Hidden:        true,
-		DisableResize: true,
+		Name:            "sap-devs Dashboard",
+		Width:           400,
+		Height:          550,
+		URL:             srv.PanelURL(),
+		Frameless:       true,
+		AlwaysOnTop:     true,
+		Hidden:          true,
+		DisableResize:   true,
+		HideOnFocusLost: true,
+		HideOnEscape:    true,
 		Windows: application.WindowsWindow{
 			HiddenOnTaskbar: true,
 		},
@@ -42,6 +44,8 @@ func startApp(srv *Server) error {
 		panel.Hide()
 		e.Cancel()
 	})
+
+	srv.hideFunc = func() { panel.Hide() }
 
 	systemTray := app.SystemTray.New()
 	systemTray.SetIcon(trayIcon)
@@ -65,10 +69,6 @@ func startApp(srv *Server) error {
 	})
 
 	menu.AddSeparator()
-	menu.Add("Open Dashboard...").OnClick(func(ctx *application.Context) {
-		panel.Show()
-		panel.Focus()
-	})
 	menu.Add("Open Terminal...").OnClick(func(ctx *application.Context) {
 		openTerminal()
 	})
@@ -88,7 +88,11 @@ func openTerminal() {
 	var cmd *exec.Cmd
 	switch runtime.GOOS {
 	case "windows":
-		cmd = exec.Command("powershell", "-NoExit")
+		if _, err := exec.LookPath("wt.exe"); err == nil {
+			cmd = exec.Command("cmd", "/c", "start", "", "wt")
+		} else {
+			cmd = exec.Command("cmd", "/c", "start", "", "powershell")
+		}
 	case "darwin":
 		cmd = exec.Command("open", "-a", "Terminal")
 	default:

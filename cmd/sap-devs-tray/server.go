@@ -9,9 +9,12 @@ import (
 	"io/fs"
 	"net"
 	"net/http"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 	"strings"
+	"sync"
 )
 
 //go:embed frontend
@@ -21,8 +24,13 @@ type Server struct {
 	Token     string
 	ConfigDir string
 	CacheDir  string
+	hideFunc  func()
 	listener  net.Listener
 	mux       *http.ServeMux
+
+	mu          sync.Mutex
+	syncRunning bool
+	syncLog     string
 }
 
 func NewServer(configDir, cacheDir string) (*Server, error) {
@@ -42,7 +50,9 @@ func NewServer(configDir, cacheDir string) (*Server, error) {
 	s.mux.Handle("/", http.FileServer(http.FS(frontendContent)))
 	s.mux.HandleFunc("/api/state", s.requireToken(s.handleState))
 	s.mux.HandleFunc("/api/sync", s.requireToken(s.handleSync))
+	s.mux.HandleFunc("/api/sync-log", s.requireToken(s.handleSyncLog))
 	s.mux.HandleFunc("/api/inject", s.requireToken(s.handleInject))
+	s.mux.HandleFunc("/api/hide", s.requireToken(s.handleHide))
 
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
@@ -96,14 +106,47 @@ func (s *Server) handleSync(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
+	s.mu.Lock()
+	if s.syncRunning {
+		s.mu.Unlock()
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]string{"status": "already_running"})
+		return
+	}
+	s.syncRunning = true
+	s.syncLog = ""
+	s.mu.Unlock()
+
 	go func() {
-		cmd := exec.Command(sapDevsBinary(), "sync")
-		cmd.Stdout = nil
-		cmd.Stderr = nil
-		_ = cmd.Run()
+		lw := &lockedWriter{srv: s}
+		cmd := exec.Command(sapDevsBinary(), "sync", "--force")
+		cmd.Stdout = lw
+		cmd.Stderr = lw
+		err := cmd.Run()
+
+		s.mu.Lock()
+		if err != nil {
+			s.syncLog += "\nError: " + err.Error() + "\n"
+		}
+		s.syncRunning = false
+		s.mu.Unlock()
 	}()
+
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"status": "started"})
+}
+
+func (s *Server) handleSyncLog(w http.ResponseWriter, r *http.Request) {
+	s.mu.Lock()
+	log := s.syncLog
+	running := s.syncRunning
+	s.mu.Unlock()
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"running": running,
+		"log":     log,
+	})
 }
 
 func (s *Server) handleInject(w http.ResponseWriter, r *http.Request) {
@@ -121,10 +164,28 @@ func (s *Server) handleInject(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{"status": "started"})
 }
 
+func (s *Server) handleHide(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	if s.hideFunc != nil {
+		s.hideFunc()
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
+}
+
 func sapDevsBinary() string {
 	name := "sap-devs"
 	if runtime.GOOS == "windows" {
 		name = "sap-devs.exe"
+	}
+	if self, err := os.Executable(); err == nil {
+		sibling := filepath.Join(filepath.Dir(self), name)
+		if _, err := os.Stat(sibling); err == nil {
+			return sibling
+		}
 	}
 	if path, err := exec.LookPath(name); err == nil {
 		return path
@@ -138,4 +199,15 @@ func generateToken() (string, error) {
 		return "", err
 	}
 	return hex.EncodeToString(b), nil
+}
+
+type lockedWriter struct {
+	srv *Server
+}
+
+func (w *lockedWriter) Write(p []byte) (int, error) {
+	w.srv.mu.Lock()
+	w.srv.syncLog += string(p)
+	w.srv.mu.Unlock()
+	return len(p), nil
 }
