@@ -436,7 +436,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
+	"github.com/SAP-samples/sap-devs-cli/internal/content"
 )
 
 const userAgent = "Mozilla/5.0 (compatible; sap-devs/1.0)"
@@ -541,7 +541,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
+	"github.com/SAP-samples/sap-devs-cli/internal/content"
 )
 
 // LoadCache reads cached events for a given event type.
@@ -613,8 +613,8 @@ import (
 	"strings"
 	"time"
 
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/geo"
+	"github.com/SAP-samples/sap-devs-cli/internal/content"
+	"github.com/SAP-samples/sap-devs-cli/internal/geo"
 )
 
 const (
@@ -871,12 +871,12 @@ import (
 
 	"github.com/pkg/browser"
 	"github.com/spf13/cobra"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/config"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/events"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/geo"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/i18n"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/xdg"
+	"github.com/SAP-samples/sap-devs-cli/internal/config"
+	"github.com/SAP-samples/sap-devs-cli/internal/content"
+	"github.com/SAP-samples/sap-devs-cli/internal/events"
+	"github.com/SAP-samples/sap-devs-cli/internal/geo"
+	"github.com/SAP-samples/sap-devs-cli/internal/i18n"
+	"github.com/SAP-samples/sap-devs-cli/internal/xdg"
 )
 
 var (
@@ -1268,7 +1268,7 @@ func runEventsFetch(cacheDir, officialCache string, force bool) error {
 }
 ```
 
-Add imports: `"github.tools.sap/developer-relations/sap-devs-cli/internal/events"`, `"gopkg.in/yaml.v3"` (yaml may already be imported — check).
+Add imports: `"github.com/SAP-samples/sap-devs-cli/internal/events"`, `"gopkg.in/yaml.v3"` (yaml may already be imported — check).
 
 Also add `"events"` to the `ttls` map in `runSync()`:
 

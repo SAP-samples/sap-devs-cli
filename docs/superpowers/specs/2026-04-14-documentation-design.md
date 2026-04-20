@@ -38,7 +38,7 @@ Each file is fully self-contained for its audience. The project README will be u
    Go 1.26+, git, `libx11-dev` on Linux (required by `golang.design/x/clipboard`).
 
 2. **Clone & build**  
-   Module path `github.tools.sap/developer-relations/sap-devs-cli`. Build command with ldflags version injection from `git describe`. Output binary named `sap-devs`.
+   Module path `github.com/SAP-samples/sap-devs-cli`. Build command with ldflags version injection from `git describe`. Output binary named `sap-devs`.
 
 3. **Local development**  
    `SAP_DEVS_DEV=1` env var causes content to load from `./content/` instead of the user cache. Use `go run .` with this set for rapid iteration without rebuilding.
@@ -71,7 +71,7 @@ Each file is fully self-contained for its audience. The project README will be u
    - GitHub Actions `release.yml` triggers on `v*` tags, runs GoReleaser on `ubuntu-latest`.
    - GoReleaser reads `.goreleaser.yml`:
      - Builds: Linux amd64/arm64 (`.tar.gz`), macOS amd64/arm64 (`.tar.gz`), Windows amd64 (`.zip`). Windows arm64 excluded.
-     - Version injected via `-ldflags "-X github.tools.sap/developer-relations/sap-devs-cli/cmd.Version={{ .Version }}"` (full symbol path required).
+     - Version injected via `-ldflags "-X github.com/SAP-samples/sap-devs-cli/cmd.Version={{ .Version }}"` (full symbol path required).
      - Archive naming: `sap-devs_<version>_<os>_<arch>.<ext>`.
      - `checksums.txt` (SHA256) included in release assets.
    - Verify artifacts appear on the GitHub Releases page.

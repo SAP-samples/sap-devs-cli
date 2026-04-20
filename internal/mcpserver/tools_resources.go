@@ -7,7 +7,7 @@ import (
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
+	"github.com/SAP-samples/sap-devs-cli/internal/content"
 )
 
 func registerResourceTools(s *server.MCPServer, deps Deps) {

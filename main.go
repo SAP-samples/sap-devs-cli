@@ -1,6 +1,6 @@
 package main
 
-import "github.tools.sap/developer-relations/sap-devs-cli/cmd"
+import "github.com/SAP-samples/sap-devs-cli/cmd"
 
 func main() {
 	cmd.Execute()

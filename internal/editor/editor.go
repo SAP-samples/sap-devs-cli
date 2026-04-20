@@ -9,7 +9,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"charm.land/huh/v2"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/schema"
+	"github.com/SAP-samples/sap-devs-cli/internal/schema"
 	"gopkg.in/yaml.v3"
 )
 

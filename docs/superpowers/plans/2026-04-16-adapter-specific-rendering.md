@@ -497,7 +497,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/adapter"
+	"github.com/SAP-samples/sap-devs-cli/internal/adapter"
 )
 
 func TestExportFileAndClip_EmptyExportPath(t *testing.T) {
@@ -605,7 +605,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
+	"github.com/SAP-samples/sap-devs-cli/internal/content"
 )
 
 const exportGuidanceFmt = "Full SAP context saved to %s — upload to a ChatGPT Project for comprehensive knowledge."

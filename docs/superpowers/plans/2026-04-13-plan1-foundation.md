@@ -103,7 +103,7 @@ sap-devs-cli/
 
 ```bash
 cd d:/projects/sap-devs-cli
-go mod init github.tools.sap/developer-relations/sap-devs-cli
+go mod init github.com/SAP-samples/sap-devs-cli
 ```
 
 - [ ] **Step 1.2: Add dependencies**
@@ -122,7 +122,7 @@ go get github.com/blang/semver/v4@latest
 ```go
 package main
 
-import "github.tools.sap/developer-relations/sap-devs-cli/cmd"
+import "github.com/SAP-samples/sap-devs-cli/cmd"
 
 func main() {
 	cmd.Execute()
@@ -215,7 +215,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/xdg"
+	"github.com/SAP-samples/sap-devs-cli/internal/xdg"
 )
 
 func TestNew_ReturnsNonEmptyPaths(t *testing.T) {
@@ -386,7 +386,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/config"
+	"github.com/SAP-samples/sap-devs-cli/internal/config"
 )
 
 func TestLoad_DefaultsWhenNoFile(t *testing.T) {
@@ -587,7 +587,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
+	"github.com/SAP-samples/sap-devs-cli/internal/content"
 )
 
 func TestLoadPack_ParsesAllFiles(t *testing.T) {
@@ -915,7 +915,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
+	"github.com/SAP-samples/sap-devs-cli/internal/content"
 )
 
 func TestApplyWeights_OrdersPacksByProfileWeight(t *testing.T) {
@@ -1076,7 +1076,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
+	"github.com/SAP-samples/sap-devs-cli/internal/content"
 )
 
 func TestContentLoader_LoadPacks_MergesLayers(t *testing.T) {
@@ -1157,7 +1157,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
+	"github.com/SAP-samples/sap-devs-cli/internal/content"
 )
 
 func TestSelectTip_ReturnsATip(t *testing.T) {
@@ -1303,7 +1303,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	sapSync "github.tools.sap/developer-relations/sap-devs-cli/internal/sync"
+	sapSync "github.com/SAP-samples/sap-devs-cli/internal/sync"
 )
 
 func TestFetcher_DownloadsAndExtractsZip(t *testing.T) {
@@ -1429,7 +1429,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	sapSync "github.tools.sap/developer-relations/sap-devs-cli/internal/sync"
+	sapSync "github.com/SAP-samples/sap-devs-cli/internal/sync"
 )
 
 func TestEngine_IsStale_TrueWhenNeverSynced(t *testing.T) {
@@ -1755,8 +1755,8 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/config"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/xdg"
+	"github.com/SAP-samples/sap-devs-cli/internal/config"
+	"github.com/SAP-samples/sap-devs-cli/internal/xdg"
 )
 
 var configCmd = &cobra.Command{
@@ -1870,9 +1870,9 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/config"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/xdg"
+	"github.com/SAP-samples/sap-devs-cli/internal/config"
+	"github.com/SAP-samples/sap-devs-cli/internal/content"
+	"github.com/SAP-samples/sap-devs-cli/internal/xdg"
 )
 
 var profileCmd = &cobra.Command{
@@ -2049,12 +2049,12 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/config"
-	sapSync "github.tools.sap/developer-relations/sap-devs-cli/internal/sync"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/xdg"
+	"github.com/SAP-samples/sap-devs-cli/internal/config"
+	sapSync "github.com/SAP-samples/sap-devs-cli/internal/sync"
+	"github.com/SAP-samples/sap-devs-cli/internal/xdg"
 )
 
-const officialRepoArchive = "https://github.tools.sap/developer-relations/sap-devs-cli/archive/refs/heads/main.zip"
+const officialRepoArchive = "https://github.com/SAP-samples/sap-devs-cli/archive/refs/heads/main.zip"
 
 var syncForce bool
 var syncCategory string
@@ -2172,9 +2172,9 @@ import (
 
 	"github.com/charmbracelet/glamour"
 	"github.com/spf13/cobra"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/config"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/xdg"
+	"github.com/SAP-samples/sap-devs-cli/internal/config"
+	"github.com/SAP-samples/sap-devs-cli/internal/content"
+	"github.com/SAP-samples/sap-devs-cli/internal/xdg"
 )
 
 var tipCmd = &cobra.Command{
@@ -2288,9 +2288,9 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/config"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/xdg"
+	"github.com/SAP-samples/sap-devs-cli/internal/config"
+	"github.com/SAP-samples/sap-devs-cli/internal/content"
+	"github.com/SAP-samples/sap-devs-cli/internal/xdg"
 )
 
 var initCmd = &cobra.Command{

@@ -8,9 +8,9 @@ import (
 	"github.com/pkg/browser"
 	"github.com/spf13/cobra"
 
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/discovery"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/i18n"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/xdg"
+	"github.com/SAP-samples/sap-devs-cli/internal/discovery"
+	"github.com/SAP-samples/sap-devs-cli/internal/i18n"
+	"github.com/SAP-samples/sap-devs-cli/internal/xdg"
 )
 
 var discoveryGuidanceCmd = &cobra.Command{

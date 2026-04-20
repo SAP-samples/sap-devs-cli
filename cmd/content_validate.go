@@ -8,9 +8,9 @@ import (
 	"text/tabwriter"
 
 	"github.com/spf13/cobra"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/editor"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/schema"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/xdg"
+	"github.com/SAP-samples/sap-devs-cli/internal/editor"
+	"github.com/SAP-samples/sap-devs-cli/internal/schema"
+	"github.com/SAP-samples/sap-devs-cli/internal/xdg"
 )
 
 var contentValidatePackFlag string

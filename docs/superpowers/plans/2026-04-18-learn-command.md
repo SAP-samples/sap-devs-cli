@@ -296,10 +296,10 @@ import (
 	"fmt"
 	"testing"
 
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/discovery"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/learning"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/tutorials"
+	"github.com/SAP-samples/sap-devs-cli/internal/content"
+	"github.com/SAP-samples/sap-devs-cli/internal/discovery"
+	"github.com/SAP-samples/sap-devs-cli/internal/learning"
+	"github.com/SAP-samples/sap-devs-cli/internal/tutorials"
 )
 
 func TestRecommend_FeaturedFirst(t *testing.T) {
@@ -399,10 +399,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/discovery"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/learning"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/tutorials"
+	"github.com/SAP-samples/sap-devs-cli/internal/content"
+	"github.com/SAP-samples/sap-devs-cli/internal/discovery"
+	"github.com/SAP-samples/sap-devs-cli/internal/learning"
+	"github.com/SAP-samples/sap-devs-cli/internal/tutorials"
 )
 
 func Recommend(
@@ -714,9 +714,9 @@ package learn
 import (
 	"testing"
 
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/discovery"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/learning"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/tutorials"
+	"github.com/SAP-samples/sap-devs-cli/internal/discovery"
+	"github.com/SAP-samples/sap-devs-cli/internal/learning"
+	"github.com/SAP-samples/sap-devs-cli/internal/tutorials"
 )
 
 func TestSearch_TitleMatchFirst(t *testing.T) {
@@ -798,9 +798,9 @@ package learn
 import (
 	"strings"
 
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/discovery"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/learning"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/tutorials"
+	"github.com/SAP-samples/sap-devs-cli/internal/discovery"
+	"github.com/SAP-samples/sap-devs-cli/internal/learning"
+	"github.com/SAP-samples/sap-devs-cli/internal/tutorials"
 )
 
 const (
@@ -909,9 +909,9 @@ package learn
 import (
 	"testing"
 
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/learning"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/tutorials"
+	"github.com/SAP-samples/sap-devs-cli/internal/content"
+	"github.com/SAP-samples/sap-devs-cli/internal/learning"
+	"github.com/SAP-samples/sap-devs-cli/internal/tutorials"
 )
 
 func TestLoadPaths(t *testing.T) {
@@ -1054,10 +1054,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/discovery"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/learning"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/tutorials"
+	"github.com/SAP-samples/sap-devs-cli/internal/content"
+	"github.com/SAP-samples/sap-devs-cli/internal/discovery"
+	"github.com/SAP-samples/sap-devs-cli/internal/learning"
+	"github.com/SAP-samples/sap-devs-cli/internal/tutorials"
 )
 
 func LoadPaths(packs []*content.Pack) []LearningPath {
@@ -1303,14 +1303,14 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/config"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/discovery"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/i18n"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/learn"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/learning"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/tutorials"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/xdg"
+	"github.com/SAP-samples/sap-devs-cli/internal/config"
+	"github.com/SAP-samples/sap-devs-cli/internal/content"
+	"github.com/SAP-samples/sap-devs-cli/internal/discovery"
+	"github.com/SAP-samples/sap-devs-cli/internal/i18n"
+	"github.com/SAP-samples/sap-devs-cli/internal/learn"
+	"github.com/SAP-samples/sap-devs-cli/internal/learning"
+	"github.com/SAP-samples/sap-devs-cli/internal/tutorials"
+	"github.com/SAP-samples/sap-devs-cli/internal/xdg"
 )
 
 var (
@@ -1576,9 +1576,9 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/i18n"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/learn"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/xdg"
+	"github.com/SAP-samples/sap-devs-cli/internal/i18n"
+	"github.com/SAP-samples/sap-devs-cli/internal/learn"
+	"github.com/SAP-samples/sap-devs-cli/internal/xdg"
 )
 
 var learnSearchCmd = &cobra.Command{
@@ -1678,9 +1678,9 @@ import (
 	"github.com/pkg/browser"
 	"github.com/spf13/cobra"
 
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/i18n"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/learn"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/xdg"
+	"github.com/SAP-samples/sap-devs-cli/internal/i18n"
+	"github.com/SAP-samples/sap-devs-cli/internal/learn"
+	"github.com/SAP-samples/sap-devs-cli/internal/xdg"
 )
 
 var learnPathCmd = &cobra.Command{

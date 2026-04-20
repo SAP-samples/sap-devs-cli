@@ -5,8 +5,8 @@ import (
 	"strings"
 	"time"
 
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/geo"
+	"github.com/SAP-samples/sap-devs-cli/internal/content"
+	"github.com/SAP-samples/sap-devs-cli/internal/geo"
 )
 
 const (

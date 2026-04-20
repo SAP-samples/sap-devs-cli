@@ -7,12 +7,12 @@ import (
 
 	"github.com/charmbracelet/glamour"
 	"github.com/spf13/cobra"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/config"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/i18n"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/shellhook"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/xdg"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/youtube"
+	"github.com/SAP-samples/sap-devs-cli/internal/config"
+	"github.com/SAP-samples/sap-devs-cli/internal/content"
+	"github.com/SAP-samples/sap-devs-cli/internal/i18n"
+	"github.com/SAP-samples/sap-devs-cli/internal/shellhook"
+	"github.com/SAP-samples/sap-devs-cli/internal/xdg"
+	"github.com/SAP-samples/sap-devs-cli/internal/youtube"
 )
 
 var tipMarkdown bool

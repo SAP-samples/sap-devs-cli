@@ -59,14 +59,14 @@ This guide covers everything you need to build, test, and release the `sap-devs`
 ## Clone & Build
 
 ```bash
-git clone https://github.tools.sap/developer-relations/sap-devs-cli
+git clone https://github.com/SAP-samples/sap-devs-cli
 cd sap-devs-cli
 
 VERSION=$(git describe --tags --always --dirty)
-go build -ldflags "-X github.tools.sap/developer-relations/sap-devs-cli/cmd.Version=${VERSION}" -o sap-devs .
+go build -ldflags "-X github.com/SAP-samples/sap-devs-cli/cmd.Version=${VERSION}" -o sap-devs .
 ```
 
-This produces a `sap-devs` binary in the current directory. The module path is `github.tools.sap/developer-relations/sap-devs-cli`.
+This produces a `sap-devs` binary in the current directory. The module path is `github.com/SAP-samples/sap-devs-cli`.
 
 ---
 
@@ -254,7 +254,7 @@ Windows arm64 is excluded. Archive naming: `sap-devs_<version>_<os>_<arch>.<ext>
 
 Version is injected at build time:
 ```
--ldflags "-X github.tools.sap/developer-relations/sap-devs-cli/cmd.Version={{ .Version }}"
+-ldflags "-X github.com/SAP-samples/sap-devs-cli/cmd.Version={{ .Version }}"
 ```
 
 A `checksums.txt` (SHA256) is included in the release assets.
@@ -699,7 +699,7 @@ Create `docs/user/user-guide.md` with the following content:
 
 ### Download
 
-Go to the [GitHub Releases page](https://github.tools.sap/developer-relations/sap-devs-cli/releases) and download the archive for your platform:
+Go to the [GitHub Releases page](https://github.com/SAP-samples/sap-devs-cli/releases) and download the archive for your platform:
 
 | Platform | Architecture | File |
 |---|---|---|

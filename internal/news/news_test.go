@@ -6,9 +6,9 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/community"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/news"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/youtube"
+	"github.com/SAP-samples/sap-devs-cli/internal/community"
+	"github.com/SAP-samples/sap-devs-cli/internal/news"
+	"github.com/SAP-samples/sap-devs-cli/internal/youtube"
 )
 
 func date(year int, month time.Month, day int) time.Time {

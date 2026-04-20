@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/schema"
+	"github.com/SAP-samples/sap-devs-cli/internal/schema"
 )
 
 // loadSchema is a helper that loads a named schema using the shared schemasDir().

@@ -489,7 +489,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
+	"github.com/SAP-samples/sap-devs-cli/internal/content"
 )
 
 func TestRenderProfileShow_BuiltinProfile_PrintsBuiltinNote(t *testing.T) {
@@ -560,7 +560,7 @@ func renderProfileShow(out io.Writer, p *content.Profile, lang string) {
 
 Add the `io` import to the import block in `cmd/profile.go` (add `"io"` alongside the existing imports).
 
-Add the `content` import: `"github.tools.sap/developer-relations/sap-devs-cli/internal/content"`.
+Add the `content` import: `"github.com/SAP-samples/sap-devs-cli/internal/content"`.
 
 In `profileShowCmd.RunE`, replace the existing display block:
 

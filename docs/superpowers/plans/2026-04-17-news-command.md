@@ -12,7 +12,7 @@
 
 ## Key Context for Every Task
 
-**Module path:** `github.tools.sap/developer-relations/sap-devs-cli`
+**Module path:** `github.com/SAP-samples/sap-devs-cli`
 
 **Build/vet (no `go test` on Windows — Windows Defender blocks binary execution from .config paths):**
 ```bash
@@ -124,7 +124,7 @@ import (
 
     "github.com/stretchr/testify/assert"
     "github.com/stretchr/testify/require"
-    "github.tools.sap/developer-relations/sap-devs-cli/internal/youtube"
+    "github.com/SAP-samples/sap-devs-cli/internal/youtube"
 )
 
 func TestParsePlaylistFeed_Count(t *testing.T) {
@@ -333,7 +333,7 @@ import (
 
     "github.com/stretchr/testify/assert"
     "github.com/stretchr/testify/require"
-    "github.tools.sap/developer-relations/sap-devs-cli/internal/community"
+    "github.com/SAP-samples/sap-devs-cli/internal/community"
 )
 
 func TestParsePosts_Count(t *testing.T) {
@@ -522,9 +522,9 @@ import (
 
     "github.com/stretchr/testify/assert"
     "github.com/stretchr/testify/require"
-    "github.tools.sap/developer-relations/sap-devs-cli/internal/community"
-    "github.tools.sap/developer-relations/sap-devs-cli/internal/news"
-    "github.tools.sap/developer-relations/sap-devs-cli/internal/youtube"
+    "github.com/SAP-samples/sap-devs-cli/internal/community"
+    "github.com/SAP-samples/sap-devs-cli/internal/news"
+    "github.com/SAP-samples/sap-devs-cli/internal/youtube"
 )
 
 func date(year int, month time.Month, day int) time.Time {
@@ -622,8 +622,8 @@ import (
     "strings"
     "time"
 
-    "github.tools.sap/developer-relations/sap-devs-cli/internal/community"
-    "github.tools.sap/developer-relations/sap-devs-cli/internal/youtube"
+    "github.com/SAP-samples/sap-devs-cli/internal/community"
+    "github.com/SAP-samples/sap-devs-cli/internal/youtube"
 )
 
 // NewsItem pairs a YouTube episode with its matched Community blog post (if any).
@@ -720,9 +720,9 @@ import (
 
     "github.com/pkg/browser"
     "github.com/spf13/cobra"
-    "github.tools.sap/developer-relations/sap-devs-cli/internal/community"
-    "github.tools.sap/developer-relations/sap-devs-cli/internal/news"
-    "github.tools.sap/developer-relations/sap-devs-cli/internal/youtube"
+    "github.com/SAP-samples/sap-devs-cli/internal/community"
+    "github.com/SAP-samples/sap-devs-cli/internal/news"
+    "github.com/SAP-samples/sap-devs-cli/internal/youtube"
 )
 
 const (

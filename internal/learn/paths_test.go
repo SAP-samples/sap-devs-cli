@@ -3,9 +3,9 @@ package learn
 import (
 	"testing"
 
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/learning"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/tutorials"
+	"github.com/SAP-samples/sap-devs-cli/internal/content"
+	"github.com/SAP-samples/sap-devs-cli/internal/learning"
+	"github.com/SAP-samples/sap-devs-cli/internal/tutorials"
 )
 
 func TestLoadPaths(t *testing.T) {

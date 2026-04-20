@@ -188,7 +188,7 @@ tutorials.FetchContent(cacheDir, meta TutorialMeta) (*Tutorial, error)
 
 - **Repo metadata + Trees API:** ~42 requests per full sync (2 per repo × ~21 repos). Within the 60 req/hour unauthenticated limit. Incremental syncs skip unchanged repos (cached tree SHA), reducing to only changed repos.
 - **Raw content:** Uses `raw.githubusercontent.com` CDN — no API rate limit.
-- **With token:** If `GITHUB_TOKEN` is set, used for API calls (5,000 req/hour). Not required. Note: the existing `credentials.Resolve()` targets `github.tools.sap`; tutorials use public `github.com`, so a separate token resolution path checks `GITHUB_TOKEN` / `GH_TOKEN` only.
+- **With token:** If `GITHUB_TOKEN` is set, used for API calls (5,000 req/hour). Not required. Note: the existing `credentials.Resolve()` targets `github.com/SAP-samples`; tutorials use public `github.com`, so a separate token resolution path checks `GITHUB_TOKEN` / `GH_TOKEN` only.
 
 ## 3. Markdown Parser
 

@@ -594,7 +594,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/youtube"
+	"github.com/SAP-samples/sap-devs-cli/internal/youtube"
 )
 
 func TestParsePlaylistItemsResponse(t *testing.T) {
@@ -867,8 +867,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/youtube"
+	"github.com/SAP-samples/sap-devs-cli/internal/content"
+	"github.com/SAP-samples/sap-devs-cli/internal/youtube"
 )
 
 func TestResolve_VideoType_NoNetworkCall(t *testing.T) {
@@ -905,7 +905,7 @@ import (
 	"os"
 	"time"
 
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
+	"github.com/SAP-samples/sap-devs-cli/internal/content"
 )
 
 // Resolve fetches videos for a YouTubeSource.
@@ -1006,8 +1006,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/videos"
+	"github.com/SAP-samples/sap-devs-cli/internal/content"
+	"github.com/SAP-samples/sap-devs-cli/internal/videos"
 )
 
 func TestLoadSaveCache_Roundtrip(t *testing.T) {
@@ -1083,7 +1083,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
+	"github.com/SAP-samples/sap-devs-cli/internal/content"
 )
 
 // LoadCache reads cached videos for a given pack and source.
@@ -1136,7 +1136,7 @@ package videos
 import (
 	"strings"
 
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
+	"github.com/SAP-samples/sap-devs-cli/internal/content"
 )
 
 // ResolveAll reads cached videos for each source and returns them as a flat slice.
@@ -1442,11 +1442,11 @@ import (
 
 	"github.com/pkg/browser"
 	"github.com/spf13/cobra"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/config"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/i18n"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/videos"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/xdg"
+	"github.com/SAP-samples/sap-devs-cli/internal/config"
+	"github.com/SAP-samples/sap-devs-cli/internal/content"
+	"github.com/SAP-samples/sap-devs-cli/internal/i18n"
+	"github.com/SAP-samples/sap-devs-cli/internal/videos"
+	"github.com/SAP-samples/sap-devs-cli/internal/xdg"
 )
 
 var videosCmd = &cobra.Command{

@@ -86,7 +86,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/youtube"
+	"github.com/SAP-samples/sap-devs-cli/internal/youtube"
 )
 ```
 
@@ -105,7 +105,7 @@ Add the `youtube` import to `cmd/tip.go`:
 ```go
 import (
 	// existing imports...
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/youtube"
+	"github.com/SAP-samples/sap-devs-cli/internal/youtube"
 )
 ```
 

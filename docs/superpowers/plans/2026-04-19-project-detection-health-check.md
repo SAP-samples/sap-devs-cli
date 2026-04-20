@@ -637,7 +637,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
+	"github.com/SAP-samples/sap-devs-cli/internal/content"
 )
 
 func TestCheck_DefaultEnvNotGitignored(t *testing.T) {
@@ -813,7 +813,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
+	"github.com/SAP-samples/sap-devs-cli/internal/content"
 )
 
 type Finding struct {
@@ -1038,8 +1038,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/project"
+	"github.com/SAP-samples/sap-devs-cli/internal/content"
+	"github.com/SAP-samples/sap-devs-cli/internal/project"
 )
 
 func TestRenderDynamic_ProjectContext(t *testing.T) {
@@ -1104,7 +1104,7 @@ with:
 import (
 	"time"
 
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/project"
+	"github.com/SAP-samples/sap-devs-cli/internal/project"
 )
 ```
 
@@ -1153,7 +1153,7 @@ In `internal/dynamic/gather.go`:
 
 Add import:
 ```go
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/project"
+	"github.com/SAP-samples/sap-devs-cli/internal/project"
 ```
 
 Replace line 50-51:
@@ -1196,7 +1196,7 @@ In `cmd/inject.go`, after the `dynCtx` is gathered (after line 250), add:
 
 Add the project import to `cmd/inject.go`:
 ```go
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/project"
+	"github.com/SAP-samples/sap-devs-cli/internal/project"
 ```
 
 - [ ] **Step 7: Fix compilation — remove or update references to `ProjectType`**
@@ -1300,7 +1300,7 @@ Add imports to `cmd/doctor.go`:
 	"io"
 	"os"
 
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/project"
+	"github.com/SAP-samples/sap-devs-cli/internal/project"
 ```
 
 Note: `"strings"` and `"fmt"` are already imported.
@@ -1463,7 +1463,7 @@ Expected: Tool Versions table only, no Project Health section.
 ```bash
 cd /d/projects/sap-devs-cli
 VERSION=$(git describe --tags --always --dirty)
-go build -ldflags "-X github.tools.sap/developer-relations/sap-devs-cli/cmd.Version=${VERSION}" -o sap-devs .
+go build -ldflags "-X github.com/SAP-samples/sap-devs-cli/cmd.Version=${VERSION}" -o sap-devs .
 ```
 
 Expected: Clean build.

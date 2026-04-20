@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
+	"github.com/SAP-samples/sap-devs-cli/internal/content"
 )
 
 // Finding is a single health-check result for the current project.

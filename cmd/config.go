@@ -9,10 +9,10 @@ import (
 
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/config"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/credentials"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/i18n"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/xdg"
+	"github.com/SAP-samples/sap-devs-cli/internal/config"
+	"github.com/SAP-samples/sap-devs-cli/internal/credentials"
+	"github.com/SAP-samples/sap-devs-cli/internal/i18n"
+	"github.com/SAP-samples/sap-devs-cli/internal/xdg"
 )
 
 var configCmd = &cobra.Command{
@@ -146,12 +146,12 @@ var tokenServiceFlag string
 
 var configTokenCmd = &cobra.Command{
 	Use:   "token [value]",
-	Short: "Store a GitHub token for authenticating with github.tools.sap",
-	Long: `Store a Personal Access Token for authenticating with github.tools.sap.
+	Short: "Store a GitHub token for authenticating with GitHub",
+	Long: `Store a Personal Access Token for authenticating with GitHub.
 
-Only required when syncing content from a private GitHub Enterprise instance
-(github.tools.sap). Not needed if you are outside the SAP network or already
-have GITHUB_TOOLS_SAP_TOKEN set in your environment.
+Only required when syncing content from a private repository or when
+unauthenticated API rate limits are exceeded. Not needed if you already
+have GH_TOKEN or GITHUB_TOKEN set in your environment.
 
 The token is stored in the OS keychain (macOS Keychain, Windows Credential
 Manager, Linux Secret Service). On systems without a keychain, it falls back

@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
+	"github.com/SAP-samples/sap-devs-cli/internal/content"
 )
 
 // WriteMCPConfig merges an MCP server entry into the host's settings JSON file.

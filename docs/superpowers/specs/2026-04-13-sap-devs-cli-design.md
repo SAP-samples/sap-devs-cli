@@ -2,7 +2,7 @@
 
 **Date:** 2026-04-13  
 **Status:** Draft  
-**Repo:** https://github.tools.sap/developer-relations/sap-devs-cli  
+**Repo:** https://github.com/SAP-samples/sap-devs-cli  
 **Author:** Thomas Jung  
 
 ---

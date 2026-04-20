@@ -46,7 +46,7 @@ import (
 	"strings"
 	"time"
 
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
+	"github.com/SAP-samples/sap-devs-cli/internal/content"
 )
 
 // ExportICS writes events in iCal format (RFC 5545) to w.
@@ -111,7 +111,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
+	"github.com/SAP-samples/sap-devs-cli/internal/content"
 )
 
 // GoogleCalendarURL returns a URL that opens Google Calendar with the event pre-filled.
@@ -228,7 +228,7 @@ import (
 	"strings"
 	"time"
 
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
+	"github.com/SAP-samples/sap-devs-cli/internal/content"
 )
 
 // CheckUpcoming returns events whose date is within the next N days.
@@ -666,7 +666,7 @@ Add to the import block in `cmd/events.go`:
 ```go
 "os"
 
-"github.tools.sap/developer-relations/sap-devs-cli/internal/notify"
+"github.com/SAP-samples/sap-devs-cli/internal/notify"
 ```
 
 - [ ] **Step 3: Update init() to register new subcommands and flags**
@@ -716,9 +716,9 @@ import (
 	"strconv"
 
 	"github.com/spf13/cobra"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/config"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/i18n"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/xdg"
+	"github.com/SAP-samples/sap-devs-cli/internal/config"
+	"github.com/SAP-samples/sap-devs-cli/internal/i18n"
+	"github.com/SAP-samples/sap-devs-cli/internal/xdg"
 )
 
 var configEventsCmd = &cobra.Command{

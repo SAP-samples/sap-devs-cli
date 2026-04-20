@@ -32,7 +32,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/scratch"
+	"github.com/SAP-samples/sap-devs-cli/internal/scratch"
 )
 
 func TestLoad_MissingFile(t *testing.T) {
@@ -303,8 +303,8 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/i18n"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/scratch"
+	"github.com/SAP-samples/sap-devs-cli/internal/i18n"
+	"github.com/SAP-samples/sap-devs-cli/internal/scratch"
 )
 
 var contextCmd = &cobra.Command{
@@ -549,7 +549,7 @@ git commit -m "feat: render scratch notes as Current Context section in injected
 Add to the import block in `cmd/inject.go`:
 
 ```go
-"github.tools.sap/developer-relations/sap-devs-cli/internal/scratch"
+"github.com/SAP-samples/sap-devs-cli/internal/scratch"
 ```
 
 - [ ] **Step 2: Load scratch notes when project scope**

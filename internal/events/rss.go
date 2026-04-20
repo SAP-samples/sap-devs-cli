@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
+	"github.com/SAP-samples/sap-devs-cli/internal/content"
 )
 
 const userAgent = "Mozilla/5.0 (compatible; sap-devs/1.0)"

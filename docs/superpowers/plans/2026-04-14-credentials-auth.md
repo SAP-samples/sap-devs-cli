@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Fix the silent "not a valid zip file" error during `sap-devs sync` by adding OS-keychain-backed token storage and authenticated HTTP requests to github.tools.sap.
+**Goal:** Fix the silent "not a valid zip file" error during `sap-devs sync` by adding OS-keychain-backed token storage and authenticated HTTP requests to github.com/SAP-samples.
 
 **Architecture:** A new `internal/credentials` package wraps `zalando/go-keyring` with a file fallback (`<configDir>/credentials`, 0600). `FetchArchive` gains a `token` parameter and auth-redirect detection. A new `sap-devs config token` command manages the stored token, and `init` prompts for a token before syncing.
 
@@ -680,7 +680,7 @@ Add the import for `credentials` and resolve the token once before both `FetchAr
 
 Add to imports:
 ```go
-"github.tools.sap/developer-relations/sap-devs-cli/internal/credentials"
+"github.com/SAP-samples/sap-devs-cli/internal/credentials"
 ```
 
 At the top of `syncCmd.RunE`, after loading `cfg` and before the categories/TTL logic, add:
@@ -895,9 +895,9 @@ import (
 
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/config"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/credentials"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/xdg"
+	"github.com/SAP-samples/sap-devs-cli/internal/config"
+	"github.com/SAP-samples/sap-devs-cli/internal/credentials"
+	"github.com/SAP-samples/sap-devs-cli/internal/xdg"
 )
 
 var configCmd = &cobra.Command{
@@ -1005,11 +1005,11 @@ var tokenDeleteFlag bool
 
 var configTokenCmd = &cobra.Command{
 	Use:   "token [value]",
-	Short: "Store a GitHub token for authenticating with github.tools.sap",
-	Long: `Store a Personal Access Token for authenticating with github.tools.sap.
+	Short: "Store a GitHub token for authenticating with github.com/SAP-samples",
+	Long: `Store a Personal Access Token for authenticating with github.com/SAP-samples.
 
 Only required when syncing content from a private GitHub Enterprise instance
-(github.tools.sap). Not needed if you are outside the SAP network or already
+(github.com/SAP-samples). Not needed if you are outside the SAP network or already
 have GITHUB_TOOLS_SAP_TOKEN set in your environment.
 
 The token is stored in the OS keychain (macOS Keychain, Windows Credential
@@ -1130,9 +1130,9 @@ import (
 
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/config"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/credentials"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/xdg"
+	"github.com/SAP-samples/sap-devs-cli/internal/config"
+	"github.com/SAP-samples/sap-devs-cli/internal/credentials"
+	"github.com/SAP-samples/sap-devs-cli/internal/xdg"
 )
 
 var initCmd = &cobra.Command{
@@ -1150,7 +1150,7 @@ var initCmd = &cobra.Command{
 		// Step 1: GitHub authentication (optional)
 		fmt.Println("Step 1/5: GitHub authentication (optional)")
 		fmt.Println()
-		fmt.Println("  sap-devs syncs content from github.tools.sap, which requires a Personal")
+		fmt.Println("  sap-devs syncs content from github.com/SAP-samples, which requires a Personal")
 		fmt.Println("  Access Token if you are inside the SAP corporate network. If you are")
 		fmt.Println("  outside SAP or already have GITHUB_TOOLS_SAP_TOKEN set in your")
 		fmt.Println("  environment, press Enter to skip.")
@@ -1389,9 +1389,9 @@ Find the `### sync` section (around line 141) and insert a new `### Authenticati
 ```markdown
 ### Authentication
 
-`sap-devs sync` fetches content from `github.tools.sap`, which requires a Personal Access Token if you are inside the SAP corporate network.
+`sap-devs sync` fetches content from `github.com/SAP-samples`, which requires a Personal Access Token if you are inside the SAP corporate network.
 
-**When you need a token:** Only when syncing from `github.tools.sap` on the SAP corporate network. If you are outside SAP, no token is needed.
+**When you need a token:** Only when syncing from `github.com/SAP-samples` on the SAP corporate network. If you are outside SAP, no token is needed.
 
 **Token resolution order** (first match wins):
 
@@ -1512,7 +1512,7 @@ Expected: all pass (CI is the authoritative runner; Windows may skip some tests 
 
 ```bash
 VERSION=$(git describe --tags --always --dirty)
-go build -ldflags "-X github.tools.sap/developer-relations/sap-devs-cli/cmd.Version=${VERSION}" -o sap-devs .
+go build -ldflags "-X github.com/SAP-samples/sap-devs-cli/cmd.Version=${VERSION}" -o sap-devs .
 ./sap-devs config show
 ./sap-devs config token --help
 ./sap-devs init --help

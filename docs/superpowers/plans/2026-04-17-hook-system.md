@@ -57,8 +57,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.tools.sap/developer-relations/sap-devs-cli/cmd"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
+	"github.com/SAP-samples/sap-devs-cli/cmd"
+	"github.com/SAP-samples/sap-devs-cli/internal/content"
 )
 
 func TestFormatTip_Markdown(t *testing.T) {
@@ -308,7 +308,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
+	"github.com/SAP-samples/sap-devs-cli/internal/content"
 )
 
 func TestFlattenHooks_ReturnsAllHooks(t *testing.T) {
@@ -438,7 +438,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/adapter"
+	"github.com/SAP-samples/sap-devs-cli/internal/adapter"
 )
 
 func TestWriteHookConfig_CreatesFileWhenAbsent(t *testing.T) {
@@ -827,11 +827,11 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/adapter"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/config"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/i18n"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/xdg"
+	"github.com/SAP-samples/sap-devs-cli/internal/adapter"
+	"github.com/SAP-samples/sap-devs-cli/internal/config"
+	"github.com/SAP-samples/sap-devs-cli/internal/content"
+	"github.com/SAP-samples/sap-devs-cli/internal/i18n"
+	"github.com/SAP-samples/sap-devs-cli/internal/xdg"
 )
 
 var hookCmd = &cobra.Command{
