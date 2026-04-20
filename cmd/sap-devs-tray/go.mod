@@ -2,7 +2,10 @@ module github.com/SAP-samples/sap-devs-cli/cmd/sap-devs-tray
 
 go 1.26.1
 
-require github.com/wailsapp/wails/v3 v3.0.0-alpha.77
+require (
+	github.com/wailsapp/wails/v3 v3.0.0-alpha.77
+	gopkg.in/yaml.v3 v3.0.1
+)
 
 require (
 	dario.cat/mergo v1.0.2 // indirect
