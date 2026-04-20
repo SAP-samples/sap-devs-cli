@@ -6,11 +6,11 @@
 
 ## Problem
 
-The sync command has 7 phases, but only the archive fetch (Phase 1) prints a status line and marker expansion (Phase 2) has a Bubbletea progress UI. Phases 3-7 (events, YouTube, Discovery Center, tutorials, learning) are completely silent and can each take seconds to complete, creating long pauses with no terminal feedback.
+The sync command has 8 logical phases (content, company, markers, events, YouTube, Discovery Center, tutorials, learning), but only the archive fetch prints a status line and marker expansion has a Bubbletea progress UI. Phases 3-7 (events, YouTube, Discovery Center, tutorials, learning) are completely silent and can each take seconds to complete, creating long pauses with no terminal feedback.
 
 ## Solution
 
-Replace all sync output with a single Bubbletea inline program that renders a progress bar and phase status list throughout the entire sync lifecycle. The existing marker expansion detail integrates as sub-items under the markers phase.
+Replace all sync output with a single Bubbletea inline program that renders a progress bar and phase status list throughout the entire sync lifecycle. The existing marker expansion detail integrates as sub-items under the markers phase. When stdout is not a TTY, fall back to plain text progress lines.
 
 ## Visual Design
 
@@ -35,7 +35,21 @@ Replace all sync output with a single Bubbletea inline program that renders a pr
 - `●` active spinner: FioriBlue (#4DB8FF)
 - `✗` failed: FioriRed (#FF5C5C)
 - `─` pending/skipped: FioriMuted (#8C9BAA)
-- Progress bar gradient: FioriBlue → FioriGreen
+- Progress bar fill: FioriBlue (#4DB8FF), empty: FioriMuted (#8C9BAA)
+
+All styling uses `github.com/charmbracelet/lipgloss` v1 (matching `internal/ui/progress.go`). Define local color constants in `sync_progress.go` rather than importing `internal/theme` (which mixes lipgloss v1 and v2 types).
+
+### Non-TTY Fallback
+
+Before launching the Bubbletea program, check `term.IsTerminal(int(os.Stdout.Fd()))` (same pattern as `cmd/inject.go`). When stdout is not a TTY:
+
+- Skip Bubbletea entirely
+- Print plain text progress lines to `out` as each phase starts/completes: `"  ✓ content"`, `"  ✓ events (2 types)"`, `"  ✗ discovery (fetch failed)"`
+- This ensures `inject --sync`, CI pipelines, and piped output work correctly
+
+### `--category` Filtering
+
+When `--category` is set, the phase list shown in the UI is filtered to only the relevant phase(s). For example, `sync --category events` shows only the events phase row and the progress bar fills from 0% to 100% for that single phase. Skipped phases for other categories are not rendered.
 
 ## Architecture
 
@@ -49,13 +63,18 @@ const (
     PhaseContent PhaseID = iota
     PhaseCompany
     PhaseMarkers
+    PhaseChangelog
     PhaseEvents
     PhaseYouTube
     PhaseDiscovery
     PhaseTutorials
     PhaseLearning
 )
+```
 
+**Company + changelog coupling:** In the current code, company sync and changelog collection happen inside the `archiveNeedsSync` block, tightly coupled to the content phase. In the new model, `PhaseContent`, `PhaseCompany`, `PhaseMarkers`, and `PhaseChangelog` are all sub-phases of the archive sync block. The `syncWorker` runs them sequentially within the archive-needs-sync conditional, and skips all four together when the archive is fresh. Changelog collection receives both the official and company cache directories, exactly as today.
+
+```go
 type PhaseStartMsg struct{ ID PhaseID }
 type PhaseDoneMsg  struct{ ID PhaseID; Summary string; Err error }
 type PhaseSkipMsg  struct{ ID PhaseID }
@@ -75,17 +94,19 @@ Single `syncModel` in `internal/ui/sync_progress.go`:
 
 ```go
 type syncModel struct {
-    phases   []phaseState       // ordered, one per PhaseID
+    phases   []phaseState       // ordered, one per visible phase
     markers  []markerItem       // sub-items under PhaseMarkers (reused)
-    progress progress.Model     // bubbles progress bar
-    spinner  spinner.Model      // bubbles spinner for active phases
+    frame    int                // spinner frame counter (ticked by tea.Tick)
     done     int                // phases completed + skipped
-    total    int                // total phase count
+    total    int                // total visible phase count
     fatalErr error              // propagated back to caller
 }
 ```
 
-Runs inline (no alt-screen). Spinner tick keeps the display alive during long-running phases — this is what eliminates the "long pause" problem.
+No `bubbles` dependency. The progress bar and spinner are rendered manually using lipgloss v1 styled strings, matching the approach in the existing `progressModel` in `progress.go`:
+
+- **Progress bar:** Hand-built from `█` (filled) and `░` (empty) characters, width 20, styled with lipgloss v1.
+- **Spinner:** Rotating dot sequence (`⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏`), advanced by `tea.Tick` at 100ms intervals. This tick is what keeps the display alive during long-running phases.
 
 ### Sync Orchestration
 
@@ -132,9 +153,10 @@ func syncWorker(p *tea.Program, plan syncPlan) {
 
 ### Modified files
 
-- `cmd/sync.go` — refactor `runSync` into setup + Bubbletea launch + `syncWorker`; update `runMarkerExpansion` to accept `*tea.Program`
+- `cmd/sync.go` — refactor `runSync` into setup + Bubbletea launch + `syncWorker`; update `runMarkerExpansion` to accept `*tea.Program`; add TTY detection gating Bubbletea vs plain text fallback
 - `internal/ui/progress.go` — remove `RunMarkerExpansion` (program logic moves to `sync_progress.go`); keep `MarkerDoneMsg` and marker item types for reuse
-- `go.mod` / `go.sum` — add `github.com/charmbracelet/bubbles` as direct v1 dependency (for `progress` and `spinner`)
+
+No new dependencies. Progress bar and spinner are hand-rendered with lipgloss v1 strings.
 
 ### Unchanged
 
@@ -144,7 +166,8 @@ func syncWorker(p *tea.Program, plan syncPlan) {
 
 ## Edge Cases
 
-- **Non-TTY (CI, pipe):** Bubbletea renders a single final frame. No spinner animation but the phase list still prints.
+- **Non-TTY (CI, pipe, `inject --sync`):** Detected via `term.IsTerminal(int(os.Stdout.Fd()))`. Falls back to plain `fmt.Fprintln(out, ...)` lines per phase — no Bubbletea, no spinner. This matches the existing pattern in `cmd/inject.go:374`.
+- **`--category` filter:** Phase list shows only the targeted phase(s). Progress bar fills 0→100% for the subset.
 - **"Up to date" fast path:** If nothing is stale, skip Bubbletea entirely, print existing i18n message directly.
 - **Fatal error (archive fetch fails):** `SyncDoneMsg{FatalErr: err}` quits the program, error propagates to caller.
 - **Non-fatal phase errors:** Rendered as `✗ failed` with warning text; sync continues.
@@ -154,4 +177,5 @@ func syncWorker(p *tea.Program, plan syncPlan) {
 Explicitly NOT included:
 - Per-phase elapsed time display
 - Parallel phase execution (phases stay sequential)
-- Changes to `inject --sync` flow (it calls `runSync`, gets new UI automatically)
+- New external dependencies (no `bubbles` — progress bar and spinner are hand-rendered)
+- Changes to `inject --sync` flow (it calls `runSync`, gets the new UI automatically when TTY; plain text fallback otherwise)
