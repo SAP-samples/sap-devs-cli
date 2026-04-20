@@ -200,7 +200,7 @@ Interactive UI for editing and maintaining pack content YAML files (event-types.
 - ✅ Schema-driven forms: enum fields render as select dropdowns, URI/pattern fields get inline validation, required field highlighting
 - ✅ Layer resolution: all 4 layers (official, company, user, project) respected; user-layer overrides auto-created when editing from home directory
 
-#### Phase 2 — TUI Enhancements
+#### Phase 2 — TUI Enhancements - DONE ✔️
 
 - Undo/redo support within the editor session - DONE ✔️
 - Diff view showing changes against the lower-layer version before saving - DONE ✔️
@@ -287,31 +287,11 @@ A persistent system-tray (or menu-bar) icon that surfaces tool status, triggers 
 
 ## AI Agent Influence
 
-### `sap-devs` as an MCP server
+### `sap-devs` as an MCP server - DONE  ✔️
 
 Expose `sap-devs` as a live MCP server so AI agents can query it on demand during a conversation, instead of relying solely on static injected text.
 
 **Problem:** Static injection pushes everything upfront and hopes the agent reads it. With an MCP server, the agent pulls specific context when it needs it — no token budget pressure, always fresh, and topically relevant to the current task.
-
-**Proposed tools the server would expose:**
-
-- `get_tip(pack, topic)` — return one actionable tip, optionally filtered by topic keyword
-- `search_resources(query, pack)` — return matching curated resources with URLs
-- `get_context(profile)` — return the full context block for a profile on demand
-- `get_recent_news()` — return latest SAP Developer News episodes
-- `list_packs()` — enumerate available packs so the agent knows what domains are covered
-- `get_known_errors(pattern)` — look up a SAP error message and return cause + fix (backing data: `known_errors.yaml` ✅)
-
-**Architecture:**
-
-- Implemented as a sub-command: `sap-devs mcp serve` starts the MCP server process
-- Registered in the tool's MCP config via `sap-devs mcp install sap-devs-server` (reusing the existing `mcp-wire` adapter mechanism)
-- Reads from the same pack content as `inject` — no duplicate data
-- Stateless: each tool call loads packs fresh (or from cache); no daemon required
-
-**Why this matters:** This inverts the whole model. Instead of "push everything and hope", the agent fetches what it needs, when it needs it. Particularly powerful for tools like Claude Code where the agent can decide mid-task that it needs CAP-specific context.
-
-**Dependency:** Requires the base MCP infrastructure in `cmd/mcp.go` to be extended to support self-hosting, not just wiring third-party servers.
 
 ---
 
@@ -339,7 +319,7 @@ Implemented: added `## sap-devs CLI Reference (for AI agents)` table to `content
 
 ---
 
-### ~~Scratch/session context — `sap-devs context add`~~ ✅
+### ~~Scratch/session context — `sap-devs context add`~~ DONE ✔️
 
 Implemented: `context add/list/clear` commands with `.sap-devs/scratch.yaml` storage and `## Current Context` injection in project-scope output.
 
