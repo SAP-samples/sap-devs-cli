@@ -118,6 +118,10 @@ Three content types: **missions** (guided learning paths), **services** (BTP ser
 
 On every command invocation (except `update` and dev builds), a background goroutine checks GitHub for a newer release at most once every 7 days (168h). Results are printed to stderr after the command completes, with a 3-second timeout. State tracked in the cache directory.
 
+### OS-Native Scheduler
+
+`internal/service/` provides a `Scheduler` interface with platform implementations behind build tags: `scheduler_windows.go` (Task Scheduler via `schtasks`), `scheduler_darwin.go` (launchd plist), `scheduler_linux.go` (systemd user timer). Each shells out to OS tools — no CGO, no new dependencies. `service.New(cacheDir)` returns the platform-appropriate implementation. Scheduler logs to `~/.cache/sap-devs/daemon.log`. Interval is configured via `config.Service.Interval` (default 6h).
+
 ### CLI Commands
 
 | Command | Purpose |
@@ -145,6 +149,7 @@ On every command invocation (except `update` and dev builds), a background gorou
 | `videos` | Browse SAP YouTube videos; `videos list/search/open` |
 | `update` | Self-update the binary |
 | `init` | First-time setup wizard |
+| `service install/uninstall/status` | Manage OS-native background scheduler (systemd/launchd/Task Scheduler) |
 
 ### Project Detection & Health Check
 
