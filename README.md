@@ -47,9 +47,18 @@ For SAP's developer relations work, this opens a new distribution channel. SAP p
 
 The broader opportunity is that AI assistants are fast becoming one of the most influential factors in which platforms developers choose. Platforms that integrate well into this workflow feel modern and worth learning. Platforms that do not feel like obstacles. Shipping accurate, current SAP knowledge into the AI tools developers use every day is one of the most direct ways SAP can influence that perception in 2026.
 
+## Contributing
+
+If you wish to contribute code, offer fixes or improvements, please send a pull request. Due to legal reasons, contributors will be asked to accept a Developer Certificate of Origin (DCO) when they submit their first pull request to this project. This happens in an automated fashion during the submission process. SAP uses [the standard DCO text of the Linux Foundation](https://developercertificate.org/).
+
 ## How to obtain support
 
 This project is provided "as-is": there is no guarantee that raised issues will be answered or addressed in future releases.
+
+## Legal
+
+- [Privacy Statement](PRIVACY_STATEMENT.md)
+- [Terms of Use](https://www.sap.com/about/legal/terms-of-use.html)
 
 ## License
 
