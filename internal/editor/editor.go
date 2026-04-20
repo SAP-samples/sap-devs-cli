@@ -131,11 +131,20 @@ func runArrayEditor(target *ResolvedFile, s *schema.Schema) error {
 					}
 					continue
 				}
-				// Coerce string value to int for integer fields.
+				// Coerce string values to native types for integer and boolean fields.
 				for _, f := range s.ItemSpec.Fields {
-					if f.Key == field && f.Type == "integer" {
-						if n, convErr := strconv.Atoi(value.(string)); convErr == nil {
-							value = n
+					if f.Key == field {
+						if f.Type == "integer" {
+							if n, convErr := strconv.Atoi(value.(string)); convErr == nil {
+								value = n
+							}
+						} else if f.Type == "boolean" {
+							switch value.(string) {
+							case "true":
+								value = true
+							case "false":
+								value = false
+							}
 						}
 						break
 					}

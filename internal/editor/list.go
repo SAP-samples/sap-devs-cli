@@ -252,10 +252,6 @@ func (m listModel) visibleItems() []visibleItem {
 	return out
 }
 
-func (m listModel) selectedCount() int {
-	return len(m.selected)
-}
-
 func (m listModel) View() string {
 	var sb strings.Builder
 
@@ -347,7 +343,7 @@ func (m listModel) View() string {
 	footerStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("241"))
 	if len(m.selected) > 0 {
 		sb.WriteString(footerStyle.Render(
-			fmt.Sprintf("  %d selected: e set field  d delete  t add/remove tag  Esc clear", len(m.selected)),
+			fmt.Sprintf("  %d selected: e set field  d delete  t add/remove tag  J/K reorder  Esc clear", len(m.selected)),
 		))
 	} else {
 		sb.WriteString(footerStyle.Render(

@@ -3,7 +3,6 @@ package editor
 import (
 	"errors"
 	"fmt"
-	"sort"
 
 	"charm.land/huh/v2"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/schema"
@@ -176,16 +175,6 @@ func BulkApplyTag(items []MergedItem, selected map[int]bool, field, value, actio
 		}
 		items[idx].Data[field] = arr
 	}
-}
-
-// selectedIndices returns sorted indices from a selected map.
-func selectedIndices(selected map[int]bool) []int {
-	indices := make([]int, 0, len(selected))
-	for idx := range selected {
-		indices = append(indices, idx)
-	}
-	sort.Ints(indices)
-	return indices
 }
 
 // bulkSettableFields returns fields suitable for bulk set: string, integer, boolean types.
