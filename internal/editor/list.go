@@ -131,8 +131,12 @@ func (m listModel) updateNormal(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.quit = true
 		return m, tea.Quit
 	case "esc":
-		m.quit = true
-		return m, tea.Quit
+		if len(m.selected) > 0 {
+			m.selected = make(map[int]bool)
+		} else {
+			m.quit = true
+			return m, tea.Quit
+		}
 	case "up", "k":
 		if m.cursor > 0 {
 			m.cursor--
@@ -152,6 +156,10 @@ func (m listModel) updateNormal(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.addNew = true
 		return m, tea.Quit
 	case "d":
+		if len(m.selected) > 0 {
+			m.bulkAction = "delete"
+			return m, tea.Quit
+		}
 		visible := m.visibleItems()
 		if m.cursor < len(visible) {
 			idx := visible[m.cursor].originalIndex
@@ -159,6 +167,25 @@ func (m listModel) updateNormal(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			if m.items[idx].Layer == m.target.Layer {
 				m.deleteIdx = idx
 				return m, tea.Quit
+			}
+		}
+	case " ":
+		visible := m.visibleItems()
+		if m.cursor < len(visible) {
+			idx := visible[m.cursor].originalIndex
+			if m.items[idx].Layer == m.target.Layer {
+				if m.selected[idx] {
+					delete(m.selected, idx)
+				} else {
+					m.selected[idx] = true
+				}
+			}
+		}
+	case "ctrl+a":
+		visible := m.visibleItems()
+		for _, vi := range visible {
+			if vi.item.Layer == m.target.Layer {
+				m.selected[vi.originalIndex] = true
 			}
 		}
 	case "/":
