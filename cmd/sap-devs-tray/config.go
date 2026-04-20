@@ -3,10 +3,13 @@ package main
 import (
 	_ "embed"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/url"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -445,3 +448,223 @@ func (s *Server) handleDetectLocation(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// ── Task 4: Service & autostart APIs ─────────────────────────────────────────
+
+type serviceStatusResponse struct {
+	Scheduler struct {
+		Installed bool `json:"installed"`
+	} `json:"scheduler"`
+	Autostart struct {
+		Installed bool `json:"installed"`
+	} `json:"autostart"`
+}
+
+// handleServiceStatus checks whether the OS scheduler and autostart entry are installed.
+func (s *Server) handleServiceStatus(w http.ResponseWriter, r *http.Request) {
+	var status serviceStatusResponse
+
+	// Check scheduler via `sap-devs service status`.
+	out, err := exec.Command(sapDevsBinary(), "service", "status").CombinedOutput()
+	if err == nil {
+		status.Scheduler.Installed = strings.Contains(strings.ToLower(string(out)), "installed")
+	}
+
+	status.Autostart.Installed = autostartInstalled()
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(status)
+}
+
+// autostartInstalled returns true when the OS-specific autostart entry exists.
+func autostartInstalled() bool {
+	switch runtime.GOOS {
+	case "windows":
+		out, err := exec.Command("reg", "query",
+			`HKCU\Software\Microsoft\Windows\CurrentVersion\Run`,
+			"/v", "sap-devs-tray",
+		).CombinedOutput()
+		return err == nil && strings.Contains(string(out), "sap-devs-tray")
+	case "darwin":
+		home, _ := os.UserHomeDir()
+		path := filepath.Join(home, "Library", "LaunchAgents", "com.sap-devs.tray.plist")
+		_, err := os.Stat(path)
+		return err == nil
+	default: // linux
+		home, _ := os.UserHomeDir()
+		path := filepath.Join(home, ".config", "autostart", "sap-devs-tray.desktop")
+		_, err := os.Stat(path)
+		return err == nil
+	}
+}
+
+// handleServiceInstall runs `sap-devs service install`.
+func (s *Server) handleServiceInstall(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	out, err := exec.Command(sapDevsBinary(), "service", "install").CombinedOutput()
+	w.Header().Set("Content-Type", "application/json")
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": strings.TrimSpace(string(out)) + ": " + err.Error()})
+		return
+	}
+	json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
+}
+
+// handleServiceUninstall runs `sap-devs service uninstall`.
+func (s *Server) handleServiceUninstall(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	out, err := exec.Command(sapDevsBinary(), "service", "uninstall").CombinedOutput()
+	w.Header().Set("Content-Type", "application/json")
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": strings.TrimSpace(string(out)) + ": " + err.Error()})
+		return
+	}
+	json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
+}
+
+// handleAutostartInstall registers the tray binary as a login-startup item.
+func (s *Server) handleAutostartInstall(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	self, err := os.Executable()
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "cannot determine executable path: " + err.Error()})
+		return
+	}
+	if err := registerAutostart(self); err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
+}
+
+// handleAutostartUninstall removes the login-startup item for the tray binary.
+func (s *Server) handleAutostartUninstall(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	if err := unregisterAutostart(); err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
+}
+
+// ── Autostart helpers (duplicated from internal/trayctl — tray cannot import internal/) ──
+
+func registerAutostart(binaryPath string) error {
+	switch runtime.GOOS {
+	case "windows":
+		return registerWindowsAutostart(binaryPath)
+	case "darwin":
+		return registerDarwinAutostart(binaryPath)
+	case "linux":
+		return registerLinuxAutostart(binaryPath)
+	default:
+		return fmt.Errorf("autostart not supported on %s", runtime.GOOS)
+	}
+}
+
+func unregisterAutostart() error {
+	switch runtime.GOOS {
+	case "windows":
+		return unregisterWindowsAutostart()
+	case "darwin":
+		return unregisterDarwinAutostart()
+	case "linux":
+		return unregisterLinuxAutostart()
+	default:
+		return nil
+	}
+}
+
+func registerWindowsAutostart(binaryPath string) error {
+	return exec.Command("reg", "add",
+		`HKCU\Software\Microsoft\Windows\CurrentVersion\Run`,
+		"/v", "sap-devs-tray",
+		"/t", "REG_SZ",
+		"/d", binaryPath,
+		"/f",
+	).Run()
+}
+
+func unregisterWindowsAutostart() error {
+	return exec.Command("reg", "delete",
+		`HKCU\Software\Microsoft\Windows\CurrentVersion\Run`,
+		"/v", "sap-devs-tray",
+		"/f",
+	).Run()
+}
+
+func registerDarwinAutostart(binaryPath string) error {
+	plist := fmt.Sprintf(`<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>com.sap-devs.tray</string>
+	<key>ProgramArguments</key>
+	<array>
+		<string>%s</string>
+	</array>
+	<key>RunAtLoad</key>
+	<true/>
+</dict>
+</plist>`, binaryPath)
+
+	home, _ := os.UserHomeDir()
+	path := filepath.Join(home, "Library", "LaunchAgents", "com.sap-devs.tray.plist")
+	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+		return err
+	}
+	return os.WriteFile(path, []byte(plist), 0644)
+}
+
+func unregisterDarwinAutostart() error {
+	home, _ := os.UserHomeDir()
+	path := filepath.Join(home, "Library", "LaunchAgents", "com.sap-devs.tray.plist")
+	_ = exec.Command("launchctl", "unload", path).Run()
+	return os.Remove(path)
+}
+
+func registerLinuxAutostart(binaryPath string) error {
+	entry := fmt.Sprintf(`[Desktop Entry]
+Type=Application
+Name=sap-devs Tray
+Exec=%s
+Terminal=false
+StartupNotify=false
+X-GNOME-Autostart-enabled=true
+`, binaryPath)
+
+	home, _ := os.UserHomeDir()
+	dir := filepath.Join(home, ".config", "autostart")
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return err
+	}
+	return os.WriteFile(filepath.Join(dir, "sap-devs-tray.desktop"), []byte(entry), 0644)
+}
+
+func unregisterLinuxAutostart() error {
+	home, _ := os.UserHomeDir()
+	path := filepath.Join(home, ".config", "autostart", "sap-devs-tray.desktop")
+	return os.Remove(path)
+}

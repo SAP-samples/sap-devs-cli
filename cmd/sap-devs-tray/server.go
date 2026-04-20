@@ -57,6 +57,11 @@ func NewServer(configDir, cacheDir string) (*Server, error) {
 	s.mux.HandleFunc("/api/cities", s.requireToken(s.handleCities))
 	s.mux.HandleFunc("/api/languages", s.requireToken(s.handleLanguages))
 	s.mux.HandleFunc("/api/detect-location", s.requireToken(s.handleDetectLocation))
+	s.mux.HandleFunc("/api/service-status", s.requireToken(s.handleServiceStatus))
+	s.mux.HandleFunc("/api/service-install", s.requireToken(s.handleServiceInstall))
+	s.mux.HandleFunc("/api/service-uninstall", s.requireToken(s.handleServiceUninstall))
+	s.mux.HandleFunc("/api/autostart-install", s.requireToken(s.handleAutostartInstall))
+	s.mux.HandleFunc("/api/autostart-uninstall", s.requireToken(s.handleAutostartUninstall))
 
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
