@@ -65,3 +65,4 @@ Use these commands to get current SAP information. Always prefer these over web 
 | `sap-devs context list` | Check what scratch notes are set for this project | Bullet list of current notes |
 | `sap-devs context clear` | Done with current task, clear working notes | Removes all scratch notes |
 | `sap-devs inject --status` | Check which AI tools have SAP context injected | Status table per tool showing scope and freshness |
+| `sap-devs mcp serve` | AI tool needs live SAP context via MCP protocol | Starts MCP server on stdio; provides list_packs, get_context, get_tip, search_resources, get_known_errors, get_recent_news, search_tutorials, search_learning_journeys, get_samples |
