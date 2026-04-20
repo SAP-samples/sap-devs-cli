@@ -7,6 +7,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/SAP-samples/sap-devs-cli/internal/credentials"
 	"github.com/SAP-samples/sap-devs-cli/internal/i18n"
+	"github.com/SAP-samples/sap-devs-cli/internal/trayctl"
 	"github.com/SAP-samples/sap-devs-cli/internal/update"
 	"github.com/SAP-samples/sap-devs-cli/internal/xdg"
 )
@@ -49,6 +50,17 @@ var updateCmd = &cobra.Command{
 		}
 
 		fmt.Fprintln(cmd.OutOrStdout(), i18n.Tf(i18n.ActiveLang, "update.done", map[string]any{"TagName": rel.TagName}))
+
+		mgr := &trayctl.Manager{CacheDir: paths.CacheDir, Version: rel.Version, Token: token, RepoURL: repoURL}
+		if mgr.IsInstalled() {
+			fmt.Fprintln(cmd.OutOrStdout(), "Updating tray companion...")
+			if err := mgr.Install(); err != nil {
+				fmt.Fprintf(cmd.ErrOrStderr(), "Warning: tray update failed: %v\n", err)
+			} else {
+				fmt.Fprintln(cmd.OutOrStdout(), "Tray companion updated.")
+			}
+		}
+
 		return nil
 	},
 }
