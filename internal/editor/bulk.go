@@ -3,6 +3,7 @@ package editor
 import (
 	"errors"
 	"fmt"
+	"sort"
 
 	"charm.land/huh/v2"
 	"github.tools.sap/developer-relations/sap-devs-cli/internal/schema"
@@ -138,6 +139,53 @@ func BulkAddRemoveTag(spec *schema.ObjectSpec) (action string, field string, val
 // IsUserAborted reports whether the error is a user abort from huh.
 func IsUserAborted(err error) bool {
 	return errors.Is(err, huh.ErrUserAborted)
+}
+
+// BulkDeleteItems removes items at the selected indices and returns a new slice.
+func BulkDeleteItems(items []MergedItem, selected map[int]bool) []MergedItem {
+	result := make([]MergedItem, 0, len(items)-len(selected))
+	for i, item := range items {
+		if !selected[i] {
+			result = append(result, item)
+		}
+	}
+	return result
+}
+
+// BulkApplyTag adds or removes a tag value from an array field on the selected items.
+func BulkApplyTag(items []MergedItem, selected map[int]bool, field, value, action string) {
+	for idx := range selected {
+		if idx < 0 || idx >= len(items) {
+			continue
+		}
+		arr, _ := items[idx].Data[field].([]any)
+		if arr == nil {
+			arr = []any{}
+		}
+		switch action {
+		case "add":
+			arr = append(arr, value)
+		case "remove":
+			filtered := make([]any, 0, len(arr))
+			for _, v := range arr {
+				if v != value {
+					filtered = append(filtered, v)
+				}
+			}
+			arr = filtered
+		}
+		items[idx].Data[field] = arr
+	}
+}
+
+// selectedIndices returns sorted indices from a selected map.
+func selectedIndices(selected map[int]bool) []int {
+	indices := make([]int, 0, len(selected))
+	for idx := range selected {
+		indices = append(indices, idx)
+	}
+	sort.Ints(indices)
+	return indices
 }
 
 // bulkSettableFields returns fields suitable for bulk set: string, integer, boolean types.
