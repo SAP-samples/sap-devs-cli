@@ -21,12 +21,13 @@ import (
 var frontendFS embed.FS
 
 type Server struct {
-	Token     string
-	ConfigDir string
-	CacheDir  string
-	hideFunc  func()
-	listener  net.Listener
-	mux       *http.ServeMux
+	Token            string
+	ConfigDir        string
+	CacheDir         string
+	hideFunc         func()
+	configWindowFunc func()
+	listener         net.Listener
+	mux              *http.ServeMux
 
 	mu          sync.Mutex
 	syncRunning bool
@@ -62,6 +63,7 @@ func NewServer(configDir, cacheDir string) (*Server, error) {
 	s.mux.HandleFunc("/api/service-uninstall", s.requireToken(s.handleServiceUninstall))
 	s.mux.HandleFunc("/api/autostart-install", s.requireToken(s.handleAutostartInstall))
 	s.mux.HandleFunc("/api/autostart-uninstall", s.requireToken(s.handleAutostartUninstall))
+	s.mux.HandleFunc("/api/open-config", s.requireToken(s.handleOpenConfig))
 
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
@@ -81,6 +83,10 @@ func (s *Server) URL() string {
 
 func (s *Server) PanelURL() string {
 	return fmt.Sprintf("%s/?token=%s", s.URL(), s.Token)
+}
+
+func (s *Server) ConfigURL() string {
+	return fmt.Sprintf("%s/config.html?token=%s", s.URL(), s.Token)
 }
 
 func (s *Server) Start() error {
@@ -180,6 +186,18 @@ func (s *Server) handleHide(w http.ResponseWriter, r *http.Request) {
 	}
 	if s.hideFunc != nil {
 		s.hideFunc()
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
+}
+
+func (s *Server) handleOpenConfig(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	if s.configWindowFunc != nil {
+		s.configWindowFunc()
 	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
