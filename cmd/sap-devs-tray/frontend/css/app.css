@@ -513,7 +513,9 @@ body.config-editor {
 }
 
 .cfg-switch-track {
+    display: inline-block;
     width: 36px;
+    min-width: 36px;
     height: 20px;
     background: var(--sapNeutralBackground, #bcc3ca);
     border-radius: 10px;
