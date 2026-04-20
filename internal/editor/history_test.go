@@ -90,3 +90,62 @@ func TestHistory_DeepCopyIsolation(t *testing.T) {
 	redone, _, _ := h.Redo(restored)
 	assert.Equal(t, "Mutated", redone[0].Data["title"])
 }
+
+func TestHistory_HasChanges_NoChanges(t *testing.T) {
+	items := sampleItems()
+	h := editor.NewHistory(items)
+	assert.False(t, h.HasChanges(items))
+}
+
+func TestHistory_HasChanges_AfterEdit(t *testing.T) {
+	items := sampleItems()
+	h := editor.NewHistory(items)
+	items[0].Data["title"] = "Changed"
+	assert.True(t, h.HasChanges(items))
+}
+
+func TestHistory_Changes_Edit(t *testing.T) {
+	items := sampleItems()
+	h := editor.NewHistory(items)
+	items[0].Data["title"] = "Alpha Edited"
+	changes := h.Changes(items)
+	require.Len(t, changes, 1)
+	assert.Equal(t, editor.ChangeEdited, changes[0].Kind)
+	assert.Equal(t, "a", changes[0].ItemID)
+	require.Len(t, changes[0].Fields, 1)
+	assert.Equal(t, "title", changes[0].Fields[0].Key)
+	assert.Equal(t, "Alpha", changes[0].Fields[0].OldValue)
+	assert.Equal(t, "Alpha Edited", changes[0].Fields[0].NewValue)
+}
+
+func TestHistory_Changes_Add(t *testing.T) {
+	items := sampleItems()
+	h := editor.NewHistory(items)
+	items = append(items, editor.MergedItem{
+		Data:  map[string]any{"id": "c", "title": "Gamma"},
+		Layer: editor.LayerUser,
+	})
+	changes := h.Changes(items)
+	require.Len(t, changes, 1)
+	assert.Equal(t, editor.ChangeAdded, changes[0].Kind)
+	assert.Equal(t, "c", changes[0].ItemID)
+}
+
+func TestHistory_Changes_Delete(t *testing.T) {
+	items := sampleItems()
+	h := editor.NewHistory(items)
+	items = items[1:] // remove first item
+	changes := h.Changes(items)
+	require.Len(t, changes, 1)
+	assert.Equal(t, editor.ChangeDeleted, changes[0].Kind)
+	assert.Equal(t, "a", changes[0].ItemID)
+}
+
+func TestHistory_Changes_UndoAllNoChanges(t *testing.T) {
+	items := sampleItems()
+	h := editor.NewHistory(items)
+	items[0].Data["title"] = "Changed"
+	h.Push(items, "edit")
+	restored, _, _ := h.Undo(items)
+	assert.False(t, h.HasChanges(restored))
+}

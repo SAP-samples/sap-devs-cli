@@ -1,5 +1,7 @@
 package editor
 
+import "fmt"
+
 // Snapshot holds a deep copy of the item list at a point in time, along with
 // a human-readable description of the change that produced it.
 type Snapshot struct {
@@ -94,4 +96,105 @@ func deepCopyItems(items []MergedItem) []MergedItem {
 		}
 	}
 	return cp
+}
+
+// ChangeKind categorises a difference between baseline and current.
+type ChangeKind int
+
+const (
+	ChangeAdded ChangeKind = iota
+	ChangeEdited
+	ChangeDeleted
+)
+
+// FieldDiff describes a single field that changed between baseline and current.
+type FieldDiff struct {
+	Key      string
+	OldValue string
+	NewValue string
+}
+
+// Change describes one item-level difference.
+type Change struct {
+	Kind   ChangeKind
+	ItemID string
+	Fields []FieldDiff
+}
+
+// HasChanges reports whether the current items differ from the baseline.
+func (h *History) HasChanges(current []MergedItem) bool {
+	return len(h.Changes(current)) > 0
+}
+
+// Changes compares the baseline against current and returns all differences.
+func (h *History) Changes(current []MergedItem) []Change {
+	baseByKey := make(map[string]map[string]any)
+	baseOrder := make([]string, 0)
+	for i, item := range h.baseline {
+		key := itemKey(item.Data)
+		if key == "" {
+			key = positionalKey(i)
+		}
+		baseByKey[key] = item.Data
+		baseOrder = append(baseOrder, key)
+	}
+
+	var changes []Change
+	currentKeys := make(map[string]bool)
+
+	for i, item := range current {
+		key := itemKey(item.Data)
+		if key == "" {
+			key = positionalKey(i)
+		}
+		currentKeys[key] = true
+
+		baseData, existed := baseByKey[key]
+		if !existed {
+			changes = append(changes, Change{Kind: ChangeAdded, ItemID: key})
+			continue
+		}
+
+		diffs := diffFields(baseData, item.Data)
+		if len(diffs) > 0 {
+			changes = append(changes, Change{Kind: ChangeEdited, ItemID: key, Fields: diffs})
+		}
+	}
+
+	for _, key := range baseOrder {
+		if !currentKeys[key] {
+			changes = append(changes, Change{Kind: ChangeDeleted, ItemID: key})
+		}
+	}
+
+	return changes
+}
+
+func positionalKey(i int) string {
+	return fmt.Sprintf("item #%d", i+1)
+}
+
+func diffFields(old, new map[string]any) []FieldDiff {
+	var diffs []FieldDiff
+	allKeys := make(map[string]bool)
+	for k := range old {
+		allKeys[k] = true
+	}
+	for k := range new {
+		allKeys[k] = true
+	}
+	for k := range allKeys {
+		oldVal := fmt.Sprintf("%v", old[k])
+		newVal := fmt.Sprintf("%v", new[k])
+		if old[k] == nil {
+			oldVal = ""
+		}
+		if new[k] == nil {
+			newVal = ""
+		}
+		if oldVal != newVal {
+			diffs = append(diffs, FieldDiff{Key: k, OldValue: oldVal, NewValue: newVal})
+		}
+	}
+	return diffs
 }
