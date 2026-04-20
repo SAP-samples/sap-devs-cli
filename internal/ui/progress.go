@@ -28,6 +28,15 @@ type markerItem struct {
 	lines  int
 }
 
+// MarkerItem represents a single marker sub-item in the sync progress display.
+type MarkerItem struct {
+	PackID string
+	Index  int
+	Label  string
+	State  string // "fetching", "done", "failed"
+	Lines  int
+}
+
 type progressModel struct {
 	items []markerItem
 	total int
