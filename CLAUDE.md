@@ -122,6 +122,10 @@ On every command invocation (except `update` and dev builds), a background gorou
 
 `internal/service/` provides a `Scheduler` interface with platform implementations behind build tags: `scheduler_windows.go` (Task Scheduler via `schtasks`), `scheduler_darwin.go` (launchd plist), `scheduler_linux.go` (systemd user timer). Each shells out to OS tools — no CGO, no new dependencies. `service.New(cacheDir)` returns the platform-appropriate implementation. Scheduler logs to `~/.cache/sap-devs/daemon.log`. Interval is configured via `config.Service.Interval` (default 6h).
 
+### Tray Companion (Experimental)
+
+`internal/trayctl/` manages an optional GUI tray binary (`sap-devs-tray`) downloaded from GitHub Releases. `Manager` handles download, SHA256 checksum verification (via `tray-checksums.txt`), extraction (tar.gz/zip), start/stop (process management), and version-matched updates during `sap-devs update`. `autostart.go` provides cross-platform login startup registration: Windows registry (`HKCU\...\Run`), macOS LaunchAgent plist, Linux XDG `.desktop` file. The tray binary is stored at `~/.cache/sap-devs/bin/sap-devs-tray`. Config key: `config.Tray.Autostart`.
+
 ### CLI Commands
 
 | Command | Purpose |
@@ -150,6 +154,7 @@ On every command invocation (except `update` and dev builds), a background gorou
 | `update` | Self-update the binary |
 | `init` | First-time setup wizard |
 | `service install/uninstall/status` | Manage OS-native background scheduler (systemd/launchd/Task Scheduler) |
+| `tray install/uninstall/start/stop/status` | Download and manage optional GUI tray companion (Wails v3, experimental) |
 
 ### Project Detection & Health Check
 
