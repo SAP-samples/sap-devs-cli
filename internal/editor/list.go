@@ -201,6 +201,30 @@ func (m listModel) updateNormal(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.redone = true
 			return m, tea.Quit
 		}
+	case "J":
+		visible := m.visibleItems()
+		if m.cursor < len(visible) {
+			m.cursorOriginalIndex = visible[m.cursor].originalIndex
+		}
+		m.moveDown = true
+		return m, tea.Quit
+	case "K":
+		visible := m.visibleItems()
+		if m.cursor < len(visible) {
+			m.cursorOriginalIndex = visible[m.cursor].originalIndex
+		}
+		m.moveUp = true
+		return m, tea.Quit
+	case "e":
+		if len(m.selected) > 0 {
+			m.bulkAction = "set-field"
+			return m, tea.Quit
+		}
+	case "t":
+		if len(m.selected) > 0 {
+			m.bulkAction = "add-tag"
+			return m, tea.Quit
+		}
 	}
 	return m, nil
 }
