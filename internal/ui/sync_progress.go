@@ -96,12 +96,13 @@ type spinnerTickMsg struct{}
 type SetMarkersMsg struct{ Items []MarkerItem }
 
 type syncModel struct {
-	phases   []phaseState
-	markers  []MarkerItem
-	frame    int
-	done     int
-	total    int
-	fatalErr error
+	phases       []phaseState
+	markers      []MarkerItem
+	frame        int
+	done         int
+	total        int
+	fatalErr     error
+	maxViewLines int
 }
 
 func newSyncModel(visiblePhases []PhaseID) *syncModel {
@@ -242,7 +243,15 @@ func (m *syncModel) View() string {
 			}
 		}
 	}
-	return b.String()
+	out := b.String()
+	lines := strings.Count(out, "\n")
+	if lines > m.maxViewLines {
+		m.maxViewLines = lines
+	}
+	for i := lines; i < m.maxViewLines; i++ {
+		out += "\n"
+	}
+	return out
 }
 
 // FatalErr returns the fatal error from the sync worker, if any.
