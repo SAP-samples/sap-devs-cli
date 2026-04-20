@@ -88,6 +88,8 @@ Each phase transitions through: `pending` → `active` → `done`/`failed`, or d
 
 Progress bar percent = `(done + skipped) / total`.
 
+`total` is set to the number of visible phases in this sync run. Every `PhaseID` that is included in the phase list must produce exactly one terminal message (`PhaseDoneMsg` or `PhaseSkipMsg`) to ensure `done + skipped == total` at completion. `PhaseChangelog` is a hidden sub-phase — it is not counted in `total` and does not appear as a row. `PhaseCompany` is included in `total` when a company repo is configured; otherwise it is omitted from the phase list entirely (not shown as skipped).
+
 ### Bubbletea Model
 
 Single `syncModel` in `internal/ui/sync_progress.go`:
