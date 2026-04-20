@@ -186,3 +186,47 @@ func TestHistory_DiscardLast_PreservesRedo(t *testing.T) {
 	h.DiscardLast()
 	assert.True(t, h.CanRedo())
 }
+
+func TestHistory_BulkUndoSingleSnapshot(t *testing.T) {
+	items := []editor.MergedItem{
+		{Data: map[string]any{"id": "a", "scope": "old"}, Layer: editor.LayerUser},
+		{Data: map[string]any{"id": "b", "scope": "old"}, Layer: editor.LayerUser},
+		{Data: map[string]any{"id": "c", "scope": "old"}, Layer: editor.LayerUser},
+	}
+	h := editor.NewHistory(items)
+
+	h.Push(items, "set scope on 3 items")
+	items[0].Data["scope"] = "new"
+	items[1].Data["scope"] = "new"
+	items[2].Data["scope"] = "new"
+
+	assert.Equal(t, 1, h.UndoDepth())
+
+	restored, desc, ok := h.Undo(items)
+	require.True(t, ok)
+	assert.Equal(t, "set scope on 3 items", desc)
+	assert.Equal(t, "old", restored[0].Data["scope"])
+	assert.Equal(t, "old", restored[1].Data["scope"])
+	assert.Equal(t, "old", restored[2].Data["scope"])
+}
+
+func TestHistory_BulkDeleteUndo(t *testing.T) {
+	items := []editor.MergedItem{
+		{Data: map[string]any{"id": "a"}, Layer: editor.LayerUser},
+		{Data: map[string]any{"id": "b"}, Layer: editor.LayerUser},
+		{Data: map[string]any{"id": "c"}, Layer: editor.LayerUser},
+	}
+	h := editor.NewHistory(items)
+
+	h.Push(items, "deleted 2 items")
+	items = editor.BulkDeleteItems(items, map[int]bool{0: true, 2: true})
+	require.Len(t, items, 1)
+	assert.Equal(t, "b", items[0].Data["id"])
+
+	restored, _, ok := h.Undo(items)
+	require.True(t, ok)
+	require.Len(t, restored, 3)
+	assert.Equal(t, "a", restored[0].Data["id"])
+	assert.Equal(t, "b", restored[1].Data["id"])
+	assert.Equal(t, "c", restored[2].Data["id"])
+}

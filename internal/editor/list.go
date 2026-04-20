@@ -63,20 +63,29 @@ type listModel struct {
 	// History and status.
 	history   *History
 	statusMsg string
+
+	// Selection and bulk action result fields.
+	selected             map[int]bool // originalIndex -> selected
+	moveUp               bool
+	moveDown             bool
+	bulkAction           string // "set-field", "delete", "add-tag", or ""
+	cursorOriginalIndex  int    // resolved originalIndex of cursor item (filter-safe)
 }
 
 func newListModel(items []MergedItem, columns []string, target *ResolvedFile, s *schema.Schema, history *History, statusMsg string) listModel {
 	return listModel{
-		items:     items,
-		columns:   columns,
-		target:    target,
-		schema:    s,
-		editIndex: -1,
-		deleteIdx: -1,
-		width:     80,
-		height:    24,
-		history:   history,
-		statusMsg: statusMsg,
+		items:               items,
+		columns:             columns,
+		target:              target,
+		schema:              s,
+		editIndex:           -1,
+		deleteIdx:           -1,
+		width:               80,
+		height:              24,
+		history:             history,
+		statusMsg:           statusMsg,
+		selected:            make(map[int]bool),
+		cursorOriginalIndex: -1,
 	}
 }
 
@@ -122,8 +131,12 @@ func (m listModel) updateNormal(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.quit = true
 		return m, tea.Quit
 	case "esc":
-		m.quit = true
-		return m, tea.Quit
+		if len(m.selected) > 0 {
+			m.selected = make(map[int]bool)
+		} else {
+			m.quit = true
+			return m, tea.Quit
+		}
 	case "up", "k":
 		if m.cursor > 0 {
 			m.cursor--
@@ -143,6 +156,10 @@ func (m listModel) updateNormal(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.addNew = true
 		return m, tea.Quit
 	case "d":
+		if len(m.selected) > 0 {
+			m.bulkAction = "delete"
+			return m, tea.Quit
+		}
 		visible := m.visibleItems()
 		if m.cursor < len(visible) {
 			idx := visible[m.cursor].originalIndex
@@ -150,6 +167,25 @@ func (m listModel) updateNormal(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			if m.items[idx].Layer == m.target.Layer {
 				m.deleteIdx = idx
 				return m, tea.Quit
+			}
+		}
+	case " ":
+		visible := m.visibleItems()
+		if m.cursor < len(visible) {
+			idx := visible[m.cursor].originalIndex
+			if m.items[idx].Layer == m.target.Layer {
+				if m.selected[idx] {
+					delete(m.selected, idx)
+				} else {
+					m.selected[idx] = true
+				}
+			}
+		}
+	case "ctrl+a":
+		visible := m.visibleItems()
+		for _, vi := range visible {
+			if vi.item.Layer == m.target.Layer {
+				m.selected[vi.originalIndex] = true
 			}
 		}
 	case "/":
@@ -163,6 +199,30 @@ func (m listModel) updateNormal(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case "r":
 		if m.history != nil && m.history.CanRedo() {
 			m.redone = true
+			return m, tea.Quit
+		}
+	case "J":
+		visible := m.visibleItems()
+		if m.cursor < len(visible) {
+			m.cursorOriginalIndex = visible[m.cursor].originalIndex
+		}
+		m.moveDown = true
+		return m, tea.Quit
+	case "K":
+		visible := m.visibleItems()
+		if m.cursor < len(visible) {
+			m.cursorOriginalIndex = visible[m.cursor].originalIndex
+		}
+		m.moveUp = true
+		return m, tea.Quit
+	case "e":
+		if len(m.selected) > 0 {
+			m.bulkAction = "set-field"
+			return m, tea.Quit
+		}
+	case "t":
+		if len(m.selected) > 0 {
+			m.bulkAction = "add-tag"
 			return m, tea.Quit
 		}
 	}
@@ -243,6 +303,17 @@ func (m listModel) View() string {
 	for i := start; i < len(visible) && i < start+maxVisible; i++ {
 		vi := visible[i]
 		row := "  "
+
+		// Checkbox (only shown when any items are selected).
+		if len(m.selected) > 0 {
+			if m.selected[vi.originalIndex] {
+				row += theme.SelectedCheckbox().Render("[x]") + " "
+			} else {
+				row += "[ ] "
+			}
+		}
+
+		// Cursor indicator.
 		if i == m.cursor {
 			row += "> "
 		} else {
@@ -270,9 +341,15 @@ func (m listModel) View() string {
 	// Footer
 	sb.WriteString("\n")
 	footerStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("241"))
-	sb.WriteString(footerStyle.Render(
-		"  ↑/↓ navigate  Enter edit  a add  d delete  u undo  r redo  / filter  q save  Esc quit",
-	))
+	if len(m.selected) > 0 {
+		sb.WriteString(footerStyle.Render(
+			fmt.Sprintf("  %d selected: e set field  d delete  t add/remove tag  J/K reorder  Esc clear", len(m.selected)),
+		))
+	} else {
+		sb.WriteString(footerStyle.Render(
+			"  ↑/↓ navigate  Enter edit  a add  d delete  u undo  r redo  / filter  q save  Esc quit",
+		))
+	}
 	sb.WriteString("\n")
 
 	return sb.String()
