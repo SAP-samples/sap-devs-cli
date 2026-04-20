@@ -42,7 +42,8 @@
 
         setText('profile-name', state.profile.name || state.profile.id);
         setText('profile-id', state.profile.id);
-        setText('version', 'v' + state.version);
+        var ver = state.version;
+        setText('version', ver.charAt(0) === 'v' ? ver : 'v' + ver);
     }
 
     function setText(id, text) {
@@ -76,6 +77,17 @@
     }
 
     document.addEventListener('DOMContentLoaded', function() {
+        var btnClose = document.getElementById('btn-close');
+        if (btnClose) {
+            btnClose.addEventListener('click', function() {
+                if (window.wails && window.wails.Window) {
+                    window.wails.Window.Hide();
+                } else {
+                    window.close();
+                }
+            });
+        }
+
         var btnSync = document.getElementById('btn-sync');
         if (btnSync) {
             btnSync.addEventListener('click', function() {

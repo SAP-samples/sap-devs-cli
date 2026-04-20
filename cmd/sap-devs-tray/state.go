@@ -44,13 +44,16 @@ func readSyncState(cacheDir string) SyncState {
 	if err != nil {
 		return SyncState{Status: "unknown"}
 	}
-	var raw map[string]time.Time
+	var raw struct {
+		Version    int                  `json:"version"`
+		Categories map[string]time.Time `json:"categories"`
+	}
 	if err := json.Unmarshal(data, &raw); err != nil {
 		return SyncState{Status: "unknown"}
 	}
 	var latest time.Time
 	count := 0
-	for _, t := range raw {
+	for _, t := range raw.Categories {
 		count++
 		if t.After(latest) {
 			latest = t
