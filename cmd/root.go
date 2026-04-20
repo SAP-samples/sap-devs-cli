@@ -41,8 +41,8 @@ var rootCmd = &cobra.Command{
 		}
 		localizeCommands(cmd.Root(), i18n.ActiveLang)
 
-		// Skip background update check for "update" command and dev builds.
-		if cmd.Name() == "update" || Version == "dev" {
+		// Skip background update check for "update" command, "serve" command (stdio MCP server), and dev builds.
+		if cmd.Name() == "update" || cmd.Name() == "serve" || Version == "dev" {
 			return nil
 		}
 		cacheDir := mustCacheDir()
