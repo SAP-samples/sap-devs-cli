@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"charm.land/huh/v2"
@@ -97,6 +98,102 @@ func runArrayEditor(target *ResolvedFile, s *schema.Schema) error {
 			if restored, desc, ok := history.Redo(items); ok {
 				items = restored
 				statusMsg = fmt.Sprintf("↪ redid: %s", desc)
+			}
+			continue
+		}
+
+		// Handle reorder.
+		if result.moveUp || result.moveDown {
+			sel := result.selected
+			if len(sel) == 0 {
+				cursorIdx := result.cursorOriginalIndex
+				if cursorIdx >= 0 && items[cursorIdx].Layer == target.Layer {
+					sel = map[int]bool{cursorIdx: true}
+				}
+			}
+			if len(sel) > 0 {
+				desc := fmt.Sprintf("reordered %d item(s)", len(sel))
+				history.Push(items, desc)
+				items = MoveItems(items, sel, result.moveUp)
+				statusMsg = fmt.Sprintf("✓ %s", desc)
+			}
+			continue
+		}
+
+		// Handle bulk actions.
+		if result.bulkAction != "" {
+			switch result.bulkAction {
+			case "set-field":
+				field, value, err := BulkSetField(s.ItemSpec)
+				if err != nil {
+					if IsUserAborted(err) {
+						continue
+					}
+					continue
+				}
+				// Coerce string values to native types for integer and boolean fields.
+				for _, f := range s.ItemSpec.Fields {
+					if f.Key == field {
+						if f.Type == "integer" {
+							if n, convErr := strconv.Atoi(value.(string)); convErr == nil {
+								value = n
+							}
+						} else if f.Type == "boolean" {
+							switch value.(string) {
+							case "true":
+								value = true
+							case "false":
+								value = false
+							}
+						}
+						break
+					}
+				}
+				desc := fmt.Sprintf("set %s on %d item(s)", field, len(result.selected))
+				history.Push(items, desc)
+				for idx := range result.selected {
+					if items[idx].Layer != target.Layer {
+						cloned := make(map[string]any)
+						for k, v := range items[idx].Data {
+							cloned[k] = v
+						}
+						items[idx].Data = cloned
+						items[idx].Layer = target.Layer
+						items[idx].IsOverride = true
+					}
+					items[idx].Data[field] = value
+				}
+				statusMsg = fmt.Sprintf("✓ %s", desc)
+
+			case "delete":
+				desc := fmt.Sprintf("deleted %d item(s)", len(result.selected))
+				history.Push(items, desc)
+				items = BulkDeleteItems(items, result.selected)
+				statusMsg = fmt.Sprintf("✓ %s", desc)
+
+			case "add-tag":
+				action, field, value, err := BulkAddRemoveTag(s.ItemSpec)
+				if err != nil {
+					if IsUserAborted(err) {
+						continue
+					}
+					continue
+				}
+				desc := fmt.Sprintf("%s tag %q on %s for %d item(s)", action, value, field, len(result.selected))
+				history.Push(items, desc)
+				for idx := range result.selected {
+					if items[idx].Layer != target.Layer {
+						cloned := make(map[string]any)
+						for k, v := range items[idx].Data {
+							cloned[k] = v
+						}
+						items[idx].Data = cloned
+						items[idx].Layer = target.Layer
+						items[idx].IsOverride = true
+					}
+				}
+				BulkApplyTag(items, result.selected, field, value, action)
+				statusMsg = fmt.Sprintf("✓ %s", desc)
 			}
 			continue
 		}

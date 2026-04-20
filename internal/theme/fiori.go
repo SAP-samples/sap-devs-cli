@@ -107,3 +107,7 @@ func DiffDeleted() lipglossv1.Style {
 func DiffMuted() lipglossv1.Style {
 	return lipglossv1.NewStyle().Foreground(lipglossv1.Color("#8C9BAA"))
 }
+
+func SelectedCheckbox() lipglossv1.Style {
+	return lipglossv1.NewStyle().Foreground(lipglossv1.Color("#4DB8FF"))
+}
