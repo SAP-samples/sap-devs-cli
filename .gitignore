@@ -13,3 +13,4 @@ sap-devs-cli.exe
 *.bak
 *.swp
 sap-devs-news
+/cmd/sap-devs-tray/data/cities.json
