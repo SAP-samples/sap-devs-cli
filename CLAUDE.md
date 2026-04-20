@@ -126,6 +126,14 @@ On every command invocation (except `update` and dev builds), a background gorou
 
 `internal/trayctl/` manages an optional GUI tray binary (`sap-devs-tray`) downloaded from GitHub Releases. `Manager` handles download, SHA256 checksum verification (via `tray-checksums.txt`), extraction (tar.gz/zip), start/stop (process management), and version-matched updates during `sap-devs update`. `autostart.go` provides cross-platform login startup registration: Windows registry (`HKCU\...\Run`), macOS LaunchAgent plist, Linux XDG `.desktop` file. The tray binary is stored at `~/.cache/sap-devs/bin/sap-devs-tray`. Config key: `config.Tray.Autostart`.
 
+### Tray Binary (Optional)
+
+`sap-devs-tray` is an optional GUI companion built with Wails v3 (alpha). It lives in `cmd/sap-devs-tray/` with its own `go.mod` — the main CLI never imports Wails. The tray binary provides a system tray icon and a Fiori-themed webview dashboard panel using SAP Fundamental Styles (`sap_horizon` / `sap_horizon_dark` themes, auto-switching via OS preference).
+
+**Architecture:** The tray reads shared state files (`sync-state.json`, `config.yaml`) written by the main CLI. An embedded HTTP server bound to `127.0.0.1` (session-token-protected) serves the dashboard frontend. The main CLI manages the tray lifecycle via `internal/trayctl/` (download from GitHub Releases, start/stop, autostart registration).
+
+**Alpha disclaimer:** Wails v3 is in alpha. The tray is strictly optional — all CLI features work without it. If Wails v3 breaks, only the tray binary is affected.
+
 ### CLI Commands
 
 | Command | Purpose |

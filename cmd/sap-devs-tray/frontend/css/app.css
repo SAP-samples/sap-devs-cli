@@ -1,0 +1,131 @@
+:root {
+    --panel-width: 400px;
+    --panel-max-height: 550px;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    width: var(--panel-width);
+    max-height: var(--panel-max-height);
+    overflow-y: auto;
+    font-family: '72', 'Segoe UI', system-ui, sans-serif;
+    background: var(--sapBackgroundColor, #fff);
+    color: var(--sapTextColor, #32363a);
+}
+
+.panel-header {
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 1px solid var(--sapGroup_ContentBorderColor, #d9d9d9);
+}
+
+.panel-header .logo {
+    width: 28px;
+    height: 28px;
+}
+
+.panel-header .title {
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.panel-header .version {
+    margin-left: auto;
+    font-size: 12px;
+    color: var(--sapContent_LabelColor, #6a6d70);
+}
+
+.status-card, .profile-card, .tools-card {
+    margin: 0 16px 12px;
+    padding: 14px;
+    border-radius: 12px;
+    background: var(--sapGroup_ContentBackground, #fff);
+    border: 1px solid var(--sapGroup_ContentBorderColor, #d9d9d9);
+}
+
+.card-title {
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--sapContent_LabelColor, #6a6d70);
+    margin-bottom: 10px;
+}
+
+.card-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 0;
+}
+
+.card-row .label {
+    font-size: 13px;
+    color: var(--sapContent_LabelColor, #6a6d70);
+}
+
+.card-row .value {
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.badge-positive {
+    color: var(--sapPositiveColor, #256f3a);
+    background: var(--sapPositiveElementColor, #e8f5e9);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.badge-warning {
+    color: var(--sapCriticalColor, #e76500);
+    background: var(--sapCriticalBackground, #fff3b8);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.badge-neutral {
+    color: var(--sapNeutralColor, #6a6d70);
+    background: var(--sapNeutralBackground, #eaecee);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.action-buttons {
+    margin: 4px 16px 16px;
+    display: flex;
+    gap: 8px;
+}
+
+.action-buttons .fd-button {
+    flex: 1;
+}
+
+.loading {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.spinner {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border: 2px solid var(--sapContent_LabelColor, #6a6d70);
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-right: 6px;
+    vertical-align: middle;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
