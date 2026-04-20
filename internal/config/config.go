@@ -19,6 +19,7 @@ type Config struct {
 	Tutorial        TutorialConfig `yaml:"tutorial,omitempty"`
 	ExperienceLevel string         `yaml:"experience_level,omitempty"`
 	Service         ServiceConfig  `yaml:"service,omitempty"`
+	Tray            TrayConfig     `yaml:"tray,omitempty"`
 }
 
 // SyncConfig controls per-category TTLs for background content refresh.
@@ -58,6 +59,11 @@ type TutorialConfig struct {
 // ServiceConfig controls the OS-native background scheduler.
 type ServiceConfig struct {
 	Interval time.Duration `yaml:"interval"`
+}
+
+// TrayConfig controls the optional GUI tray companion.
+type TrayConfig struct {
+	Autostart bool `yaml:"autostart,omitempty"`
 }
 
 func (e EventsConfig) EffectiveLocalRadius() int {

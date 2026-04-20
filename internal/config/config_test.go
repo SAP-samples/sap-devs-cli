@@ -159,3 +159,21 @@ func TestServiceConfig_RoundTrip(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, 12*time.Hour, loaded.Service.Interval)
 }
+
+func TestTrayConfig_Defaults(t *testing.T) {
+	dir := t.TempDir()
+	cfg, err := config.Load(dir)
+	require.NoError(t, err)
+	assert.False(t, cfg.Tray.Autostart)
+}
+
+func TestTrayConfig_RoundTrip(t *testing.T) {
+	dir := t.TempDir()
+	cfg := config.Default()
+	cfg.Tray.Autostart = true
+	require.NoError(t, cfg.Save(dir))
+
+	loaded, err := config.Load(dir)
+	require.NoError(t, err)
+	assert.True(t, loaded.Tray.Autostart)
+}
