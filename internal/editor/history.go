@@ -75,6 +75,17 @@ func (h *History) CanRedo() bool { return len(h.redoStack) > 0 }
 // UndoDepth returns the number of undoable steps currently on the stack.
 func (h *History) UndoDepth() int { return len(h.undoStack) }
 
+// DiscardLast pops the most recent undo entry without touching the redo stack.
+// Use this to roll back a Push that preceded a cancelled operation.
+func (h *History) DiscardLast() ([]MergedItem, bool) {
+	if len(h.undoStack) == 0 {
+		return nil, false
+	}
+	top := h.undoStack[len(h.undoStack)-1]
+	h.undoStack = h.undoStack[:len(h.undoStack)-1]
+	return deepCopyItems(top.Items), true
+}
+
 // Baseline returns a deep copy of the initial item state passed to NewHistory.
 func (h *History) Baseline() []MergedItem { return deepCopyItems(h.baseline) }
 

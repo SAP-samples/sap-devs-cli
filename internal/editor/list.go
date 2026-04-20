@@ -55,9 +55,17 @@ type listModel struct {
 	deleteIdx int  // index of item to delete, or -1
 	quit      bool // user chose to quit
 	save      bool // user chose to save before quitting
+
+	// Undo/redo result fields.
+	undone bool
+	redone bool
+
+	// History and status.
+	history   *History
+	statusMsg string
 }
 
-func newListModel(items []MergedItem, columns []string, target *ResolvedFile, s *schema.Schema) listModel {
+func newListModel(items []MergedItem, columns []string, target *ResolvedFile, s *schema.Schema, history *History, statusMsg string) listModel {
 	return listModel{
 		items:     items,
 		columns:   columns,
@@ -67,6 +75,8 @@ func newListModel(items []MergedItem, columns []string, target *ResolvedFile, s 
 		deleteIdx: -1,
 		width:     80,
 		height:    24,
+		history:   history,
+		statusMsg: statusMsg,
 	}
 }
 
@@ -145,6 +155,16 @@ func (m listModel) updateNormal(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case "/":
 		m.filtering = true
 		m.filter = ""
+	case "u":
+		if m.history != nil && m.history.CanUndo() {
+			m.undone = true
+			return m, tea.Quit
+		}
+	case "r":
+		if m.history != nil && m.history.CanRedo() {
+			m.redone = true
+			return m, tea.Quit
+		}
 	}
 	return m, nil
 }
@@ -183,6 +203,15 @@ func (m listModel) View() string {
 		m.target.Layer,
 		len(m.items),
 	))
+
+	if m.statusMsg != "" {
+		statusStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("#00D68F")).Italic(true)
+		depth := ""
+		if m.history != nil && m.history.UndoDepth() > 0 {
+			depth = fmt.Sprintf("  (%d in undo stack)", m.history.UndoDepth())
+		}
+		sb.WriteString(fmt.Sprintf("  %s%s\n", statusStyle.Render(m.statusMsg), depth))
+	}
 
 	if m.filtering {
 		sb.WriteString(fmt.Sprintf("  / %s_\n", m.filter))
@@ -242,7 +271,7 @@ func (m listModel) View() string {
 	sb.WriteString("\n")
 	footerStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("241"))
 	sb.WriteString(footerStyle.Render(
-		"  up/down navigate  Enter edit  a add  d delete  / filter  q save & quit  Esc quit",
+		"  ↑/↓ navigate  Enter edit  a add  d delete  u undo  r redo  / filter  q save  Esc quit",
 	))
 	sb.WriteString("\n")
 

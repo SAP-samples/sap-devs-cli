@@ -69,9 +69,11 @@ func runArrayEditor(target *ResolvedFile, s *schema.Schema) error {
 	}
 
 	columns := ColumnsForSchema(s.ItemSpec)
+	history := NewHistory(items)
+	var statusMsg string
 
 	for {
-		listMdl := newListModel(items, columns, target, s)
+		listMdl := newListModel(items, columns, target, s, history, statusMsg)
 		p := tea.NewProgram(listMdl, tea.WithAltScreen())
 		finalModel, err := p.Run()
 		if err != nil {
@@ -79,10 +81,32 @@ func runArrayEditor(target *ResolvedFile, s *schema.Schema) error {
 		}
 
 		result := finalModel.(listModel)
+		statusMsg = ""
+
+		// Handle undo.
+		if result.undone {
+			if restored, desc, ok := history.Undo(items); ok {
+				items = restored
+				statusMsg = fmt.Sprintf("↩ undid: %s", desc)
+			}
+			continue
+		}
+
+		// Handle redo.
+		if result.redone {
+			if restored, desc, ok := history.Redo(items); ok {
+				items = restored
+				statusMsg = fmt.Sprintf("↪ redid: %s", desc)
+			}
+			continue
+		}
 
 		// Handle delete.
 		if result.deleteIdx >= 0 {
+			desc := descForItem("deleted", items[result.deleteIdx].Data)
+			history.Push(items, desc)
 			items = append(items[:result.deleteIdx], items[result.deleteIdx+1:]...)
+			statusMsg = fmt.Sprintf("✓ %s", desc)
 			continue
 		}
 
@@ -91,14 +115,16 @@ func runArrayEditor(target *ResolvedFile, s *schema.Schema) error {
 			newItem := make(map[string]any)
 			if err := editItem(s.ItemSpec, newItem); err != nil {
 				if errors.Is(err, huh.ErrUserAborted) {
-					continue // user cancelled; return to list
+					continue
 				}
 				continue
 			}
+			history.Push(items, descForItem("added", newItem))
 			items = append(items, MergedItem{
 				Data:  newItem,
 				Layer: target.Layer,
 			})
+			statusMsg = fmt.Sprintf("✓ %s", descForItem("added", newItem))
 			continue
 		}
 
@@ -106,7 +132,6 @@ func runArrayEditor(target *ResolvedFile, s *schema.Schema) error {
 		if result.editIndex >= 0 {
 			item := &items[result.editIndex]
 			if item.Layer != target.Layer {
-				// Clone inherited item into the target layer (override).
 				cloned := make(map[string]any)
 				for k, v := range item.Data {
 					cloned[k] = v
@@ -115,23 +140,59 @@ func runArrayEditor(target *ResolvedFile, s *schema.Schema) error {
 				item.Layer = target.Layer
 				item.IsOverride = true
 			}
+			desc := descForItem("edited", item.Data)
+			history.Push(items, desc)
 			if err := editItem(s.ItemSpec, item.Data); err != nil {
 				if errors.Is(err, huh.ErrUserAborted) {
+					if restored, ok := history.DiscardLast(); ok {
+						items = restored
+					}
 					continue
 				}
 				continue
 			}
+			statusMsg = fmt.Sprintf("✓ %s", desc)
 			continue
 		}
 
 		// Handle save+quit.
 		if result.save {
-			return SaveItems(target.FilePath, items, target.Layer)
+			if !history.HasChanges(items) {
+				fmt.Fprintln(os.Stdout, "No changes.")
+				return nil
+			}
+
+			changes := history.Changes(items)
+			dm := newDiffModel(changes)
+			dp := tea.NewProgram(dm, tea.WithAltScreen())
+			diffResult, err := dp.Run()
+			if err != nil {
+				return err
+			}
+
+			switch diffResult.(diffModel).action {
+			case diffSave:
+				return SaveItems(target.FilePath, items, target.Layer)
+			case diffDiscard:
+				fmt.Fprintln(os.Stdout, "Changes discarded.")
+				return nil
+			case diffCancel:
+				statusMsg = "Save cancelled — back to editing"
+				continue
+			}
 		}
 
-		// Quit without saving.
+		// Quit without saving (Esc).
 		return nil
 	}
+}
+
+func descForItem(verb string, data map[string]any) string {
+	id := itemKey(data)
+	if id == "" {
+		id = "item"
+	}
+	return fmt.Sprintf("%s %q", verb, id)
 }
 
 // editItem opens a form for a single item and merges the result back.
