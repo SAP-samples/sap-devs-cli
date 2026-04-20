@@ -12,3 +12,17 @@ if ($LASTEXITCODE -eq 0) {
     Write-Host "Build FAILED" -ForegroundColor Red
     exit 1
 }
+
+if (Test-Path "cmd\sap-devs-tray\go.mod") {
+    $env:CGO_ENABLED = "1"
+    Push-Location cmd\sap-devs-tray
+    go build -ldflags "-X main.version=$Version" -o ..\..\sap-devs-tray.exe .
+    $rc = $LASTEXITCODE
+    Pop-Location
+    if ($rc -eq 0) {
+        Write-Host "Build OK: sap-devs-tray.exe ($Version)" -ForegroundColor Green
+    } else {
+        Write-Host "Build FAILED: sap-devs-tray.exe (CGO required — need gcc in PATH)" -ForegroundColor Red
+        exit 1
+    }
+}

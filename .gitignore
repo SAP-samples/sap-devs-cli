@@ -3,6 +3,8 @@
 .playwright-mcp/
 sap-devs
 sap-devs.exe
+sap-devs-tray
+sap-devs-tray.exe
 *.test.exe
 sap-devs-cli.exe
 *.test-cli.exe
