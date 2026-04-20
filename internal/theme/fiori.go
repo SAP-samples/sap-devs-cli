@@ -91,3 +91,19 @@ func LayerBadgeProject() lipglossv1.Style {
 func OverrideSuffix() lipglossv1.Style {
 	return lipglossv1.NewStyle().Foreground(lipglossv1.Color("#F58B00"))
 }
+
+func DiffAdded() lipglossv1.Style {
+	return lipglossv1.NewStyle().Foreground(lipglossv1.Color("#00D68F"))
+}
+
+func DiffEdited() lipglossv1.Style {
+	return lipglossv1.NewStyle().Foreground(lipglossv1.Color("#F58B00"))
+}
+
+func DiffDeleted() lipglossv1.Style {
+	return lipglossv1.NewStyle().Foreground(lipglossv1.Color("#FF5C5C"))
+}
+
+func DiffMuted() lipglossv1.Style {
+	return lipglossv1.NewStyle().Foreground(lipglossv1.Color("#8C9BAA"))
+}
