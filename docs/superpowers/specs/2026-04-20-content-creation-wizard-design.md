@@ -147,7 +147,7 @@ On confirm (`Y` or Enter), all files are written. On cancel (`n`), abort without
 
 | File | Responsibility |
 |---|---|
-| `cmd/content_create.go` | Cobra command definition, calls `findSchemasDir(cwd)` then passes it to `editor.RunCreateWizard(cwd, schemasDir)` |
+| `cmd/content_create.go` | Cobra command definition, calls `findSchemasDir(cwd)` (already defined in `cmd/content_validate.go`, same package — no import needed) then passes it to `editor.RunCreateWizard(cwd, schemasDir)` |
 | `internal/editor/wizard.go` | Wizard orchestration: layer form, metadata form, file selection, initial entry collection, summary, batch write |
 
 ### Reused infrastructure
@@ -171,7 +171,7 @@ User input (huh forms)
 
 The `WizardState` struct holds:
 - Selected layer + resolved pack directory path
-- Pack metadata (`map[string]any` for pack.yaml)
+- Pack metadata (`map[string]any` for pack.yaml). **Important:** `additive_position` must only be added to this map when `additive` is true. When `additive` is false, omit `additive_position` entirely to satisfy the schema's `else: not required` constraint.
 - List of selected content files
 - Initial entry data per file (`map[string]map[string]any`)
 - Markdown template content for tips.md / constraints.md
