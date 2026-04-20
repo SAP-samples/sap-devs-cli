@@ -307,6 +307,17 @@ func (m listModel) View() string {
 	for i := start; i < len(visible) && i < start+maxVisible; i++ {
 		vi := visible[i]
 		row := "  "
+
+		// Checkbox (only shown when any items are selected).
+		if len(m.selected) > 0 {
+			if m.selected[vi.originalIndex] {
+				row += theme.SelectedCheckbox().Render("[x]") + " "
+			} else {
+				row += "[ ] "
+			}
+		}
+
+		// Cursor indicator.
 		if i == m.cursor {
 			row += "> "
 		} else {
@@ -334,9 +345,15 @@ func (m listModel) View() string {
 	// Footer
 	sb.WriteString("\n")
 	footerStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("241"))
-	sb.WriteString(footerStyle.Render(
-		"  ↑/↓ navigate  Enter edit  a add  d delete  u undo  r redo  / filter  q save  Esc quit",
-	))
+	if len(m.selected) > 0 {
+		sb.WriteString(footerStyle.Render(
+			fmt.Sprintf("  %d selected: e set field  d delete  t add/remove tag  Esc clear", len(m.selected)),
+		))
+	} else {
+		sb.WriteString(footerStyle.Render(
+			"  ↑/↓ navigate  Enter edit  a add  d delete  u undo  r redo  / filter  q save  Esc quit",
+		))
+	}
 	sb.WriteString("\n")
 
 	return sb.String()
