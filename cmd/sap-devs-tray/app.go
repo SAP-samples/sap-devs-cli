@@ -47,6 +47,25 @@ func startApp(srv *Server) error {
 
 	srv.hideFunc = func() { panel.Hide() }
 
+	configWin := app.Window.NewWithOptions(application.WebviewWindowOptions{
+		Name:   "sap-devs Config",
+		Width:  520,
+		Height: 700,
+		URL:    srv.ConfigURL(),
+		Hidden: true,
+	})
+
+	configWin.RegisterHook(events.Common.WindowClosing, func(e *application.WindowEvent) {
+		configWin.Hide()
+		e.Cancel()
+	})
+
+	srv.configWindowFunc = func() {
+		configWin.SetURL(srv.ConfigURL())
+		configWin.Show()
+		configWin.Focus()
+	}
+
 	systemTray := app.SystemTray.New()
 	systemTray.SetIcon(trayIcon)
 	systemTray.SetTooltip("sap-devs")
@@ -66,6 +85,13 @@ func startApp(srv *Server) error {
 			cmd := exec.Command(sapDevsBinary(), "inject", "--no-sync")
 			_ = cmd.Run()
 		}()
+	})
+
+	menu.AddSeparator()
+	menu.Add("Config...").OnClick(func(ctx *application.Context) {
+		if srv.configWindowFunc != nil {
+			srv.configWindowFunc()
+		}
 	})
 
 	menu.AddSeparator()

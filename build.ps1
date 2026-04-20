@@ -14,6 +14,13 @@ if ($LASTEXITCODE -eq 0) {
 }
 
 if (Test-Path "cmd\sap-devs-tray\go.mod") {
+    # Copy cities.json for embedding in tray binary
+    $citiesSrc = "internal\geo\cities.json"
+    $citiesDst = "cmd\sap-devs-tray\data\cities.json"
+    if (Test-Path $citiesSrc) {
+        New-Item -ItemType Directory -Path (Split-Path $citiesDst) -Force | Out-Null
+        Copy-Item $citiesSrc $citiesDst -Force
+    }
     $env:CGO_ENABLED = "1"
     Push-Location cmd\sap-devs-tray
     go build -ldflags "-X main.version=$Version" -o ..\..\sap-devs-tray.exe .

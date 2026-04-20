@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>sap-devs Configuration</title>
+    <link rel="stylesheet" href="css/sap_horizon.css" media="(prefers-color-scheme: light)">
+    <link rel="stylesheet" href="css/sap_horizon_dark.css" media="(prefers-color-scheme: dark)">
+    <link rel="stylesheet" href="css/fundamental-styles.min.css">
+    <link rel="stylesheet" href="css/app.css">
+</head>
+<body class="config-editor">
+    <div class="config-header">
+        <span class="config-title">sap-devs Configuration</span>
+    </div>
+
+    <div class="config-form" id="config-form">
+
+        <!-- General Panel -->
+        <div class="cfg-panel" data-panel="general">
+            <div class="cfg-panel-header" onclick="togglePanel(this)">
+                <span class="cfg-chevron">&#9660;</span>
+                <span class="cfg-panel-title">General</span>
+            </div>
+            <div class="cfg-panel-body">
+                <div class="cfg-field">
+                    <label for="cfg-language">Language</label>
+                    <select id="cfg-language" class="fd-input"></select>
+                </div>
+                <div class="cfg-field">
+                    <label for="cfg-location">Location</label>
+                    <div class="cfg-location-row">
+                        <div class="cfg-typeahead-wrap">
+                            <input type="text" id="cfg-location" class="fd-input" placeholder="City, Country" autocomplete="off">
+                            <div class="cfg-typeahead-list hidden" id="cfg-location-list"></div>
+                        </div>
+                        <button type="button" class="fd-button" id="btn-detect-location">Detect</button>
+                    </div>
+                    <span class="cfg-hint">Type to search cities, or click Detect for IP-based lookup</span>
+                    <span class="cfg-warning hidden" id="cfg-location-warning">Location not found in city database — event filtering may not work.</span>
+                </div>
+                <div class="cfg-field">
+                    <label for="cfg-experience">Experience Level</label>
+                    <select id="cfg-experience" class="fd-input">
+                        <option value="">(not set)</option>
+                        <option value="beginner">Beginner</option>
+                        <option value="intermediate">Intermediate</option>
+                        <option value="advanced">Advanced</option>
+                    </select>
+                </div>
+                <div class="cfg-field">
+                    <label for="cfg-company-repo">Company Repo</label>
+                    <input type="text" id="cfg-company-repo" class="fd-input" placeholder="https://github.com/...">
+                    <span class="cfg-error hidden" id="cfg-company-repo-error"></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Preferences Panel -->
+        <div class="cfg-panel" data-panel="preferences">
+            <div class="cfg-panel-header" onclick="togglePanel(this)">
+                <span class="cfg-chevron">&#9660;</span>
+                <span class="cfg-panel-title">Preferences</span>
+            </div>
+            <div class="cfg-panel-body">
+                <div class="cfg-field">
+                    <label for="cfg-tip-rotation">Tip Rotation</label>
+                    <select id="cfg-tip-rotation" class="fd-input">
+                        <option value="daily">Daily</option>
+                        <option value="hourly">Hourly</option>
+                        <option value="session">Session</option>
+                    </select>
+                </div>
+                <div class="cfg-field cfg-switch-row">
+                    <label class="cfg-switch-label">
+                        <input type="checkbox" id="cfg-tutorial-interactive">
+                        <span class="cfg-switch-track"><span class="cfg-switch-thumb"></span></span>
+                        <span class="cfg-switch-text">Interactive Tutorials</span>
+                    </label>
+                    <span class="cfg-hint">Open tutorials in step-by-step TUI mode by default</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Events Panel -->
+        <div class="cfg-panel" data-panel="events">
+            <div class="cfg-panel-header" onclick="togglePanel(this)">
+                <span class="cfg-chevron">&#9660;</span>
+                <span class="cfg-panel-title">Events</span>
+            </div>
+            <div class="cfg-panel-body">
+                <div class="cfg-row-2col">
+                    <div class="cfg-field">
+                        <label for="cfg-local-radius">Local Radius</label>
+                        <div class="cfg-suffix-input">
+                            <input type="number" id="cfg-local-radius" class="fd-input" min="1">
+                            <span class="cfg-suffix">km</span>
+                        </div>
+                        <span class="cfg-error hidden" id="cfg-local-radius-error"></span>
+                    </div>
+                    <div class="cfg-field">
+                        <label for="cfg-regional-radius">Regional Radius</label>
+                        <div class="cfg-suffix-input">
+                            <input type="number" id="cfg-regional-radius" class="fd-input" min="1">
+                            <span class="cfg-suffix">km</span>
+                        </div>
+                        <span class="cfg-error hidden" id="cfg-regional-radius-error"></span>
+                    </div>
+                </div>
+                <div class="cfg-row-2col">
+                    <div class="cfg-field">
+                        <label for="cfg-notify-days">Notify Days</label>
+                        <input type="number" id="cfg-notify-days" class="fd-input" min="1">
+                        <span class="cfg-error hidden" id="cfg-notify-days-error"></span>
+                    </div>
+                    <div class="cfg-field">
+                        <label for="cfg-notify-method">Notify Method</label>
+                        <select id="cfg-notify-method" class="fd-input">
+                            <option value="hook">Hook</option>
+                            <option value="os">OS notification</option>
+                            <option value="both">Both</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sync TTLs Panel -->
+        <div class="cfg-panel" data-panel="sync">
+            <div class="cfg-panel-header" onclick="togglePanel(this)">
+                <span class="cfg-chevron">&#9660;</span>
+                <span class="cfg-panel-title">Sync TTLs</span>
+            </div>
+            <div class="cfg-panel-body">
+                <div class="cfg-field cfg-switch-row">
+                    <label class="cfg-switch-label">
+                        <input type="checkbox" id="cfg-sync-disabled">
+                        <span class="cfg-switch-track"><span class="cfg-switch-thumb"></span></span>
+                        <span class="cfg-switch-text">Disable All Sync</span>
+                    </label>
+                </div>
+                <div class="cfg-grid-2col" id="cfg-sync-fields">
+                    <div class="cfg-field">
+                        <label for="cfg-sync-tips">Tips</label>
+                        <input type="text" id="cfg-sync-tips" class="fd-input">
+                        <span class="cfg-error hidden" id="cfg-sync-tips-error"></span>
+                    </div>
+                    <div class="cfg-field">
+                        <label for="cfg-sync-tools">Tools</label>
+                        <input type="text" id="cfg-sync-tools" class="fd-input">
+                        <span class="cfg-error hidden" id="cfg-sync-tools-error"></span>
+                    </div>
+                    <div class="cfg-field">
+                        <label for="cfg-sync-resources">Resources</label>
+                        <input type="text" id="cfg-sync-resources" class="fd-input">
+                        <span class="cfg-error hidden" id="cfg-sync-resources-error"></span>
+                    </div>
+                    <div class="cfg-field">
+                        <label for="cfg-sync-context">Context</label>
+                        <input type="text" id="cfg-sync-context" class="fd-input">
+                        <span class="cfg-error hidden" id="cfg-sync-context-error"></span>
+                    </div>
+                    <div class="cfg-field">
+                        <label for="cfg-sync-events">Events</label>
+                        <input type="text" id="cfg-sync-events" class="fd-input">
+                        <span class="cfg-error hidden" id="cfg-sync-events-error"></span>
+                    </div>
+                    <div class="cfg-field">
+                        <label for="cfg-sync-youtube">YouTube</label>
+                        <input type="text" id="cfg-sync-youtube" class="fd-input">
+                        <span class="cfg-error hidden" id="cfg-sync-youtube-error"></span>
+                    </div>
+                    <div class="cfg-field">
+                        <label for="cfg-sync-discovery">Discovery</label>
+                        <input type="text" id="cfg-sync-discovery" class="fd-input">
+                        <span class="cfg-error hidden" id="cfg-sync-discovery-error"></span>
+                    </div>
+                    <div class="cfg-field">
+                        <label for="cfg-sync-tutorials">Tutorials</label>
+                        <input type="text" id="cfg-sync-tutorials" class="fd-input">
+                        <span class="cfg-error hidden" id="cfg-sync-tutorials-error"></span>
+                    </div>
+                    <div class="cfg-field">
+                        <label for="cfg-sync-advocates">Advocates</label>
+                        <input type="text" id="cfg-sync-advocates" class="fd-input">
+                        <span class="cfg-error hidden" id="cfg-sync-advocates-error"></span>
+                    </div>
+                    <div class="cfg-field">
+                        <label for="cfg-sync-mcp">MCP</label>
+                        <input type="text" id="cfg-sync-mcp" class="fd-input">
+                        <span class="cfg-error hidden" id="cfg-sync-mcp-error"></span>
+                    </div>
+                    <div class="cfg-field">
+                        <label for="cfg-sync-learning">Learning</label>
+                        <input type="text" id="cfg-sync-learning" class="fd-input">
+                        <span class="cfg-error hidden" id="cfg-sync-learning-error"></span>
+                    </div>
+                </div>
+                <span class="cfg-hint">Go duration format: e.g. 24h, 168h, 4h30m</span>
+            </div>
+        </div>
+
+        <!-- Service & Tray Panel -->
+        <div class="cfg-panel" data-panel="service">
+            <div class="cfg-panel-header" onclick="togglePanel(this)">
+                <span class="cfg-chevron">&#9660;</span>
+                <span class="cfg-panel-title">Service &amp; Tray</span>
+            </div>
+            <div class="cfg-panel-body">
+                <div class="cfg-service-section" id="scheduler-section">
+                    <div class="cfg-service-header">
+                        <div>
+                            <span class="cfg-service-title">Background Scheduler</span>
+                            <span class="cfg-service-desc">Runs sync + inject automatically on a schedule</span>
+                        </div>
+                        <span class="cfg-badge" id="scheduler-badge">Loading...</span>
+                    </div>
+                    <div id="scheduler-installed" class="hidden">
+                        <div class="cfg-field" style="margin-bottom:10px">
+                            <label for="cfg-service-interval">Interval</label>
+                            <div style="display:flex;align-items:center;gap:8px">
+                                <input type="text" id="cfg-service-interval" class="fd-input" style="width:120px">
+                                <span class="cfg-hint" style="margin:0">Go duration format</span>
+                            </div>
+                            <span class="cfg-error hidden" id="cfg-service-interval-error"></span>
+                        </div>
+                        <button type="button" class="fd-button cfg-btn-danger" id="btn-scheduler-uninstall">Uninstall Scheduler</button>
+                    </div>
+                    <div id="scheduler-not-installed" class="hidden">
+                        <button type="button" class="fd-button fd-button--emphasized" id="btn-scheduler-install">Install Scheduler</button>
+                    </div>
+                </div>
+
+                <div class="cfg-divider"></div>
+
+                <div class="cfg-service-section" id="autostart-section">
+                    <div class="cfg-service-header">
+                        <div>
+                            <span class="cfg-service-title">Tray Autostart</span>
+                            <span class="cfg-service-desc">Launch tray companion at OS login</span>
+                        </div>
+                        <span class="cfg-badge" id="autostart-badge">Loading...</span>
+                    </div>
+                    <div id="autostart-installed" class="hidden">
+                        <button type="button" class="fd-button cfg-btn-danger" id="btn-autostart-uninstall">Uninstall Autostart</button>
+                    </div>
+                    <div id="autostart-not-installed" class="hidden">
+                        <button type="button" class="fd-button fd-button--emphasized" id="btn-autostart-install">Install Autostart</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Sticky Save Bar -->
+    <div class="cfg-save-bar">
+        <span class="cfg-save-status hidden" id="cfg-save-status"></span>
+        <button type="button" class="fd-button fd-button--emphasized" id="btn-save">Save</button>
+    </div>
+
+    <script src="js/config.js"></script>
+</body>
+</html>
