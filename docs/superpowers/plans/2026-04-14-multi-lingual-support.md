@@ -641,13 +641,13 @@ For each file, change every `loader.LoadPacks(...)` call to pass `i18n.ActiveLan
 ```go
 packs, err := loader.LoadPacks(activeProfile, i18n.ActiveLang)
 ```
-Add import: `"github.tools.sap/developer-relations/sap-devs-cli/internal/i18n"`
+Add import: `"github.com/SAP-samples/sap-devs-cli/internal/i18n"`
 
 **`cmd/tip.go`** (1 call):
 ```go
 packs, err := loader.LoadPacks(activeProfile, i18n.ActiveLang)
 ```
-Add import: `"github.tools.sap/developer-relations/sap-devs-cli/internal/i18n"`
+Add import: `"github.com/SAP-samples/sap-devs-cli/internal/i18n"`
 
 **`cmd/doctor.go`** (3 calls — all three `loader.LoadPacks(...)` calls):
 ```go
@@ -655,7 +655,7 @@ packs, err = loader.LoadPacks(nil, i18n.ActiveLang)        // line ~33
 packs, err = loader.LoadPacks(active, i18n.ActiveLang)     // line ~56
 packs, err = loader.LoadPacks(p, i18n.ActiveLang)          // line ~68
 ```
-Add import: `"github.tools.sap/developer-relations/sap-devs-cli/internal/i18n"`
+Add import: `"github.com/SAP-samples/sap-devs-cli/internal/i18n"`
 
 **`cmd/mcp.go`** (5 calls) — add `i18n.ActiveLang` as second arg to all 5 `loader.LoadPacks(...)` calls. Add import.
 
@@ -694,7 +694,7 @@ git commit -m "feat: add lang param to LoadPacks and update all call sites"
 
 - [ ] **Step 5.1: Add i18n init and `localizeCommands` to `cmd/root.go`**
 
-1. Add the import `"github.tools.sap/developer-relations/sap-devs-cli/internal/i18n"` to the import block.
+1. Add the import `"github.com/SAP-samples/sap-devs-cli/internal/i18n"` to the import block.
 
 2. In `PersistentPreRunE`, add language resolution at the top of the function. The i18n init runs for **all** commands (including `update`) so all commands see the resolved language. Replace the entire function opening up to the update check guard:
 
@@ -877,7 +877,7 @@ The `i18n` import was added in Task 4.
 
 - [ ] **Step 6.3: Wire `cmd/sync.go` output strings**
 
-Add import `"github.tools.sap/developer-relations/sap-devs-cli/internal/i18n"`.
+Add import `"github.com/SAP-samples/sap-devs-cli/internal/i18n"`.
 
 Replace all `fmt.Println`/`fmt.Printf` output calls:
 ```go

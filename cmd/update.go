@@ -5,15 +5,15 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/credentials"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/i18n"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/update"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/xdg"
+	"github.com/SAP-samples/sap-devs-cli/internal/credentials"
+	"github.com/SAP-samples/sap-devs-cli/internal/i18n"
+	"github.com/SAP-samples/sap-devs-cli/internal/update"
+	"github.com/SAP-samples/sap-devs-cli/internal/xdg"
 )
 
 // repoURL is the canonical repository URL used for update checks and downloads.
 // Accessible to all files in package cmd (e.g. root.go background check).
-const repoURL = "https://github.tools.sap/developer-relations/sap-devs-cli"
+const repoURL = "https://github.com/SAP-samples/sap-devs-cli"
 
 var updateCmd = &cobra.Command{
 	Use:   "update",

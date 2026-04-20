@@ -2,13 +2,13 @@
 
 **Date:** 2026-04-14  
 **Status:** Approved  
-**Feature:** Secure token storage and authenticated sync for github.tools.sap
+**Feature:** Secure token storage and authenticated sync for github.com/SAP-samples
 
 ---
 
 ## Problem
 
-`sap-devs sync` fetches content from `github.tools.sap`, which requires authentication. Unauthenticated requests receive a 302 redirect to the login page. `http.Get` follows the redirect, receives an HTML page with HTTP 200, and `zip.NewReader` then fails with "not a valid zip file" — a confusing error that does not indicate the root cause.
+`sap-devs sync` fetches content from `github.com/SAP-samples`, which requires authentication. Unauthenticated requests receive a 302 redirect to the login page. `http.Get` follows the redirect, receives an HTML page with HTTP 200, and `zip.NewReader` then fails with "not a valid zip file" — a confusing error that does not indicate the root cause.
 
 No authentication mechanism currently exists in the CLI.
 
@@ -16,7 +16,7 @@ No authentication mechanism currently exists in the CLI.
 
 ## Goals
 
-- Allow users to authenticate with github.tools.sap for content sync
+- Allow users to authenticate with github.com/SAP-samples for content sync
 - Store tokens securely (OS keychain preferred, credentials file fallback)
 - Support CI/scripted usage via environment variables
 - Surface a clear, actionable error when authentication is missing or fails
@@ -173,7 +173,7 @@ Removes the stored token from the keychain or credentials file. `Delete()` is id
 
 **Explanatory text** shown in `--help` and during `init`:
 
-> Only required when syncing content from a private GitHub Enterprise instance (github.tools.sap). Not needed if you are outside the SAP network or already have GITHUB_TOOLS_SAP_TOKEN set in your environment.
+> Only required when syncing content from a private GitHub Enterprise instance (github.com/SAP-samples). Not needed if you are outside the SAP network or already have GITHUB_TOOLS_SAP_TOKEN set in your environment.
 
 ---
 
@@ -190,7 +190,7 @@ The token prompt becomes **Step 1 of 5**, before the sync step. The full updated
 ```text
 Step 1/5: GitHub authentication (optional)
 
-  sap-devs syncs content from github.tools.sap, which requires a Personal
+  sap-devs syncs content from github.com/SAP-samples, which requires a Personal
   Access Token if you are inside the SAP corporate network. If you are
   outside SAP or already have GITHUB_TOOLS_SAP_TOKEN set in your
   environment, press Enter to skip.
@@ -214,7 +214,7 @@ Behaviour:
 
 Add a new **Authentication** section near the sync documentation covering:
 
-- When a token is needed (private github.tools.sap, SAP corporate network)
+- When a token is needed (private github.com/SAP-samples, SAP corporate network)
 - The three env vars checked, in priority order
 - How to store a token interactively: `sap-devs config token`
 - How to store a token non-interactively (scripted/CI): pass as argument or set env var

@@ -11,7 +11,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	sapSync "github.tools.sap/developer-relations/sap-devs-cli/internal/sync"
+	sapSync "github.com/SAP-samples/sap-devs-cli/internal/sync"
 )
 
 func TestFetcher_DownloadsAndExtractsZip(t *testing.T) {
@@ -73,7 +73,7 @@ func TestFetcher_AuthRedirectReturnsActionableError(t *testing.T) {
 	err := sapSync.FetchArchive(srv.URL+"/repo.zip", dest, "")
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "authentication required")
-	assert.Contains(t, err.Error(), "GITHUB_TOOLS_SAP_TOKEN")
+	assert.Contains(t, err.Error(), "GH_TOKEN")
 	assert.Contains(t, err.Error(), "sap-devs config token")
 }
 

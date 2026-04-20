@@ -13,16 +13,16 @@ import (
 
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/adapter"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/config"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/dynamic"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/i18n"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/learning"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/project"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/scratch"
-	sapSync "github.tools.sap/developer-relations/sap-devs-cli/internal/sync"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/xdg"
+	"github.com/SAP-samples/sap-devs-cli/internal/adapter"
+	"github.com/SAP-samples/sap-devs-cli/internal/config"
+	"github.com/SAP-samples/sap-devs-cli/internal/content"
+	"github.com/SAP-samples/sap-devs-cli/internal/dynamic"
+	"github.com/SAP-samples/sap-devs-cli/internal/i18n"
+	"github.com/SAP-samples/sap-devs-cli/internal/learning"
+	"github.com/SAP-samples/sap-devs-cli/internal/project"
+	"github.com/SAP-samples/sap-devs-cli/internal/scratch"
+	sapSync "github.com/SAP-samples/sap-devs-cli/internal/sync"
+	"github.com/SAP-samples/sap-devs-cli/internal/xdg"
 )
 
 var (

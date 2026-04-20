@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ```bash
 # Build (with version injection)
 VERSION=$(git describe --tags --always --dirty)
-go build -ldflags "-X github.tools.sap/developer-relations/sap-devs-cli/cmd.Version=${VERSION}" -o sap-devs .
+go build -ldflags "-X github.com/SAP-samples/sap-devs-cli/cmd.Version=${VERSION}" -o sap-devs .
 
 # Lint / static analysis (use instead of go test on Windows — Windows Defender blocks test binaries from ~/.config)
 go build ./...
@@ -33,7 +33,7 @@ This is a Go CLI built with [cobra](https://github.com/spf13/cobra). Its core pu
 
 Content is loaded from up to four layered sources, with later layers overriding earlier ones by ID:
 
-1. **Official** — cached from `github.tools.sap/developer-relations/sap-devs-cli` repo at `~/.cache/sap-devs/official/`
+1. **Official** — cached from `github.com/SAP-samples/sap-devs-cli` repo at `~/.cache/sap-devs/official/`
 2. **Company** — optional, configured via `sap-devs config company <git-url>`, cached at `~/.cache/sap-devs/company/`
 3. **User** — `~/.local/share/sap-devs/` (Linux), `%LOCALAPPDATA%/sap-devs/data/` (Windows)
 4. **Project** — `.sap-devs/` in the current working directory
@@ -104,7 +104,7 @@ Three content types: **missions** (guided learning paths), **services** (BTP ser
 
 ### Credentials
 
-`internal/credentials` ([internal/credentials/credentials.go](internal/credentials/credentials.go)) provides secure token storage. `Store`/`Load`/`Delete` use the OS keychain via `zalando/go-keyring` with a `<configDir>/credentials` file fallback (0600). `Resolve()` implements the full priority chain: env vars (`GITHUB_TOOLS_SAP_TOKEN`, `GH_TOKEN`, `GITHUB_TOKEN`) → keychain → file → `""`. Used by `sync` and `config token`.
+`internal/credentials` ([internal/credentials/credentials.go](internal/credentials/credentials.go)) provides secure token storage. `Store`/`Load`/`Delete` use the OS keychain via `zalando/go-keyring` with a `<configDir>/credentials` file fallback (0600). `Resolve()` implements the full priority chain: env vars (`GH_TOKEN`, `GITHUB_TOKEN`, `GITHUB_TOOLS_SAP_TOKEN` legacy) → keychain → file → `""`. Used by `sync` and `config token`.
 
 ### Platform Paths
 

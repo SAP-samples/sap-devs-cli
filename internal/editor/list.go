@@ -6,8 +6,8 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/schema"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/theme"
+	"github.com/SAP-samples/sap-devs-cli/internal/schema"
+	"github.com/SAP-samples/sap-devs-cli/internal/theme"
 )
 
 // Styles for the list view.

@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
+	"github.com/SAP-samples/sap-devs-cli/internal/content"
 )
 
 const khorosBaseURL = "https://groups.community.sap.com/api/2.0/search"

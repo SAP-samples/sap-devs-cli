@@ -6,17 +6,9 @@ Ideas and planned features for `sap-devs`. These are not commitments or a roadma
 
 ## Release & Distribution
 
-### Migrate to github.com/sap-samples
+### ~~Migrate to github.com/SAP-samples~~ (Done)
 
-Move the repository from `github.tools.sap/developer-relations/sap-devs-cli` to `github.com/sap-samples` for public OSS distribution.
-
-**Scope:**
-
-- Create the repo under `github.com/sap-samples/sap-devs-cli` (or appropriate name)
-- Update all import paths (`github.tools.sap/developer-relations/sap-devs-cli/...` → `github.com/sap-samples/...`)
-- Update `github_urls` in `.goreleaser.yml` (remove the custom `api`/`upload`/`download` overrides — they're only needed for `github.tools.sap`)
-- Update release workflow to use `GITHUB_TOKEN` against `github.com`
-- Redirect or archive the internal repo; update any internal install instructions
+Repository migrated from `github.tools.sap/developer-relations/sap-devs-cli` to `github.com/SAP-samples/sap-devs-cli`. Full git history preserved. All import paths, runtime URLs, CI workflows, and documentation updated.
 
 ---
 
@@ -36,6 +28,21 @@ Distribute via package managers so users never see a Windows SmartScreen warning
 
 - [Scoop support](https://goreleaser.com/customization/scoop/)
 - [Homebrew support](https://goreleaser.com/customization/homebrew/)
+
+---
+
+### Claude Code plugin marketplace
+
+Research publishing `sap-devs` as an official Claude Code cloud plugin via the [claude-plugins-official](https://github.com/anthropics/claude-plugins-official) marketplace.
+
+**Why:** Claude Code users could install SAP developer context with a single command (`/install sap-devs`) instead of manually downloading the binary and running `inject`. The plugin system handles distribution, updates, and discovery.
+
+**Research needed:**
+
+- Plugin manifest format and submission requirements
+- How the existing `sap-devs` CLI maps to the plugin model (skills, hooks, MCP servers)
+- Whether the plugin can wrap/invoke the full CLI or needs a lighter adapter
+- Approval process and timeline for marketplace listing
 
 ---
 

@@ -400,7 +400,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/schema"
+	"github.com/SAP-samples/sap-devs-cli/internal/schema"
 )
 
 func schemasDir() string {
@@ -820,7 +820,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/schema"
+	"github.com/SAP-samples/sap-devs-cli/internal/schema"
 )
 
 func TestValidate_ValidResource(t *testing.T) {
@@ -1023,9 +1023,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/config"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/schema"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/xdg"
+	"github.com/SAP-samples/sap-devs-cli/internal/config"
+	"github.com/SAP-samples/sap-devs-cli/internal/schema"
+	"github.com/SAP-samples/sap-devs-cli/internal/xdg"
 )
 
 // Layer describes which content layer is being edited.
@@ -1062,7 +1062,7 @@ type ResolvedFile struct {
 	PackDir    string // directory containing the pack
 }
 
-const officialRepoURL = "github.tools.sap/developer-relations/sap-devs-cli"
+const officialRepoURL = "github.com/SAP-samples/sap-devs-cli"
 
 // ResolveEditTarget determines the file path and layer for a content edit request.
 // arg is the user-provided file argument (e.g., "resources.yaml", "cap/resources.yaml", or a path).
@@ -1367,7 +1367,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/schema"
+	"github.com/SAP-samples/sap-devs-cli/internal/schema"
 	"gopkg.in/yaml.v3"
 )
 
@@ -1528,7 +1528,7 @@ import (
 	"strings"
 
 	"charm.land/huh/v2"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/schema"
+	"github.com/SAP-samples/sap-devs-cli/internal/schema"
 )
 
 // StringBinding holds a string value for huh form binding.
@@ -1905,7 +1905,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/schema"
+	"github.com/SAP-samples/sap-devs-cli/internal/schema"
 )
 
 var (
@@ -2167,7 +2167,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"charm.land/huh/v2"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/schema"
+	"github.com/SAP-samples/sap-devs-cli/internal/schema"
 	"gopkg.in/yaml.v3"
 )
 
@@ -2393,8 +2393,8 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/editor"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/schema"
+	"github.com/SAP-samples/sap-devs-cli/internal/editor"
+	"github.com/SAP-samples/sap-devs-cli/internal/schema"
 	"gopkg.in/yaml.v3"
 )
 
@@ -2506,9 +2506,9 @@ import (
 	"path/filepath"
 
 	"github.com/spf13/cobra"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/editor"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/schema"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/xdg"
+	"github.com/SAP-samples/sap-devs-cli/internal/editor"
+	"github.com/SAP-samples/sap-devs-cli/internal/schema"
+	"github.com/SAP-samples/sap-devs-cli/internal/xdg"
 )
 
 var (
@@ -2676,7 +2676,7 @@ func countValidationErrors(errs []schema.ValidationError) int {
 }
 ```
 
-Note: Uses `xdg.New()` from the existing `internal/xdg` package. Ensure the import includes `"github.tools.sap/developer-relations/sap-devs-cli/internal/xdg"`.
+Note: Uses `xdg.New()` from the existing `internal/xdg` package. Ensure the import includes `"github.com/SAP-samples/sap-devs-cli/internal/xdg"`.
 
 - [ ] **Step 2: Verify compilation**
 
@@ -2708,8 +2708,8 @@ import (
 
 	"charm.land/huh/v2"
 	"github.com/spf13/cobra"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/editor"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/schema"
+	"github.com/SAP-samples/sap-devs-cli/internal/editor"
+	"github.com/SAP-samples/sap-devs-cli/internal/schema"
 )
 
 var contentEditCmd = &cobra.Command{

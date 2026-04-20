@@ -8,7 +8,7 @@ import (
 	"sync"
 
 	tea "github.com/charmbracelet/bubbletea"
-	sapSync "github.tools.sap/developer-relations/sap-devs-cli/internal/sync"
+	sapSync "github.com/SAP-samples/sap-devs-cli/internal/sync"
 )
 
 // MarkerDoneMsg is sent by fetch goroutines when a marker fetch completes.

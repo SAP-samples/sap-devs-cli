@@ -710,7 +710,7 @@ git commit -m "feat: add HasBTPContext and BTP/CF fact rendering in buildFacts"
 
 Add to `internal/dynamic/gather_test.go`:
 
-Add to `internal/dynamic/gather_test.go`. **Note:** These tests reference `project.ProjectContext` directly, so add `"github.tools.sap/developer-relations/sap-devs-cli/internal/project"` to the import list in `gather_test.go`.
+Add to `internal/dynamic/gather_test.go`. **Note:** These tests reference `project.ProjectContext` directly, so add `"github.com/SAP-samples/sap-devs-cli/internal/project"` to the import list in `gather_test.go`.
 
 ```go
 func TestGatherDynamic_BTPContext_NoBTPWhenNotConfigured(t *testing.T) {

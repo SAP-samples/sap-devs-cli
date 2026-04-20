@@ -66,7 +66,7 @@ import (
 
     "github.com/stretchr/testify/assert"
     "github.com/stretchr/testify/require"
-    "github.tools.sap/developer-relations/sap-devs-cli/internal/adapter"
+    "github.com/SAP-samples/sap-devs-cli/internal/adapter"
 )
 
 func TestLoadAdapters(t *testing.T) {
@@ -233,7 +233,7 @@ import (
 
     "github.com/stretchr/testify/assert"
     "github.com/stretchr/testify/require"
-    "github.tools.sap/developer-relations/sap-devs-cli/internal/adapter"
+    "github.com/SAP-samples/sap-devs-cli/internal/adapter"
 )
 
 func TestReplaceSection_FirstInject(t *testing.T) {
@@ -416,8 +416,8 @@ import (
 
     "github.com/stretchr/testify/assert"
     "github.com/stretchr/testify/require"
-    "github.tools.sap/developer-relations/sap-devs-cli/internal/adapter"
-    "github.tools.sap/developer-relations/sap-devs-cli/internal/content"
+    "github.com/SAP-samples/sap-devs-cli/internal/adapter"
+    "github.com/SAP-samples/sap-devs-cli/internal/content"
 )
 
 func TestWriteMCPConfig_NewFile(t *testing.T) {
@@ -505,7 +505,7 @@ import (
     "os"
     "path/filepath"
 
-    "github.tools.sap/developer-relations/sap-devs-cli/internal/content"
+    "github.com/SAP-samples/sap-devs-cli/internal/content"
 )
 
 // WriteMCPConfig merges an MCP server entry into the host's settings JSON file.
@@ -835,7 +835,7 @@ import (
     "testing"
 
     "github.com/stretchr/testify/assert"
-    "github.tools.sap/developer-relations/sap-devs-cli/internal/content"
+    "github.com/SAP-samples/sap-devs-cli/internal/content"
 )
 
 func TestRenderContext_BasicPacks(t *testing.T) {
@@ -1183,7 +1183,7 @@ func mergeAdapters(dst, src []adapter.Adapter) []adapter.Adapter {
 
 Also add the import for `adapter` package to root.go:
 ```go
-"github.tools.sap/developer-relations/sap-devs-cli/internal/adapter"
+"github.com/SAP-samples/sap-devs-cli/internal/adapter"
 ```
 
 - [ ] **Step 2: Implement cmd/inject.go**
@@ -1196,10 +1196,10 @@ import (
     "fmt"
 
     "github.com/spf13/cobra"
-    "github.tools.sap/developer-relations/sap-devs-cli/internal/adapter"
-    "github.tools.sap/developer-relations/sap-devs-cli/internal/config"
-    "github.tools.sap/developer-relations/sap-devs-cli/internal/content"
-    "github.tools.sap/developer-relations/sap-devs-cli/internal/xdg"
+    "github.com/SAP-samples/sap-devs-cli/internal/adapter"
+    "github.com/SAP-samples/sap-devs-cli/internal/config"
+    "github.com/SAP-samples/sap-devs-cli/internal/content"
+    "github.com/SAP-samples/sap-devs-cli/internal/xdg"
 )
 
 var (
@@ -1388,8 +1388,8 @@ import (
 
     "github.com/stretchr/testify/assert"
     "github.com/stretchr/testify/require"
-    "github.tools.sap/developer-relations/sap-devs-cli/internal/adapter"
-    "github.tools.sap/developer-relations/sap-devs-cli/internal/content"
+    "github.com/SAP-samples/sap-devs-cli/internal/adapter"
+    "github.com/SAP-samples/sap-devs-cli/internal/content"
 )
 
 // TestInjectEndToEnd tests ReplaceSection → file content round-trip

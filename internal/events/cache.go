@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
+	"github.com/SAP-samples/sap-devs-cli/internal/content"
 )
 
 // LoadCache reads cached events for a given event type.

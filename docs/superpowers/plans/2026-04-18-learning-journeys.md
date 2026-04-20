@@ -787,7 +787,7 @@ func runLearningFetch(cacheDir string, force bool) error {
 }
 ```
 
-Add the import `"github.tools.sap/developer-relations/sap-devs-cli/internal/learning"` to the imports block.
+Add the import `"github.com/SAP-samples/sap-devs-cli/internal/learning"` to the imports block.
 
 - [ ] **Step 5: Verify it compiles**
 
@@ -862,11 +862,11 @@ import (
 	"github.com/pkg/browser"
 	"github.com/spf13/cobra"
 
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/config"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/i18n"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/learning"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/xdg"
+	"github.com/SAP-samples/sap-devs-cli/internal/config"
+	"github.com/SAP-samples/sap-devs-cli/internal/content"
+	"github.com/SAP-samples/sap-devs-cli/internal/i18n"
+	"github.com/SAP-samples/sap-devs-cli/internal/learning"
+	"github.com/SAP-samples/sap-devs-cli/internal/xdg"
 )
 
 var learningCmd = &cobra.Command{
@@ -1315,7 +1315,7 @@ if learningIndex != nil {
 }
 ```
 
-Add the import `"github.tools.sap/developer-relations/sap-devs-cli/internal/learning"` to `cmd/inject.go`.
+Add the import `"github.com/SAP-samples/sap-devs-cli/internal/learning"` to `cmd/inject.go`.
 
 - [ ] **Step 4: Verify it compiles**
 

@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
+	"github.com/SAP-samples/sap-devs-cli/internal/content"
 )
 
 func TestRenderProfileShow_BuiltinProfile_PrintsBuiltinNote(t *testing.T) {

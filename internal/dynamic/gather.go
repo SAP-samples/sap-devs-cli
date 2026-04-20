@@ -5,10 +5,10 @@ import (
 	"encoding/json"
 	"os"
 
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/adapter"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/project"
-	sapSync "github.tools.sap/developer-relations/sap-devs-cli/internal/sync"
+	"github.com/SAP-samples/sap-devs-cli/internal/adapter"
+	"github.com/SAP-samples/sap-devs-cli/internal/content"
+	"github.com/SAP-samples/sap-devs-cli/internal/project"
+	sapSync "github.com/SAP-samples/sap-devs-cli/internal/sync"
 )
 
 // GatherOpts holds all inputs needed to collect dynamic context at inject time.

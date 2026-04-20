@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
+	"github.com/SAP-samples/sap-devs-cli/internal/content"
 )
 
 // findBySeverity returns all findings with the given severity.

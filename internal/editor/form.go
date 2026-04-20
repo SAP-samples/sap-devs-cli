@@ -8,8 +8,8 @@ import (
 	"strings"
 
 	"charm.land/huh/v2"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/schema"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/theme"
+	"github.com/SAP-samples/sap-devs-cli/internal/schema"
+	"github.com/SAP-samples/sap-devs-cli/internal/theme"
 )
 
 // StringBinding holds a string value for huh form binding.

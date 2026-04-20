@@ -9,7 +9,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	sapSync "github.tools.sap/developer-relations/sap-devs-cli/internal/sync"
+	sapSync "github.com/SAP-samples/sap-devs-cli/internal/sync"
 )
 
 func TestScanMarkers_Basic(t *testing.T) {

@@ -122,7 +122,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/content"
+	"github.com/SAP-samples/sap-devs-cli/internal/content"
 )
 
 func fixtureTutorialPacks() []*content.Pack {
@@ -316,7 +316,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/tutorials"
+	"github.com/SAP-samples/sap-devs-cli/internal/tutorials"
 )
 
 func TestIndexCache_RoundTrip(t *testing.T) {
@@ -520,7 +520,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/tutorials"
+	"github.com/SAP-samples/sap-devs-cli/internal/tutorials"
 )
 
 const sampleV2Markdown = `---
@@ -944,7 +944,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/tutorials"
+	"github.com/SAP-samples/sap-devs-cli/internal/tutorials"
 )
 
 func fixtureIndex() []tutorials.TutorialMeta {
@@ -1125,7 +1125,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/tutorials"
+	"github.com/SAP-samples/sap-devs-cli/internal/tutorials"
 )
 
 func TestProgress_NewTutorial(t *testing.T) {
@@ -1335,7 +1335,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.tools.sap/developer-relations/sap-devs-cli/internal/tutorials"
+	"github.com/SAP-samples/sap-devs-cli/internal/tutorials"
 )
 
 func TestFetchRepoList(t *testing.T) {
@@ -1762,7 +1762,7 @@ func runTutorialsFetch(cacheDir string, force bool) error {
 		cachedBranches[r.Name] = r.DefaultBranch
 	}
 
-	// Tutorials live on public github.com, not github.tools.sap.
+	// Tutorials live on public github.com, not github.com/SAP-samples.
 	// Do NOT use credentials.Resolve() here — it targets the enterprise instance.
 	token := os.Getenv("GITHUB_TOKEN")
 	if token == "" {
