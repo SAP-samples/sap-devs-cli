@@ -135,7 +135,7 @@ On every command invocation (except `update` and dev builds), a background gorou
 | `discovery` | Browse SAP Discovery Center missions, BTP services, and guidance framework; `discovery missions list/search/open`, `discovery services list/search/open`, `discovery guidance/show/open` |
 | `learning` | Browse SAP Learning Journeys; `learning list/search/show/open` |
 | `learn` | Guided learning recommendations combining tutorials, journeys, and missions; `learn recommend/search`, `learn path list/show/open` |
-| `mcp list/install/status` | Browse and wire SAP MCP servers into AI tool configs |
+| `mcp list/install/status/serve` | Browse, wire, and self-host SAP MCP servers; `serve` starts the built-in MCP server on stdio |
 | `hook list/install/uninstall/status` | Wire AI tool lifecycle hooks from pack definitions |
 | `events` | Browse upcoming SAP community events with location filtering; `events types` lists event categories |
 | `influencers` | Browse SAP community influencers and thought leaders |

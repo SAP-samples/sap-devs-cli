@@ -1,0 +1,10 @@
+- id: sap-devs-server
+  name: SAP Developer Context Server
+  description: Live MCP server exposing SAP tips, resources, error patterns, news, tutorials, and learning journeys
+  install:
+    command: sap-devs
+    args: ["mcp", "serve"]
+  hosts:
+    - claude-code
+    - cursor
+    - continue
