@@ -109,7 +109,7 @@ func buildSyncPlan(cfg *config.Config, paths *xdg.Paths, engine *sapSync.Engine,
 
 	if plan.archiveNeeded {
 		plan.visiblePhases = append(plan.visiblePhases, ui.PhaseContent)
-		if cfg.CompanyRepo != "" && strings.HasPrefix(cfg.CompanyRepo, "https://") {
+		if cfg.CompanyRepo != "" {
 			plan.companyNeeded = true
 			plan.visiblePhases = append(plan.visiblePhases, ui.PhaseCompany)
 		}
@@ -214,13 +214,17 @@ func syncWorker(plan *syncPlan, p *tea.Program) {
 		// Phase: company
 		if plan.companyNeeded {
 			p.Send(ui.PhaseStartMsg{ID: ui.PhaseCompany})
-			companyCache := filepath.Join(plan.paths.CacheDir, "company")
-			repoURL := strings.TrimRight(plan.cfg.CompanyRepo, "/")
-			companyArchive := repoURL + "/archive/refs/heads/main.zip"
-			if err := sapSync.FetchArchive(companyArchive, companyCache, plan.token); err != nil {
-				p.Send(ui.PhaseDoneMsg{ID: ui.PhaseCompany, Err: err})
+			if !strings.HasPrefix(plan.cfg.CompanyRepo, "https://") {
+				p.Send(ui.PhaseDoneMsg{ID: ui.PhaseCompany, Err: fmt.Errorf("company repo must use https://")})
 			} else {
-				p.Send(ui.PhaseDoneMsg{ID: ui.PhaseCompany})
+				companyCache := filepath.Join(plan.paths.CacheDir, "company")
+				repoURL := strings.TrimRight(plan.cfg.CompanyRepo, "/")
+				companyArchive := repoURL + "/archive/refs/heads/main.zip"
+				if err := sapSync.FetchArchive(companyArchive, companyCache, plan.token); err != nil {
+					p.Send(ui.PhaseDoneMsg{ID: ui.PhaseCompany, Err: err})
+				} else {
+					p.Send(ui.PhaseDoneMsg{ID: ui.PhaseCompany})
+				}
 			}
 		}
 
@@ -319,7 +323,6 @@ func runSyncPlain(plan *syncPlan, out io.Writer) error {
 
 	// --- Archive block ---
 	if plan.archiveNeeded {
-		ui.PrintPlainProgress(out, ui.PhaseContent, "start", "", nil)
 		if err := sapSync.FetchArchive(officialRepoArchive, plan.officialCache, plan.token); err != nil {
 			ui.PrintPlainProgress(out, ui.PhaseContent, "failed", "", err)
 			return fmt.Errorf("sync official content: %w", err)
@@ -332,22 +335,26 @@ func runSyncPlain(plan *syncPlan, out io.Writer) error {
 
 		// Company
 		if plan.companyNeeded {
-			ui.PrintPlainProgress(out, ui.PhaseCompany, "start", "", nil)
-			companyCache := filepath.Join(plan.paths.CacheDir, "company")
-			repoURL := strings.TrimRight(plan.cfg.CompanyRepo, "/")
-			companyArchive := repoURL + "/archive/refs/heads/main.zip"
-			if err := sapSync.FetchArchive(companyArchive, companyCache, plan.token); err != nil {
-				ui.PrintPlainProgress(out, ui.PhaseCompany, "failed", "", err)
+			if !strings.HasPrefix(plan.cfg.CompanyRepo, "https://") {
+				ui.PrintPlainProgress(out, ui.PhaseCompany, "failed", "", fmt.Errorf("company repo must use https://"))
 			} else {
-				ui.PrintPlainProgress(out, ui.PhaseCompany, "done", "", nil)
+				companyCache := filepath.Join(plan.paths.CacheDir, "company")
+				repoURL := strings.TrimRight(plan.cfg.CompanyRepo, "/")
+				companyArchive := repoURL + "/archive/refs/heads/main.zip"
+				if err := sapSync.FetchArchive(companyArchive, companyCache, plan.token); err != nil {
+					ui.PrintPlainProgress(out, ui.PhaseCompany, "failed", "", err)
+				} else {
+					ui.PrintPlainProgress(out, ui.PhaseCompany, "done", "", nil)
+				}
 			}
 		}
 
 		// Markers (silent in plain mode — no Bubbletea program)
 		if err := runMarkerExpansion(plan.officialCache, plan.engine, nil); err != nil {
-			fmt.Fprintf(os.Stderr, "sap-devs: marker expansion warning: %v\n", err)
+			ui.PrintPlainProgress(out, ui.PhaseMarkers, "failed", "", err)
+		} else {
+			ui.PrintPlainProgress(out, ui.PhaseMarkers, "done", "", nil)
 		}
-		ui.PrintPlainProgress(out, ui.PhaseMarkers, "done", "", nil)
 
 		// Changelog (hidden)
 		changelogDirs := []string{filepath.Join(plan.officialCache, "content", "packs")}
