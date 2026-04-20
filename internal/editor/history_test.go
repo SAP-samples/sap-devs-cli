@@ -149,3 +149,40 @@ func TestHistory_Changes_UndoAllNoChanges(t *testing.T) {
 	restored, _, _ := h.Undo(items)
 	assert.False(t, h.HasChanges(restored))
 }
+
+func TestHistory_DiscardLast(t *testing.T) {
+	items := sampleItems()
+	h := editor.NewHistory(items)
+
+	items[0].Data["title"] = "Edited"
+	h.Push(items, "edited Alpha")
+
+	restored, ok := h.DiscardLast()
+	require.True(t, ok)
+	assert.Equal(t, "Edited", restored[0].Data["title"])
+	assert.False(t, h.CanUndo())
+	assert.False(t, h.CanRedo())
+}
+
+func TestHistory_DiscardLast_EmptyStack(t *testing.T) {
+	items := sampleItems()
+	h := editor.NewHistory(items)
+	_, ok := h.DiscardLast()
+	assert.False(t, ok)
+}
+
+func TestHistory_DiscardLast_PreservesRedo(t *testing.T) {
+	items := sampleItems()
+	h := editor.NewHistory(items)
+
+	items[0].Data["title"] = "Edit 1"
+	h.Push(items, "edit 1")
+	items[0].Data["title"] = "Edit 2"
+	h.Push(items, "edit 2")
+
+	h.Undo(items)
+	assert.True(t, h.CanRedo())
+
+	h.DiscardLast()
+	assert.True(t, h.CanRedo())
+}

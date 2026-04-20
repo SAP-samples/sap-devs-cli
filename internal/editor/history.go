@@ -90,15 +90,19 @@ func (h *History) DiscardLast() ([]MergedItem, bool) {
 func (h *History) Baseline() []MergedItem { return deepCopyItems(h.baseline) }
 
 // deepCopyItems returns a new slice where each MergedItem has its own copy of
-// the Data map. Shallow map values (scalars, strings) are copied by value;
-// nested maps/slices are not deep-copied — content YAML values are always
-// scalars or simple strings so this is sufficient.
+// the Data map and any []any slice values (e.g. tags).
 func deepCopyItems(items []MergedItem) []MergedItem {
 	cp := make([]MergedItem, len(items))
 	for i, item := range items {
 		data := make(map[string]any, len(item.Data))
 		for k, v := range item.Data {
-			data[k] = v
+			if sl, ok := v.([]any); ok {
+				dup := make([]any, len(sl))
+				copy(dup, sl)
+				data[k] = dup
+			} else {
+				data[k] = v
+			}
 		}
 		cp[i] = MergedItem{
 			Data:       data,
@@ -185,22 +189,22 @@ func positionalKey(i int) string {
 	return fmt.Sprintf("item #%d", i+1)
 }
 
-func diffFields(old, new map[string]any) []FieldDiff {
+func diffFields(old, cur map[string]any) []FieldDiff {
 	var diffs []FieldDiff
 	allKeys := make(map[string]bool)
 	for k := range old {
 		allKeys[k] = true
 	}
-	for k := range new {
+	for k := range cur {
 		allKeys[k] = true
 	}
 	for k := range allKeys {
 		oldVal := fmt.Sprintf("%v", old[k])
-		newVal := fmt.Sprintf("%v", new[k])
+		newVal := fmt.Sprintf("%v", cur[k])
 		if old[k] == nil {
 			oldVal = ""
 		}
-		if new[k] == nil {
+		if cur[k] == nil {
 			newVal = ""
 		}
 		if oldVal != newVal {
