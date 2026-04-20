@@ -46,6 +46,88 @@ Research publishing `sap-devs` as an official Claude Code cloud plugin via the [
 
 ---
 
+### npm wrapper package
+
+Publish a lightweight npm package (`sap-devs` or `@sap/devs`) that downloads the platform-appropriate Go binary on `postinstall`. The target audience is CAP/Node.js developers who already have npm — `npx sap-devs inject` is zero-friction with no separate download step.
+
+**Why:** The primary user persona (CAP developers) lives in the Node.js ecosystem. An npm wrapper meets them where they are — same install flow as `@sap/cds-dk`. Also unlocks `npx` for one-shot usage and makes version management automatic via `package.json`.
+
+**Implementation sketch:**
+
+- Thin JS wrapper: `postinstall` script downloads the correct binary from GitHub Releases into `node_modules/.bin/`
+- Platform detection: `os.platform()` + `os.arch()` → map to GoReleaser artifact names
+- Version pinning: npm package version matches Go release tag
+- Graceful fallback: if binary download fails, print instructions for manual install
+- GoReleaser can auto-generate the npm package or we maintain a small `npm/` directory in the repo
+
+**References:**
+
+- [`esbuild`](https://github.com/evanw/esbuild) uses this exact pattern — Go binary distributed via npm with platform-specific optionalDependencies
+- [`turbo`](https://github.com/vercel/turbo) similarly wraps a Rust binary in npm
+
+---
+
+### MCP server registry listings
+
+Once `sap-devs mcp serve` ships, list the MCP server on public registries so any MCP-compatible agent can discover and install it.
+
+**Target registries:**
+
+| Registry | URL | Notes |
+| --- | --- | --- |
+| **Smithery.ai** | <https://smithery.ai> | Largest MCP server directory; submit via PR |
+| **mcp.run** | <https://mcp.run> | Cloudflare-backed MCP registry; supports hosted and self-hosted servers |
+| **Glama.ai** | <https://glama.ai/mcp/servers> | Curated MCP server directory |
+| **MCP Hub** | <https://github.com/nicholascote/mcp-hub> | Community-maintained registry |
+
+**Why:** MCP is agent-agnostic. Listing in registries makes SAP context available to Claude, Cursor, Windsurf, Copilot, and any future MCP client — without building separate adapters for each.
+
+**Dependency:** Requires `sap-devs mcp serve` to be functional and stable.
+
+---
+
+### IDE extension wrappers (VS Code / Cursor)
+
+Publish a VS Code extension (also compatible with Cursor) that wraps `sap-devs inject` and MCP server wiring into the IDE marketplace.
+
+**Why:** The VS Code / Cursor marketplace is a massive discovery surface. An extension can handle binary download, auto-inject on workspace open, surface tips in the status bar, and register the MCP server — all without the user touching a terminal.
+
+**Scope (v1):**
+
+- Download and manage the `sap-devs` binary
+- Run `inject --project` on workspace open
+- Register MCP server in Cursor/VS Code Copilot settings
+- Status bar item showing active profile and last-sync time
+- Command palette: Sync, Inject, Show Tip, Open Resources
+
+**Open questions:**
+
+- Publish under SAP-samples org or request official SAP publisher?
+- Should the extension embed the binary or download on activate?
+
+---
+
+### GitHub Copilot Extensions
+
+Research publishing `sap-devs` as a GitHub Copilot Extension, making SAP context available natively in Copilot Chat.
+
+**Why:** Copilot has the largest market share of AI coding assistants. A Copilot Extension would let users `@sap-devs` in Copilot Chat to get SAP-specific guidance, similar to how the MCP server works but through Microsoft's agent extensibility model.
+
+**Research needed:**
+
+- Copilot Extensions API and submission requirements
+- Whether it can wrap the existing MCP server or needs a separate HTTP agent
+- GitHub Marketplace listing process for extensions
+- Authentication and rate limiting considerations
+
+---
+
+### GitHub Packages — not planned
+
+GitHub Packages (Go module proxy) is **not a priority**. `sap-devs` is a CLI binary, not a Go library — the target audience (SAP/CAP/Node.js developers) won't use `go install`. GitHub Releases via GoReleaser is the correct artifact host for binary distribution. Revisit only if a Go library extraction becomes relevant.
+
+---
+
 ### Windows code signing for unsigned binary distribution
 
 Unsigned `.exe` files downloaded from the internet are blocked or warned about by Windows SmartScreen. Investigate free signing options for OSS.

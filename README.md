@@ -1,4 +1,6 @@
-# sap-devs
+# sap-devs cli
+
+[![REUSE status](https://api.reuse.software/badge/github.com/SAP-samples/sap-devs-cli)](https://api.reuse.software/info/github.com/SAP-samples/sap-devs-cli)
 
 `sap-devs` injects up-to-date SAP developer knowledge into your AI coding tools, wires SAP MCP servers, and keeps content current automatically.
 
@@ -25,10 +27,6 @@ sap-devs sync
 sap-devs inject
 ```
 
-## License
-
-See [LICENSE](LICENSE).
-
 ## Executive Summary
 
 AI coding assistants have become the default way developers write software. Tools like GitHub Copilot, Cursor, and Claude sit open in the background while developers work, answering questions and generating code on demand. By 2026 this shift is well underway, and it is reshaping how developers choose which technologies to build with.
@@ -48,3 +46,12 @@ For developers new to SAP, this changes the first impression entirely. Historica
 For SAP's developer relations work, this opens a new distribution channel. SAP produces high-quality content: tutorials, blog posts, developer news, and curated learning paths. The challenge has always been getting that content in front of developers who are actively working on a problem. sap-devs solves that. SAP's best content reaches developers inside the tools they are already using, at the moment it matters most.
 
 The broader opportunity is that AI assistants are fast becoming one of the most influential factors in which platforms developers choose. Platforms that integrate well into this workflow feel modern and worth learning. Platforms that do not feel like obstacles. Shipping accurate, current SAP knowledge into the AI tools developers use every day is one of the most direct ways SAP can influence that perception in 2026.
+
+## How to obtain support
+
+This project is provided "as-is": there is no guarantee that raised issues will be answered or addressed in future releases.
+
+## License
+
+Copyright (c) 2026 SAP SE or an SAP affiliate company. All rights reserved.
+This project is licensed under the Apache Software License, v. 2 except as noted otherwise in the [LICENSE](LICENSES/Apache-2.0.txt) file.
