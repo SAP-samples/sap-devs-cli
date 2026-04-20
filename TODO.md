@@ -113,8 +113,8 @@ Interactive UI for editing and maintaining pack content YAML files (event-types.
 
 #### Phase 2 — TUI Enhancements
 
-- Undo/redo support within the editor session - DONE
-- Diff view showing changes against the lower-layer version before saving - DONE
+- Undo/redo support within the editor session - DONE ✔️
+- Diff view showing changes against the lower-layer version before saving - DONE ✔️
 - ~~Git commit/push integration~~ — dropped; developers use their own git tools
 - Drag-and-drop reordering of list entries (e.g. resources, tips)
 - Bulk editing — apply a change across multiple entries at once
