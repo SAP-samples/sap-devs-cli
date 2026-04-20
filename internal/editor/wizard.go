@@ -432,3 +432,107 @@ func collectInitialEntries(schemasDir string, selectedFiles []string) (map[strin
 
 	return entries, nil
 }
+
+// --- Task 6: Confirmation form ---
+
+func runConfirmForm(summary string) (bool, error) {
+	var confirmed bool
+	form := huh.NewForm(
+		huh.NewGroup(
+			huh.NewConfirm().
+				Title("Proceed?").
+				Description(summary).
+				Affirmative("Create").
+				Negative("Cancel").
+				Value(&confirmed),
+		),
+	).WithTheme(huh.ThemeFunc(theme.ThemeFiori))
+
+	if err := form.Run(); err != nil {
+		return false, err
+	}
+	return confirmed, nil
+}
+
+// --- Task 7: RunCreateWizard orchestration ---
+
+// RunCreateWizard runs the full content pack creation wizard.
+func RunCreateWizard(cwd, schemasDir string) error {
+	// Step 1: Layer selection
+	layer, err := runLayerForm(cwd)
+	if err != nil {
+		return err
+	}
+
+	// Step 2: Pack metadata
+	meta, err := runMetadataForm()
+	if err != nil {
+		return err
+	}
+
+	// Resolve pack directory and check for conflicts
+	packDir, err := resolvePackDir(layer, cwd, meta.ID)
+	if err != nil {
+		return err
+	}
+	if err := checkPackConflict(packDir); err != nil {
+		return err
+	}
+
+	// Build additive_position if needed
+	var additivePosition string
+	if meta.Additive {
+		pos, err := runAdditivePositionForm()
+		if err != nil {
+			return err
+		}
+		additivePosition = pos
+	}
+
+	metadata := buildMetadataMap(
+		meta.ID, meta.Name, meta.Description,
+		meta.TagsRaw, meta.WeightRaw,
+		meta.Additive, additivePosition,
+	)
+
+	// Step 4: Content file selection
+	selectedFiles, err := runContentFileForm()
+	if err != nil {
+		return err
+	}
+
+	// Step 5: Initial entries for selected YAML files
+	entries, err := collectInitialEntries(schemasDir, selectedFiles)
+	if err != nil {
+		return err
+	}
+
+	// Assemble state
+	state := &WizardState{
+		Layer:         layer,
+		PackDir:       packDir,
+		Metadata:      metadata,
+		SelectedFiles: selectedFiles,
+		Entries:       entries,
+	}
+
+	// Step 6: Summary and confirmation
+	confirmed, err := runConfirmForm(state.Summary())
+	if err != nil {
+		return err
+	}
+	if !confirmed {
+		fmt.Println("Aborted — no files written.")
+		return nil
+	}
+
+	// Write all files
+	if err := state.WriteFiles(); err != nil {
+		return err
+	}
+
+	packID, _ := metadata["id"].(string)
+	fmt.Printf("\nPack %q created at %s\n", packID, packDir)
+	fmt.Printf("Edit with: sap-devs content edit %s/pack.yaml\n", packID)
+	return nil
+}
