@@ -93,7 +93,7 @@ func BulkAddRemoveTag(spec *schema.ObjectSpec) (action string, field string, val
 
 **`BulkSetField` flow:**
 
-1. Build a huh select dropdown of all schema fields (key + type label).
+1. Build a huh select dropdown of string and enum schema fields (key + type label). Exclude array, object, and map fields — those are not meaningful for bulk set. Boolean and integer fields use a text input; the raw string value is stored as-is and validated by schema validation downstream.
 2. User picks a field.
 3. If the field is an enum (has `Enum` values in schema), show a select dropdown of valid options.
 4. If the field is a string/URI/etc., show a text input.
@@ -139,7 +139,8 @@ if result.bulkAction != "" {
         history.Push(items, desc)
         for _, idx := range indices {
             items[idx].Data[field] = value
-            // clone to target layer if inherited (same as edit logic)
+            // Clone to target layer if inherited: copy Data map, set Layer = target.Layer,
+            // IsOverride = true — same pattern as the single-item edit path in editor.go.
         }
     case "delete":
         history.Push(items, desc)
@@ -159,6 +160,8 @@ if result.bulkAction != "" {
     continue
 }
 ```
+
+**Post-action behavior:** Selection is cleared after every bulk action (set-field, delete, add-tag) and after every reorder. The user starts fresh for the next operation. This avoids accidental double-application.
 
 ### Modified file: `internal/theme/fiori.go`
 
