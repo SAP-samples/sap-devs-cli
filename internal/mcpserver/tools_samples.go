@@ -3,6 +3,7 @@ package mcpserver
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
@@ -39,6 +40,16 @@ func getSamplesHandler(deps Deps) server.ToolHandlerFunc {
 
 		var samples []content.Sample
 		if packID != "" {
+			found := false
+			for _, p := range deps.Packs {
+				if p.ID == packID {
+					found = true
+					break
+				}
+			}
+			if !found {
+				return mcp.NewToolResultError(fmt.Sprintf("pack %q not found", packID)), nil
+			}
 			samples = content.FilterSamplesByPack(deps.Packs, packID)
 		} else {
 			samples = content.FlattenSamples(deps.Packs)

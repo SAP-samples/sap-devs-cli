@@ -3,6 +3,7 @@ package mcpserver
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
@@ -43,11 +44,16 @@ func searchResourcesHandler(deps Deps) server.ToolHandlerFunc {
 
 		var resources []content.Resource
 		if packID != "" {
+			found := false
 			for _, p := range deps.Packs {
 				if p.ID == packID {
 					resources = p.Resources
+					found = true
 					break
 				}
+			}
+			if !found {
+				return mcp.NewToolResultError(fmt.Sprintf("pack %q not found", packID)), nil
 			}
 		} else {
 			resources = content.FlattenResources(deps.Packs)

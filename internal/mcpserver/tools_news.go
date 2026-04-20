@@ -20,6 +20,7 @@ const (
 )
 
 type newsFetcher struct {
+	mu     sync.Mutex
 	once   sync.Once
 	cached []news.NewsItem
 }
@@ -34,7 +35,9 @@ func (f *newsFetcher) get() []news.NewsItem {
 				return
 			}
 			posts, _ := community.FetchBlogPosts(newsCommunityRSS)
+			f.mu.Lock()
 			f.cached = news.Correlate(episodes, posts)
+			f.mu.Unlock()
 			close(done)
 		}()
 		select {
@@ -42,6 +45,8 @@ func (f *newsFetcher) get() []news.NewsItem {
 		case <-time.After(newsFetchTimeout):
 		}
 	})
+	f.mu.Lock()
+	defer f.mu.Unlock()
 	return f.cached
 }
 
