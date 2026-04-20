@@ -90,29 +90,34 @@ type PhaseSkipMsg struct{ ID PhaseID }
 // SyncDoneMsg signals that all sync work is complete.
 type SyncDoneMsg struct{ FatalErr error }
 
+// WarnMsg queues a warning to be printed after the progress display exits.
+type WarnMsg struct{ Text string }
+
 type spinnerTickMsg struct{}
 
 // SetMarkersMsg populates marker sub-items in the model.
 type SetMarkersMsg struct{ Items []MarkerItem }
 
 type syncModel struct {
-	phases       []phaseState
-	markers      []MarkerItem
-	frame        int
-	done         int
-	total        int
-	fatalErr     error
-	maxViewLines int
+	phases      []phaseState
+	markers     []MarkerItem
+	markerSlots int
+	frame       int
+	done        int
+	total       int
+	fatalErr    error
+	warnings    []string
 }
 
-func newSyncModel(visiblePhases []PhaseID) *syncModel {
+func newSyncModel(visiblePhases []PhaseID, markerSlots int) *syncModel {
 	phases := make([]phaseState, len(visiblePhases))
 	for i, id := range visiblePhases {
 		phases[i] = phaseState{id: id, status: statusPending}
 	}
 	return &syncModel{
-		phases: phases,
-		total:  len(visiblePhases),
+		phases:      phases,
+		total:       len(visiblePhases),
+		markerSlots: markerSlots,
 	}
 }
 
@@ -175,6 +180,8 @@ func (m *syncModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	case SetMarkersMsg:
 		m.markers = msg.Items
+	case WarnMsg:
+		m.warnings = append(m.warnings, msg.Text)
 	case SyncDoneMsg:
 		m.fatalErr = msg.FatalErr
 		return m, tea.Quit
@@ -227,31 +234,28 @@ func (m *syncModel) View() string {
 		}
 
 		// Render marker sub-items after the markers phase
-		if p.id == PhaseMarkers && len(m.markers) > 0 {
-			for _, item := range m.markers {
-				switch item.State {
-				case "done":
-					fmt.Fprintf(&b, "      %-8s › %-36s %s  (%d lines)\n",
-						item.PackID, item.Label, styleDone.Render("✓"), item.Lines)
-				case "failed":
-					fmt.Fprintf(&b, "      %-8s › %-36s %s  fetch failed, using cached\n",
-						item.PackID, item.Label, styleFailed.Render("✗"))
-				default:
-					fmt.Fprintf(&b, "      %-8s › %-36s fetching...\n",
-						item.PackID, item.Label)
+		if p.id == PhaseMarkers && m.markerSlots > 0 {
+			for i := 0; i < m.markerSlots; i++ {
+				if i < len(m.markers) {
+					item := m.markers[i]
+					switch item.State {
+					case "done":
+						fmt.Fprintf(&b, "      %-8s › %-36s %s  (%d lines)\n",
+							item.PackID, item.Label, styleDone.Render("✓"), item.Lines)
+					case "failed":
+						fmt.Fprintf(&b, "      %-8s › %-36s %s  fetch failed, using cached\n",
+							item.PackID, item.Label, styleFailed.Render("✗"))
+					default:
+						fmt.Fprintf(&b, "      %-8s › %-36s fetching...\n",
+							item.PackID, item.Label)
+					}
+				} else {
+					b.WriteString("\n")
 				}
 			}
 		}
 	}
-	out := b.String()
-	lines := strings.Count(out, "\n")
-	if lines > m.maxViewLines {
-		m.maxViewLines = lines
-	}
-	for i := lines; i < m.maxViewLines; i++ {
-		out += "\n"
-	}
-	return out
+	return b.String()
 }
 
 // FatalErr returns the fatal error from the sync worker, if any.
@@ -259,11 +263,16 @@ func (m *syncModel) FatalErr() error {
 	return m.fatalErr
 }
 
+// Warnings returns any warnings collected during sync.
+func (m *syncModel) Warnings() []string {
+	return m.warnings
+}
+
 // RunSyncProgress starts the Bubbletea inline program for sync progress.
-// Returns the syncModel (to extract fatalErr) and the program so the caller
-// can launch a goroutine that sends messages.
-func RunSyncProgress(visiblePhases []PhaseID) (*tea.Program, *syncModel) {
-	m := newSyncModel(visiblePhases)
+// markerSlots pre-allocates lines for marker sub-items so the view height
+// stays constant (prevents ghost lines from terminal scroll).
+func RunSyncProgress(visiblePhases []PhaseID, markerSlots int) (*tea.Program, *syncModel) {
+	m := newSyncModel(visiblePhases, markerSlots)
 	p := tea.NewProgram(m)
 	return p, m
 }

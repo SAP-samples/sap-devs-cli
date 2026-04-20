@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -245,10 +246,10 @@ func syncWorker(plan *syncPlan, p *tea.Program) {
 		syncedAt := time.Now()
 		clEntries, err := sapSync.CollectChangelog(changelogDirs)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "sap-devs: changelog collection warning: %v\n", err)
+			p.Send(ui.WarnMsg{Text: fmt.Sprintf("changelog collection warning: %v", err)})
 		}
 		if writeErr := sapSync.WriteChangelog(plan.paths.CacheDir, syncedAt, clEntries); writeErr != nil {
-			fmt.Fprintf(os.Stderr, "sap-devs: changelog write warning: %v\n", writeErr)
+			p.Send(ui.WarnMsg{Text: fmt.Sprintf("changelog write warning: %v", writeErr)})
 		}
 	}
 
@@ -305,14 +306,64 @@ func buildIndepPhases(plan *syncPlan) []indepPhase {
 	return phases
 }
 
+// countMarkerSlots scans packs for fetch markers and returns the total count,
+// so the Bubbletea model can pre-allocate view lines and avoid height changes.
+func countMarkerSlots(officialCache string) int {
+	packsDir := filepath.Join(officialCache, "content", "packs")
+	entries, err := os.ReadDir(packsDir)
+	if err != nil {
+		return 0
+	}
+	count := 0
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			continue
+		}
+		data, err := os.ReadFile(filepath.Join(packsDir, entry.Name(), "context.md"))
+		if err != nil {
+			continue
+		}
+		markers, _ := sapSync.ScanMarkers(entry.Name(), string(data))
+		count += len(markers)
+	}
+	return count
+}
+
 // runSyncTTY runs the sync with the Bubbletea inline progress display.
 func runSyncTTY(plan *syncPlan) error {
-	p, model := ui.RunSyncProgress(plan.visiblePhases)
+	markerSlots := countMarkerSlots(plan.officialCache)
+	p, model := ui.RunSyncProgress(plan.visiblePhases, markerSlots)
+
+	// Capture stderr during Bubbletea to prevent cursor corruption.
+	// On Windows, stderr and stdout share the console buffer; any write
+	// to stderr shifts the cursor and leaves ghost lines in the display.
+	var stderrBuf bytes.Buffer
+	origStderr := os.Stderr
+	r, w, _ := os.Pipe()
+	os.Stderr = w
+	done := make(chan struct{})
+	go func() {
+		io.Copy(&stderrBuf, r)
+		close(done)
+	}()
 
 	go syncWorker(plan, p)
 
-	if _, err := p.Run(); err != nil {
-		return fmt.Errorf("progress display: %w", err)
+	_, runErr := p.Run()
+
+	// Restore stderr and flush captured output.
+	w.Close()
+	<-done
+	os.Stderr = origStderr
+	if stderrBuf.Len() > 0 {
+		stderrBuf.WriteTo(os.Stderr)
+	}
+	for _, warn := range model.Warnings() {
+		fmt.Fprintf(os.Stderr, "sap-devs: %s\n", warn)
+	}
+
+	if runErr != nil {
+		return fmt.Errorf("progress display: %w", runErr)
 	}
 	return model.FatalErr()
 }
@@ -417,7 +468,11 @@ func runMarkerExpansion(officialCache string, engine *sapSync.Engine, p *tea.Pro
 		contextContent := string(data)
 		markers, warns := sapSync.ScanMarkers(packID, contextContent)
 		for _, w := range warns {
-			fmt.Fprintf(os.Stderr, "sap-devs: %s\n", w)
+			if p != nil {
+				p.Send(ui.WarnMsg{Text: w})
+			} else {
+				fmt.Fprintf(os.Stderr, "sap-devs: %s\n", w)
+			}
 		}
 		hasMarkers := len(markers) > 0
 		if err := engine.SetPackHasMarkers(packID, hasMarkers); err != nil {
