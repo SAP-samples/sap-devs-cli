@@ -462,6 +462,7 @@ Manage SAP MCP (Model Context Protocol) servers. MCP servers give AI tools direc
 sap-devs mcp list [--all]
 sap-devs mcp status
 sap-devs mcp install [id] [--all] [--dry-run]
+sap-devs mcp serve [--profile <id>]
 ```
 
 | Subcommand | Description |
@@ -469,6 +470,39 @@ sap-devs mcp install [id] [--all] [--dry-run]
 | `list` | List available SAP MCP servers (active profile by default; `--all` for all) |
 | `status` | Show which SAP MCP servers are registered in your AI tool configs |
 | `install [id]` | Wire an SAP MCP server into your AI tools; `--all` installs all for active profile |
+| `serve` | Start the built-in MCP server on stdio (for AI tool integration) |
+
+**`serve` flags:**
+
+| Flag | Description |
+|---|---|
+| `--profile <id>` | Override the active profile for this server session |
+
+#### Built-in MCP Server
+
+`sap-devs mcp serve` starts a built-in MCP server that exposes SAP developer knowledge as live tools for AI agents. The server communicates over stdio using the JSON-RPC-based MCP protocol.
+
+**Available tools:**
+
+| Tool | Description |
+|---|---|
+| `list_packs` | List all available content packs with metadata |
+| `get_context` | Get the AI context text for a specific pack or all packs |
+| `get_tip` | Get a random SAP developer tip, optionally filtered by tags |
+| `search_resources` | Search curated SAP resources by keyword |
+| `get_known_errors` | Get known SAP error patterns, optionally filtered by keyword or pack |
+| `get_samples` | Get canonical SAP code samples, optionally filtered by pack or keyword |
+| `get_recent_news` | Get the latest SAP Developer News episodes |
+| `search_tutorials` | Search SAP tutorials by keyword |
+| `search_learning_journeys` | Search SAP Learning Journeys by keyword |
+
+**Self-install:** The built-in server is registered in `mcp.yaml` as `sap-devs-server`. To wire it into your AI tools:
+
+```bash
+sap-devs mcp install sap-devs-server
+```
+
+This configures supported AI tools (Claude Code, Cursor, Continue) to launch `sap-devs mcp serve` as an MCP server.
 
 **Example:**
 ```bash
@@ -936,15 +970,18 @@ View with `sap-devs config show`. Edit with `sap-devs config set <key> <value>`.
 
 ## MCP Servers
 
-MCP (Model Context Protocol) servers extend AI tools with direct access to external APIs and data. `sap-devs` can configure SAP MCP servers in your AI tool settings automatically.
+MCP (Model Context Protocol) servers extend AI tools with direct access to external APIs and data. `sap-devs` can configure SAP MCP servers in your AI tool settings automatically, and includes a built-in server that exposes SAP developer knowledge as live tools.
 
 ```bash
 sap-devs mcp list          # see what's available
 sap-devs mcp status        # see what's already configured
 sap-devs mcp install <id>  # wire a server into your AI tools
+sap-devs mcp serve         # start the built-in MCP server on stdio
 ```
 
-Supported AI tools include Claude Code, Cursor, and others detected on your system.
+The built-in server (`sap-devs-server`) can be installed with `sap-devs mcp install sap-devs-server`. It exposes 9 tools: `list_packs`, `get_context`, `get_tip`, `search_resources`, `get_known_errors`, `get_recent_news`, `search_tutorials`, `search_learning_journeys`, and `get_samples`.
+
+Supported AI tools include Claude Code, Cursor, Continue, and others detected on your system.
 
 ---
 
