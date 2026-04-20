@@ -64,6 +64,7 @@ func (s *darwinScheduler) Install(interval time.Duration, binaryPath string) err
 	if err := os.WriteFile(path, []byte(plist), 0644); err != nil {
 		return err
 	}
+	_ = exec.Command("launchctl", "unload", path).Run()
 	cmd := exec.Command("launchctl", "load", path)
 	out, err := cmd.CombinedOutput()
 	if err != nil {

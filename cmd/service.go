@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/SAP-samples/sap-devs-cli/internal/config"
@@ -33,6 +34,10 @@ var serviceInstallCmd = &cobra.Command{
 		binaryPath, err := os.Executable()
 		if err != nil {
 			return fmt.Errorf("could not determine binary path: %w", err)
+		}
+		binaryPath, err = filepath.EvalSymlinks(binaryPath)
+		if err != nil {
+			return fmt.Errorf("could not resolve binary path: %w", err)
 		}
 
 		sched := service.New(paths.CacheDir)

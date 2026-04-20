@@ -26,7 +26,7 @@ func (s *windowsScheduler) logPath() string {
 }
 
 func (s *windowsScheduler) Install(interval time.Duration, binaryPath string) error {
-	script := fmt.Sprintf(`%s sync > "%s" 2>&1 && %s inject --no-sync >> "%s" 2>&1`,
+	script := fmt.Sprintf(`"%s" sync > "%s" 2>&1 && "%s" inject --no-sync >> "%s" 2>&1`,
 		binaryPath, s.logPath(), binaryPath, s.logPath())
 
 	cmd := exec.Command("schtasks", "/create",

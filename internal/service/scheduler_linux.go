@@ -36,7 +36,7 @@ Description=sap-devs background sync
 
 [Service]
 Type=oneshot
-ExecStart=/bin/sh -c '%s sync && %s inject --no-sync'
+ExecStart=/bin/sh -c '"%s" sync && "%s" inject --no-sync'
 StandardOutput=file:%s
 StandardError=file:%s
 `, binaryPath, binaryPath, s.logPath(), s.logPath())

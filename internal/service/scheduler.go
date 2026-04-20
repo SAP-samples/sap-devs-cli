@@ -1,14 +1,12 @@
 package service
 
 import (
-	"fmt"
 	"time"
 )
 
 // Status describes the current state of the OS scheduler entry.
 type Status struct {
 	Installed bool
-	Interval  time.Duration
 	LastRun   time.Time // zero value if unknown or never run
 	NextRun   time.Time // zero value if unknown
 }
@@ -25,6 +23,3 @@ type Scheduler interface {
 func New(cacheDir string) Scheduler {
 	return newPlatformScheduler(cacheDir)
 }
-
-// ErrNotInstalled is returned when querying status of an uninstalled scheduler.
-var ErrNotInstalled = fmt.Errorf("scheduler is not installed")
