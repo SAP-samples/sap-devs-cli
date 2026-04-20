@@ -19,7 +19,8 @@
     }
 
     function renderState(state) {
-        var lastSynced = state.sync.lastSynced
+        var zeroTime = '0001-01-01T00:00:00Z';
+        var lastSynced = (state.sync.lastSynced && state.sync.lastSynced !== zeroTime)
             ? timeAgo(new Date(state.sync.lastSynced))
             : 'Never';
         setText('last-synced', lastSynced);

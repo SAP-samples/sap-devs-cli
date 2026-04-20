@@ -11,11 +11,9 @@ import (
 )
 
 type DashboardState struct {
-	Version   string       `json:"version"`
-	Profile   ProfileState `json:"profile"`
-	Sync      SyncState    `json:"sync"`
-	Tools     []ToolState  `json:"tools"`
-	ServiceUp bool         `json:"serviceUp"`
+	Version string       `json:"version"`
+	Profile ProfileState `json:"profile"`
+	Sync    SyncState    `json:"sync"`
 }
 
 type ProfileState struct {
@@ -29,11 +27,6 @@ type SyncState struct {
 	NextSync   time.Time `json:"nextSync"`
 	PackCount  int       `json:"packCount"`
 	Status     string    `json:"status"`
-}
-
-type ToolState struct {
-	Name     string `json:"name"`
-	Injected bool   `json:"injected"`
 }
 
 func ReadState(configDir, cacheDir string) *DashboardState {

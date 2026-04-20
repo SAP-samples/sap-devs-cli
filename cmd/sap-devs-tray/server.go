@@ -92,6 +92,10 @@ func (s *Server) handleState(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleSync(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
 	go func() {
 		cmd := exec.Command(sapDevsBinary(), "sync")
 		cmd.Stdout = nil
@@ -103,6 +107,10 @@ func (s *Server) handleSync(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleInject(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
 	go func() {
 		cmd := exec.Command(sapDevsBinary(), "inject", "--no-sync")
 		cmd.Stdout = nil

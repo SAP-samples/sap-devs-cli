@@ -125,5 +125,9 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          COUNT=$(ls checksums/*.sha256 2>/dev/null | wc -l)
+          if [ "$COUNT" -ne 5 ]; then
+            echo "::warning::Expected 5 checksums, got $COUNT"
+          fi
           cat checksums/*.sha256 > tray-checksums.txt
           gh release upload "${GITHUB_REF_NAME}" tray-checksums.txt --clobber
