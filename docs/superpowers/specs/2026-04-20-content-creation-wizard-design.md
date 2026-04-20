@@ -27,7 +27,7 @@ The wizard auto-detects the target layer using the existing `detectLayer()` from
 | Directory with `.sap-devs/` | project | `.sap-devs/packs/<id>/` |
 | Anywhere else | user | `~/.local/share/sap-devs/packs/<id>/` (Linux) / `%LOCALAPPDATA%/sap-devs/data/packs/<id>/` (Windows) |
 
-The first wizard step shows the detected layer and lets the user override it via a huh select dropdown. Layer options are: official, company, user, project. The pack directory path is derived from the selected layer + the pack ID entered in the metadata step.
+The first wizard step shows the detected layer and lets the user override it via a huh select dropdown. Available layer options depend on context: "official" and "company" are only offered when the CWD is detected as the corresponding repo checkout (via `isOfficialRepo()` / `isCompanyRepo()`). "User" and "project" are always available. If the user selects "company" but the CWD is not a company checkout, the wizard shows an error explaining the constraint. The pack directory path is derived from the selected layer + the pack ID entered in the metadata step.
 
 **Conflict detection:** Before writing any files, the wizard checks if a pack directory with the same ID already exists in the target layer. If it does, the wizard prints an error and aborts. The user should use `content edit` to modify existing packs.
 
@@ -46,8 +46,8 @@ A single huh form collecting the `pack.yaml` fields:
 | `id` | text input | yes | pattern `^[a-z][a-z0-9-]*$` | — |
 | `name` | text input | yes | non-empty | — |
 | `description` | text input | yes | non-empty | — |
-| `tags` | text input | no | comma-separated, parsed to `[]string` | — |
-| `weight` | text input | no | integer | "50" |
+| `tags` | text input | yes | comma-separated, parsed to `[]string`, at least one required | — |
+| `weight` | text input | no | integer | "50" (intentionally higher than the schema default of 0, so new packs appear before base) |
 | `additive` | confirm (bool) | no | — | false |
 | `additive_position` | select (before/after) | conditional | only shown when `additive` is true | "after" |
 
@@ -59,7 +59,7 @@ A single huh form collecting the `pack.yaml` fields:
 - `changelog` — populated post-release, not at creation time
 - `overlaps` — advanced deduplication field, not needed at creation time
 
-The `additive` field requires a two-phase form: first form collects all fields including `additive`, then if `additive` is true, a follow-up form collects `additive_position`.
+The `additive` field requires a two-phase form approach. The first form is hand-built (not using `BuildForm`, since the wizard needs custom control over which pack.yaml fields appear). It collects id, name, description, tags, weight, and additive. If `additive` is true after the first form completes, a second minimal huh form with a single `huh.NewSelect[string]` collects `additive_position` (before/after, default "after").
 
 ### Step 3: Context template creation
 
@@ -79,7 +79,7 @@ The wizard creates `context.md` with the standard section scaffold matching the 
 <!-- TODO: Add best practices -->
 ```
 
-No form needed — this is a template file written directly.
+No form needed — this is a template file written directly. Additional optional sections recognised by `ValidateContextSections()` (`Anti-patterns`, `Code Examples`) can be added by the author later.
 
 ### Step 4: Content file selection
 
@@ -147,15 +147,15 @@ On confirm (`Y` or Enter), all files are written. On cancel (`n`), abort without
 
 | File | Responsibility |
 |---|---|
-| `cmd/content_create.go` | Cobra command definition, calls `editor.RunCreateWizard()` |
+| `cmd/content_create.go` | Cobra command definition, calls `findSchemasDir(cwd)` then passes it to `editor.RunCreateWizard(cwd, schemasDir)` |
 | `internal/editor/wizard.go` | Wizard orchestration: layer form, metadata form, file selection, initial entry collection, summary, batch write |
 
 ### Reused infrastructure
 
 | Component | Used for |
 |---|---|
-| `internal/editor/resolve.go` | `detectLayer()` for auto-detection; layer path constants |
-| `internal/editor/merge.go` | `SaveObject()` for pack.yaml; `SaveItems()` for YAML array files |
+| `internal/editor/resolve.go` | `detectLayer()` for auto-detection; layer path constants; `isOfficialRepo()` / `isCompanyRepo()` for layer availability |
+| `internal/editor/merge.go` | `SaveObject()` for pack.yaml |
 | `internal/editor/form.go` | `BuildForm()` for schema-driven initial entry forms |
 | `internal/schema/` | `Load()` for each content file's schema |
 | `internal/theme/` | `ThemeFiori` for huh form styling |
@@ -182,7 +182,7 @@ All-or-nothing: the wizard collects all data in memory, then writes all files in
 1. `os.MkdirAll()` for the pack directory
 2. `SaveObject()` for pack.yaml
 3. `os.WriteFile()` for context.md
-4. For each selected YAML file: `SaveItems()` with a single-entry slice (or empty slice if user skipped the entry form)
+4. For each selected YAML file: `yaml.Marshal()` + `os.WriteFile()` directly with a `[]map[string]any` slice (single entry or empty). This avoids `SaveItems()` which requires `[]MergedItem` wrapping and layer filtering — unnecessary for brand-new files with no multi-layer merge concern.
 5. For each selected markdown file: `os.WriteFile()` with template content
 
 If a write fails mid-batch, already-written files remain. This is acceptable — the pack directory was just created and can be deleted manually. No rollback mechanism needed.
@@ -193,7 +193,7 @@ If a write fails mid-batch, already-written files remain. This is acceptable —
 |---|---|
 | Pack ID already exists in target layer | Error message, abort before any forms |
 | Invalid pack ID (fails pattern) | huh inline validation, blocks form submission |
-| User aborts any form (Ctrl+C / Esc) | Clean exit, no files written |
+| User aborts any form (Ctrl+C / Esc) | Clean exit via `huh.ErrUserAborted`, no files written. Esc during Step 5 (initial entry) skips that file's entry but keeps the file in the scaffold list (empty array). Esc/Ctrl+C during Steps 1-4 or 6 aborts the entire wizard. |
 | Target directory not writable | Error on write attempt |
 | Schema file not found for a content type | Skip that file with a warning |
 
