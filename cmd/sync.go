@@ -61,7 +61,6 @@ type syncPlan struct {
 	visiblePhases []ui.PhaseID
 	archiveNeeded bool
 	companyNeeded bool
-	markersNeeded bool
 	activeArchive []string
 	activeIndep   []string
 	indepPhases   map[string]ui.PhaseID
@@ -113,8 +112,7 @@ func buildSyncPlan(cfg *config.Config, paths *xdg.Paths, engine *sapSync.Engine,
 			plan.companyNeeded = true
 			plan.visiblePhases = append(plan.visiblePhases, ui.PhaseCompany)
 		}
-		// Markers phase is always included when archive syncs; skipped at runtime if no markers found
-		plan.markersNeeded = true
+		// Markers phase is always included when archive syncs
 		plan.visiblePhases = append(plan.visiblePhases, ui.PhaseMarkers)
 	}
 
@@ -212,6 +210,7 @@ func syncWorker(plan *syncPlan, p *tea.Program) {
 		p.Send(ui.PhaseDoneMsg{ID: ui.PhaseContent})
 
 		// Phase: company
+		companySynced := false
 		if plan.companyNeeded {
 			p.Send(ui.PhaseStartMsg{ID: ui.PhaseCompany})
 			if !strings.HasPrefix(plan.cfg.CompanyRepo, "https://") {
@@ -223,6 +222,7 @@ func syncWorker(plan *syncPlan, p *tea.Program) {
 				if err := sapSync.FetchArchive(companyArchive, companyCache, plan.token); err != nil {
 					p.Send(ui.PhaseDoneMsg{ID: ui.PhaseCompany, Err: err})
 				} else {
+					companySynced = true
 					p.Send(ui.PhaseDoneMsg{ID: ui.PhaseCompany})
 				}
 			}
@@ -238,7 +238,7 @@ func syncWorker(plan *syncPlan, p *tea.Program) {
 
 		// Changelog (hidden — no phase messages)
 		changelogDirs := []string{filepath.Join(plan.officialCache, "content", "packs")}
-		if plan.companyNeeded {
+		if companySynced {
 			companyCache := filepath.Join(plan.paths.CacheDir, "company")
 			changelogDirs = append(changelogDirs, filepath.Join(companyCache, "content", "packs"))
 		}
@@ -334,6 +334,7 @@ func runSyncPlain(plan *syncPlan, out io.Writer) error {
 		ui.PrintPlainProgress(out, ui.PhaseContent, "done", "", nil)
 
 		// Company
+		companySynced := false
 		if plan.companyNeeded {
 			if !strings.HasPrefix(plan.cfg.CompanyRepo, "https://") {
 				ui.PrintPlainProgress(out, ui.PhaseCompany, "failed", "", fmt.Errorf("company repo must use https://"))
@@ -344,6 +345,7 @@ func runSyncPlain(plan *syncPlan, out io.Writer) error {
 				if err := sapSync.FetchArchive(companyArchive, companyCache, plan.token); err != nil {
 					ui.PrintPlainProgress(out, ui.PhaseCompany, "failed", "", err)
 				} else {
+					companySynced = true
 					ui.PrintPlainProgress(out, ui.PhaseCompany, "done", "", nil)
 				}
 			}
@@ -358,7 +360,7 @@ func runSyncPlain(plan *syncPlan, out io.Writer) error {
 
 		// Changelog (hidden)
 		changelogDirs := []string{filepath.Join(plan.officialCache, "content", "packs")}
-		if plan.companyNeeded {
+		if companySynced {
 			companyCache := filepath.Join(plan.paths.CacheDir, "company")
 			changelogDirs = append(changelogDirs, filepath.Join(companyCache, "content", "packs"))
 		}
