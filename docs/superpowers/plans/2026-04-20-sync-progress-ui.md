@@ -38,6 +38,7 @@ This task builds the core Bubbletea model that renders the phase list and progre
 package ui
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
@@ -453,8 +454,8 @@ Add to `internal/ui/sync_progress.go`:
 // PhaseSkipMsg/MarkerDoneMsg/SyncDoneMsg to the returned *tea.Program.
 func RunSyncProgress(visiblePhases []PhaseID) (*tea.Program, *syncModel) {
 	m := newSyncModel(visiblePhases)
-	p := tea.NewProgram(&m)
-	return p, &m
+	p := tea.NewProgram(m)
+	return p, m
 }
 
 // PrintPlainProgress writes a single non-TTY progress line for one phase.
