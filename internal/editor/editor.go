@@ -101,6 +101,24 @@ func runArrayEditor(target *ResolvedFile, s *schema.Schema) error {
 			continue
 		}
 
+		// Handle reorder.
+		if result.moveUp || result.moveDown {
+			sel := result.selected
+			if len(sel) == 0 {
+				cursorIdx := result.cursorOriginalIndex
+				if cursorIdx >= 0 && items[cursorIdx].Layer == target.Layer {
+					sel = map[int]bool{cursorIdx: true}
+				}
+			}
+			if len(sel) > 0 {
+				desc := fmt.Sprintf("reordered %d item(s)", len(sel))
+				history.Push(items, desc)
+				items = MoveItems(items, sel, result.moveUp)
+				statusMsg = fmt.Sprintf("✓ %s", desc)
+			}
+			continue
+		}
+
 		// Handle delete.
 		if result.deleteIdx >= 0 {
 			desc := descForItem("deleted", items[result.deleteIdx].Data)
