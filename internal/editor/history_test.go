@@ -26,8 +26,8 @@ func TestHistory_NewHistory(t *testing.T) {
 func TestHistory_PushAndUndo(t *testing.T) {
 	items := sampleItems()
 	h := editor.NewHistory(items)
-	items[0].Data["title"] = "Alpha Edited"
 	h.Push(items, "edited Alpha")
+	items[0].Data["title"] = "Alpha Edited"
 	assert.True(t, h.CanUndo())
 	restored, desc, ok := h.Undo(items)
 	require.True(t, ok)
@@ -38,8 +38,8 @@ func TestHistory_PushAndUndo(t *testing.T) {
 func TestHistory_Redo(t *testing.T) {
 	items := sampleItems()
 	h := editor.NewHistory(items)
-	items[0].Data["title"] = "Alpha Edited"
 	h.Push(items, "edited Alpha")
+	items[0].Data["title"] = "Alpha Edited"
 	restored, _, _ := h.Undo(items)
 	assert.True(t, h.CanRedo())
 	redone, desc, ok := h.Redo(restored)
@@ -51,24 +51,24 @@ func TestHistory_Redo(t *testing.T) {
 func TestHistory_PushClearsRedo(t *testing.T) {
 	items := sampleItems()
 	h := editor.NewHistory(items)
-	items[0].Data["title"] = "Edit 1"
 	h.Push(items, "edit 1")
+	items[0].Data["title"] = "Edit 1"
 	restored, _, _ := h.Undo(items)
 	assert.True(t, h.CanRedo())
-	restored[1].Data["title"] = "Beta Edited"
 	h.Push(restored, "edit beta")
+	restored[1].Data["title"] = "Beta Edited"
 	assert.False(t, h.CanRedo())
 }
 
 func TestHistory_UndoAll(t *testing.T) {
 	items := sampleItems()
 	h := editor.NewHistory(items)
-	items[0].Data["title"] = "Edit 1"
 	h.Push(items, "edit 1")
-	items[0].Data["title"] = "Edit 2"
+	items[0].Data["title"] = "Edit 1"
 	h.Push(items, "edit 2")
-	items[0].Data["title"] = "Edit 3"
+	items[0].Data["title"] = "Edit 2"
 	h.Push(items, "edit 3")
+	items[0].Data["title"] = "Edit 3"
 	current := items
 	for h.CanUndo() {
 		var ok bool
@@ -82,8 +82,8 @@ func TestHistory_UndoAll(t *testing.T) {
 func TestHistory_DeepCopyIsolation(t *testing.T) {
 	items := sampleItems()
 	h := editor.NewHistory(items)
-	items[0].Data["title"] = "Mutated"
 	h.Push(items, "mutated")
+	items[0].Data["title"] = "Mutated"
 	restored, _, _ := h.Undo(items)
 	assert.Equal(t, "Alpha", restored[0].Data["title"])
 	restored[0].Data["title"] = "Mutated Again"
@@ -144,8 +144,8 @@ func TestHistory_Changes_Delete(t *testing.T) {
 func TestHistory_Changes_UndoAllNoChanges(t *testing.T) {
 	items := sampleItems()
 	h := editor.NewHistory(items)
-	items[0].Data["title"] = "Changed"
 	h.Push(items, "edit")
+	items[0].Data["title"] = "Changed"
 	restored, _, _ := h.Undo(items)
 	assert.False(t, h.HasChanges(restored))
 }
@@ -154,12 +154,12 @@ func TestHistory_DiscardLast(t *testing.T) {
 	items := sampleItems()
 	h := editor.NewHistory(items)
 
-	items[0].Data["title"] = "Edited"
 	h.Push(items, "edited Alpha")
+	items[0].Data["title"] = "Edited"
 
 	restored, ok := h.DiscardLast()
 	require.True(t, ok)
-	assert.Equal(t, "Edited", restored[0].Data["title"])
+	assert.Equal(t, "Alpha", restored[0].Data["title"])
 	assert.False(t, h.CanUndo())
 	assert.False(t, h.CanRedo())
 }
@@ -175,10 +175,10 @@ func TestHistory_DiscardLast_PreservesRedo(t *testing.T) {
 	items := sampleItems()
 	h := editor.NewHistory(items)
 
-	items[0].Data["title"] = "Edit 1"
 	h.Push(items, "edit 1")
-	items[0].Data["title"] = "Edit 2"
+	items[0].Data["title"] = "Edit 1"
 	h.Push(items, "edit 2")
+	items[0].Data["title"] = "Edit 2"
 
 	h.Undo(items)
 	assert.True(t, h.CanRedo())
