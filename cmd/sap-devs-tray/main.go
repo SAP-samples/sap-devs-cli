@@ -20,6 +20,14 @@ func main() {
 }
 
 func run() error {
-	fmt.Println("sap-devs-tray starting... (skeleton)")
-	select {}
+	configDir := defaultConfigDir()
+	cacheDir := defaultCacheDir()
+
+	srv, err := NewServer(configDir, cacheDir)
+	if err != nil {
+		return fmt.Errorf("could not start server: %w", err)
+	}
+	go srv.Start()
+
+	return startApp(srv)
 }
