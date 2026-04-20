@@ -18,6 +18,7 @@ type Config struct {
 	Events      EventsConfig   `yaml:"events,omitempty"`
 	Tutorial        TutorialConfig `yaml:"tutorial,omitempty"`
 	ExperienceLevel string         `yaml:"experience_level,omitempty"`
+	Service         ServiceConfig  `yaml:"service,omitempty"`
 }
 
 // SyncConfig controls per-category TTLs for background content refresh.
@@ -52,6 +53,11 @@ type EventsConfig struct {
 // TutorialConfig controls tutorial display behaviour.
 type TutorialConfig struct {
 	Interactive bool `yaml:"interactive,omitempty"`
+}
+
+// ServiceConfig controls the OS-native background scheduler.
+type ServiceConfig struct {
+	Interval time.Duration `yaml:"interval"`
 }
 
 func (e EventsConfig) EffectiveLocalRadius() int {
@@ -95,6 +101,9 @@ func Default() *Config {
 			Discovery: 168 * time.Hour, // 7 days
 			Tutorials: 168 * time.Hour, // 7 days
 			Learning:  168 * time.Hour, // 7 days
+		},
+		Service: ServiceConfig{
+			Interval: 6 * time.Hour,
 		},
 	}
 }
