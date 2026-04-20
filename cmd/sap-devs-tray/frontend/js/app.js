@@ -215,6 +215,13 @@
             });
         }
 
+        var btnConfig = document.getElementById('btn-config');
+        if (btnConfig) {
+            btnConfig.addEventListener('click', function() {
+                fetch('/api/open-config?token=' + token, { method: 'POST' });
+            });
+        }
+
         fetchState();
         setInterval(fetchState, 30000);
     });
