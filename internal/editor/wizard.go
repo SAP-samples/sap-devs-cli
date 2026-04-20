@@ -132,8 +132,6 @@ func checkPackConflict(packDir string) error {
 	return nil
 }
 
-// --- Task 2: Layer detection form + resolvePackDir ---
-
 func resolvePackDir(layer Layer, cwd, packID string) (string, error) {
 	switch layer {
 	case LayerOfficial, LayerCompany:
@@ -200,8 +198,6 @@ func runLayerForm(cwd string) (Layer, error) {
 	}
 	return LayerUser, nil
 }
-
-// --- Task 3: Pack metadata form (two-phase additive) ---
 
 func buildMetadataMap(id, name, description, tagsRaw, weightRaw string, additive bool, additivePosition string) map[string]any {
 	tags := splitTags(tagsRaw)
@@ -342,8 +338,6 @@ func runAdditivePositionForm() (string, error) {
 	return position, nil
 }
 
-// --- Task 4: Content file selection form ---
-
 type contentFileOption struct {
 	Filename    string
 	Description string
@@ -385,8 +379,6 @@ func runContentFileForm() ([]string, error) {
 	}
 	return selected, nil
 }
-
-// --- Task 5: Initial entry collection via BuildForm ---
 
 func isMarkdownFile(filename string) bool {
 	return filename == "tips.md" || filename == "constraints.md"
@@ -433,8 +425,6 @@ func collectInitialEntries(schemasDir string, selectedFiles []string) (map[strin
 	return entries, nil
 }
 
-// --- Task 6: Confirmation form ---
-
 func runConfirmForm(summary string) (bool, error) {
 	var confirmed bool
 	form := huh.NewForm(
@@ -453,8 +443,6 @@ func runConfirmForm(summary string) (bool, error) {
 	}
 	return confirmed, nil
 }
-
-// --- Task 7: RunCreateWizard orchestration ---
 
 // RunCreateWizard runs the full content pack creation wizard.
 func RunCreateWizard(cwd, schemasDir string) error {

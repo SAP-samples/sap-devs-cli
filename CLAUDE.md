@@ -126,7 +126,7 @@ On every command invocation (except `update` and dev builds), a background gorou
 | `sync` | Fetch latest content from official/company repos |
 | `profile set/list/show` | Manage active developer persona |
 | `config show/set/edit/company` | View and edit `~/.config/sap-devs/config.yaml`; `edit` opens interactive TUI form |
-| `content` | Manage content YAML files; `content edit/validate/list` with `--pack`/`--layer`/`--json` filtering; edit includes undo/redo, pre-save diff review, Shift+J/K reordering, and bulk editing (multi-select with Space, then set-field/delete/add-remove-tag) |
+| `content` | Manage content YAML files; `content edit/validate/list/create` with `--pack`/`--layer`/`--json` filtering; edit includes undo/redo, pre-save diff review, Shift+J/K reordering, and bulk editing; create scaffolds a new pack via guided wizard |
 | `context` | Manage ephemeral project context notes; `context add/list/clear` |
 | `tip` | Show a SAP developer tip; on Fridays shows the latest SAP Developer News episode (bypassed by `--new`); `tip install`/`tip uninstall` wires it into your shell prompt |
 | `tutorial` | Browse and render SAP tutorials; `tutorial list/search/show/open`; `-i` for interactive step-by-step TUI |

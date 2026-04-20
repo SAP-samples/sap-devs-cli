@@ -118,7 +118,7 @@ Interactive UI for editing and maintaining pack content YAML files (event-types.
 - ~~Git commit/push integration~~ — dropped; developers use their own git tools
 - Drag-and-drop reordering of list entries (e.g. resources, tips) - DONE ✔️
 - Bulk editing — apply a change across multiple entries at once - DONE ✔️
-- Content creation wizard — guided flow for adding a new pack from scratch
+- Content creation wizard — guided flow for adding a new pack from scratch - DONE ✔️
 
 #### Phase 3 — Graphical UI (Optional)
 
