@@ -63,20 +63,29 @@ type listModel struct {
 	// History and status.
 	history   *History
 	statusMsg string
+
+	// Selection and bulk action result fields.
+	selected             map[int]bool // originalIndex -> selected
+	moveUp               bool
+	moveDown             bool
+	bulkAction           string // "set-field", "delete", "add-tag", or ""
+	cursorOriginalIndex  int    // resolved originalIndex of cursor item (filter-safe)
 }
 
 func newListModel(items []MergedItem, columns []string, target *ResolvedFile, s *schema.Schema, history *History, statusMsg string) listModel {
 	return listModel{
-		items:     items,
-		columns:   columns,
-		target:    target,
-		schema:    s,
-		editIndex: -1,
-		deleteIdx: -1,
-		width:     80,
-		height:    24,
-		history:   history,
-		statusMsg: statusMsg,
+		items:               items,
+		columns:             columns,
+		target:              target,
+		schema:              s,
+		editIndex:           -1,
+		deleteIdx:           -1,
+		width:               80,
+		height:              24,
+		history:             history,
+		statusMsg:           statusMsg,
+		selected:            make(map[int]bool),
+		cursorOriginalIndex: -1,
 	}
 }
 
@@ -190,6 +199,10 @@ func (m listModel) visibleItems() []visibleItem {
 		out = append(out, visibleItem{originalIndex: i, item: item})
 	}
 	return out
+}
+
+func (m listModel) selectedCount() int {
+	return len(m.selected)
 }
 
 func (m listModel) View() string {
