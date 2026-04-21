@@ -1,1 +1,170 @@
-[]
+[
+  {
+    "Episode": {
+      "ID": "mJrmidot-G4",
+      "Title": "SAP Developer News",
+      "URL": "https://www.youtube.com/watch?v=mJrmidot-G4",
+      "Published": "2026-04-16T19:00:06Z",
+      "Description": "ITEMS \n\n*UX Innovation Day in Silicon Valley on 11 June*\n\n- Event page https://events.sap.com/us-ux-innovation-day-siliconvalley-2026/en_us/home.html  \n\n*SAP BTP ABAP Environment – Pre-Upgrade Option for Release 2605*\n\n- Blog post https://community.sap.com/t5/technology-blog-posts-by-sap/sap-btp-abap-environment-pre-upgrade-option-for-release-2605/ba-p/14347147  \n\n*XML Annotations: The Essentials Before Adapting Documentation Samples to Your Project*\n\n- Mio’s blog post https://community.sap.com/t5/technology-blog-posts-by-members/xml-annotations-the-essentials-before-adapting-documentation-samples-to/ba-p/14369241 \n- OData Deep Dive mission https://developers.sap.com/mission.odata-deep-dive.html  \n- OData Deep Dive rewrite blog post https://qmacro.org/blog/posts/2026/02/02/odata-deep-dive-rewrite-in-the-open/  \n\n*Edge Integration Cell APIs and Cloud Integration AI-assisted error resolution*\n\n- Edge Integration Cell APIs: https://help.sap.com/docs/cloud-integration/sap-cloud-integration/local-odata-api-access-for-edge-integration-cell?locale=en-US  \n- AI-assisted error resolution: https://help.sap.com/docs/integration-suite/sap-integration-suite/analyze-message-processing-errors-with-ai-f27f95d7b90b4f13aea22b399418b702?locale=en-US  \n\n*DYK #12 AI Launchpad Leaderboard*\n\n- The Model Library topic in the SAP Help Portal https://help.sap.com/docs/ai-launchpad/sap-ai-launchpad/model-library\n\nCHAPTER TITLES  \n\n00:00 Intro \n00:07 UX Innovation Day in Silicon Valley on 11 June \n01:00 SAP BTP ABAP Environment – Pre-Upgrade Option for Release 2605 \n02:00 XML Annotations: The Essentials Before Adapting Documentation Samples to Your Project \n03:16 Edge Integration Cell APIs and Cloud Integration AI-assisted error resolution \n04:25 DYK #12 AI Launchpad Leaderboard",
+      "Duration": "",
+      "Tags": null
+    },
+    "Community": null
+  },
+  {
+    "Episode": {
+      "ID": "Ams8yzY-x-A",
+      "Title": "Code Connect, Brazil Roadshow, SAPUI5 news, new CAP Expert Sessions, DYK 11 | SAP Developer News",
+      "URL": "https://www.youtube.com/watch?v=Ams8yzY-x-A",
+      "Published": "2026-04-09T19:00:06Z",
+      "Description": "ITEMS \n\n*Code Connect event tickets available from 16 Apr*\n\n- Code Connect website https://code-connect.dev/ \n\n*On-location update from the SAP CodeJam Roadshow in Brazil*\n\n- SAP CodeJam Roadshow 2026 - Brazil edition (blog post) https://community.sap.com/t5/sap-codejam-blog-posts/sap-codejam-roadshow-2026-brazil-edition-kicking-off-in-march-and/ba-p/14317926  \n\n*SAPUI5 news - “The Art and Science of SAPUI5 in SAP Build\" on 15 Apr plus Road Map updates*\n\n- Event information https://learning.sap.com/live-sessions/the-art-and-science-of-sapui5-in-sap-build  \n\n- Road Map info https://roadmaps.sap.com/board?PRODUCT=73554900100800001361\u0026range=CURRENT-LAST#Q2%202026  \n\n*New Expert Session series on CAP Node.js with Daniel Schlachter*\n\n- Series playlist https://www.youtube.com/playlist?list=PL6RpkC85SLQDxW_6INTtprrvZ3WiXT8u5 \n\n*DYK #11 - AI agents (Generative AI Hub \u0026 LangGraph)*\n\n- CrewAI example connecting to Sap Generative AI Hub via LiteLLM https://sap-contributions.github.io/litellm-agentic-examples/_notebooks/examples/crewai_litellm_lib.html \n\nCHAPTER TITLES  \n\n00:00 Intro \n00:07 Code Connect event tickets available from 16 Apr \n01:01 On-location update from the SAP CodeJam Roadshow in Brazil \n01:54 SAPUI5 news - “The Art and Science of SAPUI5 in SAP Build\" on 15 Apr plus Road Map updates \n02:42 New Expert Session series on CAP Node.js with Daniel Schlachter \n03:22 DYK #11 - AI agents (Generative AI Hub \u0026 LangGraph)",
+      "Duration": "",
+      "Tags": null
+    },
+    "Community": null
+  },
+  {
+    "Episode": {
+      "ID": "OOy_Firo61Y",
+      "Title": "AI Dev Challenge April, What's New SAP HANA Cloud, Removal of webc, DYK #10 | SAP Developer News",
+      "URL": "https://www.youtube.com/watch?v=OOy_Firo61Y",
+      "Published": "2026-04-02T19:00:06Z",
+      "Description": "*AI Developer Challenge April 2026 - build AI Agents with Generative AI Hub*\n  - Repository: https://sap.to/6050B6oABO\n  - Blog Post: https://community.sap.com/t5/artificial-intelligence-blogs-posts/ai-developer-challenge-april-2026-build-ai-agents-with-generative-ai-hub/ba-p/14327218\n\n*What’s  New in SAP HANA Cloud 2026/Q1*\n  - SAP HANA Cloud Data \u0026 Discovery Agents - Beta Program: https://sap.to/6052B6oABu\n  - What’s New in SAP HANA Cloud – March 2026 [blog post]: https://sap.to/6053B6oABR\n  - Deep Dive with Product Experts [video]: https://sap.to/6054B6oABr \n  - SAP CodeJam Brazil AI Tour: https://sap.to/6055B6oABT \n  - HANA TechCon 2026: https://sap.to/6056B6oABp \n\n*Removal of the experimental sap.ui.webc. libraries for Web Components in UI5*\n  - Removal of legacy sap.ui.webc.* Web Component UI libraries from SAPUI5/OpenUI5 1.147.0 onwards (blog post) https://sap.to/6057B6oABV \n\n*DYK #10 – Test Orchestration Configuration*\n  - More information: https://sap.to/6058B6oABn\n\n====================================================\n\n*CHAPTER TITLES*\n0:00 Intro\n0:10 AI Developer Challenge April 2026 - build AI Agents with Generative AI Hub\n1:10 What’s  New in SAP HANA Cloud 2026/Q1\n2:37 Removal of the experimental sap.ui.webc.* libraries for Web Components in UI5\n3:58 DYK #10 Test Orchestration Configuration",
+      "Duration": "",
+      "Tags": null
+    },
+    "Community": null
+  },
+  {
+    "Episode": {
+      "ID": "VLy14Vy4L2U",
+      "Title": "Build Apps Retirement, Edge Integration Cell, A2A Editor, DYK 9 | Developer News",
+      "URL": "https://www.youtube.com/watch?v=VLy14Vy4L2U",
+      "Published": "2026-03-26T19:00:06Z",
+      "Description": "*Bye Bye Build Apps*\n  - Deprecation Announcement (blog post): https://sap.to/6059B65KEz\n  - The Path Forward, or what you can do now (documentation): https://sap.to/6050B65KEM\n\n*Edge Integration Cell updates*\n  - What's new in Edge Integration Cell: https://sap.to/6051B65KE3 \n\n*A2A Editor*\n  - A2A Editor: https://sap.to/6052B65KEO\n  - CodeJam Roadshow Brazil: https://sap.to/6053B65KEP\n\n*DYK  #9 – Orchestration Client Configuration*\n  • More information: https://sap.to/6055B65KER\n\n=======================================================\n\nCHAPTER TITLES \n0:00 Intro\n0:10 Build Apps Retirement\n2:42 Edge Integration Cell updates\n3:31 A2A Editor\n4:58 DYK #9 Orchestration client Configuration",
+      "Duration": "",
+      "Tags": null
+    },
+    "Community": null
+  },
+  {
+    "Episode": {
+      "ID": "-I5nYXrnATE",
+      "Title": "ABAP Dev Challenge, SAP Insider Las Vegas, Integration Suite Enhanced | SAP Developer News",
+      "URL": "https://www.youtube.com/watch?v=-I5nYXrnATE",
+      "Published": "2026-03-19T20:00:06Z",
+      "Description": "ITEMS \n\n*ABAP Developer Challenge – halfway point!*\n\n- ABAP Developer Challenge - Joule for Developers using Basic Trial (blog post) https://community.sap.com/t5/abap-blog-posts/abap-developer-challenge-joule-for-developers-using-basic-trial/ba-p/14336191 \n\n*SAP Insider Las Vegas*\n\n- Event website https://vegas.sapinsider.org/  \n\n*Introducing SAP Integration Suite, enhanced edition*\n\n- Introducing SAP Integration Suite, enhanced edition (blog post) https://community.sap.com/t5/technology-blog-posts-by-sap/introducing-sap-integration-suite-enhanced-edition/ba-p/14346638  \n\n*CAP Feb 2026 release*\n\n- Release notes https://cap.cloud.sap/docs/releases/2026/feb26  \n\n*Feedback for the btp CLI and Terraform providers*\n\n- Post with links to both surveys https://www.linkedin.com/posts/christian-lechner-inthecloud_do-you-use-the-btp-cli-andor-terraform-activity-7435231498376482816-rjWW/  \n\n*DYK #8 Orchestration Client in SAP Cloud SDK for AI*\n\n- SAP Cloud SDK for AI – Chat Completion documentation https://sap.github.io/ai-sdk/docs/js/orchestration/chat-completion  \n\n\nCHAPTER TITLES  \n\n00:00 Intro \n00:07 ABAP Developer Challenge – halfway point! \n00:39 SAP Insider Las Vegas \n01:59 Introducing SAP Integration Suite, enhanced edition  \n03:10 CAP Feb 2026 release \n04:58 Feedback for the btp CLI and Terraform providers  \n05:56 DYK #8 Orchestration Client in SAP Cloud SDK for AI",
+      "Duration": "",
+      "Tags": null
+    },
+    "Community": null
+  },
+  {
+    "Episode": {
+      "ID": "3Uc8l3b5600",
+      "Title": "SAP Intelligence Event, HANA-CLI 4.0, BTP Automation Roundtable | SAP Developer News",
+      "URL": "https://www.youtube.com/watch?v=3Uc8l3b5600",
+      "Published": "2026-03-12T19:00:05Z",
+      "Description": "DESCRIPTION\n\n*SAP Intelligence Event*\n  • Event Details: https://sap.to/6052B6Ky4w\n  • SAP CodeJams: https://sap.to/6055B6Ky4d\n\n*HANA-CLI 4.0*\n  • NPM: https://sap.to/6056B6Ky4e\n  • GitHub Repo: https://sap.to/6057B6Ky45\n  • Documentation Site: https://sap.to/6058B6Ky4g\n  • Blog post: https://sap.to/6059B6Ky49\n\n*SAP BTP Platform Automation Roundtable #2*\n  • Customer \u0026 Partner Roundtable for SAP BTP Platform Automation #2 (March Edition) https://sap.to/6050B6Ky4i \n\n*SAP Fiori Development Newsletter*\n  • https://sap.to/6051B6Ky4c \n\n*SAP CodeJam at Bosch-Vietnam*\n  • SAP CodeJams: https://sap.to/6055B6Ky4d\n\n*SAP Developer Insights Survey *\n  • The 2026 SAP Developer Insights Survey is live: https://sap.to/6052B6Ky4Y\n  • 2025 Survey Report: https://sap.to/6053B6Ky4l\n\n*DYK #7 AI Launchpad Model Library*\n  • More Info: https://sap.to/6054B6Ky4m\n\n=========================================================\n\nCHAPTER TITLES \n00:00 Intro\n0:10 SAP Intelligence Event\n1:26 hana-cli 4.0\n2:48 SAP BTP Platform Automation Roundtable #2\n3:45 SAP Fiori Development Newsletter\n4:36 SAP CodeJam at Bosch-Vietnam\n5:50 SAP Developer Insights Survey  \n6:35 DYK #7 AI Launchpad Model Library",
+      "Duration": "",
+      "Tags": null
+    },
+    "Community": null
+  },
+  {
+    "Episode": {
+      "ID": "g6hDrE2ERyI",
+      "Title": "Brazil Roadshow, ABAP Cloud Learning Map, Odata Series, DYK Privileged Access | SAP Developer News",
+      "URL": "https://www.youtube.com/watch?v=g6hDrE2ERyI",
+      "Published": "2026-03-05T20:00:06Z",
+      "Description": "*Brazil CodeJam Roadshow Wk1*\n  • CodeJam Group: https://sap.to/6053hCJKh\n  • CodeJam Calendar: https://sap.to/6054hCJz6\n\n*ABAP Cloud Learning Map*\n  • Learning Map: https://sap.to/6055hCJzB\n\n*OData tutorial series rewrite in the open – your feedback wanted!*\n  • OData Deep Dive rewrite in the open (blog post, with tutorial content and feedback links) https://sap.to/6056hCJz8 \n\n*DYK #6 Privileged Access in ADT*\n  • Help Documentation: https://sap.to/6057hCJzD\n\n================================================\n\n*CHAPTER TITLES* \n00:00 Intro\n00:10 Brazil CodeJam Roadshow Wk1\n01:24 ABAP Cloud Learning Map\n02:13 OData tutorial series rewrite in the open – your feedback wanted!\n03:44 DYK # 6 Privileged Access in ADT",
+      "Duration": "",
+      "Tags": null
+    },
+    "Community": null
+  },
+  {
+    "Episode": {
+      "ID": "MI7CC4ji5z0",
+      "Title": "March Dev Challenge, RAG in SAP, BTP ABAP 2602, Integration Suite Updates | SAP Developer News",
+      "URL": "https://www.youtube.com/watch?v=MI7CC4ji5z0",
+      "Published": "2026-02-26T20:00:06Z",
+      "Description": "ITEMS\n\n*March Developer Challenge Announcement - ABAP*\n\n- Application Development and Automation Blog Posts on the SAP Community https://community.sap.com/t5/application-development-and-automation-blog-posts/bg-p/application-developmentblog-board \n- Learn about the SAP Joule for Developers, ABAP AI Capabilities https://help.sap.com/docs/abap-cloud/abap-development-tools-user-guide/joule-for-developers-abap-ai-capabilities-f14ebffef77b41bfb0746c33dcb70e84 \n\n*Implementing Retrieval-Augmented Generation (RAG) in an SAP Environment*\n\n- Implementing Retrieval-Augmented Generation (RAG) in an SAP Environment: https://community.sap.com/t5/enterprise-architecture-knowledge-base/implementing-retrieval-augmented-generation-rag-in-an-sap-environment/ta-p/14325588  \n- SAP CodeJam Topics: https://community.sap.com/t5/sap-codejam-blog-posts/sap-codejam-topics/ba-p/221407#codejam1  \n- SAP CodeJam Roadshow 2026 - Brazil edition: https://community.sap.com/t5/sap-codejam-blog-posts/sap-codejam-roadshow-2026-brazil-edition-kicking-off-in-march-and/ba-p/14317926  \n\n*SAP BTP ABAP Environment - Release 2602*\n\n- Blog post https://community.sap.com/t5/technology-blog-posts-by-sap/sap-btp-abap-environment-release-2602/ba-p/14329182 \n\n*Integration Suite updates*\n\n- What's new in SAP Cloud Integration https://help.sap.com/whats-new/cf0cb2cb149647329b5d02aa96303f56?locale=en-US\u0026lastSent=2026-02-16\u0026Component=SAP+Cloud+Application+Event+Hub;Integration%2BSuite%2BGeneral%2BFeatures;Event%2BMesh;Edge%2BIntegration%2BCell;Cloud%2BIntegration;API%2BManagement\u0026Valid_as_Of=2026-01-01:2026-03-31  \n\n*SAP Audit Log Viewer for Global Accounts and SAP Audit Log Viewer Now Automatically Enabled for All Subaccounts*\n\n- SAP Audit Log Viewer service for the Cloud Foundry Environment https://help.sap.com/docs/btp/sap-business-technology-platform/audit-log-viewer-for-cloud-foundry-environment  \n\n*DYK #5 - Search ABAP CDS Objects using Annotations*\n\n- ABAP Development Tools for Eclipse guide https://help.sap.com/docs/abap-cloud/abap-development-tools-user-guide/about-abap-development-tools-user-guide  \n\nCHAPTER TITLES  \n\n00:00 Intro \n00:07 March Developer Challenge Announcement-ABAP \n01:25 Implementing Retrieval-Augmented Generation (RAG) in an SAP Environment \n03:23 SAP BTP ABAP Environment - Release 2602 \n04:42 Integration Suite updates \n05:35 SAP Audit Log Viewer for Global Accounts and SAP Audit Log Viewer Now Automatically Enabled for All Subaccounts \n06:30 DYK #5 - Search ABAP CDS Objects using Annotations",
+      "Duration": "",
+      "Tags": null
+    },
+    "Community": null
+  },
+  {
+    "Episode": {
+      "ID": "-PQk6qfZLeQ",
+      "Title": "Developer Survey, RPT-1 Beta, CodeJams in ANZ, ABAP Roundtable, DYK 4 | SAP Developer News",
+      "URL": "https://www.youtube.com/watch?v=-PQk6qfZLeQ",
+      "Published": "2026-02-19T20:00:06Z",
+      "Description": "*SAP Developer Insights Survey*\n  • The 2026 SAP Developer Insights Survey is live now: https://sap.to/6057h5Lhl \n  • 2025 Survey Report: https://sap.to/6058h5Lhm\n\n*SAP RPT-1 Beta Available in the SAP Cloud SDK for AI*\n  • SAP RPT-1 (Beta): https://sap.to/6059h5LhW\n\n*SAP CodeJams in Australia and New Zealand*\n  • SAP CodeJam Group: https://sap.to/6050h5Lho\n\n*SAP BTP, ABAP Environment Customer and Partner Roundtable*\n  • Event Details: https://sap.to/6051h5LhU\n\n*Did You Know #4: Released Object in ABAP Development Tools*\n• More Details: https://sap.to/6052h5Lhq\n\n===========================================================\n\n*CHAPTER TITLES* \n0:00 Intro\n0:10 SAP Developer Insights Survey\n0:44 SAP RPT-1 Beta available in the SAP Cloud SDK for AI\n1:17 SAP CodeJams in Australia and New Zealand\n3:15 SAP BTP, ABAP Environment Customer and Partner Roundtable\n4:07 DYK 4 Released Object in ADT",
+      "Duration": "",
+      "Tags": null
+    },
+    "Community": null
+  },
+  {
+    "Episode": {
+      "ID": "jp6k7atZp6E",
+      "Title": "SAP Developer Insights Survey 2026 #sap #developers",
+      "URL": "https://www.youtube.com/shorts/jp6k7atZp6E",
+      "Published": "2026-02-16T21:57:44Z",
+      "Description": "The 2026 SAP Developer Insights Survey is live now: https://sapinsights.eu.qualtrics.com/jfe/form/SV_9prRAJk5ccYPMMe\n\n2025 Survey Report: https://community.sap.com/t5/technology-blog-posts-by-sap/the-2025-developer-insights-survey-the-report/ba-p/14323198\n\nCurious about how others in the SAP ecosystem are leveraging AI? There're many new questions on that topic .. and more. \n\nSurvey open through the next six weeks.",
+      "Duration": "",
+      "Tags": null
+    },
+    "Community": null
+  },
+  {
+    "Episode": {
+      "ID": "aU3Eu2SlvxE",
+      "Title": "ABAP AI Roadmap, CAP Jan 2026 Release, Brazil CodeJams, CAP Roundtable, DYK #3 | SAP Developer News",
+      "URL": "https://www.youtube.com/watch?v=aU3Eu2SlvxE",
+      "Published": "2026-02-12T20:00:06Z",
+      "Description": "*Your 2026 Roadmap to Getting Started with ABAP AI and ABAP-1*\n  • ABAP AI and ABAP-1 Roadmap https://community.sap.com/t5/technology-blog-posts-by-sap/your-2026-roadmap-to-getting-started-with-abap-ai-and-abap-1/ba-p/14312060\n\n*CAP January 2026 release*\n  • Release notes https://cap.cloud.sap/docs/releases/2026/jan26\n  • Blog post \"Modifying queries, replacing the WHERE clause\" https://qmacro.org/blog/posts/2026/02/04/modifying-queries-replacing-the-where-clause/ \n  • Hands-on SAP Dev mini-series on CXL in CAP https://qmacro.org/blog/posts/2025/12/09/a-new-hands-on-sap-dev-mini-series-on-the-core-expression-language-in-cds/ \n\n*Brazil CodeJam roadshow*\n  • SAP CodeJam Roadshow 2026 - Brazil edition 🇧🇷 - https://community.sap.com/t5/sap-codejam-blog-posts/sap-codejam-roadshow-2026-brazil-edition-kicking-off-in-march-and/ba-p/14317926 \n\n*CAP Customer Roundtable*\n  • Agenda and details https://community.sap.com/t5/technology-blog-posts-by-sap/sap-cloud-application-programming-model-cap-customer-roundtable-february/ba-p/14317448 \n\n*Did You Know? #3 – Debugging apps on CF*\n  • Debugging with cds debug https://cap.cloud.sap/docs/tools/cds-cli#cds-debug \n\n============================================================\n\nCHAPTER TITLES \n0:00 Intro\n0:10 ABAP AI and ABAP-1 Roadmap\n1:25 CAP January 2026 release\n5:48 Brazil CodeJam roadshow\n6:51 CAP Customer Roundtable 18 Feb\n7:29 Did You Know? #3 – Debugging apps on CF",
+      "Duration": "",
+      "Tags": null
+    },
+    "Community": null
+  },
+  {
+    "Episode": {
+      "ID": "HqlUHFtW0g4",
+      "Title": "Build Q4 2025, My Home ABAP, DYK Mocking Auth, Devtoberfest Winners | SAP Developer News",
+      "URL": "https://www.youtube.com/watch?v=HqlUHFtW0g4",
+      "Published": "2026-02-05T20:00:06Z",
+      "Description": "*SAP Build Q4 2025 Release Highlights*\n  • https://sap.to/6056hJYOG\n\n*My Home in SAP BTP ABAP Environment*\n  • https://sap.to/6058hJYOy \n\n*Did You Know? #2 – Mocking Auth in CAP*\n  • Authentication Strategies https://cap.cloud.sap/docs/node.js/authentication#strategies \n\n*Devtoberfest 2025 – Winners Announcement*\n  • https://sap.to/6050hJYOK\n\n*New live stream series and blog post series on CAP topics*\n  • Modules, modularity \u0026 reuse in CDS models (blog post series) https://sap.to/6051hJYOz \n  • Hands-on SAP Dev CXL live stream series playlist https://sap.to/6052hJYOM\n  • A new Hands-on SAP Dev mini-series on the core expression language in CDS (blog post) https://sap.to/6053hJYO3 \n  • Constraints, expressions and axioms in action (blog post) https://sap.to/6054hJYOO\n\n=================================================\n\n*CHAPTER TITLES*\n0:00 Intro\n0:10 SAP Build Q4 2025 Release Highlights\n1:36 My Home in SAP BTP ABAP Environment\n3:04 DYK #2 Mocking Auth in CAP\n4:10 Devtoberfest 2025 – Winners Announcement\n4:44 New live stream series and blog post series on CAP topics",
+      "Duration": "",
+      "Tags": null
+    },
+    "Community": null
+  },
+  {
+    "Episode": {
+      "ID": "5-mzMGS1gHo",
+      "Title": "CodeConnect, Joule Studio CodeJams, DYK #1, HANA ML Hackathon, Python Client | Developer News",
+      "URL": "https://www.youtube.com/watch?v=5-mzMGS1gHo",
+      "Published": "2026-01-29T20:00:06Z",
+      "Description": "*Code Connect 2026 Call For Papers / Proposals*\n  • Code Connect Website (find the CFP links via the individual conference links) https://sap.to/6058hDT7k \n\n*Joule Studio CodeJams*\n  • Request to host by posting here: https://sap.to/6052hDT7j\n  • Milan: https://sap.to/6053hDT7d\n  • Sydney: https://sap.to/6054hDT7e\n  • Paris: https://sap.to/6055hDT75\n  • Melbourne: https://sap.to/6056hDT7g\n  • Brisbane: https://sap.to/6057hDT79\n  • Amsterdam: https://sap.to/6058hDT7i\n  • Risch-Rotkreuz, Switzerland: https://sap.to/6059hDT7c\n  • All CodeJams: https://sap.to/6050hDT7Y\n\n*Did You Know #1 – The cds REPL*\n  • A reCAP intro to the cds REPL https://qmacro.org/blog/posts/2025/07/21/a-recap-intro-to-the-cds-repl/ \n\n*HANA ML and RPT-1 at AI Hackathon in Oslo*\n  • Defense Interest Group (DEIG): https://sap.to/6051hDT7l \n  • Getting Started with Data Science: https://sap.to/6052hDT7m\n  • AI Agent with LiteLLM, CrewAI and SAP-RPT-1: Here’s What Actually Worked: https://sap.to/6053hDT7W \n\n*Support for async in Python clients for SAP HANA*\n  • Use the SAP HANA Client Python driver with the Asynchronous I/O (asyncio) library: https://sap.to/6054hDT7o\n  • SQLAlchemy Dialect for SAP HANA 4.3.0: https://sap.to/6055hDT7U \n\n=======================================================\n\n*CHAPTER TITLES* \n0:00 Intro\n0:10 Code Connect 2026 Call For Papers / Proposals\n0:54 Joule Studio CodeJams \n2:19 DYK #1 CDS REPL\n3:22 HANA ML and RPT-1 at AI Hackathon in Oslo; async in Python clients for SAP HANA\n4:33 Edgar Martinez – Devtoberfest Winners’ Interview",
+      "Duration": "",
+      "Tags": null
+    },
+    "Community": null
+  },
+  {
+    "Episode": {
+      "ID": "WH52v01BYOo",
+      "Title": "UI5Con Bangalore, BTP Automation Roundtable, Event Mesh Monitoring, UI5 Roadmap | SAP Developer News",
+      "URL": "https://www.youtube.com/watch?v=WH52v01BYOo",
+      "Published": "2026-01-22T20:00:06Z",
+      "Description": "*UI5Con Bangalore*\n  - UI5con Bangalore: https://sap.to/6055CA7XJ \n\n*SAP BTP Platform Automation Roundtable #1* \n  - Blog post https://sap.to/6057CA7Xz  \n  - Registration https://sap.to/6058CA7XM \n\n*Event Mesh capability monitoring in SAP Cloud ALM*\n  - Monitoring Event Mesh from SAP Integration Suite with SAP Cloud ALM: https://sap.to/6059CA7X3  \n\n*SAPUI5 Roadmap Explorer*\n  - Link to the Roadmap: https://sap.to/6050CA7XO \n\n*Code Connect 2026* \n  - Code Connect website https://sap.to/6051CA7XP  \n\n*Devtoberfest Winners Interview - Gert Mertens* \n\n=============================================\n\n*CHAPTER TITLES*  \n\n0:00 Intro \n0:10 UI5con Bangalore \n0:45 SAP BTP Platform Automation Roundtable #1\n1:28 Event Mesh capability monitoring in SAP Cloud ALM \n2:19 SAPUI5 Roadmap Explorer \n3:23 Code Connect 2026 \n4:48 Devtoberfest Winners Interview - Gert Mertens",
+      "Duration": "",
+      "Tags": null
+    },
+    "Community": null
+  }
+]
