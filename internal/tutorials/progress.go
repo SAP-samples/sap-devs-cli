@@ -2,8 +2,10 @@ package tutorials
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"time"
 )
 
@@ -93,4 +95,62 @@ func UpdateProgress(dataDir, slug string, currentStep, totalSteps int, markDone 
 
 	all[slug] = p
 	return SaveProgress(dataDir, all)
+}
+
+// MergeCompletedSteps merges a batch of completed step indices into the stored progress for a tutorial.
+// Steps are deduplicated and sorted. currentStep is set explicitly if > 0, otherwise inferred from
+// the last completed step. If all steps are completed, CompletedAt is stamped.
+func MergeCompletedSteps(dataDir, slug string, completedSteps []int, currentStep, totalSteps int) (*TutorialProgress, error) {
+	for _, s := range completedSteps {
+		if s < 1 || s > totalSteps {
+			return nil, fmt.Errorf("step %d out of range 1..%d", s, totalSteps)
+		}
+	}
+
+	all, err := LoadProgress(dataDir)
+	if err != nil {
+		return nil, err
+	}
+
+	now := time.Now()
+	p, exists := all[slug]
+	if !exists {
+		p = TutorialProgress{
+			Slug:       slug,
+			TotalSteps: totalSteps,
+			StartedAt:  now,
+		}
+	}
+
+	existing := make(map[int]bool, len(p.CompletedSteps))
+	for _, s := range p.CompletedSteps {
+		existing[s] = true
+	}
+	for _, s := range completedSteps {
+		if !existing[s] {
+			p.CompletedSteps = append(p.CompletedSteps, s)
+			existing[s] = true
+		}
+	}
+
+	sort.Ints(p.CompletedSteps)
+
+	if currentStep > 0 {
+		p.CurrentStep = currentStep
+	} else if len(p.CompletedSteps) > 0 {
+		p.CurrentStep = p.CompletedSteps[len(p.CompletedSteps)-1] + 1
+	}
+
+	p.TotalSteps = totalSteps
+	p.LastAccessed = now
+
+	if len(p.CompletedSteps) >= totalSteps && p.CompletedAt == nil {
+		p.CompletedAt = &now
+	}
+
+	all[slug] = p
+	if err := SaveProgress(dataDir, all); err != nil {
+		return nil, err
+	}
+	return &p, nil
 }
