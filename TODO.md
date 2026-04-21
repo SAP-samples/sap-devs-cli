@@ -305,6 +305,74 @@ Implemented: `<!-- verbosity:core/detail/extended -->` markers in context.md, `V
 
 ---
 
+### MCP wrappers for BTP CLI and CF CLI
+
+Expose the `btp` and `cf` command-line tools as MCP tool surfaces, so AI agents can interact with them conversationally instead of the user having to context-switch to a terminal.
+
+**Why:** Developers already use `btp` and `cf` heavily for subaccount management, service binding, app deployment, and space configuration. Wrapping these CLIs as MCP tools lets an agent run `cf apps`, `btp list accounts/subaccount`, `cf logs`, etc. on the user's behalf — with the agent interpreting the output and suggesting next steps. This turns the MCP server from a *knowledge* source into an *action* surface.
+
+**Scope:**
+
+- Detect whether `btp` and/or `cf` are installed (reuse `doctor` detection logic)
+- Expose a curated set of read-only tools first (list, status, logs) — write operations (push, bind, create) gated behind explicit confirmation
+- Pass through the user's existing CLI authentication (no separate OAuth flow)
+- Map common multi-step workflows into higher-level tools (e.g., "deploy this CAP app" = `cf push` + `cf bind-service` + `cf start`)
+
+**Open questions:**
+
+- Which commands are safe to expose without confirmation vs. which need explicit user approval?
+- Should the MCP tools wrap raw CLI output or parse it into structured JSON for the agent?
+- How to handle long-running commands (e.g., `cf push`) — streaming output vs. polling?
+
+---
+
+### Expose `doctor` via MCP with install/fix capabilities
+
+Make the `sap-devs doctor` health check available as an MCP tool so AI agents can proactively check the user's environment and offer to install missing tools.
+
+**Why:** When an agent encounters a "command not found" or version mismatch mid-task, it currently has no structured way to diagnose and fix the environment. An MCP-exposed `doctor` tool lets the agent run a health check, identify what's missing (e.g., `btp` CLI not installed, `cf` CLI outdated), and offer install commands — turning environment setup from a manual detour into an agent-guided flow.
+
+**Scope:**
+
+- Expose `doctor --tools-only` and `doctor --project-only` as separate MCP tools
+- Return structured JSON (not table text) so the agent can reason about findings
+- Include `--fix` hints in the tool output so the agent can suggest or execute install commands
+- Priority: tool installation (btp, cf, cds, mbt) > version checks > project health
+
+**Dependency:** Existing `internal/project` detection and `cmd/doctor.go` health check infrastructure.
+
+---
+
+### MCP-to-MCP interactions with SAP ecosystem servers
+
+Investigate whether the `sap-devs` MCP server can discover and interact with other SAP-ecosystem MCP servers — specifically the CAP CDS, UI5, Fiori, and hana-cli MCP servers — enabling cross-tool orchestration.
+
+**Why:** The SAP developer toolchain is fragmented across multiple MCP servers: `cds-mcp` for CAP/CDS models, `ui5-mcp-server` for UI5 apps, and potentially `hana-cli` for HANA database operations. Today these are isolated silos — each agent session picks one. If `sap-devs` could act as an orchestrator (or at least a discovery layer), it could route queries to the right specialist MCP server and compose cross-cutting operations (e.g., "scaffold a CAP service with a Fiori UI" touching both CDS and UI5 servers).
+
+**Research needed:**
+
+- Does the MCP spec support server-to-server communication, or is it strictly client→server? (Current spec is client-initiated; may need an MCP client embedded in the `sap-devs` server)
+- Can an MCP server advertise "I know about these other servers" and let the agent decide routing?
+- Practical pattern: `sap-devs mcp serve` detects co-installed MCP servers (from `.mcp.json`, tool config) and exposes a `list-sap-servers` tool + proxy tools
+- Alternatively: a "meta-tool" that accepts a target server name and forwards the call, avoiding N×M tool explosion
+
+**Known SAP MCP servers:**
+
+| Server | Package/Repo | Covers |
+| --- | --- | --- |
+| `cds-mcp` | `@sap/cds-mcp` (built into `@sap/cds-dk`) | CDS models, service definitions, CQL queries |
+| `ui5-mcp-server` | `@nicobrinkkemper/ui5-mcp-server` | UI5 app scaffolding, API reference, linting |
+| `hana-cli` | `hana-cli` npm package | HANA database operations, SQL, HDI containers |
+| `fiori-tools` | (potential future) | Fiori elements, annotations, deployment |
+
+**Open questions:**
+
+- Is "MCP talking to MCP" the right pattern, or should `sap-devs` simply recommend tool configurations to the agent?
+- Latency and error propagation: if a proxied call fails, how does `sap-devs` report it?
+- Security: should `sap-devs` ever proxy write operations to another MCP server?
+
+---
+
 ## New Adapters
 
 ### ~~Zed editor adapter~~ — Covered by existing Claude Code adapter

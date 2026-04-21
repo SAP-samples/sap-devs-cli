@@ -18,7 +18,7 @@ import (
 const (
 	newsPlaylistRSS  = "https://www.youtube.com/feeds/videos.xml?playlist_id=PL6RpkC85SLQAVBSQXN9522_1jNvPavBgg"
 	newsPlaylistID   = "PL6RpkC85SLQAVBSQXN9522_1jNvPavBgg"
-	newsCommunityRSS = "https://community.sap.com/t5/developer-news/bg-p/developer-news/rss"
+	newsCommunityRSS = "https://community.sap.com/khhcw49343/rss/board?board.id=developer-news"
 	newsTTL          = 10 * time.Minute
 )
 

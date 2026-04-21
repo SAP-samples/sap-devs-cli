@@ -27,7 +27,7 @@ const (
 	newsPlaylistRSS  = "https://www.youtube.com/feeds/videos.xml?playlist_id=PL6RpkC85SLQAVBSQXN9522_1jNvPavBgg"
 	newsPlaylistID   = "PL6RpkC85SLQAVBSQXN9522_1jNvPavBgg"
 	newsPlaylistURL  = "https://www.youtube.com/playlist?list=PL6RpkC85SLQAVBSQXN9522_1jNvPavBgg"
-	newsCommunityRSS = "https://community.sap.com/t5/developer-news/bg-p/developer-news/rss"
+	newsCommunityRSS = "https://community.sap.com/khhcw49343/rss/board?board.id=developer-news"
 	newsLinkedIn     = "https://www.linkedin.com/newsletters/sap-developer-news-7155319074263044096/"
 	newsYTMusic      = "" // footer line is suppressed when empty
 )

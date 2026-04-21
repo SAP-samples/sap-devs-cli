@@ -345,13 +345,13 @@ All `/platformx/` function imports are called via OData `$batch`:
 
 | Field | Value |
 |-------|-------|
-| **URL** | `https://community.sap.com/t5/developer-news/bg-p/developer-news/rss` |
+| **URL** | `https://community.sap.com/khhcw49343/rss/board?board.id=developer-news` |
 | **Method** | `GET` |
 | **Response format** | XML (RSS 2.0) |
 | **Parsing** | `xml.Unmarshal` into `rssFeed` struct |
 | **Max body** | 1 MiB |
 | **Headers** | `User-Agent: Mozilla/5.0 (compatible; sap-devs/1.0)` |
-| **Fragility** | **Medium** — standard RSS but URL/board path could change if SAP Community migrates |
+| **Fragility** | **Medium** — Khoros API path; the previous vanity URL (`/t5/.../rss`) broke when SAP Community changed frontend routing |
 
 ### 12b. Blog Post Content Fetch (HTML Scraping)
 

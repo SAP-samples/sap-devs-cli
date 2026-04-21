@@ -41,7 +41,10 @@ func ParsePosts(data []byte) ([]BlogPost, error) {
 	}
 	posts := make([]BlogPost, 0, len(feed.Channel.Items))
 	for _, item := range feed.Channel.Items {
-		pub, _ := time.Parse(time.RFC1123Z, item.PubDate)
+		pub, _ := time.Parse(time.RFC1123, item.PubDate)
+		if pub.IsZero() {
+			pub, _ = time.Parse(time.RFC1123Z, item.PubDate)
+		}
 		posts = append(posts, BlogPost{
 			Title:     item.Title,
 			URL:       item.Link,
@@ -60,7 +63,7 @@ func ExtractMarkdown(data []byte) (string, error) {
 	return strings.TrimSpace(md), nil
 }
 
-const userAgent = "Mozilla/5.0 (compatible; sap-devs/1.0)"
+const userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"
 
 // FetchBlogPosts fetches the SAP Community RSS feed and returns blog posts.
 func FetchBlogPosts(rssURL string) ([]BlogPost, error) {
