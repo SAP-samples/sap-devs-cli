@@ -21,9 +21,10 @@ type ProjectContext struct {
 	Auth          string
 	HasCDSRC      bool
 	HasDefaultEnv bool
-	BTPSubaccount string
-	BTPRegion     string
-	BTPIsTrial    bool
+	BTPGlobalAccount string
+	BTPSubaccount    string
+	BTPRegion        string
+	BTPIsTrial       bool
 	CFOrg         string
 	CFSpace       string
 	CFRegion      string
@@ -143,7 +144,7 @@ func detectDefaultEnv(cwd string, ctx *ProjectContext) {
 
 // HasBTPContext reports whether any BTP or Cloud Foundry target is detected.
 func (ctx *ProjectContext) HasBTPContext() bool {
-	return ctx.BTPSubaccount != "" || ctx.CFOrg != ""
+	return ctx.BTPSubaccount != "" || ctx.BTPGlobalAccount != "" || ctx.CFOrg != ""
 }
 
 // RebuildFacts re-derives the Facts slice from the current typed fields.
@@ -193,6 +194,9 @@ func buildFacts(ctx *ProjectContext) {
 	}
 	if ctx.Auth != "" {
 		ctx.Facts = append(ctx.Facts, Fact{Key: "Auth", Value: "XSUAA (xs-security.json detected)"})
+	}
+	if ctx.BTPGlobalAccount != "" && ctx.BTPSubaccount == "" {
+		ctx.Facts = append(ctx.Facts, Fact{Key: "BTP global account", Value: ctx.BTPGlobalAccount})
 	}
 	if ctx.BTPSubaccount != "" {
 		val := ctx.BTPSubaccount
@@ -298,12 +302,32 @@ func readCFConfig() *cfConfig {
 	return &cfg
 }
 
+type btpConfigEntry struct {
+	Type      string `json:"Type"`
+	Subdomain string `json:"Subdomain"`
+}
+
 type btpConfig struct {
-	TargetHierarchy struct {
-		GlobalAccountSubdomain string `json:"GlobalAccountSubdomain"`
-		SubaccountSubdomain    string `json:"SubaccountSubdomain"`
-	} `json:"TargetHierarchy"`
-	CLIServerURL string `json:"CLIServerURL"`
+	TargetHierarchy []btpConfigEntry `json:"TargetHierarchy"`
+	ServerURL       string           `json:"ServerURL"`
+}
+
+func (c *btpConfig) globalAccount() string {
+	for _, e := range c.TargetHierarchy {
+		if e.Type == "globalaccount" {
+			return e.Subdomain
+		}
+	}
+	return ""
+}
+
+func (c *btpConfig) subaccount() string {
+	for _, e := range c.TargetHierarchy {
+		if e.Type == "subaccount" {
+			return e.Subdomain
+		}
+	}
+	return ""
 }
 
 func extractBTPRegion(subdomain string) string {
@@ -320,13 +344,16 @@ func detectBTP(ctx *ProjectContext) {
 		btpCLIFallback(ctx)
 		return
 	}
-	ctx.BTPSubaccount = cfg.TargetHierarchy.SubaccountSubdomain
-	if ctx.BTPSubaccount == "" {
+	ctx.BTPSubaccount = cfg.subaccount()
+	ctx.BTPGlobalAccount = cfg.globalAccount()
+	if ctx.BTPSubaccount == "" && ctx.BTPGlobalAccount == "" {
 		btpCLIFallback(ctx)
 		return
 	}
-	ctx.BTPRegion = extractBTPRegion(ctx.BTPSubaccount)
-	ctx.BTPIsTrial = strings.Contains(strings.ToLower(ctx.BTPSubaccount), "trial")
+	if ctx.BTPSubaccount != "" {
+		ctx.BTPRegion = extractBTPRegion(ctx.BTPSubaccount)
+		ctx.BTPIsTrial = strings.Contains(strings.ToLower(ctx.BTPSubaccount), "trial")
+	}
 }
 
 func btpCLIFallback(ctx *ProjectContext) {

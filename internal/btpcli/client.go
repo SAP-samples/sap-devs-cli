@@ -24,12 +24,32 @@ func NewClient(run Runner, configPath string) *Client {
 	}
 }
 
+type btpConfigEntry struct {
+	Type      string `json:"Type"`
+	Subdomain string `json:"Subdomain"`
+}
+
 type btpConfig struct {
-	TargetHierarchy struct {
-		GlobalAccountSubdomain string `json:"GlobalAccountSubdomain"`
-		SubaccountSubdomain    string `json:"SubaccountSubdomain"`
-	} `json:"TargetHierarchy"`
-	CLIServerURL string `json:"CLIServerURL"`
+	TargetHierarchy []btpConfigEntry `json:"TargetHierarchy"`
+	ServerURL       string           `json:"ServerURL"`
+}
+
+func (c *btpConfig) globalAccount() string {
+	for _, e := range c.TargetHierarchy {
+		if e.Type == "globalaccount" {
+			return e.Subdomain
+		}
+	}
+	return ""
+}
+
+func (c *btpConfig) subaccount() string {
+	for _, e := range c.TargetHierarchy {
+		if e.Type == "subaccount" {
+			return e.Subdomain
+		}
+	}
+	return ""
 }
 
 func (c *Client) readConfig() *btpConfig {

@@ -249,11 +249,11 @@ func TestExtractCFRegion(t *testing.T) {
 func TestDetectBTP_ParsesConfigJSON(t *testing.T) {
 	dir := t.TempDir()
 	writeFile(t, dir, "config.json", `{
-		"TargetHierarchy": {
-			"GlobalAccountSubdomain": "ga-sub",
-			"SubaccountSubdomain": "my-subaccount"
-		},
-		"CLIServerURL": "https://cli.btp.cloud.sap"
+		"TargetHierarchy": [
+			{"Type": "globalaccount", "Subdomain": "ga-sub"},
+			{"Type": "subaccount", "Subdomain": "my-subaccount"}
+		],
+		"ServerURL": "https://cli.btp.cloud.sap"
 	}`)
 
 	ctx := &ProjectContext{RawFiles: make(map[string]bool)}
@@ -271,9 +271,9 @@ func TestDetectBTP_ParsesConfigJSON(t *testing.T) {
 func TestDetectBTP_DetectsTrialFromSubdomain(t *testing.T) {
 	dir := t.TempDir()
 	writeFile(t, dir, "config.json", `{
-		"TargetHierarchy": {
-			"SubaccountSubdomain": "eu10-trial-abc123"
-		}
+		"TargetHierarchy": [
+			{"Type": "subaccount", "Subdomain": "eu10-trial-abc123"}
+		]
 	}`)
 
 	ctx := &ProjectContext{RawFiles: make(map[string]bool)}
@@ -288,9 +288,9 @@ func TestDetectBTP_DetectsTrialFromSubdomain(t *testing.T) {
 func TestDetectBTP_ExtractsRegionFromSubdomain(t *testing.T) {
 	dir := t.TempDir()
 	writeFile(t, dir, "config.json", `{
-		"TargetHierarchy": {
-			"SubaccountSubdomain": "eu10-trial-abc123"
-		}
+		"TargetHierarchy": [
+			{"Type": "subaccount", "Subdomain": "eu10-trial-abc123"}
+		]
 	}`)
 
 	ctx := &ProjectContext{RawFiles: make(map[string]bool)}

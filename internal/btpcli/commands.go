@@ -20,19 +20,22 @@ type TargetInfo struct {
 
 func (c *Client) Target(ctx context.Context) (TargetInfo, error) {
 	cfg := c.readConfig()
-	if cfg != nil && cfg.TargetHierarchy.SubaccountSubdomain != "" {
-		subdomain := cfg.TargetHierarchy.SubaccountSubdomain
-		region := ""
-		if m := reBTPRegion.FindStringSubmatch(subdomain); len(m) >= 2 {
-			region = m[1]
+	if cfg != nil {
+		ga := cfg.globalAccount()
+		sub := cfg.subaccount()
+		if ga != "" || sub != "" {
+			region := ""
+			if m := reBTPRegion.FindStringSubmatch(sub); len(m) >= 2 {
+				region = m[1]
+			}
+			return TargetInfo{
+				Subaccount:    sub,
+				GlobalAccount: ga,
+				Region:        region,
+				Trial:         strings.Contains(strings.ToLower(sub), "trial"),
+				LoggedIn:      true,
+			}, nil
 		}
-		return TargetInfo{
-			Subaccount:    subdomain,
-			GlobalAccount: cfg.TargetHierarchy.GlobalAccountSubdomain,
-			Region:        region,
-			Trial:         strings.Contains(strings.ToLower(subdomain), "trial"),
-			LoggedIn:      true,
-		}, nil
 	}
 
 	childCtx, cancel := context.WithTimeout(ctx, c.timeout)
