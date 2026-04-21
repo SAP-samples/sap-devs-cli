@@ -227,19 +227,118 @@ func updateTutorialProgressHandler(deps Deps) server.ToolHandlerFunc {
 	}
 }
 
-// Stub handlers — implemented in next commit
+type tutorialProgressResult struct {
+	Slug     string           `json:"slug"`
+	Title    string           `json:"title"`
+	Progress progressSnapshot `json:"progress"`
+}
 
 func getTutorialProgressHandler(deps Deps) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		return mcp.NewToolResultError("not implemented yet"), nil
+		slug := req.GetString("slug", "")
+
+		if slug != "" {
+			p, err := tutorials.GetProgress(deps.DataDir, slug)
+			if err != nil {
+				return mcp.NewToolResultError(fmt.Sprintf("Failed to load progress: %v", err)), nil
+			}
+			if p == nil {
+				return mcp.NewToolResultError(fmt.Sprintf("No progress found for tutorial %q.", slug)), nil
+			}
+			title := slug
+			if m := tutorials.FindBySlug(deps.TutorialIndex, slug); m != nil {
+				title = m.Title
+			}
+			result := tutorialProgressResult{
+				Slug:  slug,
+				Title: title,
+				Progress: progressSnapshot{
+					CompletedSteps: p.CompletedSteps,
+					CurrentStep:    p.CurrentStep,
+					TotalSteps:     p.TotalSteps,
+					StartedAt:      p.StartedAt.Format("2006-01-02T15:04:05Z"),
+					LastAccessed:   p.LastAccessed.Format("2006-01-02T15:04:05Z"),
+				},
+			}
+			b, _ := json.Marshal(result)
+			return mcp.NewToolResultText(string(b)), nil
+		}
+
+		all, err := tutorials.LoadProgress(deps.DataDir)
+		if err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("Failed to load progress: %v", err)), nil
+		}
+
+		var items []tutorialProgressResult
+		for slug, p := range all {
+			title := slug
+			if m := tutorials.FindBySlug(deps.TutorialIndex, slug); m != nil {
+				title = m.Title
+			}
+			items = append(items, tutorialProgressResult{
+				Slug:  slug,
+				Title: title,
+				Progress: progressSnapshot{
+					CompletedSteps: p.CompletedSteps,
+					CurrentStep:    p.CurrentStep,
+					TotalSteps:     p.TotalSteps,
+					StartedAt:      p.StartedAt.Format("2006-01-02T15:04:05Z"),
+					LastAccessed:   p.LastAccessed.Format("2006-01-02T15:04:05Z"),
+				},
+			})
+		}
+
+		sort.Slice(items, func(i, j int) bool {
+			return items[i].Progress.LastAccessed > items[j].Progress.LastAccessed
+		})
+
+		return wrapResults(items, len(items), len(items), "tutorial progress entries", ""), nil
 	}
+}
+
+type activeTutorialResult struct {
+	Slug           string `json:"slug"`
+	Title          string `json:"title"`
+	CompletedSteps []int  `json:"completed_steps"`
+	TotalSteps     int    `json:"total_steps"`
+	LastAccessed   string `json:"last_accessed"`
 }
 
 func listActiveTutorialsHandler(deps Deps) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		return mcp.NewToolResultError("not implemented yet"), nil
+		limit := clampLimit(req.GetInt("limit", 10), 10, 50)
+
+		all, err := tutorials.LoadProgress(deps.DataDir)
+		if err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("Failed to load progress: %v", err)), nil
+		}
+
+		var items []activeTutorialResult
+		for slug, p := range all {
+			if p.CompletedAt != nil {
+				continue
+			}
+			title := slug
+			if m := tutorials.FindBySlug(deps.TutorialIndex, slug); m != nil {
+				title = m.Title
+			}
+			items = append(items, activeTutorialResult{
+				Slug:           slug,
+				Title:          title,
+				CompletedSteps: p.CompletedSteps,
+				TotalSteps:     p.TotalSteps,
+				LastAccessed:   p.LastAccessed.Format("2006-01-02T15:04:05Z"),
+			})
+		}
+
+		sort.Slice(items, func(i, j int) bool {
+			return items[i].LastAccessed > items[j].LastAccessed
+		})
+
+		total := len(items)
+		if limit < total {
+			items = items[:limit]
+		}
+		return wrapResults(items, total, len(items), "active tutorials", ""), nil
 	}
 }
-
-// sort is used in the next commit; keep import alive
-var _ = sort.Slice

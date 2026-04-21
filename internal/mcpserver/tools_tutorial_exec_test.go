@@ -159,3 +159,75 @@ func TestUpdateTutorialProgress_OutOfRange(t *testing.T) {
 	require.NoError(t, err)
 	assert.True(t, result.IsError)
 }
+
+func TestGetTutorialProgress_Single(t *testing.T) {
+	deps := tutorialExecDeps(t)
+
+	require.NoError(t, tutorials.UpdateProgress(deps.DataDir, "cap-getting-started", 2, 2, true))
+
+	handler := getTutorialProgressHandler(deps)
+	req := mcp.CallToolRequest{}
+	req.Params.Arguments = map[string]any{"slug": "cap-getting-started"}
+	result, err := handler(context.Background(), req)
+	require.NoError(t, err)
+
+	var resp map[string]any
+	require.NoError(t, json.Unmarshal([]byte(result.Content[0].(mcp.TextContent).Text), &resp))
+	assert.Equal(t, "cap-getting-started", resp["slug"])
+}
+
+func TestGetTutorialProgress_All(t *testing.T) {
+	deps := tutorialExecDeps(t)
+
+	require.NoError(t, tutorials.UpdateProgress(deps.DataDir, "cap-getting-started", 1, 2, false))
+	require.NoError(t, tutorials.UpdateProgress(deps.DataDir, "other-tut", 1, 3, false))
+
+	handler := getTutorialProgressHandler(deps)
+	req := mcp.CallToolRequest{}
+	req.Params.Arguments = map[string]any{}
+	result, err := handler(context.Background(), req)
+	require.NoError(t, err)
+
+	env := unmarshalEnvelope(t, result)
+	assert.Equal(t, 2, env.Count)
+}
+
+func TestGetTutorialProgress_None(t *testing.T) {
+	deps := tutorialExecDeps(t)
+	handler := getTutorialProgressHandler(deps)
+	req := mcp.CallToolRequest{}
+	req.Params.Arguments = map[string]any{"slug": "nonexistent"}
+	result, err := handler(context.Background(), req)
+	require.NoError(t, err)
+	assert.True(t, result.IsError)
+}
+
+func TestListActiveTutorials_FiltersCompleted(t *testing.T) {
+	deps := tutorialExecDeps(t)
+
+	require.NoError(t, tutorials.UpdateProgress(deps.DataDir, "cap-getting-started", 1, 2, false))
+	require.NoError(t, tutorials.UpdateProgress(deps.DataDir, "done-tut", 1, 1, true))
+
+	handler := listActiveTutorialsHandler(deps)
+	req := mcp.CallToolRequest{}
+	req.Params.Arguments = map[string]any{}
+	result, err := handler(context.Background(), req)
+	require.NoError(t, err)
+
+	env := unmarshalEnvelope(t, result)
+	assert.Equal(t, 1, env.Count)
+	items := env.resultSlice(t)
+	assert.Equal(t, "cap-getting-started", items[0]["slug"])
+}
+
+func TestListActiveTutorials_Empty(t *testing.T) {
+	deps := tutorialExecDeps(t)
+	handler := listActiveTutorialsHandler(deps)
+	req := mcp.CallToolRequest{}
+	req.Params.Arguments = map[string]any{}
+	result, err := handler(context.Background(), req)
+	require.NoError(t, err)
+
+	env := unmarshalEnvelope(t, result)
+	assert.Equal(t, 0, env.Count)
+}
