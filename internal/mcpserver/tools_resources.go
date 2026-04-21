@@ -2,7 +2,6 @@ package mcpserver
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	"github.com/mark3labs/mcp-go/mcp"
@@ -13,13 +12,16 @@ import (
 func registerResourceTools(s *server.MCPServer, deps Deps) {
 	s.AddTool(
 		mcp.NewTool("search_resources",
-			mcp.WithDescription("Search curated SAP resources by keyword. Returns matching resources with URLs."),
+			mcp.WithDescription("Search curated SAP resources (documentation, guides, blog posts, tools) by keyword. Returns matching resources with direct URLs. Use this to find official SAP documentation links."),
 			mcp.WithString("query",
 				mcp.Required(),
-				mcp.Description("Search query (matches against title, type, tags)"),
+				mcp.Description("Search query — matches against title, type, and tags. Examples: 'REST API', 'authentication', 'HANA migration', 'Fiori elements'."),
 			),
 			mcp.WithString("pack",
-				mcp.Description("Filter to resources from a specific pack ID"),
+				mcp.Description("Filter to resources from a specific pack ID. Use list_packs to see available IDs."),
+			),
+			mcp.WithNumber("limit",
+				mcp.Description("Maximum number of results to return (default 10, max 50)"),
 			),
 		),
 		searchResourcesHandler(deps),
@@ -41,6 +43,7 @@ func searchResourcesHandler(deps Deps) server.ToolHandlerFunc {
 			return mcp.NewToolResultError("query parameter is required"), nil
 		}
 		packID := req.GetString("pack", "")
+		limit := clampLimit(req.GetInt("limit", 10), 10, 50)
 
 		var resources []content.Resource
 		if packID != "" {
@@ -59,6 +62,10 @@ func searchResourcesHandler(deps Deps) server.ToolHandlerFunc {
 			resources = content.FlattenResources(deps.Packs)
 		}
 		resources = content.FilterResources(resources, query)
+		total := len(resources)
+		if limit < total {
+			resources = resources[:limit]
+		}
 
 		out := make([]resourceResult, 0, len(resources))
 		for _, r := range resources {
@@ -70,7 +77,6 @@ func searchResourcesHandler(deps Deps) server.ToolHandlerFunc {
 				Tags:  r.Tags,
 			})
 		}
-		b, _ := json.Marshal(out)
-		return mcp.NewToolResultText(string(b)), nil
+		return wrapResults(out, total, len(out), "resources", query), nil
 	}
 }

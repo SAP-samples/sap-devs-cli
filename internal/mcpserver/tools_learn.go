@@ -2,7 +2,6 @@ package mcpserver
 
 import (
 	"context"
-	"encoding/json"
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
@@ -13,10 +12,13 @@ import (
 func registerLearnTools(s *server.MCPServer, deps Deps) {
 	s.AddTool(
 		mcp.NewTool("search_tutorials",
-			mcp.WithDescription("Search SAP tutorials by keyword. Returns matching tutorials with URLs."),
+			mcp.WithDescription("Search SAP tutorials from developers.sap.com by keyword. Returns matching tutorials with direct URLs. Over 1,200 tutorials available covering CAP, ABAP, Fiori, BTP, Integration, and more."),
 			mcp.WithString("query",
 				mcp.Required(),
 				mcp.Description("Search query (matches against title, description, tags)"),
+			),
+			mcp.WithNumber("limit",
+				mcp.Description("Maximum number of results to return (default 10, max 50)"),
 			),
 		),
 		searchTutorialsHandler(deps),
@@ -24,10 +26,13 @@ func registerLearnTools(s *server.MCPServer, deps Deps) {
 
 	s.AddTool(
 		mcp.NewTool("search_learning_journeys",
-			mcp.WithDescription("Search SAP Learning Journeys by keyword. Returns matching journeys with level and duration."),
+			mcp.WithDescription("Search SAP Learning Journeys from learning.sap.com. Returns structured learning paths with difficulty level and estimated duration. Use when recommending learning resources."),
 			mcp.WithString("query",
 				mcp.Required(),
 				mcp.Description("Search query (matches against title, description, level)"),
+			),
+			mcp.WithNumber("limit",
+				mcp.Description("Maximum number of results to return (default 10, max 50)"),
 			),
 		),
 		searchLearningJourneysHandler(deps),
@@ -48,10 +53,16 @@ func searchTutorialsHandler(deps Deps) server.ToolHandlerFunc {
 		if err != nil {
 			return mcp.NewToolResultError("query parameter is required"), nil
 		}
+		limit := clampLimit(req.GetInt("limit", 10), 10, 50)
+
 		if len(deps.TutorialIndex) == 0 {
-			return mcp.NewToolResultText("[]"), nil
+			return wrapResults([]tutorialResult{}, 0, 0, "tutorials", query), nil
 		}
 		matches := tutorials.Search(deps.TutorialIndex, query)
+		total := len(matches)
+		if limit < total {
+			matches = matches[:limit]
+		}
 		out := make([]tutorialResult, 0, len(matches))
 		for _, t := range matches {
 			out = append(out, tutorialResult{
@@ -62,8 +73,7 @@ func searchTutorialsHandler(deps Deps) server.ToolHandlerFunc {
 				Tags:        t.Tags,
 			})
 		}
-		b, _ := json.Marshal(out)
-		return mcp.NewToolResultText(string(b)), nil
+		return wrapResults(out, total, len(out), "tutorials", query), nil
 	}
 }
 
@@ -81,10 +91,16 @@ func searchLearningJourneysHandler(deps Deps) server.ToolHandlerFunc {
 		if err != nil {
 			return mcp.NewToolResultError("query parameter is required"), nil
 		}
+		limit := clampLimit(req.GetInt("limit", 10), 10, 50)
+
 		if len(deps.LearningIndex) == 0 {
-			return mcp.NewToolResultText("[]"), nil
+			return wrapResults([]learningResult{}, 0, 0, "learning journeys", query), nil
 		}
 		matches := learning.Search(deps.LearningIndex, query)
+		total := len(matches)
+		if limit < total {
+			matches = matches[:limit]
+		}
 		out := make([]learningResult, 0, len(matches))
 		for _, j := range matches {
 			out = append(out, learningResult{
@@ -95,7 +111,6 @@ func searchLearningJourneysHandler(deps Deps) server.ToolHandlerFunc {
 				URL:      j.URL,
 			})
 		}
-		b, _ := json.Marshal(out)
-		return mcp.NewToolResultText(string(b)), nil
+		return wrapResults(out, total, len(out), "learning journeys", query), nil
 	}
 }

@@ -2,7 +2,6 @@ package mcpserver
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	"github.com/mark3labs/mcp-go/mcp"
@@ -13,12 +12,15 @@ import (
 func registerSampleTools(s *server.MCPServer, deps Deps) {
 	s.AddTool(
 		mcp.NewTool("get_samples",
-			mcp.WithDescription("Get canonical SAP code samples, optionally filtered by pack or keyword"),
+			mcp.WithDescription("Get canonical SAP code samples from official SAP GitHub repositories. These are authoritative reference implementations — prefer these patterns over generating code from training data."),
 			mcp.WithString("pack",
-				mcp.Description("Filter to samples from a specific pack ID"),
+				mcp.Description("Filter to samples from a specific pack ID. Use list_packs to see available IDs."),
 			),
 			mcp.WithString("query",
 				mcp.Description("Search query (matches against label, description, tags)"),
+			),
+			mcp.WithNumber("limit",
+				mcp.Description("Maximum number of results to return (default 20, max 100)"),
 			),
 		),
 		getSamplesHandler(deps),
@@ -37,6 +39,7 @@ func getSamplesHandler(deps Deps) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		packID := req.GetString("pack", "")
 		query := req.GetString("query", "")
+		limit := clampLimit(req.GetInt("limit", 20), 20, 100)
 
 		var samples []content.Sample
 		if packID != "" {
@@ -57,6 +60,10 @@ func getSamplesHandler(deps Deps) server.ToolHandlerFunc {
 		if query != "" {
 			samples = content.FilterSamples(samples, query)
 		}
+		total := len(samples)
+		if limit < total {
+			samples = samples[:limit]
+		}
 
 		out := make([]sampleResult, 0, len(samples))
 		for _, s := range samples {
@@ -68,7 +75,6 @@ func getSamplesHandler(deps Deps) server.ToolHandlerFunc {
 				Tags:        s.Tags,
 			})
 		}
-		b, _ := json.Marshal(out)
-		return mcp.NewToolResultText(string(b)), nil
+		return wrapResults(out, total, len(out), "samples", query), nil
 	}
 }

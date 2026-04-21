@@ -2,7 +2,6 @@ package mcpserver
 
 import (
 	"context"
-	"encoding/json"
 	"path/filepath"
 	"sync"
 	"time"
@@ -93,9 +92,9 @@ func registerNewsTools(s *server.MCPServer, deps Deps) {
 
 	s.AddTool(
 		mcp.NewTool("get_recent_news",
-			mcp.WithDescription("Get the latest SAP Developer News episodes from YouTube and SAP Community"),
-			mcp.WithNumber("count",
-				mcp.Description("Number of episodes to return (default 5)"),
+			mcp.WithDescription("Get the latest SAP Developer News episodes (weekly show on SAP Developers YouTube). Returns episode titles, YouTube URLs, and companion SAP Community blog post URLs. Use when asked about what's new in SAP."),
+			mcp.WithNumber("limit",
+				mcp.Description("Maximum number of episodes to return (default 5, max 50)"),
 			),
 		),
 		getRecentNewsHandler(fetcher),
@@ -111,21 +110,19 @@ type newsResult struct {
 
 func getRecentNewsHandler(fetcher *newsFetcher) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		count := req.GetInt("count", 5)
-		if count <= 0 {
-			count = 5
-		}
+		limit := clampLimit(req.GetInt("limit", 5), 5, 50)
 
 		items := fetcher.get()
-		if len(items) == 0 {
-			return mcp.NewToolResultText("[]"), nil
+		total := len(items)
+		if total == 0 {
+			return wrapResults([]newsResult{}, 0, 0, "news episodes", ""), nil
 		}
-		if count > len(items) {
-			count = len(items)
+		if limit > total {
+			limit = total
 		}
 
-		out := make([]newsResult, 0, count)
-		for _, item := range items[:count] {
+		out := make([]newsResult, 0, limit)
+		for _, item := range items[:limit] {
 			nr := newsResult{
 				Title:     item.Episode.Title,
 				URL:       item.Episode.URL,
@@ -136,7 +133,6 @@ func getRecentNewsHandler(fetcher *newsFetcher) server.ToolHandlerFunc {
 			}
 			out = append(out, nr)
 		}
-		b, _ := json.Marshal(out)
-		return mcp.NewToolResultText(string(b)), nil
+		return wrapResults(out, total, len(out), "news episodes", ""), nil
 	}
 }

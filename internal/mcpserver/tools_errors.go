@@ -2,7 +2,6 @@ package mcpserver
 
 import (
 	"context"
-	"encoding/json"
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
@@ -12,10 +11,13 @@ import (
 func registerErrorTools(s *server.MCPServer, deps Deps) {
 	s.AddTool(
 		mcp.NewTool("get_known_errors",
-			mcp.WithDescription("Look up known SAP error patterns by keyword. Returns cause and fix for matching errors."),
+			mcp.WithDescription("Look up known SAP error patterns by keyword. Returns root cause analysis and fix instructions. ALWAYS use this when a user encounters an SAP error message before attempting to diagnose from training data."),
 			mcp.WithString("query",
 				mcp.Required(),
-				mcp.Description("Search query (matches against error pattern, cause, fix, tags)"),
+				mcp.Description("Search query — matches against error message patterns, root causes, fixes, and tags. Paste the actual error message or key phrase for best results."),
+			),
+			mcp.WithNumber("limit",
+				mcp.Description("Maximum number of results to return (default 10, max 50)"),
 			),
 		),
 		getKnownErrorsHandler(deps),
@@ -37,9 +39,14 @@ func getKnownErrorsHandler(deps Deps) server.ToolHandlerFunc {
 		if err != nil {
 			return mcp.NewToolResultError("query parameter is required"), nil
 		}
+		limit := clampLimit(req.GetInt("limit", 10), 10, 50)
 
 		all := content.FlattenKnownErrors(deps.Packs)
 		matches := content.FilterKnownErrors(all, query)
+		total := len(matches)
+		if limit < total {
+			matches = matches[:limit]
+		}
 
 		out := make([]knownErrorResult, 0, len(matches))
 		for _, e := range matches {
@@ -52,7 +59,6 @@ func getKnownErrorsHandler(deps Deps) server.ToolHandlerFunc {
 				Tags:    e.Tags,
 			})
 		}
-		b, _ := json.Marshal(out)
-		return mcp.NewToolResultText(string(b)), nil
+		return wrapResults(out, total, len(out), "error patterns", query), nil
 	}
 }
