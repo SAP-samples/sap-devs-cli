@@ -1,5 +1,7 @@
 package content
 
+import "strings"
+
 // FlattenEventTypes collects all event types from all packs.
 func FlattenEventTypes(packs []*Pack) []EventType {
 	var out []EventType
@@ -37,4 +39,24 @@ func FindEvent(events []EventInstance, id string) *EventInstance {
 		}
 	}
 	return nil
+}
+
+// FilterEventsByQuery returns events matching query in title, location, or tags.
+func FilterEventsByQuery(events []EventInstance, query string) []EventInstance {
+	q := strings.ToLower(query)
+	var out []EventInstance
+	for _, e := range events {
+		if strings.Contains(strings.ToLower(e.Title), q) ||
+			strings.Contains(strings.ToLower(e.Location), q) {
+			out = append(out, e)
+			continue
+		}
+		for _, tag := range e.Tags {
+			if strings.Contains(strings.ToLower(tag), q) {
+				out = append(out, e)
+				break
+			}
+		}
+	}
+	return out
 }
