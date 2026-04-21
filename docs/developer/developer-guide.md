@@ -92,6 +92,7 @@ sap-devs-cli/
 │   ├── learn/              # Cross-type learning recommendations, search, and paths
 │   ├── learning/           # Learning journey catalog and search API client
 │   ├── mcpserver/          # Built-in MCP server (sap-devs mcp serve)
+│   ├── news/               # News episode correlation, disk cache, baseline loader
 │   ├── project/            # Project detection and health checks
 │   ├── service/            # OS-native background scheduler (systemd/launchd/schtasks)
 │   ├── sync/               # Sync engine — fetches official/company repo zips
@@ -107,7 +108,8 @@ sap-devs-cli/
 ├── .github/
 │   ├── workflows/ci.yml    # Test + build on every push/PR
 │   ├── workflows/release.yml      # GoReleaser triggered by v* tags
-│   └── workflows/release-tray.yml # Tray binary multi-platform build
+│   ├── workflows/release-tray.yml # Tray binary multi-platform build
+│   └── workflows/news-sync.yml   # Scheduled news episode index pre-fetch (2x/day)
 ├── .goreleaser.yml         # Cross-platform release configuration
 ├── go.mod / go.sum
 └── main.go
@@ -150,23 +152,26 @@ Profiles (`content/profiles/`) are YAML files that tag which packs belong to a d
 
 The auth token is resolved once at the top of `syncCmd.RunE` via `credentials.Resolve()` and passed to both `FetchArchive` calls (official + company repo). `FetchArchive` signature: `FetchArchive(rawURL, destDir, token string) error`.
 
+**Independent sync categories** run in parallel after the archive fetch: `events`, `youtube`, `news`, `discovery`, `tutorials`, `learning`. Each has its own TTL (configured in `config.yaml` under `sync:`). The `news` category (default TTL: 2h) uses `runNewsFetch` which tries RSS with retry → YouTube API v3 fallback → baseline file fallback, then caches the result to disk.
+
 ### News
 
-`sap-devs news` (`cmd/news.go`) fetches SAP Developer News episodes live on every invocation — no caching or sync integration.
+`sap-devs news` (`cmd/news.go`) browses SAP Developer News episodes with resilient multi-layer fetching. YouTube RSS feeds are intermittently unreliable (404/500 outage cycles since December 2025), so the system uses a layered fetch strategy with retry, caching, and fallbacks.
 
 **Packages:**
 
 | Package | Responsibility |
 | --- | --- |
-| `internal/youtube` | Fetches and parses the YouTube playlist Atom RSS feed → `[]Episode` |
+| `internal/youtube` | Fetches and parses the YouTube playlist Atom RSS feed → `[]Episode`. `FetchPlaylistRetry` wraps `FetchPlaylist` with exponential backoff (3 attempts, 2s/4s/8s) for 404/500 errors. `FetchPlaylistAPI` uses the YouTube Data API v3 as a fallback. `HTTPError` typed error enables retry-or-fail decisions. |
 | `internal/community` | Fetches and parses the SAP Community RSS feed → `[]BlogPost`; also fetches post HTML and converts it to markdown via `html-to-markdown/v2` |
-| `internal/news` | Correlates episodes and posts by publish date (±7-day window, LCS tiebreaker) → `[]NewsItem` |
+| `internal/news` | Correlates episodes and posts by publish date (±7-day window, LCS tiebreaker) → `[]NewsItem`. Provides disk cache: `SaveCache`/`LoadCache`/`LoadCacheStale`/`CacheAge`/`LoadBaseline` |
 
 **Key types:**
 
 ```go
 // internal/youtube
 type Episode struct { ID, Title, URL string; Published time.Time; Description string }
+type HTTPError struct { StatusCode int; URL string } // enables retry decisions
 
 // internal/community
 type BlogPost struct { Title, URL string; Published time.Time }
@@ -175,15 +180,32 @@ type BlogPost struct { Title, URL string; Published time.Time }
 type NewsItem struct { Episode youtube.Episode; Community *community.BlogPost }
 ```
 
-**Subcommands:** `list [-n]`, `latest`, `open <id>`, `search <query>`, `read <id> [--plain]`, `hook`.
+**Fetch priority chain** (used by all CLI subcommands via `fetchNewsItems` helper and by the MCP server):
 
-**`news hook`:** Prints a Friday reminder message on Fridays, silent otherwise. Designed as a `sessionStart` hook for Claude Code — install with `sap-devs hook install community/friday-developer-news`. The pure helper `fridayHookMessage(day time.Weekday) string` holds all logic and is unit-tested in `cmd/news_test.go`. Note: this is distinct from the Friday tip override in `cmd/tip.go`, which fetches the latest episode live via YouTube RSS; `news hook` prints a static prompt and delegates fetching to the AI.
+1. **Disk cache** — `<cacheDir>/news/news-cache.json`, respects sync TTL (default 2h)
+2. **RSS feed with retry** — 3 attempts with exponential backoff (2s, 4s, 8s); only retries on 404/500
+3. **YouTube Data API v3** — if `YOUTUBE_API_KEY` env var or keychain credential is available (1 quota unit per call, 10k/day free)
+4. **Stale disk cache** — any age, with a stderr warning
+5. **Pre-fetched baseline** — `content/packs/base/news-episodes.json` committed by CI, with a stderr warning
+6. **Hard fail** — only when all above are exhausted
+
+**Disk cache** (`internal/news/cache.go`): follows the same pattern as `internal/learning/cache.go` and `internal/videos/cache.go`. Cache path: `<cacheDir>/news/news-cache.json`. `LoadBaseline` reads a pre-fetched `news-episodes.json` from the content pack (committed by the `news-sync.yml` GitHub Action and pulled during `sap-devs sync`).
+
+**Sync integration:** The `news` category runs as an independent phase during `sap-devs sync` alongside events, youtube, discovery, tutorials, and learning. Default TTL: 2h (configurable via `sync.news` in `config.yaml`). The sync function `runNewsFetch` tries RSS with retry → API v3 → baseline fallback, then saves to the disk cache.
+
+**Subcommands:** `list [-n]`, `latest`, `open <id>`, `search <query>`, `read <id> [--plain]`, `hook`, `fetch-index [--output]` (hidden).
+
+**`fetch-index`:** Hidden subcommand used by the `news-sync.yml` GitHub Action. Fetches the playlist (RSS retry → API v3 fallback), correlates with community posts, and writes the result as JSON to stdout or `--output <path>`. This produces the `news-episodes.json` baseline file.
+
+**GitHub Action** (`.github/workflows/news-sync.yml`): Runs 2x/day (08:17 and 18:17 UTC). Builds the CLI, runs `sap-devs news fetch-index`, and commits the result as `content/packs/base/news-episodes.json` if changed. Requires a `YOUTUBE_API_KEY` repository secret.
+
+**`news hook`:** Prints a Friday reminder message on Fridays, silent otherwise. Designed as a `sessionStart` hook for Claude Code — install with `sap-devs hook install community/friday-developer-news`. The pure helper `fridayHookMessage(day time.Weekday) string` holds all logic and is unit-tested in `cmd/news_test.go`. Note: this is distinct from the Friday tip override in `cmd/tip.go`; `news hook` prints a static prompt and delegates fetching to the AI.
 
 **Pager resolution** (for `news read`): `$PAGER` env var (split on whitespace to support args like `less -R`) → `exec.LookPath("less")` silent probe → plain print. On Windows, `less` is absent by default; plain print is the expected fallback.
 
-**Static footer constants** in `cmd/news.go`: LinkedIn newsletter URL (always shown); `newsYTMusic` (suppressed when empty); `newsPlaylistURL` (playlist watch link — also used by the Friday tip override in `cmd/tip.go`).
+**Static footer constants** in `cmd/news.go`: LinkedIn newsletter URL (always shown); `newsYTMusic` (suppressed when empty); `newsPlaylistURL` (playlist watch link — also used by the Friday tip override in `cmd/tip.go`). `newsPlaylistID` is the bare playlist ID used for YouTube API v3 calls.
 
-**Friday tip override:** On Fridays, `sap-devs tip` calls `fridayNewsOverride()` (`cmd/tip.go`) which fetches `newsPlaylistRSS` via `youtube.FetchPlaylist` and returns the latest episode as a `*content.Tip`. On fetch failure or an empty playlist it falls back to a hardcoded static tip pointing at `newsPlaylistURL`. The override is skipped when `useRandom` is true (`--new` flag or `SAP_DEVS_DEV=1`).
+**Friday tip override:** On Fridays, `sap-devs tip` calls `fridayNewsOverride()` (`cmd/tip.go`) which fetches `newsPlaylistRSS` via `youtube.FetchPlaylist` and returns the latest episode as a `*content.Tip`. On fetch failure or an empty playlist it falls back to a hardcoded static tip pointing at `newsPlaylistURL`. The override is skipped when `useRandom` is true (`--new` flag or `SAP_DEVS_DEV=1`). Note: the Friday tip uses the old non-resilient path (single fetch, no retry/cache) — it has its own hardcoded fallback tip, so the resilient fetch chain isn't needed here.
 
 **HTTP User-Agent:** `FetchBlogPosts` and `FetchPostContent` send `User-Agent: Mozilla/5.0 (compatible; sap-devs/1.0)`. SAP Community returns HTTP 403 to bare Go HTTP clients without this header.
 
@@ -277,14 +299,14 @@ internal/mcpserver/
 ├── tools_content.go      → list_packs, get_context, get_tip
 ├── tools_resources.go    → search_resources
 ├── tools_errors.go       → get_known_errors
-├── tools_news.go         → get_recent_news (lazy fetch with sync.Once + timeout)
+├── tools_news.go         → get_recent_news (TTL-based fetcher with disk cache + retry)
 ├── tools_learn.go        → search_tutorials, search_learning_journeys
 └── tools_samples.go      → get_samples
 ```
 
-**Deps struct:** Injected at startup — holds `[]*content.Pack`, `*content.Profile`, `[]tutorials.TutorialMeta`, `[]learning.LearningJourney`, and `Version string`. No global state.
+**Deps struct:** Injected at startup — holds `[]*content.Pack`, `*content.Profile`, `[]tutorials.TutorialMeta`, `[]learning.LearningJourney`, `CacheDir string`, `ConfigDir string`, and `Version string`. No global state. `CacheDir` and `ConfigDir` are used by the news fetcher to access the disk cache and resolve YouTube API credentials.
 
-**News fetching:** The `newsFetcher` struct uses `sync.Once` to lazily fetch YouTube RSS + SAP Community RSS on first `get_recent_news` call, with a 5-second timeout. A `sync.Mutex` protects the cached result from data races.
+**News fetching:** The `newsFetcher` struct uses a TTL-based approach (10-minute memory TTL) with the same layered fallback chain as the CLI: memory cache → disk cache → RSS with retry → YouTube API v3 → stale disk/memory cache → baseline file. This replaces the earlier `sync.Once` implementation, which permanently cached failures.
 
 **Self-install:** `content/packs/base/mcp.yaml` defines a `sap-devs-server` entry so `sap-devs mcp install sap-devs-server` wires the built-in server into AI tool configs.
 

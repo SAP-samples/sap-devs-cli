@@ -3,55 +3,93 @@ package mcpserver
 import (
 	"context"
 	"encoding/json"
+	"path/filepath"
 	"sync"
 	"time"
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
 	"github.com/SAP-samples/sap-devs-cli/internal/community"
+	"github.com/SAP-samples/sap-devs-cli/internal/credentials"
 	"github.com/SAP-samples/sap-devs-cli/internal/news"
 	"github.com/SAP-samples/sap-devs-cli/internal/youtube"
 )
 
 const (
 	newsPlaylistRSS  = "https://www.youtube.com/feeds/videos.xml?playlist_id=PL6RpkC85SLQAVBSQXN9522_1jNvPavBgg"
+	newsPlaylistID   = "PL6RpkC85SLQAVBSQXN9522_1jNvPavBgg"
 	newsCommunityRSS = "https://community.sap.com/t5/developer-news/bg-p/developer-news/rss"
-	newsFetchTimeout = 5 * time.Second
+	newsTTL          = 10 * time.Minute
 )
 
 type newsFetcher struct {
-	mu     sync.Mutex
-	once   sync.Once
-	cached []news.NewsItem
+	mu        sync.Mutex
+	cached    []news.NewsItem
+	fetchedAt time.Time
+	cacheDir  string
+	configDir string
 }
 
 func (f *newsFetcher) get() []news.NewsItem {
-	f.once.Do(func() {
-		done := make(chan struct{})
-		go func() {
-			episodes, err := youtube.FetchPlaylist(newsPlaylistRSS)
-			if err != nil {
-				close(done)
-				return
-			}
-			posts, _ := community.FetchBlogPosts(newsCommunityRSS)
-			f.mu.Lock()
-			f.cached = news.Correlate(episodes, posts)
-			f.mu.Unlock()
-			close(done)
-		}()
-		select {
-		case <-done:
-		case <-time.After(newsFetchTimeout):
-		}
-	})
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	return f.cached
+
+	if len(f.cached) > 0 && time.Since(f.fetchedAt) < newsTTL {
+		return f.cached
+	}
+
+	if f.cacheDir != "" {
+		if items, ok := news.LoadCache(f.cacheDir, newsTTL); ok {
+			f.cached = items
+			f.fetchedAt = time.Now()
+			return f.cached
+		}
+	}
+
+	episodes, _ := youtube.FetchPlaylistRetry(newsPlaylistRSS, 3)
+	if episodes == nil && f.configDir != "" {
+		apiKey := credentials.ResolveService(f.configDir, "youtube", []string{"YOUTUBE_API_KEY"})
+		if apiKey != "" {
+			episodes, _ = youtube.FetchPlaylistAPI(newsPlaylistID, apiKey)
+		}
+	}
+
+	if episodes != nil {
+		posts, _ := community.FetchBlogPosts(newsCommunityRSS)
+		f.cached = news.Correlate(episodes, posts)
+		f.fetchedAt = time.Now()
+		if f.cacheDir != "" {
+			_ = news.SaveCache(f.cacheDir, f.cached)
+		}
+		return f.cached
+	}
+
+	if len(f.cached) > 0 {
+		return f.cached
+	}
+
+	if f.cacheDir != "" {
+		if stale, ok := news.LoadCacheStale(f.cacheDir); ok {
+			f.cached = stale
+			f.fetchedAt = time.Now()
+			return f.cached
+		}
+		officialCache := filepath.Join(f.cacheDir, "official")
+		if baseline, ok := news.LoadBaseline(officialCache); ok {
+			f.cached = baseline
+			f.fetchedAt = time.Now()
+			return f.cached
+		}
+	}
+
+	return nil
 }
 
-func registerNewsTools(s *server.MCPServer) {
-	fetcher := &newsFetcher{}
+func registerNewsTools(s *server.MCPServer, deps Deps) {
+	fetcher := &newsFetcher{
+		cacheDir:  deps.CacheDir,
+		configDir: deps.ConfigDir,
+	}
 
 	s.AddTool(
 		mcp.NewTool("get_recent_news",

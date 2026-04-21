@@ -2,6 +2,7 @@ package youtube
 
 import (
 	"encoding/xml"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -63,6 +64,16 @@ func ParseFeed(data []byte) ([]Episode, error) {
 	return episodes, nil
 }
 
+// HTTPError records an HTTP status code from a failed YouTube request.
+type HTTPError struct {
+	StatusCode int
+	URL        string
+}
+
+func (e *HTTPError) Error() string {
+	return fmt.Sprintf("youtube: HTTP %d fetching %s", e.StatusCode, e.URL)
+}
+
 // FetchPlaylist fetches the YouTube playlist RSS feed at url and returns episodes.
 func FetchPlaylist(url string) ([]Episode, error) {
 	client := &http.Client{Timeout: 10 * time.Second}
@@ -72,7 +83,7 @@ func FetchPlaylist(url string) ([]Episode, error) {
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return nil, fmt.Errorf("youtube: HTTP %d fetching playlist", resp.StatusCode)
+		return nil, &HTTPError{StatusCode: resp.StatusCode, URL: url}
 	}
 	const maxBodyBytes = 1 << 20 // 1 MiB
 	buf, err := io.ReadAll(io.LimitReader(resp.Body, maxBodyBytes))
@@ -80,4 +91,35 @@ func FetchPlaylist(url string) ([]Episode, error) {
 		return nil, err
 	}
 	return ParseFeed(buf)
+}
+
+func isRetryableHTTP(err error) bool {
+	var he *HTTPError
+	if errors.As(err, &he) {
+		return he.StatusCode == 404 || he.StatusCode >= 500
+	}
+	return false
+}
+
+// FetchPlaylistRetry wraps FetchPlaylist with exponential backoff.
+// Only retries on HTTP 404/5xx (YouTube's intermittent outage codes).
+func FetchPlaylistRetry(url string, maxAttempts int) ([]Episode, error) {
+	if maxAttempts < 1 {
+		maxAttempts = 1
+	}
+	var lastErr error
+	backoff := 2 * time.Second
+	for i := 0; i < maxAttempts; i++ {
+		eps, err := FetchPlaylist(url)
+		if err == nil {
+			return eps, nil
+		}
+		lastErr = err
+		if !isRetryableHTTP(err) || i == maxAttempts-1 {
+			break
+		}
+		time.Sleep(backoff)
+		backoff *= 2
+	}
+	return nil, lastErr
 }

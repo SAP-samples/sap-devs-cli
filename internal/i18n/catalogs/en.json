@@ -498,6 +498,9 @@
   "news.col_video": "VIDEO",
   "news.col_community": "COMMUNITY",
   "news.col_url": "URL",
+  "news.warn.stale_cache": "⚠ YouTube unavailable — showing cached data",
+  "news.warn.baseline": "⚠ YouTube unavailable — showing baseline data",
+  "news.error.no_data": "no news data available (YouTube unavailable and no cache — run 'sap-devs sync' first)",
 
   "learning.list.no_journeys": "No learning journeys found.",
   "learning.search.no_results": "No learning journeys found for \"{{.Query}}\".",

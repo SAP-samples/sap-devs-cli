@@ -41,6 +41,7 @@ const (
 	PhaseChangelog
 	PhaseEvents
 	PhaseYouTube
+	PhaseNews
 	PhaseDiscovery
 	PhaseTutorials
 	PhaseLearning
@@ -53,6 +54,7 @@ var phaseLabels = map[PhaseID]string{
 	PhaseChangelog: "changelog",
 	PhaseEvents:    "events",
 	PhaseYouTube:   "youtube",
+	PhaseNews:      "news",
 	PhaseDiscovery: "discovery",
 	PhaseTutorials: "tutorials",
 	PhaseLearning:  "learning",
