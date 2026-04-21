@@ -1,0 +1,17 @@
+{
+  "mcpServers": {
+    "context7": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp@latest"]
+    },
+    "sap-devs": {
+      "type": "stdio",
+      "command": "./sap-devs.exe",
+      "args": ["mcp", "serve"],
+      "env": {
+        "SAP_DEVS_DEV": "1"
+      }
+    }
+  }
+}
