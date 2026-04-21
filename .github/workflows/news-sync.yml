@@ -1,0 +1,35 @@
+name: News Sync
+
+on:
+  schedule:
+    - cron: '17 8,18 * * *' # 2x/day at 08:17 and 18:17 UTC
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  sync-news:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: 'stable'
+
+      - run: go build -o sap-devs .
+
+      - name: Fetch news episodes
+        env:
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+        run: ./sap-devs news fetch-index --output content/packs/base/news-episodes.json
+
+      - name: Commit if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git diff --quiet content/packs/base/news-episodes.json 2>/dev/null || \
+            (git add content/packs/base/news-episodes.json && \
+             git commit -m "chore: update news episode index" && \
+             git push)

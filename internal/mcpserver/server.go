@@ -13,6 +13,8 @@ type Deps struct {
 	Profile       *content.Profile
 	TutorialIndex []tutorials.TutorialMeta
 	LearningIndex []learning.LearningJourney
+	CacheDir      string
+	ConfigDir     string
 	Version       string
 }
 
@@ -28,7 +30,7 @@ func NewServer(deps Deps) *server.MCPServer {
 	registerContentTools(s, deps)
 	registerResourceTools(s, deps)
 	registerErrorTools(s, deps)
-	registerNewsTools(s)
+	registerNewsTools(s, deps)
 	registerLearnTools(s, deps)
 	registerSampleTools(s, deps)
 

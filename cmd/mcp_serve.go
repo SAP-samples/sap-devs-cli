@@ -65,6 +65,8 @@ var mcpServeCmd = &cobra.Command{
 			Profile:       activeProfile,
 			TutorialIndex: tutorialIndex,
 			LearningIndex: learningIndex,
+			CacheDir:      paths.CacheDir,
+			ConfigDir:     paths.ConfigDir,
 			Version:       Version,
 		}
 

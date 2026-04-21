@@ -16,6 +16,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/spf13/cobra"
+	"github.com/SAP-samples/sap-devs-cli/internal/community"
 	"github.com/SAP-samples/sap-devs-cli/internal/config"
 	"github.com/SAP-samples/sap-devs-cli/internal/content"
 	"github.com/SAP-samples/sap-devs-cli/internal/credentials"
@@ -23,6 +24,7 @@ import (
 	"github.com/SAP-samples/sap-devs-cli/internal/events"
 	"github.com/SAP-samples/sap-devs-cli/internal/i18n"
 	"github.com/SAP-samples/sap-devs-cli/internal/learning"
+	"github.com/SAP-samples/sap-devs-cli/internal/news"
 	sapSync "github.com/SAP-samples/sap-devs-cli/internal/sync"
 	"github.com/SAP-samples/sap-devs-cli/internal/tutorials"
 	"github.com/SAP-samples/sap-devs-cli/internal/ui"
@@ -52,6 +54,7 @@ var syncCmd = &cobra.Command{
 var categoryToPhase = map[string]ui.PhaseID{
 	"events":    ui.PhaseEvents,
 	"youtube":   ui.PhaseYouTube,
+	"news":      ui.PhaseNews,
 	"discovery": ui.PhaseDiscovery,
 	"tutorials": ui.PhaseTutorials,
 	"learning":  ui.PhaseLearning,
@@ -81,7 +84,7 @@ func buildSyncPlan(cfg *config.Config, paths *xdg.Paths, engine *sapSync.Engine,
 	}
 
 	archiveCats := []string{"tips", "tools", "resources", "context", "mcp", "advocates"}
-	independentCats := []string{"events", "youtube", "discovery", "tutorials", "learning"}
+	independentCats := []string{"events", "youtube", "news", "discovery", "tutorials", "learning"}
 
 	activeArchive := intersectStrings(archiveCats, categories)
 	activeIndep := intersectStrings(independentCats, categories)
@@ -154,7 +157,7 @@ func runSync(ctx context.Context, force bool, out io.Writer) error {
 		"advocates": cfg.Sync.Advocates, "resources": cfg.Sync.Resources,
 		"context": cfg.Sync.Context, "mcp": cfg.Sync.MCP,
 		"events": cfg.Sync.Events, "youtube": cfg.Sync.YouTube,
-		"discovery": cfg.Sync.Discovery, "tutorials": cfg.Sync.Tutorials,
+		"news": cfg.Sync.News, "discovery": cfg.Sync.Discovery, "tutorials": cfg.Sync.Tutorials,
 		"learning": cfg.Sync.Learning,
 	}
 	engine := sapSync.NewEngine(paths.CacheDir, 24*time.Hour, ttls)
@@ -285,6 +288,10 @@ func buildIndepPhases(plan *syncPlan) []indepPhase {
 		case "youtube":
 			fn = func() (string, error) {
 				return "", runYouTubeFetch(plan.paths.CacheDir, plan.officialCache, plan.cfg.CompanyRepo, plan.paths.ConfigDir, plan.force, plan.cfg.Sync.YouTube)
+			}
+		case "news":
+			fn = func() (string, error) {
+				return "", runNewsFetch(plan.paths.CacheDir, plan.officialCache, plan.paths.ConfigDir, plan.force, plan.cfg.Sync.News)
 			}
 		case "discovery":
 			fn = func() (string, error) {
@@ -622,7 +629,7 @@ func runEventsFetch(cacheDir, officialCache string, force bool) error {
 }
 
 func allCategories() []string {
-	return []string{"tips", "tools", "resources", "context", "mcp", "advocates", "events", "youtube", "discovery", "tutorials", "learning"}
+	return []string{"tips", "tools", "resources", "context", "mcp", "advocates", "events", "youtube", "news", "discovery", "tutorials", "learning"}
 }
 
 func intersectStrings(a, b []string) []string {
@@ -683,6 +690,47 @@ func runYouTubeFetch(cacheDir, officialCache, companyRepo, configDir string, for
 		}
 	}
 	return nil
+}
+
+func runNewsFetch(cacheDir, officialCache, configDir string, force bool, ttl time.Duration) error {
+	if !force {
+		age := news.CacheAge(cacheDir)
+		if age >= 0 && age < ttl {
+			return nil
+		}
+	}
+
+	// Try RSS feed with retry.
+	episodes, rssErr := youtube.FetchPlaylistRetry(newsPlaylistRSS, 3)
+
+	// If RSS fails, try API v3 as fallback (requires key).
+	if rssErr != nil {
+		apiKey := credentials.ResolveService(configDir, "youtube", []string{"YOUTUBE_API_KEY"})
+		if apiKey != "" {
+			var apiErr error
+			episodes, apiErr = youtube.FetchPlaylistAPI(newsPlaylistID, apiKey)
+			if apiErr != nil {
+				fmt.Fprintf(os.Stderr, "sap-devs: news API fallback failed: %v\n", apiErr)
+			}
+		}
+	}
+
+	if episodes == nil {
+		// If both live fetches failed, try the pre-fetched baseline from the content repo.
+		if baseline, ok := news.LoadBaseline(officialCache); ok {
+			_ = news.SaveCache(cacheDir, baseline)
+			return nil
+		}
+		// Leave existing stale cache in place if present.
+		if rssErr != nil {
+			fmt.Fprintf(os.Stderr, "sap-devs: news fetch failed (stale cache preserved): %v\n", rssErr)
+		}
+		return nil
+	}
+
+	posts, _ := community.FetchBlogPosts(newsCommunityRSS)
+	items := news.Correlate(episodes, posts)
+	return news.SaveCache(cacheDir, items)
 }
 
 func runDiscoveryFetch(cacheDir string, force bool) error {

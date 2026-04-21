@@ -83,6 +83,8 @@ Profiles ([content/profiles/](content/profiles/)) are YAML files that tag which 
 
 `sap-devs sync` ([cmd/sync.go](cmd/sync.go)) fetches the official repo as a `.zip` archive and extracts it into the cache. Per-category TTLs are tracked in `~/.cache/sap-devs/sync-state.json` via `sync.Engine` ([internal/sync/engine.go](internal/sync/engine.go)). Forced refresh: `--force`.
 
+**Independent sync categories** run in parallel after the archive fetch: `events`, `youtube`, `news`, `discovery`, `tutorials`, `learning`. Each has its own TTL in `config.yaml`. The `news` category (default 2h) uses `runNewsFetch` which tries RSS with retry → YouTube API v3 → baseline file fallback, then caches to `<cacheDir>/news/news-cache.json`.
+
 **Phase 2 — Dynamic Content Expansion:** After the zip fetch, `sync` scans each `context.md` for `<!-- sap-devs:fetch ... -->` markers via `ScanMarkers()`, fetches remote content in parallel (Bubbletea progress UI), then writes `context.expanded.md` alongside `context.md`. `inject` prefers `context.expanded.md` when present. Marker authoring details: [docs/content-authoring.md](docs/content-authoring.md).
 
 ### Discovery Center
@@ -104,6 +106,16 @@ Profiles ([content/profiles/](content/profiles/)) are YAML files that tag which 
 **Subcommands:** `recommend` (default, sectioned output), `search <query>` (unified cross-type search), `path list/show/open` (curated + auto-generated learning paths).
 
 **Experience level:** Stored in `experience_level` config field. Filters content across all three types using normalized levels (beginner/intermediate/advanced). Mission effort maps to levels: 0-1→beginner, 2→intermediate, 3→advanced.
+
+### News
+
+`sap-devs news` ([cmd/news.go](cmd/news.go)) browses SAP Developer News episodes with resilient multi-layer fetching. YouTube RSS feeds are intermittently unreliable, so a layered fetch strategy combines retry, disk caching, and fallbacks.
+
+**Packages:** `internal/youtube` (RSS parsing + `FetchPlaylistRetry` with exponential backoff + `FetchPlaylistAPI` for YouTube Data API v3), `internal/community` (SAP Community RSS + HTML-to-markdown), `internal/news` (episode-post correlation via LCS matching, disk cache at `<cacheDir>/news/news-cache.json`, baseline loader from `content/packs/base/news-episodes.json`).
+
+**Fetch priority chain:** disk cache (2h TTL) → RSS with retry (3 attempts, 2s/4s/8s) → YouTube API v3 (if key available) → stale cache → pre-fetched baseline → hard fail. The `fetchNewsItems` helper in `cmd/news.go` centralizes this for all subcommands. The MCP server's `newsFetcher` uses the same chain with a 10-minute memory TTL.
+
+**GitHub Action:** `.github/workflows/news-sync.yml` runs 2x/day to pre-fetch the episode index as `content/packs/base/news-episodes.json` using the hidden `fetch-index` subcommand.
 
 ### i18n
 
@@ -168,7 +180,7 @@ On every command invocation (except `update` and dev builds), a background gorou
 | `influencers` | Browse SAP community influencers and thought leaders |
 | `resources` | List curated resources from active packs |
 | `samples` | Browse canonical code samples; `samples list/search/open/clone` |
-| `news list/latest/open/search/read/hook` | Browse SAP Developer News episodes fetched live from YouTube RSS and SAP Community; `news hook` prints a Friday reminder for use as a session-start hook |
+| `news list/latest/open/search/read/hook` | Browse SAP Developer News episodes with resilient multi-layer fetching (disk cache → RSS retry → YouTube API v3 → baseline); `news hook` prints a Friday reminder; `news fetch-index` (hidden) produces baseline JSON for CI |
 | `videos` | Browse SAP YouTube videos; `videos list/search/open` |
 | `update` | Self-update the binary |
 | `init` | First-time setup wizard |

@@ -32,6 +32,7 @@ type SyncConfig struct {
 	MCP       time.Duration `yaml:"mcp"`
 	Events    time.Duration `yaml:"events"`
 	YouTube   time.Duration `yaml:"youtube"`
+	News      time.Duration `yaml:"news"`
 	Discovery time.Duration `yaml:"discovery"`
 	Tutorials time.Duration `yaml:"tutorials"`
 	Learning  time.Duration `yaml:"learning"`
@@ -104,6 +105,7 @@ func Default() *Config {
 			MCP:       168 * time.Hour,
 			Events:    4 * time.Hour,
 			YouTube:   6 * time.Hour,
+			News:      2 * time.Hour,
 			Discovery: 168 * time.Hour, // 7 days
 			Tutorials: 168 * time.Hour, // 7 days
 			Learning:  168 * time.Hour, // 7 days

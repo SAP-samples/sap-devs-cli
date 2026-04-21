@@ -18,10 +18,10 @@ func TestGetRecentNews_WithItems(t *testing.T) {
 		{Episode: youtube.Episode{Title: "Episode 1", URL: "https://yt/1", Published: time.Now()}},
 		{Episode: youtube.Episode{Title: "Episode 2", URL: "https://yt/2", Published: time.Now()}},
 	}
-	fetcher := &newsFetcher{}
-	// Mark once as done so get() returns cached without network I/O.
-	fetcher.once.Do(func() {})
-	fetcher.cached = items
+	fetcher := &newsFetcher{
+		cached:    items,
+		fetchedAt: time.Now(),
+	}
 	handler := getRecentNewsHandler(fetcher)
 	req := mcp.CallToolRequest{}
 	req.Params.Arguments = map[string]any{"count": float64(1)}
