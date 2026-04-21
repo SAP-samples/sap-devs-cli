@@ -377,31 +377,20 @@ Expose the `btp` and `cf` command-line tools as MCP tool surfaces, so AI agents 
 
 - Detect whether `btp` and/or `cf` are installed (reuse `doctor` detection logic)
 - Expose a curated set of read-only tools first (list, status, logs) — write operations (push, bind, create) gated behind explicit confirmation
-- Pass through the user's existing CLI authentication (no separate OAuth flow)
+- Pass through the user's existing CLI authentication (no separate OAuth flow) - catch unauthenticated errors and prompt the user to log in if necessary
 - Map common multi-step workflows into higher-level tools (e.g., "deploy this CAP app" = `cf push` + `cf bind-service` + `cf start`)
 
 **Open questions:**
 
 - Which commands are safe to expose without confirmation vs. which need explicit user approval?
-- Should the MCP tools wrap raw CLI output or parse it into structured JSON for the agent?
+- Should the MCP tools wrap raw CLI output or parse it into structured JSON for the agent? - parse it into structured JSON!
 - How to handle long-running commands (e.g., `cf push`) — streaming output vs. polling?
 
 ---
 
-### Expose `doctor` via MCP with install/fix capabilities
+### ~~Expose `doctor` via MCP with install/fix capabilities~~ DONE ✔️
 
-Make the `sap-devs doctor` health check available as an MCP tool so AI agents can proactively check the user's environment and offer to install missing tools.
-
-**Why:** When an agent encounters a "command not found" or version mismatch mid-task, it currently has no structured way to diagnose and fix the environment. An MCP-exposed `doctor` tool lets the agent run a health check, identify what's missing (e.g., `btp` CLI not installed, `cf` CLI outdated), and offer install commands — turning environment setup from a manual detour into an agent-guided flow.
-
-**Scope:**
-
-- Expose `doctor --tools-only` and `doctor --project-only` as separate MCP tools
-- Return structured JSON (not table text) so the agent can reason about findings
-- Include `--fix` hints in the tool output so the agent can suggest or execute install commands
-- Priority: tool installation (btp, cf, cds, mbt) > version checks > project health
-
-**Dependency:** Existing `internal/project` detection and `cmd/doctor.go` health check infrastructure.
+Implemented as two MCP tools: `check_tools` (tool installation status with per-OS install commands) and `check_project` (project health checks with fix suggestions). Both return structured JSON via `ResultEnvelope`. Shipped in PR #8.
 
 ---
 
