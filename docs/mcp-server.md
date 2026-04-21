@@ -19,7 +19,7 @@ The `sap-devs` CLI includes a built-in [Model Context Protocol](https://modelcon
                                     └───────────────────┘
 ```
 
-The server loads the same content layer used by `sap-devs inject` — packs, profiles, tutorials, learning journeys — and serves it through twenty-six tools. Content is loaded once at startup from the local cache.
+The server loads the same content layer used by `sap-devs inject` — packs, profiles, tutorials, learning journeys — and serves it through thirty tools. Content is loaded once at startup from the local cache.
 
 ## Setup
 
@@ -76,7 +76,7 @@ sap-devs mcp serve --profile abap-developer
 
 ## Available Tools
 
-The server registers twenty-six tools, grouped by domain. All list/search tools return a structured envelope:
+The server registers thirty tools, grouped by domain. All list/search tools return a structured envelope:
 
 ```json
 {
@@ -160,6 +160,26 @@ News is fetched live from YouTube RSS and SAP Community RSS on the first call, t
 | `search_videos` | Search SAP developer videos from the SAP Developers YouTube channel | `query` (optional), `source` (optional — source ID), `limit` (optional, default 10, max 50) |
 | `search_discovery` | Search SAP Discovery Center missions and BTP services | `query` (required), `type` (optional — `missions` or `services`), `limit` (optional, default 10, max 50) |
 
+### Tutorial guided execution tools
+
+| Tool | Description | Parameters |
+|------|-------------|------------|
+| `get_tutorial_step` | Get a single step from an SAP tutorial with content and heuristic annotations (executable commands, file creates, verifications) | `slug` (required), `step` (optional, default 1), `track` (optional, default true — creates/updates progress) |
+| `update_tutorial_progress` | Record step completion for a tutorial | `slug` (required), `completed_steps` (required — array of 1-indexed step numbers), `current_step` (optional — inferred if omitted) |
+| `get_tutorial_progress` | Check progress on a specific tutorial or all tutorials with saved progress | `slug` (optional — omit for all) |
+| `list_active_tutorials` | List tutorials with in-progress state (not yet completed) | `limit` (optional, default 10, max 50) |
+
+These tools enable AI agents to guide users through SAP tutorials step-by-step. The MCP server is stateless — the agent drives the tutorial flow by calling tools sequentially. Progress is stored in `tutorial-progress.json` in the XDG data directory and is shared between MCP tools and the CLI's interactive TUI (`sap-devs tutorial show -i`).
+
+The **annotation engine** (`internal/tutorials/annotate.go`) heuristically classifies fenced code blocks in tutorial step markdown:
+
+- **Commands** — shell/bash blocks or untagged blocks preceded by action-oriented text (e.g., "Run the following command")
+- **File creates** — code-language blocks (`.cds`, `.json`, `.js`, etc.) preceded by text with file-action verbs and backtick-quoted filenames (e.g., "Create a file called \`schema.cds\`")
+- **Verifications** — blocks preceded by output-signaling text (e.g., "You should see the following output")
+- **Ignored** — comment-only blocks, blocks with no executable content
+
+The engine is intentionally conservative: false negatives (missed annotations) are preferred over false positives (incorrectly classified blocks). This lets the AI agent make final judgment calls rather than blindly trusting heuristics.
+
 ## Server Instructions
 
 The server sends prescriptive instructions to the agent at connection time:
@@ -187,6 +207,9 @@ An AI agent wired to the sap-devs MCP server will call its tools automatically b
 | Exploring BTP capabilities | `search_discovery` | Finds Discovery Center missions and BTP service catalog entries |
 | Asks about Cloud Foundry apps or services | `cf_target`, `cf_apps`, `cf_services` | Inspects live CF deployment state via CLI |
 | Asks about BTP subaccounts or services | `btp_target`, `btp_subaccounts`, `btp_service_instances` | Inspects live BTP account state via CLI |
+| Wants to follow an SAP tutorial | `search_tutorials`, `get_tutorial_step` | Searches for tutorials, then fetches steps with annotations for guided execution |
+| Resuming tutorial work | `list_active_tutorials`, `get_tutorial_step` | Finds in-progress tutorials and continues from the last step |
+| Completed a tutorial step | `update_tutorial_progress` | Records step completion with deduplication and auto-completion detection |
 
 ### Non-triggers — when the agent does NOT use it
 
@@ -246,6 +269,7 @@ The server implementation lives in `internal/mcpserver/`:
 | `tools_discovery.go` | `search_discovery` |
 | `tools_cf.go` | `cf_target`, `cf_apps`, `cf_services`, `cf_env`, `cf_routes`, `cf_domains`, `cf_buildpacks` |
 | `tools_btp.go` | `btp_target`, `btp_subaccounts`, `btp_service_instances`, `btp_role_collections` |
+| `tools_tutorial_exec.go` | `get_tutorial_step`, `update_tutorial_progress`, `get_tutorial_progress`, `list_active_tutorials` |
 
 The server is built on [mcp-go](https://github.com/mark3labs/mcp-go) (`server.ServeStdio`). Dependencies (`Deps` struct) are assembled in `cmd/mcp_serve.go` from the content loader, tutorial index, learning index, active profile, cache/config directories, and current working directory.
 
@@ -261,7 +285,7 @@ Multiple independent MCP servers cover the SAP developer toolchain:
 
 | Server | Package | Tools | Domain |
 | -------- | ------- | ----- | ------ |
-| **sap-devs** | `sap-devs mcp serve` | 26 | SAP knowledge, CF/BTP inspection, learning, news |
+| **sap-devs** | `sap-devs mcp serve` | 30 | SAP knowledge, CF/BTP inspection, learning, news, tutorial guided execution |
 | **cds-mcp** | `@cap-js/mcp-server` | 2 | CDS model search, CAP documentation queries |
 | **ui5-mcp** | `@ui5/mcp-server` | 10 | UI5 scaffolding, API reference, linting, validation |
 | **hana-cli** | `hana-cli` (npm) | TBD | HANA database operations, SQL, HDI containers |
@@ -340,3 +364,64 @@ Populate pack `mcp.yaml` files with downstream SAP server definitions:
 ```
 
 This enables `sap-devs mcp install --all` to wire up the full SAP tool suite in one command, without any proxy complexity.
+
+## Tutorial Guided Execution — Phase 3 Analysis
+
+*Analyzed April 2026. Conclusion: a custom Claude Code skill + targeted MCP tool enhancements achieves 90% of Phase 3's value at 10% of the complexity. A standalone embedded agent is not warranted at this time.*
+
+### Background
+
+Phase 2 (shipped April 2026) added four MCP tools and a heuristic annotation engine for AI-agent-driven tutorial walkthroughs. Phase 3 was originally envisioned as an embedded AI instructor agent inside the CLI — a standalone `sap-devs tutorial run <id> --instructor` that uses the Claude API directly.
+
+### What Phase 2 already delivers
+
+When an AI agent (Claude Code, Cursor, etc.) is connected to the sap-devs MCP server, it already acts as a tutorial instructor:
+
+- Fetches steps via `get_tutorial_step` and interprets annotations (commands, file creates, verifications)
+- Runs commands on the user's behalf via its native shell integration
+- Explains *why* steps work using pack context from `get_context`
+- Adapts explanations based on user profile and experience level
+- Tracks progress via `update_tutorial_progress` with completion detection
+- Resumes where the user left off via `list_active_tutorials`
+
+### Delta between Phase 2 and Phase 3
+
+| Capability | Phase 2 (MCP tools) | Phase 3 (embedded agent) |
+|------------|---------------------|-------------------------|
+| Step-by-step guidance | Agent calls tools | Same |
+| Run commands for user | Agent runs via shell | Same, built-in pipe |
+| Explain *why* | Agent uses pack context | Same |
+| Adapt to skill level | Agent reads profile | Same |
+| Track progress | MCP tools | Same |
+| **Works without AI tool** | No — needs Claude Code/Cursor | **Yes — standalone CLI** |
+| **Claude API dependency** | None | **Required (cost + API key)** |
+| **Shell output capture** | Agent sees output natively | Built-in pipe |
+| **Works with any AI provider** | Yes (MCP is agnostic) | **No — locked to Anthropic** |
+
+The only truly unique capability Phase 3 adds is **standalone operation** — a user without Claude Code could run the instructor directly. But this comes at significant cost:
+
+1. **Claude API dependency** — adds a hard runtime dependency on Anthropic, with token cost and API key management
+2. **Duplicated agent runtime** — Claude Code already handles command execution, output observation, conversation state, and streaming UI
+3. **Provider lock-in** — contradicts the MCP server's agent-agnostic design
+4. **Maintenance burden** — token budget management, session persistence, streaming UI, context window handling
+
+### Recommended approach: Phase 2+ (skill + MCP enhancements)
+
+Instead of building a custom agent, invest in:
+
+1. **A Claude Code skill** (or equivalent agent instructions) that orchestrates the existing MCP tools with pedagogical awareness — pacing, verification, error recovery, profile-aware explanations
+2. **MCP tool enhancements** that close the remaining gaps:
+   - Prerequisites annotation (required tools/versions per step)
+   - Common pitfalls hints the agent can proactively mention
+   - Richer discoverability (featured tutorials, profile-matched recommendations)
+   - User experience in tutorial selection and progress visibility
+3. **A dedicated subagent** (`.claude/agents/tutorial-instructor.md`) for deep tutorial guidance when dispatched
+
+This approach keeps the MCP server agent-agnostic, avoids an API dependency, and leverages the host tool's existing capabilities.
+
+### When to revisit Phase 3
+
+- The target audience shifts to users who don't have AI coding tools (unlikely given market trends)
+- A provider-agnostic agent SDK emerges that avoids Anthropic lock-in
+- The standalone tutorial experience becomes a top user request
+- MCP adds a native agent/conversation protocol that makes embedded instructors natural
