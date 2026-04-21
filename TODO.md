@@ -168,6 +168,68 @@ Unsigned `.exe` files downloaded from the internet are blocked or warned about b
 
 ---
 
+### "Phone a Friend" — topic-matched expert recommendations
+
+Surface the right SAP community expert to reach out to based on what the user is currently struggling with. Builds on the existing `influencers` command and data, but shifts from "browse the directory" to "who can help me with *this*?"
+
+**Why:** Developers hit a wall and need human help — but the SAP ecosystem is vast and they don't know who to ask. "Phone a Friend" bridges the gap between curated influencer data and a developer's immediate need, turning the influencers list from a passive directory into an active recommendation engine.
+
+**UX sketch:**
+
+```text
+$ sap-devs phone-a-friend "HANA deployment failing on CF"
+
+  Looking for experts in: hana, btp, cf
+
+  🎯 Recommended contacts:
+
+  Thomas Jung — Developer Advocate @ SAP
+    Focus: abap, cap, fiori, btp
+    💬 community: https://community.sap.com/t5/user/viewprofilepage/user-id/139
+    📝 blog: https://www.sap-press.com/authors/thomas-jung_697/
+
+  DJ Adams — Developer Advocate @ SAP
+    Focus: cap, fiori, nodejs, community, btp
+    💬 community: https://community.sap.com/t5/user/viewprofilepage/user-id/53
+    📝 blog: https://qmacro.org
+
+  💡 Tip: Ask on SAP Community and tag them — they're active there!
+```
+
+**Core mechanics:**
+
+- **Topic extraction:** Parse the user's free-text query into focus tags using keyword matching against the full tag vocabulary across all packs (e.g., "HANA deployment failing on CF" → `hana`, `btp`, `cf`)
+- **Scoring:** Rank influencers by how many of their `focus` tags overlap with the extracted topics; break ties by pack relevance to the user's active profile
+- **Contact surface priority:** Prefer `community` links (SAP Community profiles) since that's the best async channel for getting help; fall back to `blog`, `twitter`, `github`
+- **Output:** Card-style display with name/role/focus, top contact links, and a contextual tip about how to reach out effectively
+
+**Subcommand structure:**
+
+| Command | Purpose |
+| --- | --- |
+| `sap-devs phone-a-friend <query>` | Recommend experts matching the query |
+| `sap-devs phone-a-friend --topic <tag>` | Direct tag match (skip extraction) |
+| `sap-devs phone-a-friend --open <id>` | Open the recommended expert's community profile |
+
+**MCP integration:**
+
+Expose as a `phone_a_friend` MCP tool so AI agents can proactively suggest experts when the user is stuck. The agent could call this tool after detecting repeated errors or frustration patterns, surfacing "you might want to ask Thomas Jung about this" inline.
+
+**Data requirements:**
+
+- Existing `influencers.yaml` data is sufficient for v1 — no schema changes needed
+- `map[string]string` links field already supports arbitrary contact types
+- Consider adding a `community` link to all influencers who have SAP Community profiles (some entries may be missing it)
+- Future: add an `availability` or `responsive_on` field to indicate where each expert is most active
+
+**Open questions:**
+
+- Should the topic extraction be purely keyword-based, or use a lightweight fuzzy/synonym map (e.g., "Cloud Foundry" → `cf`, "HANA Cloud" → `hana`)?
+- Should the output include a "compose a question" helper that drafts an SAP Community post template tagged with the right topics?
+- Alias: should this also be available as `sap-devs ask` for brevity?
+
+---
+
 ### `sap-devs config location` - DONE ✔️
 
 ---
