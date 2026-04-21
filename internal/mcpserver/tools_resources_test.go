@@ -2,7 +2,6 @@ package mcpserver
 
 import (
 	"context"
-	"encoding/json"
 	"testing"
 
 	"github.com/mark3labs/mcp-go/mcp"
@@ -29,9 +28,8 @@ func TestSearchResources(t *testing.T) {
 	result, err := handler(context.Background(), req)
 	require.NoError(t, err)
 
-	var resources []map[string]any
-	err = json.Unmarshal([]byte(result.Content[0].(mcp.TextContent).Text), &resources)
-	require.NoError(t, err)
+	env := unmarshalEnvelope(t, result)
+	resources := env.resultSlice(t)
 	assert.Len(t, resources, 2)
 }
 
