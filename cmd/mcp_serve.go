@@ -99,6 +99,7 @@ var mcpServeCmd = &cobra.Command{
 			LearningIndex: learningIndex,
 			CacheDir:      paths.CacheDir,
 			ConfigDir:     paths.ConfigDir,
+			DataDir:       paths.DataDir,
 			Version:       Version,
 			Cwd:           cwd,
 			CFClient:      cfClient,

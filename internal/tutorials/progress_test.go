@@ -72,3 +72,44 @@ func TestProgress_LoadAll(t *testing.T) {
 	require.NoError(t, err)
 	assert.Len(t, all, 2)
 }
+
+func TestMergeCompletedSteps_NewTutorial(t *testing.T) {
+	dir := t.TempDir()
+	p, err := tutorials.MergeCompletedSteps(dir, "test-tut", []int{1, 2}, 3, 5)
+	require.NoError(t, err)
+	assert.Equal(t, []int{1, 2}, p.CompletedSteps)
+	assert.Equal(t, 3, p.CurrentStep)
+	assert.Equal(t, 5, p.TotalSteps)
+	assert.Nil(t, p.CompletedAt)
+}
+
+func TestMergeCompletedSteps_MergeIdempotent(t *testing.T) {
+	dir := t.TempDir()
+	_, err := tutorials.MergeCompletedSteps(dir, "test-tut", []int{1}, 2, 5)
+	require.NoError(t, err)
+	p, err := tutorials.MergeCompletedSteps(dir, "test-tut", []int{1, 2}, 3, 5)
+	require.NoError(t, err)
+	assert.Equal(t, []int{1, 2}, p.CompletedSteps)
+	assert.Equal(t, 3, p.CurrentStep)
+}
+
+func TestMergeCompletedSteps_Completion(t *testing.T) {
+	dir := t.TempDir()
+	p, err := tutorials.MergeCompletedSteps(dir, "test-tut", []int{1, 2, 3}, 0, 3)
+	require.NoError(t, err)
+	assert.NotNil(t, p.CompletedAt)
+}
+
+func TestMergeCompletedSteps_OutOfRange(t *testing.T) {
+	dir := t.TempDir()
+	_, err := tutorials.MergeCompletedSteps(dir, "test-tut", []int{0, 6}, 1, 5)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "out of range")
+}
+
+func TestMergeCompletedSteps_DefaultCurrentStep(t *testing.T) {
+	dir := t.TempDir()
+	p, err := tutorials.MergeCompletedSteps(dir, "test-tut", []int{3, 1, 2}, 0, 5)
+	require.NoError(t, err)
+	assert.Equal(t, 4, p.CurrentStep)
+}
