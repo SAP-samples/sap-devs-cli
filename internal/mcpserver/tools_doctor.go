@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"time"
 
 	"github.com/SAP-samples/sap-devs-cli/internal/content"
 	"github.com/SAP-samples/sap-devs-cli/internal/project"
@@ -52,7 +53,9 @@ func execRunner(command string) (string, error) {
 	if len(parts) == 0 {
 		return "", fmt.Errorf("empty command")
 	}
-	cmd := exec.Command(parts[0], parts[1:]...)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	cmd := exec.CommandContext(ctx, parts[0], parts[1:]...)
 	out, err := cmd.CombinedOutput()
 	return string(out), err
 }

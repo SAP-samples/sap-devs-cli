@@ -88,6 +88,11 @@ func getNewsDetailHandler(deps Deps) server.ToolHandlerFunc {
 			return mcp.NewToolResultError("community_url parameter is required"), nil
 		}
 
+		if !strings.HasPrefix(url, "https://community.sap.com/") &&
+			!strings.HasPrefix(url, "https://blogs.sap.com/") {
+			return mcp.NewToolResultError("community_url must be a community.sap.com or blogs.sap.com URL"), nil
+		}
+
 		cacheKey := fmt.Sprintf("%x", sha256.Sum256([]byte(url)))
 		if deps.CacheDir != "" {
 			if cached, ok := loadNewsDetailCache(deps.CacheDir, cacheKey, newsDetailTTL); ok {
