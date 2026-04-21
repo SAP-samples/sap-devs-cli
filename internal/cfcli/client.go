@@ -1,7 +1,9 @@
 package cfcli
 
 import (
+	"context"
 	"encoding/json"
+	"fmt"
 	"os"
 	"time"
 )
@@ -46,4 +48,22 @@ func (c *Client) readConfig() *cfConfig {
 		return nil
 	}
 	return &cfg
+}
+
+func (c *Client) runWithContext(ctx context.Context, command string) (string, error) {
+	type result struct {
+		out string
+		err error
+	}
+	ch := make(chan result, 1)
+	go func() {
+		out, err := c.run(command)
+		ch <- result{out, err}
+	}()
+	select {
+	case <-ctx.Done():
+		return "", fmt.Errorf("command timed out after %s — the CF API may be slow, try again", c.timeout)
+	case r := <-ch:
+		return r.out, r.err
+	}
 }
