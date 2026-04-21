@@ -54,4 +54,133 @@ func (c *Client) Target(ctx context.Context) (TargetInfo, error) {
 	return info, nil
 }
 
-var _ = strings.TrimSpace // suppress unused import until more commands are added
+func (c *Client) Apps(ctx context.Context) ([]App, error) {
+	childCtx, cancel := context.WithTimeout(ctx, c.timeout)
+	defer cancel()
+
+	out, err := c.runWithContext(childCtx, "cf apps")
+	if err != nil {
+		if notInstalled := checkNotInstalled(err); notInstalled != nil {
+			return nil, notInstalled
+		}
+		if authErr := checkAuthError(out); authErr != nil {
+			return nil, authErr
+		}
+		return nil, fmt.Errorf("cf apps failed: %s", out)
+	}
+	if authErr := checkAuthError(out); authErr != nil {
+		return nil, authErr
+	}
+	return parseCFApps(out), nil
+}
+
+func (c *Client) Services(ctx context.Context) ([]Service, error) {
+	childCtx, cancel := context.WithTimeout(ctx, c.timeout)
+	defer cancel()
+
+	out, err := c.runWithContext(childCtx, "cf services")
+	if err != nil {
+		if notInstalled := checkNotInstalled(err); notInstalled != nil {
+			return nil, notInstalled
+		}
+		if authErr := checkAuthError(out); authErr != nil {
+			return nil, authErr
+		}
+		return nil, fmt.Errorf("cf services failed: %s", out)
+	}
+	if authErr := checkAuthError(out); authErr != nil {
+		return nil, authErr
+	}
+	return parseCFServices(out), nil
+}
+
+type AppEnv struct {
+	SystemProvided any `json:"system_provided,omitempty"`
+	UserProvided   any `json:"user_provided,omitempty"`
+	Running        any `json:"running_env,omitempty"`
+	Staging        any `json:"staging_env,omitempty"`
+}
+
+func (c *Client) Env(ctx context.Context, appName string) (AppEnv, error) {
+	if appName == "" || strings.ContainsAny(appName, " \t\n\r;|&$`'\"\\") {
+		return AppEnv{}, fmt.Errorf("invalid app name: %q", appName)
+	}
+
+	childCtx, cancel := context.WithTimeout(ctx, c.timeout)
+	defer cancel()
+
+	out, err := c.runWithContext(childCtx, "cf env "+appName)
+	if err != nil {
+		if notInstalled := checkNotInstalled(err); notInstalled != nil {
+			return AppEnv{}, notInstalled
+		}
+		if authErr := checkAuthError(out); authErr != nil {
+			return AppEnv{}, authErr
+		}
+		return AppEnv{}, fmt.Errorf("cf env failed: %s", out)
+	}
+	if authErr := checkAuthError(out); authErr != nil {
+		return AppEnv{}, authErr
+	}
+	return parseCFEnv(out), nil
+}
+
+func (c *Client) Routes(ctx context.Context) ([]Route, error) {
+	childCtx, cancel := context.WithTimeout(ctx, c.timeout)
+	defer cancel()
+
+	out, err := c.runWithContext(childCtx, "cf routes")
+	if err != nil {
+		if notInstalled := checkNotInstalled(err); notInstalled != nil {
+			return nil, notInstalled
+		}
+		if authErr := checkAuthError(out); authErr != nil {
+			return nil, authErr
+		}
+		return nil, fmt.Errorf("cf routes failed: %s", out)
+	}
+	if authErr := checkAuthError(out); authErr != nil {
+		return nil, authErr
+	}
+	return parseCFRoutes(out), nil
+}
+
+func (c *Client) Domains(ctx context.Context) ([]Domain, error) {
+	childCtx, cancel := context.WithTimeout(ctx, c.timeout)
+	defer cancel()
+
+	out, err := c.runWithContext(childCtx, "cf domains")
+	if err != nil {
+		if notInstalled := checkNotInstalled(err); notInstalled != nil {
+			return nil, notInstalled
+		}
+		if authErr := checkAuthError(out); authErr != nil {
+			return nil, authErr
+		}
+		return nil, fmt.Errorf("cf domains failed: %s", out)
+	}
+	if authErr := checkAuthError(out); authErr != nil {
+		return nil, authErr
+	}
+	return parseCFDomains(out), nil
+}
+
+func (c *Client) Buildpacks(ctx context.Context) ([]Buildpack, error) {
+	childCtx, cancel := context.WithTimeout(ctx, c.timeout)
+	defer cancel()
+
+	out, err := c.runWithContext(childCtx, "cf buildpacks")
+	if err != nil {
+		if notInstalled := checkNotInstalled(err); notInstalled != nil {
+			return nil, notInstalled
+		}
+		if authErr := checkAuthError(out); authErr != nil {
+			return nil, authErr
+		}
+		return nil, fmt.Errorf("cf buildpacks failed: %s", out)
+	}
+	if authErr := checkAuthError(out); authErr != nil {
+		return nil, authErr
+	}
+	return parseCFBuildpacks(out), nil
+}

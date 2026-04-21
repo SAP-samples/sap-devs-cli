@@ -1,6 +1,10 @@
 package cfcli
 
-import "strings"
+import (
+	"encoding/json"
+	"regexp"
+	"strings"
+)
 
 func parseCFTarget(output string) TargetInfo {
 	var info TargetInfo
@@ -269,4 +273,87 @@ func parseCFBuildpacks(output string) []Buildpack {
 		})
 	}
 	return bps
+}
+
+var sensitiveKeyRe = regexp.MustCompile(`(?i)^(password|clientsecret|client_secret|token|access_token|refresh_token|key|secret|private_key|certificate)$`)
+
+func parseCFEnv(output string) AppEnv {
+	var env AppEnv
+
+	sections := map[string]*any{
+		"System-Provided:": &env.SystemProvided,
+		"User-Provided:":   &env.UserProvided,
+		"Running Environment Variable Groups:": &env.Running,
+		"Staging Environment Variable Groups:": &env.Staging,
+	}
+
+	lines := strings.Split(output, "\n")
+	for sectionName, target := range sections {
+		content := extractJSONSection(lines, sectionName)
+		if content == "" {
+			continue
+		}
+		var parsed any
+		if json.Unmarshal([]byte(content), &parsed) == nil {
+			parsed = redactSensitive(parsed)
+			*target = parsed
+		}
+	}
+	return env
+}
+
+func extractJSONSection(lines []string, marker string) string {
+	start := -1
+	for i, line := range lines {
+		if strings.TrimSpace(line) == marker || strings.Contains(line, marker) {
+			start = i + 1
+			break
+		}
+	}
+	if start < 0 {
+		return ""
+	}
+	var buf strings.Builder
+	braceDepth := 0
+	started := false
+	for _, line := range lines[start:] {
+		trimmed := strings.TrimSpace(line)
+		if !started {
+			if strings.HasPrefix(trimmed, "{") {
+				started = true
+			} else {
+				continue
+			}
+		}
+		buf.WriteString(line)
+		buf.WriteString("\n")
+		braceDepth += strings.Count(trimmed, "{") - strings.Count(trimmed, "}")
+		if started && braceDepth <= 0 {
+			break
+		}
+	}
+	return buf.String()
+}
+
+func redactSensitive(v any) any {
+	switch val := v.(type) {
+	case map[string]any:
+		out := make(map[string]any, len(val))
+		for k, v := range val {
+			if sensitiveKeyRe.MatchString(k) {
+				out[k] = "[REDACTED]"
+			} else {
+				out[k] = redactSensitive(v)
+			}
+		}
+		return out
+	case []any:
+		out := make([]any, len(val))
+		for i, v := range val {
+			out[i] = redactSensitive(v)
+		}
+		return out
+	default:
+		return v
+	}
 }
