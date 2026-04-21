@@ -46,3 +46,14 @@ func wrapResults(results any, total, count int, entityName, query string) *mcp.C
 	}
 	return mcp.NewToolResultText(string(b))
 }
+
+func wrapResultsWithHint(results any, total int, hint string) *mcp.CallToolResult {
+	env := ResultEnvelope{
+		Count:   0,
+		Total:   total,
+		Results: results,
+		Hint:    hint,
+	}
+	b, _ := json.Marshal(env)
+	return mcp.NewToolResultText(string(b))
+}

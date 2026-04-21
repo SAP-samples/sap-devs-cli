@@ -118,9 +118,11 @@ func getNewsDetailHandler(deps Deps) server.ToolHandlerFunc {
 }
 
 var (
-	boldHeadingRe = regexp.MustCompile(`(?m)^\*\*(.+?)\*\*\s*$`)
+	boldHeadingRe = regexp.MustCompile(`(?m)^\*\*(.+?)\*\*[\s\x{00a0}]*$`)
 	linkRe        = regexp.MustCompile(`\[([^\]]*)\]\((https?://[^\s)]+)\)`)
-	chapterRe     = regexp.MustCompile(`(?m)^(\d{2}:\d{2})\s+(.+)$`)
+	mdLinkRe      = regexp.MustCompile(`\[([^\]]+)\]\([^)]+\)`)
+	chapterRe     = regexp.MustCompile(`(?m)^(\d{2}:\d{2})[\s\x{00a0}]+(.+?)[\s\x{00a0}]*$`)
+	htmlCommentRe = regexp.MustCompile(`<!--.*?-->`)
 )
 
 func parseNewsDetail(communityURL, markdown string) newsDetailResult {
@@ -131,17 +133,21 @@ func parseNewsDetail(communityURL, markdown string) newsDetailResult {
 	lines := strings.Split(markdown, "\n")
 	for _, line := range lines {
 		trimmed := strings.TrimSpace(line)
-		if strings.HasPrefix(trimmed, "## ") || strings.HasPrefix(trimmed, "# ") {
-			candidate := strings.TrimLeft(trimmed, "# ")
-			if strings.Contains(strings.ToLower(candidate), "developer news") {
-				result.Title = candidate
-				break
-			}
+		if !strings.HasPrefix(trimmed, "## ") && !strings.HasPrefix(trimmed, "# ") {
+			continue
 		}
+		candidate := strings.TrimLeft(trimmed, "# ")
+		if !strings.Contains(strings.ToLower(candidate), "developer news") {
+			continue
+		}
+		candidate = mdLinkRe.ReplaceAllString(candidate, "$1")
+		result.Title = strings.TrimSpace(candidate)
+		break
 	}
 
 	itemsSection := extractSection(markdown, "ITEMS")
 	if itemsSection != "" {
+		itemsSection = htmlCommentRe.ReplaceAllString(itemsSection, "")
 		parts := boldHeadingRe.Split(itemsSection, -1)
 		headings := boldHeadingRe.FindAllStringSubmatch(itemsSection, -1)
 		for i, heading := range headings {
@@ -158,33 +164,52 @@ func parseNewsDetail(communityURL, markdown string) newsDetailResult {
 	chaptersSection := extractSection(markdown, "CHAPTER TITLES")
 	if chaptersSection != "" {
 		for _, m := range chapterRe.FindAllStringSubmatch(chaptersSection, -1) {
+			title := strings.ReplaceAll(strings.TrimSpace(m[2]), " ", " ")
 			result.Chapters = append(result.Chapters, newsDetailChapter{
 				Time:  m[1],
-				Title: strings.TrimSpace(m[2]),
+				Title: title,
 			})
 		}
 	}
 
 	if len(result.Items) == 0 {
-		result.RawContent = markdown
+		transcriptSection := extractSection(markdown, "TRANSCRIPT")
+		if transcriptSection != "" {
+			result.RawContent = transcriptSection
+		} else {
+			result.RawContent = markdown
+		}
 	}
 
 	return result
 }
 
 func extractSection(markdown, sectionName string) string {
+	upper := strings.ToUpper(markdown)
 	marker := strings.ToUpper(sectionName)
-	idx := strings.Index(strings.ToUpper(markdown), marker)
+
+	searchPatterns := []string{"### " + marker, "## " + marker, marker}
+	idx := -1
+	markerLen := 0
+	for _, pat := range searchPatterns {
+		pos := strings.Index(upper, pat)
+		if pos != -1 && (idx == -1 || pos < idx) {
+			idx = pos
+			markerLen = len(pat)
+		}
+	}
 	if idx == -1 {
 		return ""
 	}
-	rest := markdown[idx+len(marker):]
+
+	rest := markdown[idx+markerLen:]
 	nextSection := -1
-	for _, sep := range []string{"### ", "## ", "CHAPTER TITLES", "TRANSCRIPT", "ITEMS"} {
-		if sep == marker {
+	sectionMarkers := []string{"### ITEMS", "### CHAPTER TITLES", "### TRANSCRIPT", "## ", "Labels\n"}
+	for _, sep := range sectionMarkers {
+		if strings.EqualFold(sep, "### "+marker) {
 			continue
 		}
-		pos := strings.Index(strings.ToUpper(rest), strings.ToUpper(sep))
+		pos := strings.Index(upper[idx+markerLen:], strings.ToUpper(sep))
 		if pos != -1 && (nextSection == -1 || pos < nextSection) {
 			nextSection = pos
 		}
