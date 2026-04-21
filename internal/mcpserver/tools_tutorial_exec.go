@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"sort"
 
 	"github.com/SAP-samples/sap-devs-cli/internal/credentials"
 	"github.com/SAP-samples/sap-devs-cli/internal/tutorials"
@@ -164,13 +165,69 @@ func loadOrFetchTutorial(deps Deps, meta *tutorials.TutorialMeta) (*tutorials.Tu
 	return tut, nil
 }
 
-// Stub handlers — implemented in Tasks 6-7
+type progressResult struct {
+	Slug     string           `json:"slug"`
+	Progress progressSnapshot `json:"progress"`
+}
 
 func updateTutorialProgressHandler(deps Deps) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		return mcp.NewToolResultError("not implemented yet"), nil
+		slug, err := req.RequireString("slug")
+		if err != nil {
+			return mcp.NewToolResultError("slug parameter is required"), nil
+		}
+
+		meta := tutorials.FindBySlug(deps.TutorialIndex, slug)
+		if meta == nil {
+			return mcp.NewToolResultError(fmt.Sprintf("Tutorial %q not found.", slug)), nil
+		}
+
+		args := req.GetArguments()
+		stepsRaw, ok := args["completed_steps"]
+		if !ok {
+			return mcp.NewToolResultError("completed_steps parameter is required"), nil
+		}
+		stepsArr, ok := stepsRaw.([]any)
+		if !ok {
+			return mcp.NewToolResultError("completed_steps must be an array of integers"), nil
+		}
+		var completedSteps []int
+		for _, v := range stepsArr {
+			n, ok := v.(float64)
+			if !ok {
+				return mcp.NewToolResultError("completed_steps must be an array of integers"), nil
+			}
+			completedSteps = append(completedSteps, int(n))
+		}
+
+		currentStep := req.GetInt("current_step", 0)
+
+		tut, err := loadOrFetchTutorial(deps, meta)
+		if err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("Failed to load tutorial: %v", err)), nil
+		}
+
+		p, err := tutorials.MergeCompletedSteps(deps.DataDir, slug, completedSteps, currentStep, len(tut.Steps))
+		if err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("Failed to update progress: %v", err)), nil
+		}
+
+		result := progressResult{
+			Slug: slug,
+			Progress: progressSnapshot{
+				CompletedSteps: p.CompletedSteps,
+				CurrentStep:    p.CurrentStep,
+				TotalSteps:     len(tut.Steps),
+				StartedAt:      p.StartedAt.Format("2006-01-02T15:04:05Z"),
+				LastAccessed:   p.LastAccessed.Format("2006-01-02T15:04:05Z"),
+			},
+		}
+		b, _ := json.Marshal(result)
+		return mcp.NewToolResultText(string(b)), nil
 	}
 }
+
+// Stub handlers — implemented in next commit
 
 func getTutorialProgressHandler(deps Deps) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
@@ -183,3 +240,6 @@ func listActiveTutorialsHandler(deps Deps) server.ToolHandlerFunc {
 		return mcp.NewToolResultError("not implemented yet"), nil
 	}
 }
+
+// sort is used in the next commit; keep import alive
+var _ = sort.Slice

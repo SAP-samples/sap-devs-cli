@@ -111,3 +111,51 @@ func TestGetTutorialStep_NoTrack(t *testing.T) {
 	require.NoError(t, err)
 	assert.Nil(t, p)
 }
+
+func TestUpdateTutorialProgress_Basic(t *testing.T) {
+	deps := tutorialExecDeps(t)
+	handler := updateTutorialProgressHandler(deps)
+
+	req := mcp.CallToolRequest{}
+	req.Params.Arguments = map[string]any{
+		"slug":            "cap-getting-started",
+		"completed_steps": []any{float64(1)},
+		"current_step":    float64(2),
+	}
+	result, err := handler(context.Background(), req)
+	require.NoError(t, err)
+	assert.False(t, result.IsError)
+
+	var resp map[string]any
+	require.NoError(t, json.Unmarshal([]byte(result.Content[0].(mcp.TextContent).Text), &resp))
+	prog := resp["progress"].(map[string]any)
+	assert.Equal(t, float64(2), prog["current_step"])
+}
+
+func TestUpdateTutorialProgress_InvalidSlug(t *testing.T) {
+	deps := tutorialExecDeps(t)
+	handler := updateTutorialProgressHandler(deps)
+
+	req := mcp.CallToolRequest{}
+	req.Params.Arguments = map[string]any{
+		"slug":            "nonexistent",
+		"completed_steps": []any{float64(1)},
+	}
+	result, err := handler(context.Background(), req)
+	require.NoError(t, err)
+	assert.True(t, result.IsError)
+}
+
+func TestUpdateTutorialProgress_OutOfRange(t *testing.T) {
+	deps := tutorialExecDeps(t)
+	handler := updateTutorialProgressHandler(deps)
+
+	req := mcp.CallToolRequest{}
+	req.Params.Arguments = map[string]any{
+		"slug":            "cap-getting-started",
+		"completed_steps": []any{float64(99)},
+	}
+	result, err := handler(context.Background(), req)
+	require.NoError(t, err)
+	assert.True(t, result.IsError)
+}
