@@ -2,7 +2,6 @@ package mcpserver
 
 import (
 	"context"
-	"encoding/json"
 	"testing"
 
 	"github.com/mark3labs/mcp-go/mcp"
@@ -25,9 +24,8 @@ func TestSearchTutorials(t *testing.T) {
 	result, err := handler(context.Background(), req)
 	require.NoError(t, err)
 
-	var tuts []map[string]any
-	err = json.Unmarshal([]byte(result.Content[0].(mcp.TextContent).Text), &tuts)
-	require.NoError(t, err)
+	env := unmarshalEnvelope(t, result)
+	tuts := env.resultSlice(t)
 	assert.Len(t, tuts, 1)
 	assert.Equal(t, "cap-getting-started", tuts[0]["slug"])
 }
@@ -39,7 +37,11 @@ func TestSearchTutorials_EmptyIndex(t *testing.T) {
 	req.Params.Arguments = map[string]any{"query": "cap"}
 	result, err := handler(context.Background(), req)
 	require.NoError(t, err)
-	assert.Equal(t, "[]", result.Content[0].(mcp.TextContent).Text)
+
+	env := unmarshalEnvelope(t, result)
+	assert.Equal(t, 0, env.Count)
+	assert.Equal(t, 0, env.Total)
+	assert.Contains(t, env.Hint, "No tutorials matched")
 }
 
 func TestSearchLearningJourneys(t *testing.T) {
@@ -54,9 +56,8 @@ func TestSearchLearningJourneys(t *testing.T) {
 	result, err := handler(context.Background(), req)
 	require.NoError(t, err)
 
-	var journeys []map[string]any
-	err = json.Unmarshal([]byte(result.Content[0].(mcp.TextContent).Text), &journeys)
-	require.NoError(t, err)
+	env := unmarshalEnvelope(t, result)
+	journeys := env.resultSlice(t)
 	assert.Len(t, journeys, 1)
 }
 
@@ -67,5 +68,9 @@ func TestSearchLearningJourneys_EmptyIndex(t *testing.T) {
 	req.Params.Arguments = map[string]any{"query": "btp"}
 	result, err := handler(context.Background(), req)
 	require.NoError(t, err)
-	assert.Equal(t, "[]", result.Content[0].(mcp.TextContent).Text)
+
+	env := unmarshalEnvelope(t, result)
+	assert.Equal(t, 0, env.Count)
+	assert.Equal(t, 0, env.Total)
+	assert.Contains(t, env.Hint, "No learning journeys matched")
 }

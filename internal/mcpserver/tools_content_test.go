@@ -2,7 +2,6 @@ package mcpserver
 
 import (
 	"context"
-	"encoding/json"
 	"testing"
 
 	"github.com/mark3labs/mcp-go/mcp"
@@ -23,9 +22,9 @@ func TestListPacks(t *testing.T) {
 	require.NoError(t, err)
 	require.False(t, result.IsError)
 
-	var packs []map[string]any
-	err = json.Unmarshal([]byte(result.Content[0].(mcp.TextContent).Text), &packs)
-	require.NoError(t, err)
+	env := unmarshalEnvelope(t, result)
+	assert.Equal(t, 2, env.Count)
+	packs := env.resultSlice(t)
 	assert.Len(t, packs, 2)
 	assert.Equal(t, "cap", packs[0]["id"])
 	assert.Equal(t, "CAP", packs[0]["name"])
@@ -38,12 +37,23 @@ func TestGetContext_SpecificPack(t *testing.T) {
 		},
 	}
 	handler := getContextHandler(deps)
+
+	// Default verbosity is "standard" — includes core + detail but not extended
 	req := mcp.CallToolRequest{}
 	req.Params.Arguments = map[string]any{"pack": "cap"}
 	result, err := handler(context.Background(), req)
 	require.NoError(t, err)
-	assert.Contains(t, result.Content[0].(mcp.TextContent).Text, "CAP core.")
-	assert.Contains(t, result.Content[0].(mcp.TextContent).Text, "CAP extended.")
+	text := result.Content[0].(mcp.TextContent).Text
+	assert.Contains(t, text, "CAP core.")
+	assert.Contains(t, text, "CAP detail.")
+	assert.NotContains(t, text, "CAP extended.")
+
+	// Explicit "full" verbosity includes everything
+	req.Params.Arguments = map[string]any{"pack": "cap", "verbosity": "full"}
+	result, err = handler(context.Background(), req)
+	require.NoError(t, err)
+	text = result.Content[0].(mcp.TextContent).Text
+	assert.Contains(t, text, "CAP extended.")
 }
 
 func TestGetContext_UnknownPack(t *testing.T) {

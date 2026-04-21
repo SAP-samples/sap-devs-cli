@@ -105,6 +105,7 @@ type Tip struct {
 	Title   string
 	Content string
 	Tags    []string
+	PackID  string
 }
 
 // HookDef declares a hook command to wire into an AI tool's event system.
@@ -503,6 +504,9 @@ func LoadPack(packDir string, lang string) (*Pack, error) {
 	}
 	if data, err := os.ReadFile(tipsFile); err == nil {
 		pack.Tips = parseTips(string(data))
+		for i := range pack.Tips {
+			pack.Tips[i].PackID = pack.ID
+		}
 	}
 
 	return pack, nil

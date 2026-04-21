@@ -2,7 +2,6 @@ package mcpserver
 
 import (
 	"context"
-	"encoding/json"
 	"testing"
 
 	"github.com/mark3labs/mcp-go/mcp"
@@ -26,9 +25,8 @@ func TestGetKnownErrors(t *testing.T) {
 	result, err := handler(context.Background(), req)
 	require.NoError(t, err)
 
-	var errors []map[string]any
-	err = json.Unmarshal([]byte(result.Content[0].(mcp.TextContent).Text), &errors)
-	require.NoError(t, err)
+	env := unmarshalEnvelope(t, result)
+	errors := env.resultSlice(t)
 	assert.Len(t, errors, 1)
 	assert.Equal(t, "abap/access", errors[0]["id"])
 }

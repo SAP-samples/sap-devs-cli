@@ -2,7 +2,6 @@ package mcpserver
 
 import (
 	"context"
-	"encoding/json"
 	"testing"
 
 	"github.com/mark3labs/mcp-go/mcp"
@@ -25,9 +24,8 @@ func TestGetSamples(t *testing.T) {
 	result, err := handler(context.Background(), req)
 	require.NoError(t, err)
 
-	var samples []map[string]any
-	err = json.Unmarshal([]byte(result.Content[0].(mcp.TextContent).Text), &samples)
-	require.NoError(t, err)
+	env := unmarshalEnvelope(t, result)
+	samples := env.resultSlice(t)
 	assert.Len(t, samples, 1)
 	assert.Equal(t, "CAP Bookshop", samples[0]["label"])
 }
@@ -49,9 +47,8 @@ func TestGetSamples_FilterByPack(t *testing.T) {
 	result, err := handler(context.Background(), req)
 	require.NoError(t, err)
 
-	var samples []map[string]any
-	err = json.Unmarshal([]byte(result.Content[0].(mcp.TextContent).Text), &samples)
-	require.NoError(t, err)
+	env := unmarshalEnvelope(t, result)
+	samples := env.resultSlice(t)
 	assert.Len(t, samples, 1)
 	assert.Equal(t, "cap/bookshop", samples[0]["id"])
 }
@@ -63,5 +60,9 @@ func TestGetSamples_EmptyPacks(t *testing.T) {
 	req.Params.Arguments = map[string]any{}
 	result, err := handler(context.Background(), req)
 	require.NoError(t, err)
-	assert.Equal(t, "[]", result.Content[0].(mcp.TextContent).Text)
+
+	env := unmarshalEnvelope(t, result)
+	assert.Equal(t, 0, env.Count)
+	assert.Equal(t, 0, env.Total)
+	assert.Contains(t, env.Hint, "No samples available")
 }

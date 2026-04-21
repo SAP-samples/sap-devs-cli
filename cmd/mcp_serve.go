@@ -22,6 +22,11 @@ var mcpServeCmd = &cobra.Command{
 	Short: "Start the SAP developer context MCP server (stdio)",
 	Long:  "Starts a Model Context Protocol server on stdio. AI tools spawn this as a child process to query SAP developer knowledge on demand.",
 	RunE: func(cmd *cobra.Command, args []string) error {
+		cwd, err := os.Getwd()
+		if err != nil {
+			cwd = ""
+		}
+
 		loader, err := newContentLoader()
 		if err != nil {
 			return fmt.Errorf("failed to initialise content loader: %w", err)
@@ -68,6 +73,7 @@ var mcpServeCmd = &cobra.Command{
 			CacheDir:      paths.CacheDir,
 			ConfigDir:     paths.ConfigDir,
 			Version:       Version,
+			Cwd:           cwd,
 		}
 
 		s := mcpserver.NewServer(deps)
