@@ -129,7 +129,11 @@ func getTipHandler(deps Deps) server.ToolHandlerFunc {
 		seed := time.Now().UnixNano()
 		tip, err := content.SelectTip(deps.Packs, tags, seed)
 		if err != nil {
-			return mcp.NewToolResultText("No tips available for the given topic."), nil
+			hint := "No tips available."
+			if topic != "" {
+				hint = fmt.Sprintf("No tips matched topic '%s'. Try: cap, abap, btp, hana, integration. Or omit topic for a random tip.", topic)
+			}
+			return wrapResultsWithHint([]tipResult{}, 0, hint), nil
 		}
 		result := tipResult{
 			Title:   tip.Title,
@@ -137,7 +141,10 @@ func getTipHandler(deps Deps) server.ToolHandlerFunc {
 			Tags:    tip.Tags,
 			Pack:    tip.PackID,
 		}
-		b, _ := json.Marshal(result)
+		b, err := json.Marshal(result)
+		if err != nil {
+			return mcp.NewToolResultError("failed to serialize tip"), nil
+		}
 		return mcp.NewToolResultText(string(b)), nil
 	}
 }

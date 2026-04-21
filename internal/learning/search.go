@@ -2,21 +2,46 @@ package learning
 
 import "strings"
 
-// Search performs case-insensitive substring matching across title, description, slug, and product.
+// Search performs case-insensitive multi-word matching across title, description, slug, and product.
+// Multi-word queries use AND semantics: every word must appear somewhere in the combined text.
 // Results are ranked: title matches first, then others.
 func Search(journeys []LearningJourney, query string) []LearningJourney {
-	q := strings.ToLower(query)
+	words := splitQuery(query)
+	if len(words) == 0 {
+		return nil
+	}
 	var titleMatches, otherMatches []LearningJourney
 	for _, j := range journeys {
-		if strings.Contains(strings.ToLower(j.Title), q) {
+		title := strings.ToLower(j.Title)
+		if containsAllWords(title, words) {
 			titleMatches = append(titleMatches, j)
-		} else if strings.Contains(strings.ToLower(j.Description), q) ||
-			strings.Contains(strings.ToLower(j.Slug), q) ||
-			strings.Contains(strings.ToLower(j.Product), q) {
-			otherMatches = append(otherMatches, j)
+		} else {
+			combined := title + " " + strings.ToLower(j.Description) + " " + strings.ToLower(j.Slug) + " " + strings.ToLower(j.Product)
+			if containsAllWords(combined, words) {
+				otherMatches = append(otherMatches, j)
+			}
 		}
 	}
 	return append(titleMatches, otherMatches...)
+}
+
+func splitQuery(query string) []string {
+	var words []string
+	for _, w := range strings.Fields(strings.ToLower(query)) {
+		if w != "" {
+			words = append(words, w)
+		}
+	}
+	return words
+}
+
+func containsAllWords(text string, words []string) bool {
+	for _, w := range words {
+		if !strings.Contains(text, w) {
+			return false
+		}
+	}
+	return true
 }
 
 // FilterByLevel returns journeys matching the given level (case-insensitive exact match).

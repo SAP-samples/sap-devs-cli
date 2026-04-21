@@ -2,6 +2,7 @@ package mcpserver
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/mark3labs/mcp-go/mcp"
@@ -15,7 +16,7 @@ func registerDiscoveryTools(s *server.MCPServer, deps Deps) {
 			mcp.WithDescription("Search SAP Discovery Center missions and BTP services. Missions are guided hands-on experiences; services are the BTP service catalog. Use when users need to explore SAP BTP capabilities or find guided learning missions."),
 			mcp.WithString("query",
 				mcp.Required(),
-				mcp.Description("Search query for missions or services"),
+				mcp.Description("Search query for missions or services. Examples: 'CAP', 'ABAP environment', 'integration', 'HANA Cloud'."),
 			),
 			mcp.WithString("type",
 				mcp.Description("Either 'missions' or 'services'. Default: 'missions'."),
@@ -58,7 +59,7 @@ func searchDiscoveryHandler(deps Deps) server.ToolHandlerFunc {
 		if searchType == "services" {
 			services, err := client.FetchServices()
 			if err != nil {
-				return wrapResults([]serviceResult{}, 0, 0, "services", query), nil
+				return wrapResultsWithHint([]serviceResult{}, 0, fmt.Sprintf("Failed to fetch BTP service catalog: %v. Try again later.", err)), nil
 			}
 			var filtered []serviceResult
 			for _, s := range services {
@@ -82,7 +83,7 @@ func searchDiscoveryHandler(deps Deps) server.ToolHandlerFunc {
 		filters := discovery.SearchFilters{Top: limit}
 		missions, err := client.SearchMissions(query, filters)
 		if err != nil {
-			return wrapResults([]missionResult{}, 0, 0, "missions", query), nil
+			return wrapResultsWithHint([]missionResult{}, 0, fmt.Sprintf("Failed to search Discovery Center missions: %v. Try again later.", err)), nil
 		}
 		total := len(missions)
 		if limit < total {

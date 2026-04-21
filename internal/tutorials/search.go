@@ -3,28 +3,48 @@ package tutorials
 import "strings"
 
 // Search returns tutorials matching query against title, description, slug, and tags.
+// Multi-word queries use AND semantics: every word must appear somewhere in the combined text.
 // Results are ranked: title matches first, then others.
 func Search(index []TutorialMeta, query string) []TutorialMeta {
-	q := strings.ToLower(query)
+	words := splitQuery(query)
+	if len(words) == 0 {
+		return nil
+	}
 	var titleMatches, otherMatches []TutorialMeta
 	for _, m := range index {
-		if strings.Contains(strings.ToLower(m.Title), q) {
+		title := strings.ToLower(m.Title)
+		if containsAllWords(title, words) {
 			titleMatches = append(titleMatches, m)
 			continue
 		}
-		if strings.Contains(strings.ToLower(m.Description), q) ||
-			strings.Contains(strings.ToLower(m.Slug), q) {
-			otherMatches = append(otherMatches, m)
-			continue
-		}
+		combined := title + " " + strings.ToLower(m.Description) + " " + strings.ToLower(m.Slug)
 		for _, tag := range m.Tags {
-			if strings.Contains(strings.ToLower(tag), q) {
-				otherMatches = append(otherMatches, m)
-				break
-			}
+			combined += " " + strings.ToLower(tag)
+		}
+		if containsAllWords(combined, words) {
+			otherMatches = append(otherMatches, m)
 		}
 	}
 	return append(titleMatches, otherMatches...)
+}
+
+func splitQuery(query string) []string {
+	var words []string
+	for _, w := range strings.Fields(strings.ToLower(query)) {
+		if w != "" {
+			words = append(words, w)
+		}
+	}
+	return words
+}
+
+func containsAllWords(text string, words []string) bool {
+	for _, w := range words {
+		if !strings.Contains(text, w) {
+			return false
+		}
+	}
+	return true
 }
 
 // FilterByLevel returns tutorials matching the given level.

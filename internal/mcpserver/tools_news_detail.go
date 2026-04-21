@@ -96,7 +96,10 @@ func getNewsDetailHandler(deps Deps) server.ToolHandlerFunc {
 		cacheKey := fmt.Sprintf("%x", sha256.Sum256([]byte(url)))
 		if deps.CacheDir != "" {
 			if cached, ok := loadNewsDetailCache(deps.CacheDir, cacheKey, newsDetailTTL); ok {
-				b, _ := json.Marshal(cached)
+				b, err := json.Marshal(cached)
+				if err != nil {
+					return mcp.NewToolResultError("failed to serialize cached news detail"), nil
+				}
 				return mcp.NewToolResultText(string(b)), nil
 			}
 		}
@@ -112,7 +115,10 @@ func getNewsDetailHandler(deps Deps) server.ToolHandlerFunc {
 			saveNewsDetailCache(deps.CacheDir, cacheKey, result)
 		}
 
-		b, _ := json.Marshal(result)
+		b, err := json.Marshal(result)
+		if err != nil {
+			return mcp.NewToolResultError("failed to serialize news detail"), nil
+		}
 		return mcp.NewToolResultText(string(b)), nil
 	}
 }
