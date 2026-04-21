@@ -250,3 +250,93 @@ The server implementation lives in `internal/mcpserver/`:
 The server is built on [mcp-go](https://github.com/mark3labs/mcp-go) (`server.ServeStdio`). Dependencies (`Deps` struct) are assembled in `cmd/mcp_serve.go` from the content loader, tutorial index, learning index, active profile, cache/config directories, and current working directory.
 
 Content flows through the same layered merge as `inject`: official → company → user → project. The server respects the active profile's pack weighting and tip tags.
+
+## Cross-Server Orchestration (MCP-to-MCP)
+
+*Researched April 2026. Conclusion: no orchestration needed — host-mediated composition is the correct architecture.*
+
+### The SAP MCP Server Landscape
+
+Multiple independent MCP servers cover the SAP developer toolchain:
+
+| Server | Package | Tools | Domain |
+| -------- | ------- | ----- | ------ |
+| **sap-devs** | `sap-devs mcp serve` | 26 | SAP knowledge, CF/BTP inspection, learning, news |
+| **cds-mcp** | `@cap-js/mcp-server` | 2 | CDS model search, CAP documentation queries |
+| **ui5-mcp** | `@ui5/mcp-server` | 10 | UI5 scaffolding, API reference, linting, validation |
+| **hana-cli** | `hana-cli` (npm) | TBD | HANA database operations, SQL, HDI containers |
+
+All use stdio transport. In a typical session, Claude Code spawns each as a separate subprocess and the LLM sees all tools from all servers simultaneously.
+
+### Three Architectural Options Evaluated
+
+#### Option A: Host-Mediated Composition (Current — Recommended)
+
+The AI host (Claude Code, Cursor) connects to each server independently. The LLM decides which tools to call and coordinates multi-server workflows (e.g., query a CDS model via cds-mcp, then scaffold a UI5 app via ui5-mcp).
+
+- **Pros:** Already works, spec-blessed, zero maintenance, each server evolves independently
+- **Cons:** Requires each server configured separately (mitigated by `sap-devs mcp install --all`)
+
+#### Option B: Discovery Layer
+
+Expose a `list_sap_servers` tool that describes co-installed SAP MCP servers and their capabilities without proxying calls. Uses existing `mcp.yaml` pack metadata.
+
+- **Pros:** Simple to build, helps agents understand the landscape
+- **Cons:** Limited value when the host already sees all tools in context
+
+#### Option C: Proxy/Aggregator
+
+Embed mcp-go MCP clients inside `sap-devs mcp serve` to connect to downstream servers and re-expose their tools under a unified `sap_` prefix.
+
+- **Pros:** Single server for all SAP tooling, reduced agent cognitive load
+- **Cons:** Process management complexity (spawning/reaping subprocesses), double-proxy latency, N×M tool explosion (38+ tools under one server), maintenance burden tracking downstream API changes
+
+### MCP Spec Findings
+
+The MCP specification (2025-03-26) defines three roles: **host**, **client**, and **server**. Key findings:
+
+- **Server-to-server is not in the spec.** The host is the designated orchestrator. Servers are intentionally isolated — "servers should not be able to see into other servers."
+- **A server *can* also act as a client.** The mcp-go library (v0.48+) ships both `server` and `client` packages. A single Go process can run `server.ServeStdio()` while also holding `client.NewStdioMCPClient()` connections to downstream servers. This is architecturally valid but entirely custom — no standard exists.
+- **Emerging proposals:** SEP-2614 (server keywords for discovery/routing) and SEP-2598 (pluggable transports) are moving toward richer metadata but neither defines a server-to-server protocol.
+- **Sampling** (`sampling/createMessage`) lets a server request LLM completions back through the client. This enables indirect cross-server communication (Server A asks the LLM a question whose answer incorporates Server B's context) but is implicit, not designed for orchestration.
+
+### Decision
+
+**Option A (Do Nothing) is correct.** Rationale:
+
+1. **Claude Code's plugin system already solves discovery.** The `cds-mcp` and `ui5` plugins auto-register when installed — users don't manually edit `.mcp.json`.
+2. **~40 tools is within the LLM's working set.** The agent sees all tools from all connected servers in a single conversation. No routing problem exists.
+3. **The proxy adds operational risk without proportional benefit.** If a downstream server crashes inside the proxy, sap-devs must detect, report, and potentially restart it. Today the host handles this directly.
+4. **`sap-devs mcp install --all` solves setup friction.** Pack `mcp.yaml` files can declare downstream SAP servers so one command wires up the full suite.
+
+### When to Revisit
+
+- SAP MCP server count exceeds ~6 and setup friction becomes the top user complaint
+- The MCP spec adds a server discovery protocol (SEP-2614 lands)
+- A compelling cross-cutting concern emerges (e.g., SSO token propagation to all SAP servers)
+- Non-Claude-Code hosts lack a plugin system and users must manually configure each server
+
+### Near-Term Action: Pack MCP Metadata
+
+Populate pack `mcp.yaml` files with downstream SAP server definitions:
+
+```yaml
+# content/packs/cap/mcp.yaml
+- id: cds-mcp
+  name: CAP CDS MCP Server
+  description: CDS model search and CAP documentation queries
+  install:
+    command: npx
+    args: ["-y", "@cap-js/mcp-server"]
+  hosts: [claude-code, cursor, continue]
+
+- id: ui5-mcp
+  name: UI5 MCP Server
+  description: UI5 app scaffolding, API reference, linting, and validation
+  install:
+    command: npx
+    args: ["-y", "@ui5/mcp-server"]
+  hosts: [claude-code, cursor, continue]
+```
+
+This enables `sap-devs mcp install --all` to wire up the full SAP tool suite in one command, without any proxy complexity.

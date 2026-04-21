@@ -394,33 +394,15 @@ Implemented as two MCP tools: `check_tools` (tool installation status with per-O
 
 ---
 
-### MCP-to-MCP interactions with SAP ecosystem servers
+### ~~MCP-to-MCP interactions with SAP ecosystem servers~~ — RESOLVED (No Action Needed) ✔️
 
-Investigate whether the `sap-devs` MCP server can discover and interact with other SAP-ecosystem MCP servers — specifically the CAP CDS, UI5, Fiori, and hana-cli MCP servers — enabling cross-tool orchestration.
+Researched April 2026. The MCP spec (2025-03-26) is strictly client→server; there is no server-to-server protocol. A proxy pattern (sap-devs embedding mcp-go clients to downstream servers) is technically feasible but adds operational complexity without proportional benefit. Claude Code's plugin system already solves multi-server discovery — cds-mcp, ui5-mcp, and sap-devs all appear as independent servers in one agent session, and the LLM coordinates tool calls across them naturally.
 
-**Why:** The SAP developer toolchain is fragmented across multiple MCP servers: `cds-mcp` for CAP/CDS models, `ui5-mcp-server` for UI5 apps, and potentially `hana-cli` for HANA database operations. Today these are isolated silos — each agent session picks one. If `sap-devs` could act as an orchestrator (or at least a discovery layer), it could route queries to the right specialist MCP server and compose cross-cutting operations (e.g., "scaffold a CAP service with a Fiori UI" touching both CDS and UI5 servers).
+**Decision:** Host-mediated composition (the current architecture) is correct. No proxy or aggregator needed. Revisit if the SAP MCP server count exceeds ~6, or if the MCP spec adds a server discovery protocol (SEP-2614).
 
-**Research needed:**
+**Near-term action:** Populate pack `mcp.yaml` files with downstream SAP server metadata so `sap-devs mcp install --all` can wire up the full SAP tool suite.
 
-- Does the MCP spec support server-to-server communication, or is it strictly client→server? (Current spec is client-initiated; may need an MCP client embedded in the `sap-devs` server)
-- Can an MCP server advertise "I know about these other servers" and let the agent decide routing?
-- Practical pattern: `sap-devs mcp serve` detects co-installed MCP servers (from `.mcp.json`, tool config) and exposes a `list-sap-servers` tool + proxy tools
-- Alternatively: a "meta-tool" that accepts a target server name and forwards the call, avoiding N×M tool explosion
-
-**Known SAP MCP servers:**
-
-| Server | Package/Repo | Covers |
-| --- | --- | --- |
-| `cds-mcp` | `@sap/cds-mcp` (built into `@sap/cds-dk`) | CDS models, service definitions, CQL queries |
-| `ui5-mcp-server` | `@nicobrinkkemper/ui5-mcp-server` | UI5 app scaffolding, API reference, linting |
-| `hana-cli` | `hana-cli` npm package | HANA database operations, SQL, HDI containers |
-| `fiori-tools` | (potential future) | Fiori elements, annotations, deployment |
-
-**Open questions:**
-
-- Is "MCP talking to MCP" the right pattern, or should `sap-devs` simply recommend tool configurations to the agent?
-- Latency and error propagation: if a proxied call fails, how does `sap-devs` report it?
-- Security: should `sap-devs` ever proxy write operations to another MCP server?
+Full analysis: [docs/mcp-server.md § Cross-Server Orchestration](docs/mcp-server.md#cross-server-orchestration-mcp-to-mcp).
 
 ---
 
