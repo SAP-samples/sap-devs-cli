@@ -472,7 +472,7 @@ This is a three-phase feature:
 
 Implemented as 4 MCP tools (`get_tutorial_step`, `update_tutorial_progress`, `get_tutorial_progress`, `list_active_tutorials`) plus a heuristic annotation engine that extracts executable commands, file creates, and verification checks from tutorial step markdown. The AI agent drives the tutorial flow — fetching steps, annotating content, tracking progress — while the MCP server stays stateless. Progress is stored in `tutorial-progress.json` in the XDG data directory, shared between MCP tools and the existing TUI.
 
-See [design spec](docs/superpowers/specs/2026-04-21-tutorial-guided-execution-design.md) and [implementation plan](docs/superpowers/plans/2026-04-21-tutorial-guided-execution.md).
+New files: `internal/tutorials/annotate.go` (annotation engine), `internal/mcpserver/tools_tutorial_exec.go` (MCP handlers), with tests alongside.
 
 #### Phase 3 — AI Agent as Instructor
 
