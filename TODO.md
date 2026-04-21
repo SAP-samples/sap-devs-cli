@@ -367,7 +367,7 @@ Implemented: `<!-- verbosity:core/detail/extended -->` markers in context.md, `V
 
 ---
 
-### MCP wrappers for BTP CLI and CF CLI
+### ~~MCP wrappers for BTP CLI and CF CLI~~ — DONE ✔️
 
 Expose the `btp` and `cf` command-line tools as MCP tool surfaces, so AI agents can interact with them conversationally instead of the user having to context-switch to a terminal.
 
