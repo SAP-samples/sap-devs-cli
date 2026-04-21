@@ -41,7 +41,7 @@ func TestSearchTutorials_EmptyIndex(t *testing.T) {
 	env := unmarshalEnvelope(t, result)
 	assert.Equal(t, 0, env.Count)
 	assert.Equal(t, 0, env.Total)
-	assert.Contains(t, env.Hint, "No tutorials matched")
+	assert.Contains(t, env.Hint, "No tutorials loaded")
 }
 
 func TestSearchLearningJourneys(t *testing.T) {
@@ -72,5 +72,5 @@ func TestSearchLearningJourneys_EmptyIndex(t *testing.T) {
 	env := unmarshalEnvelope(t, result)
 	assert.Equal(t, 0, env.Count)
 	assert.Equal(t, 0, env.Total)
-	assert.Contains(t, env.Hint, "No learning journeys matched")
+	assert.Contains(t, env.Hint, "No learning journeys loaded")
 }

@@ -3,24 +3,28 @@ package tutorials
 import "strings"
 
 // Search returns tutorials matching query against title, description, slug, and tags.
+// Results are ranked: title matches first, then others.
 func Search(index []TutorialMeta, query string) []TutorialMeta {
 	q := strings.ToLower(query)
-	var out []TutorialMeta
+	var titleMatches, otherMatches []TutorialMeta
 	for _, m := range index {
-		if strings.Contains(strings.ToLower(m.Title), q) ||
-			strings.Contains(strings.ToLower(m.Description), q) ||
+		if strings.Contains(strings.ToLower(m.Title), q) {
+			titleMatches = append(titleMatches, m)
+			continue
+		}
+		if strings.Contains(strings.ToLower(m.Description), q) ||
 			strings.Contains(strings.ToLower(m.Slug), q) {
-			out = append(out, m)
+			otherMatches = append(otherMatches, m)
 			continue
 		}
 		for _, tag := range m.Tags {
 			if strings.Contains(strings.ToLower(tag), q) {
-				out = append(out, m)
+				otherMatches = append(otherMatches, m)
 				break
 			}
 		}
 	}
-	return out
+	return append(titleMatches, otherMatches...)
 }
 
 // FilterByLevel returns tutorials matching the given level.

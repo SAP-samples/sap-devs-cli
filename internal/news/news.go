@@ -19,20 +19,27 @@ const correlationWindow = 7 * 24 * time.Hour
 // Correlate pairs each episode with the closest Community post within ±7 days.
 // When multiple posts are within the window, the one with the highest title
 // similarity (longest common substring length) wins.
+// Each post is used at most once — episodes are matched in order, and once a
+// post is claimed, later episodes cannot reuse it.
 // Episodes with no match have Community set to nil.
 // Input episode order is preserved.
 func Correlate(episodes []youtube.Episode, posts []community.BlogPost) []NewsItem {
+	used := make(map[int]bool)
 	items := make([]NewsItem, len(episodes))
 	for i, ep := range episodes {
-		items[i] = NewsItem{Episode: ep, Community: bestMatch(ep, posts)}
+		items[i] = NewsItem{Episode: ep, Community: bestMatch(ep, posts, used)}
 	}
 	return items
 }
 
-func bestMatch(ep youtube.Episode, posts []community.BlogPost) *community.BlogPost {
+func bestMatch(ep youtube.Episode, posts []community.BlogPost, used map[int]bool) *community.BlogPost {
 	var best *community.BlogPost
+	bestIdx := -1
 	bestScore := -1
 	for j := range posts {
+		if used[j] {
+			continue
+		}
 		diff := ep.Published.Sub(posts[j].Published)
 		if diff < -correlationWindow || diff > correlationWindow {
 			continue
@@ -40,8 +47,12 @@ func bestMatch(ep youtube.Episode, posts []community.BlogPost) *community.BlogPo
 		score := lcs(strings.ToLower(ep.Title), strings.ToLower(posts[j].Title))
 		if best == nil || score > bestScore {
 			best = &posts[j]
+			bestIdx = j
 			bestScore = score
 		}
+	}
+	if bestIdx >= 0 {
+		used[bestIdx] = true
 	}
 	return best
 }
