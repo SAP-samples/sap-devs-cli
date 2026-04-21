@@ -2,7 +2,7 @@
 
 ## Summary
 
-Comprehensive improvement to the `sap-devs` MCP server across three axes: (1) make agents reliably choose the MCP server over training data/web search, (2) improve the quality and structure of data returned to agents, (3) expose CLI features currently missing from MCP. Takes the server from 9 tools to 14, with every existing tool getting better descriptions, bounded results, and structured envelopes.
+Comprehensive improvement to the `sap-devs` MCP server across three axes: (1) make agents reliably choose the MCP server over training data/web search, (2) improve the quality and structure of data returned to agents, (3) expose CLI features currently missing from MCP. Takes the server from 9 tools to 15, with every existing tool getting better descriptions, bounded results, and structured envelopes.
 
 ## Motivation
 
@@ -56,11 +56,13 @@ func wrapResults(results interface{}, total, limit int, entityName string) *mcp.
 - `count` = number of results returned (after limit applied)
 - `total` = number of matches before limit
 - `hint` = populated when `total > count` ("Showing 10 of 342 matches. Refine your query for better results.") or when `total == 0` ("No {entityName} matched '{query}'. Try broader terms.")
+- Marshal errors follow the existing convention: silently return `null` for `results` with a hint "Failed to serialize results."
 
 **Limit defaults by tool type:**
 - Search tools: default 10, max 50
 - List/get tools: default 20, max 100
 - All tools get an optional `limit` number parameter
+- **Migration:** `get_recent_news` currently has a `count` parameter. Rename it to `limit` for consistency. This is a breaking change but the MCP server is in early adoption with no external consumers beyond the project author.
 
 **Scope:** All tools returning lists. Single-item tools (`get_context`, `get_tip`, `get_news_detail`) are not enveloped.
 
@@ -107,6 +109,8 @@ New optional `verbosity` string parameter on `get_context`:
 
 Default changes from `"full"` to `"standard"`. Agents need actionable guidance, not exhaustive reference.
 
+**Breaking change note:** This silently reduces the content returned to existing consumers who relied on full verbosity. Acceptable because the MCP server is in early adoption with no external consumers, and agents can explicitly pass `verbosity: "full"` to restore the previous behavior.
+
 **Implementation:** Replace `p.Context.AtLevel("full")` with `p.Context.AtLevel(verbosity)`. The `AtLevel()` infrastructure already exists.
 
 **File:** `internal/mcpserver/tools_content.go`
@@ -142,9 +146,28 @@ Default changes from `"full"` to `"standard"`. Agents need actionable guidance, 
 }
 ```
 
-**Implementation:** Fetch the community blog post HTML, parse the `ITEMS` and `CHAPTER TITLES` sections. The blog posts follow a consistent template (bold title headings, bullet-point links, chapter timestamps). A parsing function in `tools_news_detail.go` extracts this structure.
+**Implementation:** Fetch the community blog post HTML using the existing `community.FetchBlogPosts` HTTP client. Parse the `ITEMS` and `CHAPTER TITLES` sections using a dedicated `parseNewsDetail()` function that:
 
-**Caching:** Parsed detail cached keyed by URL with 1-hour TTL using the same cache pattern.
+1. Splits the HTML/markdown body at bold headings (matching the `**Title**` pattern used in all Developer News posts)
+2. Extracts links from bullet points under each heading as the `links` array
+3. Extracts `CHAPTER TITLES` section by matching the `HH:MM Title` timestamp pattern
+
+**Graceful degradation:** If the template doesn't match (e.g., older posts with different formatting), the structured `items` and `chapters` fields are empty arrays. A `raw_content` fallback field contains the full markdown body so the agent still has the episode content:
+
+```json
+{
+  "title": "...",
+  "video_url": "...",
+  "community_url": "...",
+  "items": [],
+  "chapters": [],
+  "raw_content": "Full markdown body when structured parsing fails"
+}
+```
+
+The `raw_content` field is only populated when `items` is empty — structured and raw are mutually exclusive to avoid doubling the payload.
+
+**Caching:** Parsed detail is cached per-URL using the generic `LoadCache[T]`/`SaveCache` pattern from `internal/discovery/cache.go` (not the news-specific `news.LoadCache` which stores `[]NewsItem`). Cache directory: `<cacheDir>/news-detail/`. TTL: 1 hour. Cache key: SHA256 of the community URL.
 
 **Why `community_url` as the key:** Index numbers are fragile across calls. The URL is stable and comes directly from `get_recent_news` output.
 
@@ -165,9 +188,9 @@ Change from bare markdown to structured JSON:
 }
 ```
 
-The `content.Tip` struct already has `Title`, `Content`, and `Tags`. The `pack` field is threaded from whichever pack the tip was selected from — tag it during the flatten step or return it alongside the tip from `SelectTip()`.
+The `content.Tip` struct already has `Title`, `Content`, and `Tags`. The `pack` field requires adding a `PackID string` field to the `content.Tip` struct in `internal/content/pack.go`, populated during `FlattenTips()` when tips are collected from each pack. `SelectTip()` already operates on the flattened slice, so the `PackID` flows through automatically.
 
-**File:** `internal/mcpserver/tools_content.go`
+**Files:** `internal/mcpserver/tools_content.go`, `internal/content/pack.go` (add `PackID` to `Tip` struct), `internal/content/tip.go` (populate `PackID` in flatten)
 
 ---
 
@@ -181,7 +204,7 @@ The `content.Tip` struct already has `Title`, `Content`, and `Tags`. The `pack` 
 | Parameters | `limit` (optional number, default 20) |
 | Returns | Envelope of `{id, name, status, required, found, install, docs}` |
 
-Handler calls `content.CheckTools(tools, runner)`. The `install` field is a map of OS-specific install commands from the `ToolDef` struct.
+Handler calls `content.CheckTools(tools, runner)`. The `install` field returns only the current OS key from the `ToolDef.Install` map (detected via `runtime.GOOS` — maps `"windows"`, `"darwin"` → `"macos"`, `"linux"`, with fallback to `"all"` key). Agents don't need install commands for other platforms.
 
 **File:** `internal/mcpserver/tools_doctor.go` (new)
 
@@ -190,10 +213,10 @@ Handler calls `content.CheckTools(tools, runner)`. The `install` field is a map 
 | Field | Value |
 |-------|-------|
 | Description | "Run health checks on the current SAP project. Detects project type (CAP, MTA, UI5), checks dependencies, version staleness, and best-practice compliance. Returns findings with severity and fix suggestions. Use proactively when helping with SAP project issues." |
-| Parameters | `path` (optional string) — "Project root directory. Defaults to current working directory." |
+| Parameters | `path` (optional string) — "Absolute path to project root directory. If omitted, uses the working directory the MCP server was launched from." |
 | Returns | JSON with `detection` object (type, cap_version, database, deployment, auth, btp_subaccount, cf_org) + `findings` envelope of `{category, severity, message, fix}` |
 
-Handler calls `project.Detect(cwd)` then `project.Check(ctx, cwd, packs)`.
+Handler calls `project.Detect(cwd)` then `project.Check(ctx, cwd, packs)`. When `path` is omitted, uses `Deps.Cwd` (captured once at server startup from `cmd/mcp_serve.go`). When `path` is provided, it must be an absolute path — relative paths are rejected with a tool error. No path traversal or resolution against `Deps.Cwd`.
 
 **File:** `internal/mcpserver/tools_doctor.go` (same file, both doctor-related)
 
@@ -205,7 +228,7 @@ Handler calls `project.Detect(cwd)` then `project.Check(ctx, cwd, packs)`.
 | Parameters | `query` (optional string), `type` (optional string) — "Event type ID (e.g. 'codejam', 'devtoberfest')", `scope` (optional string) — "Filter: 'local', 'regional', 'virtual', 'global'", `limit` (optional number, default 10) |
 | Returns | Envelope of `{id, type, title, date, end_date, location, scope, url, tags}` |
 
-Uses `content.FlattenEventInstances` + `events.Resolve` for remote sources + filtering. No location-based filtering (requires lat/lon config); `scope` filter is the MCP equivalent.
+Uses `content.FlattenEventInstances(packs)` to collect all events from all packs, then applies filtering inline. The existing `content.FilterEventsByType(events, typeID)` handles type filtering. For keyword search (`query` parameter), add a new `content.FilterEventsByQuery(events []EventInstance, query string) []EventInstance` function to `internal/content/events.go` — case-insensitive substring match across title, location, and tags (same pattern as `FilterResources`). Scope filtering is a simple string match on the `Scope` field. No location-based filtering (requires lat/lon config); `scope` filter is the MCP equivalent.
 
 **File:** `internal/mcpserver/tools_events.go` (new)
 
@@ -217,7 +240,7 @@ Uses `content.FlattenEventInstances` + `events.Resolve` for remote sources + fil
 | Parameters | `query` (optional string), `source` (optional string) — "Source ID to filter by (e.g. 'sap-tech-bytes', 'developer-news')", `limit` (optional number, default 10) |
 | Returns | Envelope of `{id, title, url, published, duration, description, tags}` |
 
-Uses `videos.ResolveAll` from cache + `videos.FilterVideos`.
+Uses `videos.ResolveAll` from cache + `videos.FilterVideos`. Video data is populated by `sap-devs sync` — if the cache is empty (no sync has run), returns an empty envelope with hint: "No video data available. Run `sap-devs sync` to fetch video metadata from YouTube."
 
 **File:** `internal/mcpserver/tools_videos.go` (new)
 
@@ -229,7 +252,9 @@ Uses `videos.ResolveAll` from cache + `videos.FilterVideos`.
 | Parameters | `query` (required string), `type` (optional string) — "Either 'missions' or 'services'. Default: 'missions'", `limit` (optional number, default 10) |
 | Returns | For missions: envelope of `{id, name, effort, category, description}`. For services: envelope of `{id, name, category, description, deprecated}`. |
 
-Uses `discovery.SearchMissions` or `discovery.ResolveServices` depending on `type`. Cache-backed with 7-day TTL.
+The handler creates a `discovery.NewClient()` inside the handler (same pattern as `cmd/discovery.go`). For missions: calls `client.SearchMissions(query, filters)` which uses the OData fuzzy search endpoint with its own 1-hour search cache TTL (`SearchCacheTTL`). For services: calls `discovery.ResolveServices(refs, filters, cacheDir, false, false, client)` with profile-derived refs and filters, then applies substring filtering on the returned results. Service catalog is cached with 7-day TTL.
+
+**Network note:** Both code paths may make HTTP calls to the Discovery Center OData API. The handler should set a 15-second context timeout to avoid blocking the MCP server on slow responses. On timeout or network failure, return an empty envelope with a hint: "Discovery Center is not reachable. Try again later or run `sap-devs sync`."
 
 **File:** `internal/mcpserver/tools_discovery.go` (new)
 
@@ -269,6 +294,9 @@ Event types and video sources are extracted from `Packs` in the handlers (same a
 | `internal/mcpserver/tools_learn.go` | Updated descriptions, limit params, envelope |
 | `internal/mcpserver/tools_samples.go` | Updated description, limit param, envelope |
 | `cmd/mcp_serve.go` | Pass `Cwd` to Deps |
+| `internal/content/pack.go` | Add `PackID` field to `Tip` struct |
+| `internal/content/tip.go` | Populate `PackID` during `FlattenTips()` |
+| `internal/content/events.go` | Add `FilterEventsByQuery()` function |
 | `CLAUDE.md` | Document new tools |
 | `content/packs/base/context.md` | Update CLI reference table |
 
