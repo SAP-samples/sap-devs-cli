@@ -44,6 +44,27 @@ func TestSearchTutorials_EmptyIndex(t *testing.T) {
 	assert.Contains(t, env.Hint, "No tutorials loaded")
 }
 
+func TestSearchTutorials_IncludesLevelAndTime(t *testing.T) {
+	deps := Deps{
+		TutorialIndex: []tutorials.TutorialMeta{
+			{Slug: "cap-getting-started", Title: "Getting Started with CAP", Description: "Learn CAP basics",
+				URL: "https://developers.sap.com/tutorials/cap-getting-started.html", Tags: []string{"cap"},
+				Level: "beginner", Time: 30},
+		},
+	}
+	handler := searchTutorialsHandler(deps)
+	req := mcp.CallToolRequest{}
+	req.Params.Arguments = map[string]any{"query": "CAP"}
+	result, err := handler(context.Background(), req)
+	require.NoError(t, err)
+
+	env := unmarshalEnvelope(t, result)
+	items := env.resultSlice(t)
+	require.Len(t, items, 1)
+	assert.Equal(t, "beginner", items[0]["level"])
+	assert.Equal(t, float64(30), items[0]["time"])
+}
+
 func TestSearchLearningJourneys(t *testing.T) {
 	deps := Deps{
 		LearningIndex: []learning.LearningJourney{
