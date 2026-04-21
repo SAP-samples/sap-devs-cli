@@ -179,7 +179,15 @@ func checkProjectHandler(deps Deps) server.ToolHandlerFunc {
 				Results: out,
 			},
 		}
-		b, _ := json.Marshal(result)
+		if len(out) == 0 {
+			result.Findings.Hint = "No issues found — project looks healthy."
+		} else {
+			result.Findings.Hint = fmt.Sprintf("%d issue(s) found. Review the findings and apply suggested fixes.", len(out))
+		}
+		b, err := json.Marshal(result)
+		if err != nil {
+			return mcp.NewToolResultError("failed to serialize project check results"), nil
+		}
 		return mcp.NewToolResultText(string(b)), nil
 	}
 }

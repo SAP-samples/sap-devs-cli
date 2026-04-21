@@ -17,7 +17,7 @@ func registerSampleTools(s *server.MCPServer, deps Deps) {
 				mcp.Description("Filter to samples from a specific pack ID. Use list_packs to see available IDs."),
 			),
 			mcp.WithString("query",
-				mcp.Description("Search query (matches against label, description, tags)"),
+				mcp.Description("Search query (matches against label, description, tags). Examples: 'handler', 'CDS service', 'Java annotation'."),
 			),
 			mcp.WithNumber("limit",
 				mcp.Description("Maximum number of results to return (default 20, max 100)"),

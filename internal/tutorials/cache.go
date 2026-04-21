@@ -24,14 +24,30 @@ func SaveIndex(cacheDir string, index []TutorialMeta) error {
 	return os.WriteFile(filepath.Join(dir, "index.json"), data, 0644)
 }
 
-// LoadIndex reads the tutorial index from the cache.
+// LoadIndex reads the tutorial index from the cache and deduplicates by slug.
 func LoadIndex(cacheDir string) ([]TutorialMeta, error) {
 	data, err := os.ReadFile(filepath.Join(tutorialsDir(cacheDir), "index.json"))
 	if err != nil {
 		return nil, err
 	}
 	var index []TutorialMeta
-	return index, json.Unmarshal(data, &index)
+	if err := json.Unmarshal(data, &index); err != nil {
+		return nil, err
+	}
+	return deduplicateBySlug(index), nil
+}
+
+func deduplicateBySlug(index []TutorialMeta) []TutorialMeta {
+	seen := make(map[string]bool, len(index))
+	out := make([]TutorialMeta, 0, len(index))
+	for _, m := range index {
+		if seen[m.Slug] {
+			continue
+		}
+		seen[m.Slug] = true
+		out = append(out, m)
+	}
+	return out
 }
 
 // IndexCacheAge returns the age of the index cache file, or a negative duration if missing.

@@ -70,13 +70,17 @@ func searchVideosHandler(deps Deps) server.ToolHandlerFunc {
 
 		out := make([]videoResult, 0, len(allVids))
 		for _, v := range allVids {
+			desc := v.Description
+			if len(desc) > 200 {
+				desc = desc[:200] + "..."
+			}
 			out = append(out, videoResult{
 				ID:          v.ID,
 				Title:       v.Title,
 				URL:         v.URL,
 				Published:   v.Published.Format("2006-01-02"),
 				Duration:    v.Duration,
-				Description: v.Description,
+				Description: desc,
 				Tags:        v.Tags,
 			})
 		}
