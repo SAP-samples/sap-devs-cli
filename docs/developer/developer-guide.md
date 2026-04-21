@@ -491,3 +491,55 @@ Feature branch worktrees are stored in `.worktrees/` in the project root — **n
 # Create a worktree for a feature branch
 git worktree add .worktrees/my-feature -b feature/my-feature
 ```
+
+---
+
+## Claude Code Setup
+
+The project ships with Claude Code automations in `.claude/` and `.mcp.json`. These are checked in so every contributor gets the same setup.
+
+### Hooks (`.claude/settings.json`)
+
+Two PostToolUse hooks run automatically after every Edit/Write of a `.go` file:
+
+| Hook | What it does |
+|------|-------------|
+| **gofmt** | Auto-formats the edited file with `gofmt -w` |
+| **go vet** | Runs `go vet ./...` and shows the first 20 lines of output |
+
+These replace the need to remember to format or lint — every Go edit is immediately cleaned up.
+
+> **Why not `go test`?** Windows Defender blocks test binary execution from `~/.config` paths. `go vet` is the local quality gate; CI is the authoritative test runner.
+
+### MCP Servers (`.mcp.json`)
+
+| Server | Purpose |
+|--------|---------|
+| **context7** | Live documentation lookup for Go libraries (cobra, bubbletea, mcp-go, Wails v3, etc.) |
+
+context7 gives Claude access to current library documentation instead of relying on training data. This is especially valuable for Wails v3 (alpha API that changes frequently) and mcp-go.
+
+### Subagents (`.claude/agents/`)
+
+| Agent | Purpose |
+|-------|---------|
+| **security-reviewer** | Security-focused code review for credential handling, binary downloads, OS services, and HTTP clients |
+
+Invoke with: `@security-reviewer review the changes in internal/credentials/`
+
+The security reviewer focuses on the areas documented in [security-review.md](security-review.md) and reports findings by severity (CRITICAL/HIGH/MEDIUM/LOW).
+
+### Skills (`.claude/skills/`)
+
+| Skill | Invocation | Purpose |
+|-------|-----------|---------|
+| **release-notes** | `/release-notes` | Generate release notes from commits since the last tag, grouped by conventional commit type |
+
+### Plugin Recommendations
+
+These are not checked in but recommended for individual developer setup:
+
+| Plugin | Install | Purpose |
+|--------|---------|---------|
+| **gopls-lsp** | `/plugin install gopls-lsp` | Go language server — go-to-definition, find-references, hover for the full codebase |
+| **commit-commands** | `/plugin install commit-commands` | `/commit` and `/commit-push-pr` slash commands |
