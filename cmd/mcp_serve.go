@@ -3,9 +3,15 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"os/exec"
+	"path/filepath"
+	"runtime"
+	"strings"
 
 	"github.com/mark3labs/mcp-go/server"
 	"github.com/spf13/cobra"
+	"github.com/SAP-samples/sap-devs-cli/internal/btpcli"
+	"github.com/SAP-samples/sap-devs-cli/internal/cfcli"
 	"github.com/SAP-samples/sap-devs-cli/internal/config"
 	"github.com/SAP-samples/sap-devs-cli/internal/content"
 	"github.com/SAP-samples/sap-devs-cli/internal/i18n"
@@ -65,6 +71,27 @@ var mcpServeCmd = &cobra.Command{
 		tutorialIndex, _ := tutorials.LoadIndex(paths.CacheDir)
 		learningIndex, _ := learning.LoadIndex(paths.CacheDir, learning.CacheTTL)
 
+		cliRunner := func(command string) (string, error) {
+			parts := strings.Fields(command)
+			if len(parts) == 0 {
+				return "", fmt.Errorf("empty command")
+			}
+			cmd := exec.Command(parts[0], parts[1:]...)
+			out, err := cmd.CombinedOutput()
+			return string(out), err
+		}
+
+		cfConfigPath := resolveCFConfigPath()
+		var cfClient *cfcli.Client
+		if _, err := exec.LookPath("cf"); err == nil {
+			cfClient = cfcli.NewClient(cliRunner, cfConfigPath)
+		}
+
+		var btpClient *btpcli.Client
+		if _, err := exec.LookPath("btp"); err == nil {
+			btpClient = btpcli.NewClient(cliRunner, resolveBTPConfigPath())
+		}
+
 		deps := mcpserver.Deps{
 			Packs:         packs,
 			Profile:       activeProfile,
@@ -74,6 +101,9 @@ var mcpServeCmd = &cobra.Command{
 			ConfigDir:     paths.ConfigDir,
 			Version:       Version,
 			Cwd:           cwd,
+			CFClient:      cfClient,
+			BTPClient:     btpClient,
+			CFConfigPath:  cfConfigPath,
 		}
 
 		s := mcpserver.NewServer(deps)
@@ -89,4 +119,38 @@ var mcpServeCmd = &cobra.Command{
 func init() {
 	mcpServeCmd.Flags().StringVar(&mcpServeProfile, "profile", "", "override active profile")
 	mcpCmd.AddCommand(mcpServeCmd)
+}
+
+func resolveCFConfigPath() string {
+	cfHome := os.Getenv("CF_HOME")
+	if cfHome == "" {
+		home, err := os.UserHomeDir()
+		if err != nil {
+			return ""
+		}
+		cfHome = home
+	}
+	return filepath.Join(cfHome, ".cf", "config.json")
+}
+
+func resolveBTPConfigPath() string {
+	path := os.Getenv("BTP_CLIENTCONFIG")
+	if path != "" {
+		return path
+	}
+	if runtime.GOOS == "windows" {
+		appdata := os.Getenv("APPDATA")
+		if appdata != "" {
+			return filepath.Join(appdata, "SAP", "btp", "config.json")
+		}
+	}
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return ""
+	}
+	primary := filepath.Join(home, ".config", "btp", "config.json")
+	if _, err := os.Stat(primary); err == nil {
+		return primary
+	}
+	return filepath.Join(home, ".config", ".btp", "config.json")
 }
