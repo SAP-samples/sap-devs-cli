@@ -3,18 +3,20 @@ package learning
 import "strings"
 
 // Search performs case-insensitive substring matching across title, description, slug, and product.
+// Results are ranked: title matches first, then others.
 func Search(journeys []LearningJourney, query string) []LearningJourney {
 	q := strings.ToLower(query)
-	var out []LearningJourney
+	var titleMatches, otherMatches []LearningJourney
 	for _, j := range journeys {
-		if strings.Contains(strings.ToLower(j.Title), q) ||
-			strings.Contains(strings.ToLower(j.Description), q) ||
+		if strings.Contains(strings.ToLower(j.Title), q) {
+			titleMatches = append(titleMatches, j)
+		} else if strings.Contains(strings.ToLower(j.Description), q) ||
 			strings.Contains(strings.ToLower(j.Slug), q) ||
 			strings.Contains(strings.ToLower(j.Product), q) {
-			out = append(out, j)
+			otherMatches = append(otherMatches, j)
 		}
 	}
-	return out
+	return append(titleMatches, otherMatches...)
 }
 
 // FilterByLevel returns journeys matching the given level (case-insensitive exact match).

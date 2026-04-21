@@ -56,7 +56,7 @@ func searchTutorialsHandler(deps Deps) server.ToolHandlerFunc {
 		limit := clampLimit(req.GetInt("limit", 10), 10, 50)
 
 		if len(deps.TutorialIndex) == 0 {
-			return wrapResults([]tutorialResult{}, 0, 0, "tutorials", query), nil
+			return wrapResultsWithHint([]tutorialResult{}, 0, "No tutorials loaded. Run `sap-devs sync` to fetch the tutorial index (~1,200 tutorials)."), nil
 		}
 		matches := tutorials.Search(deps.TutorialIndex, query)
 		total := len(matches)
@@ -94,7 +94,7 @@ func searchLearningJourneysHandler(deps Deps) server.ToolHandlerFunc {
 		limit := clampLimit(req.GetInt("limit", 10), 10, 50)
 
 		if len(deps.LearningIndex) == 0 {
-			return wrapResults([]learningResult{}, 0, 0, "learning journeys", query), nil
+			return wrapResultsWithHint([]learningResult{}, 0, "No learning journeys loaded. Run `sap-devs sync` to fetch the catalog (~350 learning journeys)."), nil
 		}
 		matches := learning.Search(deps.LearningIndex, query)
 		total := len(matches)
