@@ -17,6 +17,7 @@ type Deps struct {
 	LearningIndex []learning.LearningJourney
 	CacheDir      string
 	ConfigDir     string
+	DataDir       string
 	Version       string
 	Cwd           string
 	CFClient      *cfcli.Client
