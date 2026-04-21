@@ -20,7 +20,7 @@ func registerBTPTools(s *server.MCPServer, deps Deps) {
 
 	s.AddTool(
 		mcp.NewTool("btp_subaccounts",
-			mcp.WithDescription("List BTP subaccounts with name, subdomain, region, state, and parent directory."),
+			mcp.WithDescription("List BTP subaccounts with guid, name, subdomain, region, state, and parent directory. Use the guid to target a subaccount with 'btp target --subaccount <guid>'."),
 			mcp.WithNumber("limit",
 				mcp.Description("Maximum number of results to return (default 20, max 100)"),
 			),

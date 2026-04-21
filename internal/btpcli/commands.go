@@ -82,6 +82,7 @@ func (c *Client) Target(ctx context.Context) (TargetInfo, error) {
 }
 
 type Subaccount struct {
+	GUID      string `json:"guid"`
 	Name      string `json:"name"`
 	Subdomain string `json:"subdomain"`
 	Region    string `json:"region"`
@@ -109,6 +110,7 @@ func (c *Client) Subaccounts(ctx context.Context) ([]Subaccount, error) {
 
 	var raw struct {
 		Value []struct {
+			GUID              string `json:"guid"`
 			DisplayName       string `json:"displayName"`
 			Subdomain         string `json:"subdomain"`
 			Region            string `json:"region"`
@@ -123,6 +125,7 @@ func (c *Client) Subaccounts(ctx context.Context) ([]Subaccount, error) {
 	subs := make([]Subaccount, 0, len(raw.Value))
 	for _, v := range raw.Value {
 		subs = append(subs, Subaccount{
+			GUID:      v.GUID,
 			Name:      v.DisplayName,
 			Subdomain: v.Subdomain,
 			Region:    v.Region,
