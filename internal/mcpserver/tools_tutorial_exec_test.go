@@ -231,3 +231,36 @@ func TestListActiveTutorials_Empty(t *testing.T) {
 	env := unmarshalEnvelope(t, result)
 	assert.Equal(t, 0, env.Count)
 }
+
+func TestGetTutorialStep_NavigationMetadata(t *testing.T) {
+	deps := tutorialExecDeps(t)
+	deps.TutorialIndex[0].Level = "beginner"
+	deps.TutorialIndex[0].Time = 20
+
+	handler := getTutorialStepHandler(deps)
+
+	// Step 1: no prev, has next
+	req := mcp.CallToolRequest{}
+	req.Params.Arguments = map[string]any{"slug": "cap-getting-started", "step": float64(1), "track": false}
+	result, err := handler(context.Background(), req)
+	require.NoError(t, err)
+
+	var sr map[string]any
+	require.NoError(t, json.Unmarshal([]byte(result.Content[0].(mcp.TextContent).Text), &sr))
+
+	assert.Nil(t, sr["prev_step_title"])
+	assert.Equal(t, "Init project", sr["next_step_title"])
+	assert.Equal(t, "beginner", sr["level"])
+	assert.Equal(t, float64(20), sr["time"])
+
+	// Step 2: has prev, no next
+	req2 := mcp.CallToolRequest{}
+	req2.Params.Arguments = map[string]any{"slug": "cap-getting-started", "step": float64(2), "track": false}
+	result2, _ := handler(context.Background(), req2)
+
+	var sr2 map[string]any
+	json.Unmarshal([]byte(result2.Content[0].(mcp.TextContent).Text), &sr2)
+
+	assert.Equal(t, "Set up", sr2["prev_step_title"])
+	assert.Nil(t, sr2["next_step_title"])
+}
