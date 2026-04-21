@@ -35,6 +35,7 @@ func NewServer(deps Deps) *server.MCPServer {
 	registerLearnTools(s, deps)
 	registerSampleTools(s, deps)
 	registerNewsDetailTools(s, deps)
+	registerDoctorTools(s, deps)
 
 	return s
 }
