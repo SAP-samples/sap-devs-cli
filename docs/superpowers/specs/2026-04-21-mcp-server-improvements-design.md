@@ -146,7 +146,7 @@ Default changes from `"full"` to `"standard"`. Agents need actionable guidance, 
 }
 ```
 
-**Implementation:** Fetch the community blog post HTML using the existing `community.FetchBlogPosts` HTTP client. Parse the `ITEMS` and `CHAPTER TITLES` sections using a dedicated `parseNewsDetail()` function that:
+**Implementation:** Fetch the community blog post content using `community.FetchPostContent(community_url)`, which returns the full post body as markdown. Parse the `ITEMS` and `CHAPTER TITLES` sections using a dedicated `parseNewsDetail()` function that:
 
 1. Splits the HTML/markdown body at bold headings (matching the `**Title**` pattern used in all Developer News posts)
 2. Extracts links from bullet points under each heading as the `links` array
@@ -188,9 +188,9 @@ Change from bare markdown to structured JSON:
 }
 ```
 
-The `content.Tip` struct already has `Title`, `Content`, and `Tags`. The `pack` field requires adding a `PackID string` field to the `content.Tip` struct in `internal/content/pack.go`, populated during `FlattenTips()` when tips are collected from each pack. `SelectTip()` already operates on the flattened slice, so the `PackID` flows through automatically.
+The `content.Tip` struct already has `Title`, `Content`, and `Tags`. The `pack` field requires adding a `PackID string` field to the `content.Tip` struct in `internal/content/pack.go`, populated in `LoadPack()` after `parseTips()` returns by iterating `pack.Tips` and setting `PackID = pack.ID` — same pattern used for all other pack structs. `SelectTip()` already operates on the flattened slice, so the `PackID` flows through automatically.
 
-**Files:** `internal/mcpserver/tools_content.go`, `internal/content/pack.go` (add `PackID` to `Tip` struct), `internal/content/tip.go` (populate `PackID` in flatten)
+**Files:** `internal/mcpserver/tools_content.go`, `internal/content/pack.go` (add `PackID` to `Tip` struct, populate in `LoadPack()`)
 
 ---
 
@@ -294,8 +294,7 @@ Event types and video sources are extracted from `Packs` in the handlers (same a
 | `internal/mcpserver/tools_learn.go` | Updated descriptions, limit params, envelope |
 | `internal/mcpserver/tools_samples.go` | Updated description, limit param, envelope |
 | `cmd/mcp_serve.go` | Pass `Cwd` to Deps |
-| `internal/content/pack.go` | Add `PackID` field to `Tip` struct |
-| `internal/content/tip.go` | Populate `PackID` during `FlattenTips()` |
+| `internal/content/pack.go` | Add `PackID` field to `Tip` struct, populate in `LoadPack()` |
 | `internal/content/events.go` | Add `FilterEventsByQuery()` function |
 | `CLAUDE.md` | Document new tools |
 | `content/packs/base/context.md` | Update CLI reference table |
