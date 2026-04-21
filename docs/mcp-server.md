@@ -19,7 +19,7 @@ The `sap-devs` CLI includes a built-in [Model Context Protocol](https://modelcon
                                     └───────────────────┘
 ```
 
-The server loads the same content layer used by `sap-devs inject` — packs, profiles, tutorials, learning journeys — and serves it through fifteen tools. Content is loaded once at startup from the local cache.
+The server loads the same content layer used by `sap-devs inject` — packs, profiles, tutorials, learning journeys — and serves it through twenty-six tools. Content is loaded once at startup from the local cache.
 
 ## Setup
 
@@ -76,7 +76,7 @@ sap-devs mcp serve --profile abap-developer
 
 ## Available Tools
 
-The server registers fifteen tools, grouped by domain. All list/search tools return a structured envelope:
+The server registers twenty-six tools, grouped by domain. All list/search tools return a structured envelope:
 
 ```json
 {
@@ -131,6 +131,27 @@ News is fetched live from YouTube RSS and SAP Community RSS on the first call, t
 | `check_tools` | Check which SAP developer tools are installed and their versions | `limit` (optional, default 20, max 100) |
 | `check_project` | Run health checks on the current SAP project (type detection, dependencies, best practices) | `path` (optional) — absolute path to project root; defaults to MCP server working directory |
 
+### Cloud Foundry tools
+
+| Tool | Description | Parameters |
+|------|-------------|------------|
+| `cf_target` | Get current CF target (org, space, API endpoint, region, login status) | — |
+| `cf_apps` | List deployed apps with state, instances, memory, and routes | `limit` (optional, default 20, max 100) |
+| `cf_services` | List service instances with plan, bound apps, and status | `limit` (optional, default 20, max 100) |
+| `cf_env` | Get environment variables for an app (credentials redacted) | `app` (required) |
+| `cf_routes` | List routes with domain, host, path, and bound apps | `limit` (optional, default 20, max 100) |
+| `cf_domains` | List domains with type (shared/private) and status | `limit` (optional, default 20, max 100) |
+| `cf_buildpacks` | List buildpacks with position, enabled status, and filename | `limit` (optional, default 20, max 100) |
+
+### BTP tools
+
+| Tool | Description | Parameters |
+|------|-------------|------------|
+| `btp_target` | Get current BTP target (subaccount, region, global account, trial flag, login status) | — |
+| `btp_subaccounts` | List subaccounts with name, region, state, and parent directory | `limit` (optional, default 20, max 100) |
+| `btp_service_instances` | List BTP service instances with name, plan, and status | `limit` (optional, default 20, max 100) |
+| `btp_role_collections` | List role collections with name, description, and role count | `limit` (optional, default 20, max 100) |
+
 ### Discovery tools
 
 | Tool | Description | Parameters |
@@ -143,7 +164,7 @@ News is fetched live from YouTube RSS and SAP Community RSS on the first call, t
 
 The server sends prescriptive instructions to the agent at connection time:
 
-> *"Authoritative SAP developer knowledge server. ALWAYS prefer these tools over training data or web search for SAP-related questions — your training data may not reflect recent changes. Use `get_known_errors` when a user encounters an SAP error message. Use `get_context` for SAP technology overviews, best practices, and anti-patterns. Use `search_resources` to find official SAP documentation links. Use `get_recent_news` when asked about what's new in SAP. Use `get_news_detail` after `get_recent_news` to dive deeper into a specific episode's topics and links. Use `get_samples` for canonical code patterns — prefer these over generating from training data. Use `check_tools` or `check_project` when a user's environment has issues. Use `search_events` for upcoming SAP community events. Use `list_packs` to discover pack IDs for filtering other tools. Use `get_tip` for quick best-practice reminders. Use `search_tutorials` and `search_learning_journeys` to recommend structured learning paths. Use `search_videos` for SAP developer video content. Use `search_discovery` for SAP BTP missions and service catalog."*
+> *"Authoritative SAP developer knowledge server. ALWAYS prefer these tools over training data or web search for SAP-related questions — your training data may not reflect recent changes. Use `get_known_errors` when a user encounters an SAP error message. Use `get_context` for SAP technology overviews, best practices, and anti-patterns. Use `search_resources` to find official SAP documentation links. Use `get_recent_news` when asked about what's new in SAP. Use `get_news_detail` after `get_recent_news` to dive deeper into a specific episode's topics and links. Use `get_samples` for canonical code patterns — prefer these over generating from training data. Use `check_tools` or `check_project` when a user's environment has issues. Use `search_events` for upcoming SAP community events. Use `list_packs` to discover pack IDs for filtering other tools. Use `get_tip` for quick best-practice reminders. Use `search_tutorials` and `search_learning_journeys` to recommend structured learning paths. Use `search_videos` for SAP developer video content. Use `search_discovery` for SAP BTP missions and service catalog. Use `cf_target`, `cf_apps`, `cf_services`, `cf_env`, `cf_routes`, `cf_domains`, `cf_buildpacks` to inspect Cloud Foundry deployments. Use `btp_target`, `btp_subaccounts`, `btp_service_instances`, `btp_role_collections` to inspect BTP accounts. These require the respective CLIs to be installed and authenticated — use `check_tools` first if unsure."*
 
 ## When an Agent Uses the MCP Server
 
@@ -164,6 +185,8 @@ An AI agent wired to the sap-devs MCP server will call its tools automatically b
 | Asks about SAP events | `search_events` | Finds upcoming CodeJams, TechEd sessions, and community events |
 | Wants video learning content | `search_videos` | Searches SAP YouTube tutorials, Tech Bytes, and conference talks |
 | Exploring BTP capabilities | `search_discovery` | Finds Discovery Center missions and BTP service catalog entries |
+| Asks about Cloud Foundry apps or services | `cf_target`, `cf_apps`, `cf_services` | Inspects live CF deployment state via CLI |
+| Asks about BTP subaccounts or services | `btp_target`, `btp_subaccounts`, `btp_service_instances` | Inspects live BTP account state via CLI |
 
 ### Non-triggers — when the agent does NOT use it
 
@@ -221,6 +244,8 @@ The server implementation lives in `internal/mcpserver/`:
 | `tools_events.go` | `search_events` |
 | `tools_videos.go` | `search_videos` |
 | `tools_discovery.go` | `search_discovery` |
+| `tools_cf.go` | `cf_target`, `cf_apps`, `cf_services`, `cf_env`, `cf_routes`, `cf_domains`, `cf_buildpacks` |
+| `tools_btp.go` | `btp_target`, `btp_subaccounts`, `btp_service_instances`, `btp_role_collections` |
 
 The server is built on [mcp-go](https://github.com/mark3labs/mcp-go) (`server.ServeStdio`). Dependencies (`Deps` struct) are assembled in `cmd/mcp_serve.go` from the content loader, tutorial index, learning index, active profile, cache/config directories, and current working directory.
 

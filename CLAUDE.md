@@ -174,7 +174,7 @@ On every command invocation (except `update` and dev builds), a background gorou
 | `discovery` | Browse SAP Discovery Center missions, BTP services, and guidance framework; `discovery missions list/search/open`, `discovery services list/search/open`, `discovery guidance/show/open` |
 | `learning` | Browse SAP Learning Journeys; `learning list/search/show/open` |
 | `learn` | Guided learning recommendations combining tutorials, journeys, and missions; `learn recommend/search`, `learn path list/show/open` |
-| `mcp list/install/status/serve` | Browse, wire, and self-host SAP MCP servers; `serve` starts the built-in MCP server on stdio (15 tools: list_packs, get_context, get_tip, search_resources, get_known_errors, get_recent_news, get_news_detail, search_tutorials, search_learning_journeys, get_samples, check_tools, check_project, search_events, search_videos, search_discovery) |
+| `mcp list/install/status/serve` | Browse, wire, and self-host SAP MCP servers; `serve` starts the built-in MCP server on stdio (26 tools: list_packs, get_context, get_tip, search_resources, get_known_errors, get_recent_news, get_news_detail, search_tutorials, search_learning_journeys, get_samples, check_tools, check_project, search_events, search_videos, search_discovery, cf_target, cf_apps, cf_services, cf_env, cf_routes, cf_domains, cf_buildpacks, btp_target, btp_subaccounts, btp_service_instances, btp_role_collections) |
 | `hook list/install/uninstall/status` | Wire AI tool lifecycle hooks from pack definitions |
 | `events` | Browse upcoming SAP community events with location filtering; `events types` lists event categories |
 | `influencers` | Browse SAP community influencers and thought leaders |
