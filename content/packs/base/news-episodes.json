@@ -2,14 +2,18 @@
   {
     "Episode": {
       "ID": "mJrmidot-G4",
-      "Title": "SAP Developer News",
+      "Title": "UX Innovation Day, BTP ABAP Pre-Update Option 2605, XML Annotations | SAP Developer News",
       "URL": "https://www.youtube.com/watch?v=mJrmidot-G4",
       "Published": "2026-04-16T19:00:06Z",
-      "Description": "ITEMS \n\n*UX Innovation Day in Silicon Valley on 11 June*\n\n- Event page https://events.sap.com/us-ux-innovation-day-siliconvalley-2026/en_us/home.html  \n\n*SAP BTP ABAP Environment – Pre-Upgrade Option for Release 2605*\n\n- Blog post https://community.sap.com/t5/technology-blog-posts-by-sap/sap-btp-abap-environment-pre-upgrade-option-for-release-2605/ba-p/14347147  \n\n*XML Annotations: The Essentials Before Adapting Documentation Samples to Your Project*\n\n- Mio’s blog post https://community.sap.com/t5/technology-blog-posts-by-members/xml-annotations-the-essentials-before-adapting-documentation-samples-to/ba-p/14369241 \n- OData Deep Dive mission https://developers.sap.com/mission.odata-deep-dive.html  \n- OData Deep Dive rewrite blog post https://qmacro.org/blog/posts/2026/02/02/odata-deep-dive-rewrite-in-the-open/  \n\n*Edge Integration Cell APIs and Cloud Integration AI-assisted error resolution*\n\n- Edge Integration Cell APIs: https://help.sap.com/docs/cloud-integration/sap-cloud-integration/local-odata-api-access-for-edge-integration-cell?locale=en-US  \n- AI-assisted error resolution: https://help.sap.com/docs/integration-suite/sap-integration-suite/analyze-message-processing-errors-with-ai-f27f95d7b90b4f13aea22b399418b702?locale=en-US  \n\n*DYK #12 AI Launchpad Leaderboard*\n\n- The Model Library topic in the SAP Help Portal https://help.sap.com/docs/ai-launchpad/sap-ai-launchpad/model-library\n\nCHAPTER TITLES  \n\n00:00 Intro \n00:07 UX Innovation Day in Silicon Valley on 11 June \n01:00 SAP BTP ABAP Environment – Pre-Upgrade Option for Release 2605 \n02:00 XML Annotations: The Essentials Before Adapting Documentation Samples to Your Project \n03:16 Edge Integration Cell APIs and Cloud Integration AI-assisted error resolution \n04:25 DYK #12 AI Launchpad Leaderboard",
+      "Description": "*UX Innovation Day in Silicon Valley on 11 June*\n\n- Event page https://events.sap.com/us-ux-innovation-day-siliconvalley-2026/en_us/home.html  \n\n*SAP BTP ABAP Environment – Pre-Upgrade Option for Release 2605*\n\n- Blog post https://community.sap.com/t5/technology-blog-posts-by-sap/sap-btp-abap-environment-pre-upgrade-option-for-release-2605/ba-p/14347147  \n\n*XML Annotations: The Essentials Before Adapting Documentation Samples to Your Project*\n\n- Mio’s blog post https://community.sap.com/t5/technology-blog-posts-by-members/xml-annotations-the-essentials-before-adapting-documentation-samples-to/ba-p/14369241 \n- OData Deep Dive mission https://developers.sap.com/mission.odata-deep-dive.html  \n- OData Deep Dive rewrite blog post https://qmacro.org/blog/posts/2026/02/02/odata-deep-dive-rewrite-in-the-open/  \n\n*Edge Integration Cell APIs and Cloud Integration AI-assisted error resolution*\n\n- Edge Integration Cell APIs: https://help.sap.com/docs/cloud-integration/sap-cloud-integration/local-odata-api-access-for-edge-integration-cell?locale=en-US  \n- AI-assisted error resolution: https://help.sap.com/docs/integration-suite/sap-integration-suite/analyze-message-processing-errors-with-ai-f27f95d7b90b4f13aea22b399418b702?locale=en-US  \n\n*DYK #12 AI Launchpad Leaderboard*\n\n- The Model Library topic in the SAP Help Portal https://help.sap.com/docs/ai-launchpad/sap-ai-launchpad/model-library\n\nCHAPTER TITLES  \n\n00:00 Intro \n00:07 UX Innovation Day in Silicon Valley on 11 June \n01:00 SAP BTP ABAP Environment – Pre-Upgrade Option for Release 2605 \n02:00 XML Annotations: The Essentials Before Adapting Documentation Samples to Your Project \n03:16 Edge Integration Cell APIs and Cloud Integration AI-assisted error resolution \n04:25 DYK #12 AI Launchpad Leaderboard",
       "Duration": "",
       "Tags": null
     },
-    "Community": null
+    "Community": {
+      "Title": "SAP Developer News for April 16th, 2026",
+      "URL": "https://community.sap.com/t5/developer-news/sap-developer-news-for-april-16th-2026/ba-p/14375653",
+      "Published": "2026-04-16T19:00:00Z"
+    }
   },
   {
     "Episode": {
@@ -21,7 +25,11 @@
       "Duration": "",
       "Tags": null
     },
-    "Community": null
+    "Community": {
+      "Title": "SAP Developer News for April 9th, 2026",
+      "URL": "https://community.sap.com/t5/developer-news/sap-developer-news-for-april-9th-2026/ba-p/14369571",
+      "Published": "2026-04-09T19:00:00Z"
+    }
   },
   {
     "Episode": {
@@ -33,7 +41,11 @@
       "Duration": "",
       "Tags": null
     },
-    "Community": null
+    "Community": {
+      "Title": "SAP Developer News for April 2nd, 2026",
+      "URL": "https://community.sap.com/t5/developer-news/sap-developer-news-for-april-2nd-2026/ba-p/14364844",
+      "Published": "2026-04-03T13:02:05Z"
+    }
   },
   {
     "Episode": {
@@ -45,7 +57,11 @@
       "Duration": "",
       "Tags": null
     },
-    "Community": null
+    "Community": {
+      "Title": "SAP Developer News for March 26th, 2026",
+      "URL": "https://community.sap.com/t5/developer-news/sap-developer-news-for-march-26th-2026/ba-p/14359138",
+      "Published": "2026-03-26T19:10:00Z"
+    }
   },
   {
     "Episode": {
@@ -57,7 +73,11 @@
       "Duration": "",
       "Tags": null
     },
-    "Community": null
+    "Community": {
+      "Title": "SAP Developer News, March 19th, 2026",
+      "URL": "https://community.sap.com/t5/developer-news/sap-developer-news-march-19th-2026/ba-p/14353199",
+      "Published": "2026-03-19T20:00:00Z"
+    }
   },
   {
     "Episode": {
@@ -69,7 +89,11 @@
       "Duration": "",
       "Tags": null
     },
-    "Community": null
+    "Community": {
+      "Title": "SAP Developer News, March 12th, 2026",
+      "URL": "https://community.sap.com/t5/developer-news/sap-developer-news-march-12th-2026/ba-p/14347566",
+      "Published": "2026-03-12T19:10:00Z"
+    }
   },
   {
     "Episode": {
@@ -81,7 +105,11 @@
       "Duration": "",
       "Tags": null
     },
-    "Community": null
+    "Community": {
+      "Title": "SAP Developer News, March 5th, 2026",
+      "URL": "https://community.sap.com/t5/developer-news/sap-developer-news-march-5th-2026/ba-p/14342611",
+      "Published": "2026-03-05T20:10:00Z"
+    }
   },
   {
     "Episode": {
@@ -93,7 +121,11 @@
       "Duration": "",
       "Tags": null
     },
-    "Community": null
+    "Community": {
+      "Title": "SAP Developer News, February 26th, 2026",
+      "URL": "https://community.sap.com/t5/developer-news/sap-developer-news-february-26th-2026/ba-p/14337247",
+      "Published": "2026-02-27T04:00:00Z"
+    }
   },
   {
     "Episode": {
@@ -105,7 +137,11 @@
       "Duration": "",
       "Tags": null
     },
-    "Community": null
+    "Community": {
+      "Title": "SAP Developer News, February 19th, 2026",
+      "URL": "https://community.sap.com/t5/developer-news/sap-developer-news-february-19th-2026/ba-p/14332168",
+      "Published": "2026-02-19T20:10:00Z"
+    }
   },
   {
     "Episode": {
@@ -117,7 +153,11 @@
       "Duration": "",
       "Tags": null
     },
-    "Community": null
+    "Community": {
+      "Title": "SAP Developer News, February 12th, 2026",
+      "URL": "https://community.sap.com/t5/developer-news/sap-developer-news-february-12th-2026/ba-p/14327391",
+      "Published": "2026-02-12T20:10:00Z"
+    }
   },
   {
     "Episode": {
@@ -129,7 +169,11 @@
       "Duration": "",
       "Tags": null
     },
-    "Community": null
+    "Community": {
+      "Title": "SAP Developer News, February 5th, 2026",
+      "URL": "https://community.sap.com/t5/developer-news/sap-developer-news-february-5th-2026/ba-p/14322485",
+      "Published": "2026-02-05T20:10:00Z"
+    }
   },
   {
     "Episode": {
@@ -141,7 +185,11 @@
       "Duration": "",
       "Tags": null
     },
-    "Community": null
+    "Community": {
+      "Title": "SAP Developer News, January 29th, 2026",
+      "URL": "https://community.sap.com/t5/developer-news/sap-developer-news-january-29th-2026/ba-p/14318110",
+      "Published": "2026-01-30T13:11:15Z"
+    }
   },
   {
     "Episode": {
@@ -153,7 +201,11 @@
       "Duration": "",
       "Tags": null
     },
-    "Community": null
+    "Community": {
+      "Title": "SAP Developer News, January 22nd, 2026",
+      "URL": "https://community.sap.com/t5/developer-news/sap-developer-news-january-22nd-2026/ba-p/14312899",
+      "Published": "2026-01-22T20:10:00Z"
+    }
   },
   {
     "Episode": {
@@ -165,6 +217,10 @@
       "Duration": "",
       "Tags": null
     },
-    "Community": null
+    "Community": {
+      "Title": "SAP Developer News, January 15th 2026",
+      "URL": "https://community.sap.com/t5/developer-news/sap-developer-news-january-15th-2026/ba-p/14308211",
+      "Published": "2026-01-15T20:20:00Z"
+    }
   }
 ]
