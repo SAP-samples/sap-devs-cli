@@ -468,18 +468,11 @@ This is a three-phase feature:
 
 #### Phase 1 — Content ingestion and rendering - DONE ✔️
 
-#### Phase 2 — Guided execution
+#### Phase 2 — Guided execution via MCP - DONE ✔️
 
-- `sap-devs tutorial run <id>` — interactive runner that walks through each step in sequence
-- For code steps: display the snippet and optionally copy to clipboard or scaffold files in the current directory
-- For CLI steps: display the command and optionally execute it with explicit user confirmation (no silent execution)
-- Track completed steps in local state (e.g., `~/.local/share/sap-devs/tutorial-progress/`)
+Implemented as 4 MCP tools (`get_tutorial_step`, `update_tutorial_progress`, `get_tutorial_progress`, `list_active_tutorials`) plus a heuristic annotation engine that extracts executable commands, file creates, and verification checks from tutorial step markdown. The AI agent drives the tutorial flow — fetching steps, annotating content, tracking progress — while the MCP server stays stateless. Progress is stored in `tutorial-progress.json` in the XDG data directory, shared between MCP tools and the existing TUI.
 
-#### Integration points
-
-- Inject active-tutorial context into AI tools via `inject` (e.g., "user is currently on step 3 of tutorial X — tailor suggestions accordingly")
-- Likely closely related to `sap-devs learn` — `learn` recommends tutorials, `tutorial run` executes them; decide whether to bundle or keep separate
-- Could feed into a future achievement or progress tracking system
+See [design spec](docs/superpowers/specs/2026-04-21-tutorial-guided-execution-design.md) and [implementation plan](docs/superpowers/plans/2026-04-21-tutorial-guided-execution.md).
 
 #### Phase 3 — AI Agent as Instructor
 
