@@ -118,6 +118,19 @@ function discoverArchive(srcDir, destDir) {
 const specs = discoverArchive('docs/superpowers/specs', 'archive/specs')
 const plans = discoverArchive('docs/superpowers/plans', 'archive/plans')
 
+// --- Generate archive index pages ---
+function writeArchiveIndex(destDir, title, items) {
+  const lines = [`# ${title}\n`]
+  for (const item of items) {
+    lines.push(`- [${item.text}](${item.link})`)
+  }
+  const indexPath = resolve(site, destDir, 'index.md')
+  writeFileSync(indexPath, lines.join('\n') + '\n', 'utf8')
+}
+
+writeArchiveIndex('archive/specs', 'Design Specs', specs)
+writeArchiveIndex('archive/plans', 'Implementation Plans', plans)
+
 // --- Write sidebar JSON ---
 const sidebarPath = resolve(site, '.vitepress/archive-sidebar.json')
 mkdirSync(dirname(sidebarPath), { recursive: true })
