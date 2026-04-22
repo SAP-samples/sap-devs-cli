@@ -5,6 +5,7 @@ import (
 
 	"github.com/SAP-samples/sap-devs-cli/internal/tutorials"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestAnnotateStep_SingleCommand(t *testing.T) {
@@ -114,4 +115,25 @@ func TestAnnotateStep_WorkingDir(t *testing.T) {
 	assert.Len(t, ann.Commands, 2)
 	assert.Equal(t, "cd bookshop", ann.Commands[0].Command)
 	assert.Equal(t, "npm install", ann.Commands[1].Command)
+}
+
+func TestAnnotateStep_VerificationConfidence(t *testing.T) {
+	md := "You should see the following output:\n\n```\nserver running on port 4004\n```"
+	ann := tutorials.AnnotateStep(md)
+	require.Len(t, ann.Verifications, 1)
+	assert.Equal(t, "high", ann.Verifications[0].Confidence)
+}
+
+func TestAnnotateStep_PrerequisiteTools(t *testing.T) {
+	md := "Make sure you have **Node.js** installed.\n\nAlso ensure you have the `cf` CLI installed.\n\n```bash\nnpm i -g @sap/cds-dk\n```"
+	ann := tutorials.AnnotateStep(md)
+	require.Len(t, ann.PrerequisiteTools, 2)
+	assert.Contains(t, ann.PrerequisiteTools, "Node.js")
+	assert.Contains(t, ann.PrerequisiteTools, "cf")
+}
+
+func TestAnnotateStep_NoPrerequisites(t *testing.T) {
+	md := "Run the following command:\n\n```bash\ncds init bookshop\n```"
+	ann := tutorials.AnnotateStep(md)
+	assert.Empty(t, ann.PrerequisiteTools)
 }

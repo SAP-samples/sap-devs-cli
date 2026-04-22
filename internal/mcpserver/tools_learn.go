@@ -45,6 +45,8 @@ type tutorialResult struct {
 	Description string   `json:"description"`
 	URL         string   `json:"url"`
 	Tags        []string `json:"tags"`
+	Level       string   `json:"level,omitempty"`
+	Time        int      `json:"time,omitempty"`
 }
 
 func searchTutorialsHandler(deps Deps) server.ToolHandlerFunc {
@@ -71,6 +73,8 @@ func searchTutorialsHandler(deps Deps) server.ToolHandlerFunc {
 				Description: t.Description,
 				URL:         t.URL,
 				Tags:        t.Tags,
+				Level:       t.Level,
+				Time:        t.Time,
 			})
 		}
 		return wrapResults(out, total, len(out), "tutorials", query), nil
