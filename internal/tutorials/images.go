@@ -1,7 +1,9 @@
 package tutorials
 
 import (
+	"crypto/sha256"
 	"encoding/base64"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"mime"
@@ -11,6 +13,8 @@ import (
 	"strings"
 	"time"
 )
+
+const maxImageBytes = 10 << 20 // 10 MB
 
 // ImageRef represents a parsed image reference from tutorial markdown.
 type ImageRef struct {
@@ -51,8 +55,12 @@ func FetchImage(url, cacheDir, slug string) (*FetchedImage, error) {
 		return nil, fmt.Errorf("cannot determine filename from URL: %s", url)
 	}
 
+	// Hash-prefix the filename to avoid collisions when different URLs share the same basename.
+	h := sha256.Sum256([]byte(url))
+	cacheFilename := hex.EncodeToString(h[:8]) + "_" + filename
+
 	dir := filepath.Join(cacheDir, "tutorials", "images", slug)
-	cached := filepath.Join(dir, filename)
+	cached := filepath.Join(dir, cacheFilename)
 
 	if data, err := os.ReadFile(cached); err == nil {
 		mimeType := mimeFromExt(filename)
@@ -73,9 +81,12 @@ func FetchImage(url, cacheDir, slug string) (*FetchedImage, error) {
 		return nil, fmt.Errorf("fetch image %s: HTTP %d", url, resp.StatusCode)
 	}
 
-	data, err := io.ReadAll(resp.Body)
+	data, err := io.ReadAll(io.LimitReader(resp.Body, maxImageBytes+1))
 	if err != nil {
 		return nil, fmt.Errorf("read image %s: %w", url, err)
+	}
+	if len(data) > maxImageBytes {
+		return nil, fmt.Errorf("image %s exceeds size limit (%d bytes)", url, maxImageBytes)
 	}
 
 	mimeType := resp.Header.Get("Content-Type")
