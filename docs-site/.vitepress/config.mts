@@ -38,6 +38,11 @@ export default defineConfig({
   base: '/sap-devs-cli/',
   ignoreDeadLinks: true,
 
+  head: [
+    ['link', { rel: 'icon', type: 'image/svg+xml', href: '/sap-devs-cli/favicon.svg' }],
+    ['meta', { property: 'og:image', content: 'https://sap-samples.github.io/sap-devs-cli/og-image.svg' }],
+  ],
+
   vite: {
     define: {
       __APP_VERSION__: JSON.stringify(pkg.version || '0.0.0'),

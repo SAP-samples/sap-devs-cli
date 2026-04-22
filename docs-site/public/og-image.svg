@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#354a5f"/>
+  <text x="600" y="280" text-anchor="middle" font-family="Arial" font-weight="700" font-size="72" fill="#fff">sap-devs</text>
+  <text x="600" y="360" text-anchor="middle" font-family="Arial" font-size="28" fill="rgba(255,255,255,0.8)">SAP developer knowledge, injected into your AI coding tools</text>
+</svg>
