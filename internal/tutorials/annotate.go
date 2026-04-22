@@ -6,9 +6,10 @@ import (
 )
 
 type StepAnnotations struct {
-	Commands      []CommandAnnotation      `json:"commands,omitempty"`
-	FileCreates   []FileCreateAnnotation   `json:"file_creates,omitempty"`
-	Verifications []VerificationAnnotation `json:"verifications,omitempty"`
+	Commands          []CommandAnnotation      `json:"commands,omitempty"`
+	FileCreates       []FileCreateAnnotation   `json:"file_creates,omitempty"`
+	Verifications     []VerificationAnnotation `json:"verifications,omitempty"`
+	PrerequisiteTools []string                 `json:"prerequisite_tools,omitempty"`
 }
 
 type CommandAnnotation struct {
@@ -27,6 +28,7 @@ type VerificationAnnotation struct {
 	Command      string `json:"command,omitempty"`
 	ExpectOutput string `json:"expect_output,omitempty"`
 	Description  string `json:"description,omitempty"`
+	Confidence   string `json:"confidence,omitempty"`
 }
 
 var (
@@ -42,7 +44,8 @@ func AnnotateStep(md string) StepAnnotations {
 
 	blocks := parseFencedBlocks(md)
 	for _, b := range blocks {
-		switch classifyBlock(b) {
+		kind, confidence := classifyBlock(b)
+		switch kind {
 		case blockCommand:
 			ann.Commands = append(ann.Commands, extractCommands(b)...)
 		case blockFileCreate:
@@ -50,9 +53,10 @@ func AnnotateStep(md string) StepAnnotations {
 				ann.FileCreates = append(ann.FileCreates, *fc)
 			}
 		case blockVerification:
-			ann.Verifications = append(ann.Verifications, extractVerification(b))
+			ann.Verifications = append(ann.Verifications, extractVerification(b, confidence))
 		}
 	}
+	ann.PrerequisiteTools = extractPrerequisites(md)
 	return ann
 }
 
@@ -104,25 +108,25 @@ func precedingParagraph(md string, blockStart int) string {
 
 var commandLangs = map[string]bool{"bash": true, "sh": true, "": true}
 
-func classifyBlock(b fencedBlock) blockKind {
+func classifyBlock(b fencedBlock) (blockKind, string) {
 	if commandLangs[b.lang] {
 		if outputOrVerifyRe.MatchString(b.precedingText) {
-			return blockVerification
+			return blockVerification, "high"
 		}
 		if isCommentOnly(b.content) {
-			return blockIgnored
+			return blockIgnored, ""
 		}
-		return blockCommand
+		return blockCommand, ""
 	}
 	if isCodeLang(b.lang) {
 		if isVerificationContext(b.precedingText) {
-			return blockVerification
+			return blockVerification, "low"
 		}
 		if extractFilename(b.precedingText) != "" {
-			return blockFileCreate
+			return blockFileCreate, ""
 		}
 	}
-	return blockIgnored
+	return blockIgnored, ""
 }
 
 func isCommentOnly(content string) bool {
@@ -207,9 +211,29 @@ func extractFileCreate(b fencedBlock) *FileCreateAnnotation {
 	}
 }
 
-func extractVerification(b fencedBlock) VerificationAnnotation {
+func extractVerification(b fencedBlock, confidence string) VerificationAnnotation {
 	return VerificationAnnotation{
 		ExpectOutput: b.content,
 		Description:  firstSentence(b.precedingText),
+		Confidence:   confidence,
 	}
+}
+
+var prerequisiteRe = regexp.MustCompile(`(?i)\b(?:make sure|ensure|you need|requires?|must have|install)\b[^.]*?` + "(?:`([^`]+)`|\\*\\*([^*]+)\\*\\*)")
+
+func extractPrerequisites(md string) []string {
+	seen := make(map[string]bool)
+	var tools []string
+	for _, m := range prerequisiteRe.FindAllStringSubmatch(md, -1) {
+		name := m[1]
+		if name == "" {
+			name = m[2]
+		}
+		name = strings.TrimSpace(name)
+		if name != "" && !seen[name] {
+			seen[name] = true
+			tools = append(tools, name)
+		}
+	}
+	return tools
 }
