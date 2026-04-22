@@ -8,6 +8,7 @@ import (
 	"io"
 	"mime"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -49,14 +50,14 @@ var imageHTTPClient = &http.Client{Timeout: 15 * time.Second}
 
 // FetchImage downloads an image from url, caches it locally, and returns
 // the base64-encoded data with MIME type. Returns cached data on subsequent calls.
-func FetchImage(url, cacheDir, slug string) (*FetchedImage, error) {
-	filename := filepath.Base(url)
-	if filename == "" || filename == "." || filename == "/" {
-		return nil, fmt.Errorf("cannot determine filename from URL: %s", url)
+func FetchImage(rawURL, cacheDir, slug string) (*FetchedImage, error) {
+	filename, err := filenameFromURL(rawURL)
+	if err != nil {
+		return nil, err
 	}
 
 	// Hash-prefix the filename to avoid collisions when different URLs share the same basename.
-	h := sha256.Sum256([]byte(url))
+	h := sha256.Sum256([]byte(rawURL))
 	cacheFilename := hex.EncodeToString(h[:8]) + "_" + filename
 
 	dir := filepath.Join(cacheDir, "tutorials", "images", slug)
@@ -65,28 +66,28 @@ func FetchImage(url, cacheDir, slug string) (*FetchedImage, error) {
 	if data, err := os.ReadFile(cached); err == nil {
 		mimeType := mimeFromExt(filename)
 		return &FetchedImage{
-			URL:      url,
+			URL:      rawURL,
 			Data:     base64.StdEncoding.EncodeToString(data),
 			MIMEType: mimeType,
 		}, nil
 	}
 
-	resp, err := imageHTTPClient.Get(url)
+	resp, err := imageHTTPClient.Get(rawURL)
 	if err != nil {
-		return nil, fmt.Errorf("fetch image %s: %w", url, err)
+		return nil, fmt.Errorf("fetch image %s: %w", rawURL, err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("fetch image %s: HTTP %d", url, resp.StatusCode)
+		return nil, fmt.Errorf("fetch image %s: HTTP %d", rawURL, resp.StatusCode)
 	}
 
 	data, err := io.ReadAll(io.LimitReader(resp.Body, maxImageBytes+1))
 	if err != nil {
-		return nil, fmt.Errorf("read image %s: %w", url, err)
+		return nil, fmt.Errorf("read image %s: %w", rawURL, err)
 	}
 	if len(data) > maxImageBytes {
-		return nil, fmt.Errorf("image %s exceeds size limit (%d bytes)", url, maxImageBytes)
+		return nil, fmt.Errorf("image %s exceeds size limit (%d bytes)", rawURL, maxImageBytes)
 	}
 
 	mimeType := resp.Header.Get("Content-Type")
@@ -102,7 +103,7 @@ func FetchImage(url, cacheDir, slug string) (*FetchedImage, error) {
 	}
 
 	return &FetchedImage{
-		URL:      url,
+		URL:      rawURL,
 		Data:     base64.StdEncoding.EncodeToString(data),
 		MIMEType: mimeType,
 	}, nil
@@ -138,4 +139,16 @@ func mimeFromExt(filename string) string {
 	default:
 		return "image/png"
 	}
+}
+
+func filenameFromURL(rawURL string) (string, error) {
+	u, err := url.Parse(rawURL)
+	if err != nil || u.Path == "" {
+		return "", fmt.Errorf("cannot determine filename from URL: %s", rawURL)
+	}
+	name := filepath.Base(u.Path)
+	if name == "" || name == "." || name == "/" {
+		return "", fmt.Errorf("cannot determine filename from URL: %s", rawURL)
+	}
+	return name, nil
 }
