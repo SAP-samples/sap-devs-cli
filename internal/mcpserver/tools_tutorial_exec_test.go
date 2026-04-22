@@ -329,3 +329,49 @@ func TestGetTutorialStep_ExcludesImages(t *testing.T) {
 	_, ok := result.Content[0].(mcp.TextContent)
 	assert.True(t, ok)
 }
+
+func TestGetTutorialImage_Valid(t *testing.T) {
+	imgSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "image/png")
+		w.Write(testPNG)
+	}))
+	defer imgSrv.Close()
+
+	deps := tutorialExecDeps(t)
+	handler := getTutorialImageHandler(deps)
+
+	req := mcp.CallToolRequest{}
+	req.Params.Arguments = map[string]any{
+		"url":  imgSrv.URL + "/screenshot.png",
+		"slug": "cap-getting-started",
+	}
+	result, err := handler(context.Background(), req)
+	require.NoError(t, err)
+	assert.False(t, result.IsError)
+
+	require.GreaterOrEqual(t, len(result.Content), 2)
+	_, ok := result.Content[0].(mcp.TextContent)
+	assert.True(t, ok)
+	imgBlock, ok := result.Content[1].(mcp.ImageContent)
+	assert.True(t, ok)
+	assert.Equal(t, "image/png", imgBlock.MIMEType)
+}
+
+func TestGetTutorialImage_BadURL(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.NotFound(w, r)
+	}))
+	defer srv.Close()
+
+	deps := tutorialExecDeps(t)
+	handler := getTutorialImageHandler(deps)
+
+	req := mcp.CallToolRequest{}
+	req.Params.Arguments = map[string]any{
+		"url":  srv.URL + "/missing.png",
+		"slug": "cap-getting-started",
+	}
+	result, err := handler(context.Background(), req)
+	require.NoError(t, err)
+	assert.True(t, result.IsError)
+}

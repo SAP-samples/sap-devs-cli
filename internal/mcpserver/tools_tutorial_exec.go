@@ -50,6 +50,15 @@ func registerTutorialExecTools(s *server.MCPServer, deps Deps) {
 		),
 		listActiveTutorialsHandler(deps),
 	)
+
+	s.AddTool(
+		mcp.NewTool("get_tutorial_image",
+			mcp.WithDescription("Fetch a single tutorial image by URL and return it inline as an ImageContent block. Use this when include_images was false in get_tutorial_step but you need to inspect a specific image. The image URLs are available in the 'images' field of get_tutorial_step responses."),
+			mcp.WithString("url", mcp.Required(), mcp.Description("Full URL to the tutorial image (from the images field of get_tutorial_step)")),
+			mcp.WithString("slug", mcp.Required(), mcp.Description("Tutorial slug (for caching)")),
+		),
+		getTutorialImageHandler(deps),
+	)
 }
 
 type stepResult struct {
@@ -184,6 +193,31 @@ func getTutorialStepHandler(deps Deps) server.ToolHandlerFunc {
 			})
 		}
 		return &mcp.CallToolResult{Content: content}, nil
+	}
+}
+
+func getTutorialImageHandler(deps Deps) server.ToolHandlerFunc {
+	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		url, err := req.RequireString("url")
+		if err != nil {
+			return mcp.NewToolResultError("url parameter is required"), nil
+		}
+		slug, err := req.RequireString("slug")
+		if err != nil {
+			return mcp.NewToolResultError("slug parameter is required"), nil
+		}
+
+		img, err := tutorials.FetchImage(url, deps.CacheDir, slug)
+		if err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("Failed to fetch image: %v", err)), nil
+		}
+
+		return &mcp.CallToolResult{
+			Content: []mcp.Content{
+				mcp.TextContent{Type: "text", Text: fmt.Sprintf("Tutorial image from %s", url)},
+				mcp.ImageContent{Type: "image", Data: img.Data, MIMEType: img.MIMEType},
+			},
+		}, nil
 	}
 }
 
