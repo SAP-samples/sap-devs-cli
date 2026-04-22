@@ -16,6 +16,10 @@ const archive = existsSync(archivePath)
 // Read version from package.json for shellbar badge
 const pkg = JSON.parse(readFileSync(resolve(__dirname, '../package.json'), 'utf-8'))
 
+// Load CDS TextMate grammar for syntax highlighting in archive docs
+const cdsGrammar = JSON.parse(readFileSync(resolve(__dirname, '../cds.tmLanguage.json'), 'utf-8'))
+cdsGrammar.name = 'cds'
+
 // Vite plugin: escape Vue-incompatible content in archive pages.
 // VitePress compiles markdown → Vue SFC. This plugin intercepts the SFC
 // *after* VitePress but *before* @vitejs/plugin-vue and escapes:
@@ -82,6 +86,7 @@ export default defineConfig({
       dark: 'vitesse-dark',
       light: 'vitesse-light',
     },
+    languages: [cdsGrammar],
     config: (md: MarkdownIt) => {
       // Escape {{ }} in inline code to prevent Vue template compilation errors.
       // Archive docs contain Go/goreleaser template syntax like {{ .Version }}.
