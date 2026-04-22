@@ -1,0 +1,7 @@
+guide/
+developer/
+archive/
+.vitepress/dist/
+.vitepress/cache/
+.vitepress/archive-sidebar.json
+node_modules/

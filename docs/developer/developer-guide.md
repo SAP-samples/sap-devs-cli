@@ -543,3 +543,27 @@ These are not checked in but recommended for individual developer setup:
 |--------|---------|---------|
 | **gopls-lsp** | `/plugin install gopls-lsp` | Go language server — go-to-definition, find-references, hover for the full codebase |
 | **commit-commands** | `/plugin install commit-commands` | `/commit` and `/commit-push-pr` slash commands |
+
+---
+
+## Documentation Site
+
+The project documentation is published at [sap-samples.github.io/sap-devs-cli](https://sap-samples.github.io/sap-devs-cli/) using VitePress with SAP Fiori styling.
+
+### Local Development
+
+```bash
+cd docs-site
+npm install
+npm run dev
+```
+
+The dev server copies content from `/docs/` automatically and starts a local preview at `http://localhost:5173/sap-devs-cli/`.
+
+### Content Editing
+
+All documentation source files live in `/docs/`. Edit them there — `copy-content.js` handles copying to VitePress at build time. Never edit files directly in `docs-site/guide/`, `docs-site/developer/`, or `docs-site/archive/` as they are overwritten on every build.
+
+### Design Archive
+
+The 110+ spec and plan documents from `docs/superpowers/specs/` and `docs/superpowers/plans/` are automatically included as a "Design Archive" section in the sidebar.
