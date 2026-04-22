@@ -147,3 +147,28 @@ func TestExtractLevel(t *testing.T) {
 		assert.Equal(t, tt.level, tutorials.ExtractLevel(tt.tags))
 	}
 }
+
+func TestResolveImageURLs_Relative(t *testing.T) {
+	content := "Text\n![alt text](screenshot.png)\nMore text"
+	result := tutorials.ResolveImageURLs(content, "btp-adai", "main", "my-tutorial")
+	assert.Contains(t, result, "[View image: alt text](https://raw.githubusercontent.com/sap-tutorials/btp-adai/main/tutorials/my-tutorial/screenshot.png)")
+	assert.NotContains(t, result, "![")
+}
+
+func TestResolveImageURLs_Absolute(t *testing.T) {
+	content := "![logo](https://example.com/logo.png)"
+	result := tutorials.ResolveImageURLs(content, "repo", "main", "slug")
+	assert.Equal(t, content, result) // unchanged
+}
+
+func TestResolveImageURLsKeepMarkdown_Relative(t *testing.T) {
+	content := "Text\n![alt text](screenshot.png)\nMore text"
+	result := tutorials.ResolveImageURLsKeepMarkdown(content, "btp-adai", "main", "my-tutorial")
+	assert.Contains(t, result, "![alt text](https://raw.githubusercontent.com/sap-tutorials/btp-adai/main/tutorials/my-tutorial/screenshot.png)")
+}
+
+func TestResolveImageURLsKeepMarkdown_Absolute(t *testing.T) {
+	content := "![logo](https://example.com/logo.png)"
+	result := tutorials.ResolveImageURLsKeepMarkdown(content, "repo", "main", "slug")
+	assert.Equal(t, content, result)
+}
