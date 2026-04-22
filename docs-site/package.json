@@ -1,0 +1,16 @@
+{
+  "name": "sap-devs-cli-docs",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node scripts/copy-content.js && vitepress dev",
+    "build": "vitepress build",
+    "preview": "vitepress preview"
+  },
+  "devDependencies": {
+    "vitepress": "^1.6.0",
+    "vue": "^3.5.0",
+    "fundamental-styles": "^0.39.0",
+    "@sap-theming/theming-base-content": "^11.18.0"
+  }
+}
