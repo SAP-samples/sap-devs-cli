@@ -52,12 +52,16 @@ func registerTutorialExecTools(s *server.MCPServer, deps Deps) {
 }
 
 type stepResult struct {
-	Slug         string            `json:"slug"`
-	Title        string            `json:"title"`
-	Step         stepContent       `json:"step"`
-	TotalSteps   int               `json:"total_steps"`
-	YouWillLearn []string          `json:"you_will_learn,omitempty"`
-	Progress     *progressSnapshot `json:"progress,omitempty"`
+	Slug          string            `json:"slug"`
+	Title         string            `json:"title"`
+	Step          stepContent       `json:"step"`
+	TotalSteps    int               `json:"total_steps"`
+	YouWillLearn  []string          `json:"you_will_learn,omitempty"`
+	Progress      *progressSnapshot `json:"progress,omitempty"`
+	PrevStepTitle *string           `json:"prev_step_title"`
+	NextStepTitle *string           `json:"next_step_title"`
+	Level         string            `json:"level,omitempty"`
+	Time          int               `json:"time,omitempty"`
 }
 
 type stepContent struct {
@@ -101,6 +105,16 @@ func getTutorialStepHandler(deps Deps) server.ToolHandlerFunc {
 		step := tut.Steps[stepNum-1]
 		annotations := tutorials.AnnotateStep(step.Content)
 
+		var prevTitle, nextTitle *string
+		if stepNum > 1 {
+			t := tut.Steps[stepNum-2].Title
+			prevTitle = &t
+		}
+		if stepNum < len(tut.Steps) {
+			t := tut.Steps[stepNum].Title
+			nextTitle = &t
+		}
+
 		var ps *progressSnapshot
 		if track {
 			if err := tutorials.UpdateProgress(deps.DataDir, slug, stepNum, len(tut.Steps), false); err != nil {
@@ -118,12 +132,16 @@ func getTutorialStepHandler(deps Deps) server.ToolHandlerFunc {
 		}
 
 		result := stepResult{
-			Slug:         slug,
-			Title:        tut.Title,
-			Step:         stepContent{Number: step.Number, Title: step.Title, Content: step.Content, Annotations: annotations},
-			TotalSteps:   len(tut.Steps),
-			YouWillLearn: tut.YouWillLearn,
-			Progress:     ps,
+			Slug:          slug,
+			Title:         tut.Title,
+			Step:          stepContent{Number: step.Number, Title: step.Title, Content: step.Content, Annotations: annotations},
+			TotalSteps:    len(tut.Steps),
+			YouWillLearn:  tut.YouWillLearn,
+			Progress:      ps,
+			PrevStepTitle: prevTitle,
+			NextStepTitle: nextTitle,
+			Level:         meta.Level,
+			Time:          meta.Time,
 		}
 
 		b, _ := json.Marshal(result)
