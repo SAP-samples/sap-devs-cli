@@ -219,6 +219,27 @@ The `.claude/` directory and `.mcp.json` are checked in. Contributors get these 
 - **Skills** (`.claude/skills/release-notes/`): `/release-notes` generates GitHub Release notes from commits since the last tag.
 - **MCP Servers** (`.mcp.json`): context7 for live Go library documentation (cobra, bubbletea, mcp-go, Wails v3).
 
+### Documentation Site
+
+`docs-site/` contains a VitePress documentation site deployed to GitHub Pages at `https://sap-samples.github.io/sap-devs-cli/`. It uses SAP Fundamental Styles (`sap_horizon` light + `sap_horizon_dark` dark themes) with a three-layer CSS architecture: SAP theming base → cherry-picked fundamental-styles components → VitePress variable bridge.
+
+**Key files:**
+- `docs-site/.vitepress/config.mts` — VitePress config with archive escape plugins and sidebar
+- `docs-site/.vitepress/theme/` — Custom theme with FioriShellbar, FioriHome components
+- `docs-site/.vitepress/theme/style.css` — Three CSS layers mapping `--sap*` → `--vp-c-*`
+- `docs-site/scripts/copy-content.js` — Copies `/docs/` content at build time, generates archive sidebar
+- `.github/workflows/docs.yml` — GitHub Actions deployment to Pages
+
+**Content source of truth:** All documentation lives in `/docs/`. The `copy-content.js` script copies markdown to VitePress source directories and auto-generates the archive sidebar from `docs/superpowers/specs/` and `docs/superpowers/plans/`.
+
+**Local development:**
+```bash
+cd docs-site
+npm install
+npm run dev     # starts dev server with content copy
+npm run build   # production build
+```
+
 <!-- sap-devs:start:SAP Developer Context -->
 # SAP Developer Context
 
