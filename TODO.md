@@ -474,7 +474,7 @@ Implemented as 4 MCP tools (`get_tutorial_step`, `update_tutorial_progress`, `ge
 
 New files: `internal/tutorials/annotate.go` (annotation engine), `internal/mcpserver/tools_tutorial_exec.go` (MCP handlers), with tests alongside.
 
-#### Phase 2+ — Tutorial Instructor Skill & MCP Enhancements
+#### Phase 2+ — Tutorial Instructor Skill & MCP Enhancements - DONE ✔️
 
 Deliver the "AI Agent as Instructor" vision through a Claude Code skill and targeted MCP tool enhancements, rather than building a custom embedded agent. Analysis (April 2026, documented in `docs/mcp-server.md § Tutorial Guided Execution — Phase 3 Analysis`) concluded that the host AI tool (Claude Code, Cursor) already provides the agent runtime, shell execution, output observation, and streaming UI — embedding a second agent adds complexity without proportional benefit.
 
