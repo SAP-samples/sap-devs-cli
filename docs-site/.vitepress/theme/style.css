@@ -1,0 +1,120 @@
+/* ============================================================
+   All @import statements must appear first (CSS spec).
+   Layer 1: SAP Theming Base — sap_horizon (light)
+   Layer 2: Fundamental Styles — cherry-picked component CSS
+   ============================================================ */
+@import '@sap-theming/theming-base-content/content/Base/baseLib/sap_horizon/css_variables.css';
+@import 'fundamental-styles/dist/icon.css';
+@import 'fundamental-styles/dist/button.css';
+@import 'fundamental-styles/dist/shellbar.css';
+@import 'fundamental-styles/dist/card.css';
+@import 'fundamental-styles/dist/badge.css';
+@import 'fundamental-styles/dist/message-strip.css';
+@import 'fundamental-styles/dist/breadcrumb.css';
+@import 'fundamental-styles/dist/avatar.css';
+
+/* ============================================================
+   Layer 1b: SAP Horizon Dark overrides
+   @sap-theming ships flat :root files — we scope dark values
+   under html.dark so VitePress's toggle activates them.
+   ============================================================ */
+html.dark {
+  --sapBackgroundColor: #12171c;
+  --sapBaseColor: #1d232a;
+  --sapShellColor: #1d232a;
+  --sapBrandColor: #0070f2;
+  --sapHighlightColor: #4db1ff;
+  --sapTextColor: #f5f6f7;
+  --sapTitleColor: #f5f6f7;
+  --sapLinkColor: #008fff;
+  --sapSelectedColor: #4db1ff;
+  --sapShell_Background: #1d232a;
+  --sapShell_TextColor: #f5f6f7;
+  --sapShell_BorderColor: #2e3742;
+  --sapShell_Navigation_Background: #1d232a;
+  --sapShell_Navigation_TextColor: #f5f6f7;
+  --sapShell_Navigation_SelectedColor: #4db1ff;
+  --sapGroup_ContentBorderColor: #323c48;
+  --sapHoverColor: #283340;
+  --sapContent_ForegroundColor: #1d232a;
+  --sapField_BorderColor: #a9b4be;
+  --sapErrorColor: #fa6161;
+  --sapWarningColor: #ffdf72;
+  --sapSuccessColor: #97dd40;
+}
+
+/* ============================================================
+   Layer 3: VitePress Bridge — map --sap* to --vp-c-*
+   ============================================================ */
+:root {
+  --vp-c-brand-1: var(--sapBrandColor);
+  --vp-c-brand-2: var(--sapHighlightColor);
+  --vp-c-brand-3: var(--sapSelectedColor);
+  --vp-c-brand-soft: rgba(0, 112, 242, 0.14);
+
+  --vp-c-bg: var(--sapBackgroundColor);
+  --vp-c-bg-soft: var(--sapContent_ForegroundColor, #eff1f2);
+  --vp-c-bg-mute: var(--sapBaseColor);
+
+  --vp-c-text-1: var(--sapTextColor);
+  --vp-c-text-2: var(--sapShell_Navigation_TextColor, #556b82);
+  --vp-c-text-3: var(--sapField_BorderColor, #8c9baa);
+
+  --vp-c-divider: var(--sapGroup_ContentBorderColor);
+  --vp-c-border: var(--sapGroup_ContentBorderColor);
+
+  --vp-sidebar-bg-color: var(--sapShell_Navigation_Background, #fff);
+  --vp-nav-bg-color: var(--sapShell_Background);
+
+  --vp-button-brand-bg: var(--sapBrandColor);
+  --vp-button-brand-hover-bg: var(--sapHighlightColor);
+  --vp-button-brand-text: #fff;
+
+  --vp-font-family-base: var(--sapFontFamily, '72', '72full', Arial, Helvetica, sans-serif);
+}
+
+html.dark {
+  --vp-c-brand-soft: rgba(77, 177, 255, 0.16);
+}
+
+/* ============================================================
+   Shellbar: hide VitePress default nav, style shellbar
+   ============================================================ */
+.VPNav {
+  display: none !important;
+}
+
+/* ============================================================
+   Sidebar: Fiori overrides on VitePress built-in sidebar
+   ============================================================ */
+.VPSidebar .group .title {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.VPSidebarItem.is-active > .item > .link {
+  border-left: 3px solid var(--sapShell_Navigation_SelectedColor, #0064d9);
+  color: var(--sapShell_Navigation_SelectedColor, #0064d9);
+}
+
+.VPSidebarItem .link:hover {
+  background: var(--sapHoverColor);
+}
+
+/* ============================================================
+   Content area: Fiori typography and element refinements
+   ============================================================ */
+.vp-doc h1 {
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.vp-doc a {
+  color: var(--sapLinkColor);
+}
+
+.vp-doc code {
+  color: var(--sapBrandColor);
+}
