@@ -490,3 +490,21 @@ Deliver the "AI Agent as Instructor" vision through a Claude Code skill and targ
 - **No new dependencies** — no Claude API key, no provider lock-in, works with any MCP-compatible agent
 
 **Stretch goal (standalone agent):** If demand emerges for tutorial instruction without an external AI tool, revisit the embedded agent approach. Unlikely given the trajectory of AI coding tool adoption.
+
+#### Phase 3 — Inline image display for tutorials
+
+Research displaying images inline when tutorials are executed via MCP tools and in Agent hand-hold mode. Many SAP tutorials include screenshots, diagrams, and UI guidance images that are critical for understanding the steps — text-only rendering loses this context.
+
+**Research needed:**
+
+- How tutorial images are stored and referenced (relative paths, CDN URLs, base64 in markdown?)
+- Whether MCP tool responses can include image data or URLs that agents render inline
+- How different AI tools handle images in MCP responses (Claude Code, Cursor, VS Code Copilot)
+- Fallback for text-only agents — alt text, image descriptions, or skip with a note
+- Image caching strategy — fetch on demand vs. prefetch during `sync`
+
+**Open questions:**
+
+- Are tutorial images available at predictable URLs from the `sap-tutorials` GitHub repos?
+- Should `get_tutorial_step` return image URLs/data alongside step markdown, or as separate tool calls?
+- What's the token/bandwidth impact of including images in MCP responses?
