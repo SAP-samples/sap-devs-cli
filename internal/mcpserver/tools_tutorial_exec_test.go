@@ -2,7 +2,11 @@ package mcpserver
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/SAP-samples/sap-devs-cli/internal/tutorials"
@@ -263,4 +267,111 @@ func TestGetTutorialStep_NavigationMetadata(t *testing.T) {
 
 	assert.Equal(t, "Set up", sr2["prev_step_title"])
 	assert.Nil(t, sr2["next_step_title"])
+}
+
+var testPNG = func() []byte {
+	b, _ := base64.StdEncoding.DecodeString(
+		"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==")
+	return b
+}()
+
+func TestGetTutorialStep_IncludesImages(t *testing.T) {
+	imgSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "image/png")
+		w.Write(testPNG)
+	}))
+	defer imgSrv.Close()
+
+	deps := tutorialExecDeps(t)
+	tut, _ := tutorials.LoadContent(deps.CacheDir, "cap-getting-started")
+	tut.Steps[0].Content = fmt.Sprintf("Install CDS:\n\n![cds commands](%s/cds_commands.png)\n", imgSrv.URL)
+	tut.Repo = "test-repo"
+	tutorials.SaveContent(deps.CacheDir, tut)
+
+	handler := getTutorialStepHandler(deps)
+	req := mcp.CallToolRequest{}
+	req.Params.Arguments = map[string]any{"slug": "cap-getting-started", "step": float64(1), "track": false}
+	result, err := handler(context.Background(), req)
+	require.NoError(t, err)
+
+	assert.GreaterOrEqual(t, len(result.Content), 2, "expected text + image content blocks")
+
+	textBlock, ok := result.Content[0].(mcp.TextContent)
+	require.True(t, ok, "first content block should be TextContent")
+
+	var resp map[string]any
+	require.NoError(t, json.Unmarshal([]byte(textBlock.Text), &resp))
+	assert.Equal(t, "cap-getting-started", resp["slug"])
+
+	images, ok := resp["images"].([]any)
+	assert.True(t, ok, "expected images array in response")
+	assert.Len(t, images, 1)
+
+	imgBlock, ok := result.Content[1].(mcp.ImageContent)
+	require.True(t, ok, "second content block should be ImageContent")
+	assert.Equal(t, "image/png", imgBlock.MIMEType)
+	assert.NotEmpty(t, imgBlock.Data)
+}
+
+func TestGetTutorialStep_ExcludesImages(t *testing.T) {
+	deps := tutorialExecDeps(t)
+	handler := getTutorialStepHandler(deps)
+
+	req := mcp.CallToolRequest{}
+	req.Params.Arguments = map[string]any{
+		"slug": "cap-getting-started", "step": float64(1),
+		"track": false, "include_images": false,
+	}
+	result, err := handler(context.Background(), req)
+	require.NoError(t, err)
+
+	assert.Len(t, result.Content, 1)
+	_, ok := result.Content[0].(mcp.TextContent)
+	assert.True(t, ok)
+}
+
+func TestGetTutorialImage_Valid(t *testing.T) {
+	imgSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "image/png")
+		w.Write(testPNG)
+	}))
+	defer imgSrv.Close()
+
+	deps := tutorialExecDeps(t)
+	handler := getTutorialImageHandler(deps)
+
+	req := mcp.CallToolRequest{}
+	req.Params.Arguments = map[string]any{
+		"url":  imgSrv.URL + "/screenshot.png",
+		"slug": "cap-getting-started",
+	}
+	result, err := handler(context.Background(), req)
+	require.NoError(t, err)
+	assert.False(t, result.IsError)
+
+	require.GreaterOrEqual(t, len(result.Content), 2)
+	_, ok := result.Content[0].(mcp.TextContent)
+	assert.True(t, ok)
+	imgBlock, ok := result.Content[1].(mcp.ImageContent)
+	assert.True(t, ok)
+	assert.Equal(t, "image/png", imgBlock.MIMEType)
+}
+
+func TestGetTutorialImage_BadURL(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.NotFound(w, r)
+	}))
+	defer srv.Close()
+
+	deps := tutorialExecDeps(t)
+	handler := getTutorialImageHandler(deps)
+
+	req := mcp.CallToolRequest{}
+	req.Params.Arguments = map[string]any{
+		"url":  srv.URL + "/missing.png",
+		"slug": "cap-getting-started",
+	}
+	result, err := handler(context.Background(), req)
+	require.NoError(t, err)
+	assert.True(t, result.IsError)
 }

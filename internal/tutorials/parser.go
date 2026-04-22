@@ -209,20 +209,37 @@ func ResolveImageURLs(content, repo, branch, slug string) string {
 	return imageRE.ReplaceAllStringFunc(content, func(match string) string {
 		parts := imageRE.FindStringSubmatch(match)
 		alt := parts[1]
-		path := parts[2]
-		if strings.HasPrefix(path, "http://") || strings.HasPrefix(path, "https://") {
+		url := resolveImagePath(parts[2], repo, branch, slug)
+		if url == parts[2] {
 			return match
 		}
-		if strings.Contains(path, "..") {
-			return match
-		}
-		path = strings.TrimLeft(path, "/")
-		url := fmt.Sprintf("%s/sap-tutorials/%s/%s/tutorials/%s/%s", rawBaseURL, repo, branch, slug, path)
 		if alt != "" {
 			return fmt.Sprintf("[View image: %s](%s)", alt, url)
 		}
 		return fmt.Sprintf("[View image](%s)", url)
 	})
+}
+
+// ResolveImageURLsKeepMarkdown resolves relative image paths to full GitHub
+// raw URLs but preserves the ![alt](url) markdown image syntax. Use this for
+// MCP responses where the agent should see image markdown, not link markdown.
+func ResolveImageURLsKeepMarkdown(content, repo, branch, slug string) string {
+	return imageRE.ReplaceAllStringFunc(content, func(match string) string {
+		parts := imageRE.FindStringSubmatch(match)
+		url := resolveImagePath(parts[2], repo, branch, slug)
+		return fmt.Sprintf("![%s](%s)", parts[1], url)
+	})
+}
+
+func resolveImagePath(path, repo, branch, slug string) string {
+	if strings.HasPrefix(path, "http://") || strings.HasPrefix(path, "https://") {
+		return path
+	}
+	if strings.Contains(path, "..") {
+		return path
+	}
+	path = strings.TrimLeft(path, "/")
+	return fmt.Sprintf("%s/sap-tutorials/%s/%s/tutorials/%s/%s", rawBaseURL, repo, branch, slug, path)
 }
 
 var accordionBeginRE = regexp.MustCompile(`\[ACCORDION-BEGIN\s+\[Step\s+\d+:\s*\]\((.+?)\)\]`)

@@ -16,10 +16,11 @@ import (
 func registerTutorialExecTools(s *server.MCPServer, deps Deps) {
 	s.AddTool(
 		mcp.NewTool("get_tutorial_step",
-			mcp.WithDescription("Get a single step from an SAP tutorial with content, annotations (executable commands, file creates, verifications), and progress. Use to guide users through tutorials step-by-step. First call for an uncached tutorial triggers a GitHub fetch."),
+			mcp.WithDescription("Get a single step from an SAP tutorial with content, annotations (executable commands, file creates, verifications), and progress. Use to guide users through tutorials step-by-step. First call for an uncached tutorial triggers a GitHub fetch. When include_images is true (default), tutorial images are fetched and returned inline as MCP ImageContent blocks that you can see and describe to the user."),
 			mcp.WithString("slug", mcp.Required(), mcp.Description("Tutorial slug (e.g., 'cap-getting-started')")),
 			mcp.WithNumber("step", mcp.Description("Step number, 1-indexed (default 1)")),
 			mcp.WithBoolean("track", mcp.Description("If true (default), creates/updates progress. Set false to preview without starting.")),
+			mcp.WithBoolean("include_images", mcp.Description("If true (default), fetch tutorial images and return them inline as ImageContent blocks. Set false for text-only mode with resolved image URLs.")),
 		),
 		getTutorialStepHandler(deps),
 	)
@@ -49,6 +50,15 @@ func registerTutorialExecTools(s *server.MCPServer, deps Deps) {
 		),
 		listActiveTutorialsHandler(deps),
 	)
+
+	s.AddTool(
+		mcp.NewTool("get_tutorial_image",
+			mcp.WithDescription("Fetch a single tutorial image by URL and return it inline as an ImageContent block. Use this when include_images was false in get_tutorial_step but you need to inspect a specific image. The image URLs are available in the 'images' field of get_tutorial_step responses."),
+			mcp.WithString("url", mcp.Required(), mcp.Description("Full URL to the tutorial image (from the images field of get_tutorial_step)")),
+			mcp.WithString("slug", mcp.Required(), mcp.Description("Tutorial slug (for caching)")),
+		),
+		getTutorialImageHandler(deps),
+	)
 }
 
 type stepResult struct {
@@ -62,6 +72,12 @@ type stepResult struct {
 	NextStepTitle *string           `json:"next_step_title"`
 	Level         string            `json:"level,omitempty"`
 	Time          int               `json:"time,omitempty"`
+	Images        []imageRef        `json:"images,omitempty"`
+}
+
+type imageRef struct {
+	Alt string `json:"alt"`
+	URL string `json:"url"`
 }
 
 type stepContent struct {
@@ -87,6 +103,7 @@ func getTutorialStepHandler(deps Deps) server.ToolHandlerFunc {
 		}
 		stepNum := req.GetInt("step", 1)
 		track := req.GetBool("track", true)
+		includeImages := req.GetBool("include_images", true)
 
 		meta := tutorials.FindBySlug(deps.TutorialIndex, slug)
 		if meta == nil {
@@ -103,7 +120,20 @@ func getTutorialStepHandler(deps Deps) server.ToolHandlerFunc {
 		}
 
 		step := tut.Steps[stepNum-1]
+
+		// Resolve branch for image URL construction
+		branch := resolveBranch(deps, meta.Repo)
+
+		// Always resolve image URLs in content (keep markdown image syntax)
+		resolvedContent := tutorials.ResolveImageURLsKeepMarkdown(step.Content, meta.Repo, branch, slug)
 		annotations := tutorials.AnnotateStep(step.Content)
+
+		// Extract image refs for the images field
+		imgRefs := tutorials.ExtractImageRefs(step.Content, meta.Repo, branch, slug)
+		var imgRefList []imageRef
+		for _, ref := range imgRefs {
+			imgRefList = append(imgRefList, imageRef{Alt: ref.Alt, URL: ref.URL})
+		}
 
 		var prevTitle, nextTitle *string
 		if stepNum > 1 {
@@ -134,7 +164,7 @@ func getTutorialStepHandler(deps Deps) server.ToolHandlerFunc {
 		result := stepResult{
 			Slug:          slug,
 			Title:         tut.Title,
-			Step:          stepContent{Number: step.Number, Title: step.Title, Content: step.Content, Annotations: annotations},
+			Step:          stepContent{Number: step.Number, Title: step.Title, Content: resolvedContent, Annotations: annotations},
 			TotalSteps:    len(tut.Steps),
 			YouWillLearn:  tut.YouWillLearn,
 			Progress:      ps,
@@ -142,10 +172,52 @@ func getTutorialStepHandler(deps Deps) server.ToolHandlerFunc {
 			NextStepTitle: nextTitle,
 			Level:         meta.Level,
 			Time:          meta.Time,
+			Images:        imgRefList,
 		}
 
 		b, _ := json.Marshal(result)
-		return mcp.NewToolResultText(string(b)), nil
+		textContent := mcp.TextContent{Type: "text", Text: string(b)}
+
+		if !includeImages || len(imgRefs) == 0 {
+			return &mcp.CallToolResult{Content: []mcp.Content{textContent}}, nil
+		}
+
+		// Fetch images and build mixed content response
+		fetched := tutorials.FetchStepImages(imgRefs, deps.CacheDir, slug)
+		content := []mcp.Content{textContent}
+		for _, img := range fetched {
+			content = append(content, mcp.ImageContent{
+				Type:     "image",
+				Data:     img.Data,
+				MIMEType: img.MIMEType,
+			})
+		}
+		return &mcp.CallToolResult{Content: content}, nil
+	}
+}
+
+func getTutorialImageHandler(deps Deps) server.ToolHandlerFunc {
+	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		url, err := req.RequireString("url")
+		if err != nil {
+			return mcp.NewToolResultError("url parameter is required"), nil
+		}
+		slug, err := req.RequireString("slug")
+		if err != nil {
+			return mcp.NewToolResultError("slug parameter is required"), nil
+		}
+
+		img, err := tutorials.FetchImage(url, deps.CacheDir, slug)
+		if err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("Failed to fetch image: %v", err)), nil
+		}
+
+		return &mcp.CallToolResult{
+			Content: []mcp.Content{
+				mcp.TextContent{Type: "text", Text: fmt.Sprintf("Tutorial image from %s", url)},
+				mcp.ImageContent{Type: "image", Data: img.Data, MIMEType: img.MIMEType},
+			},
+		}, nil
 	}
 }
 
@@ -158,14 +230,7 @@ func loadOrFetchTutorial(deps Deps, meta *tutorials.TutorialMeta) (*tutorials.Tu
 		return nil, err
 	}
 
-	branch := "main"
-	repos, _ := tutorials.LoadRepoInfo(deps.CacheDir)
-	for _, r := range repos {
-		if r.Name == meta.Repo {
-			branch = r.DefaultBranch
-			break
-		}
-	}
+	branch := resolveBranch(deps, meta.Repo)
 
 	token := credentials.Resolve(deps.ConfigDir)
 	client := tutorials.NewClient(tutorials.ClientConfig{Token: token})
@@ -181,6 +246,16 @@ func loadOrFetchTutorial(deps Deps, meta *tutorials.TutorialMeta) (*tutorials.Tu
 
 	_ = tutorials.SaveContent(deps.CacheDir, tut)
 	return tut, nil
+}
+
+func resolveBranch(deps Deps, repo string) string {
+	repos, _ := tutorials.LoadRepoInfo(deps.CacheDir)
+	for _, r := range repos {
+		if r.Name == repo {
+			return r.DefaultBranch
+		}
+	}
+	return "main"
 }
 
 type progressResult struct {
