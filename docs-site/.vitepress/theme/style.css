@@ -84,6 +84,15 @@ html.dark {
   --vp-layout-top-height: 44px;
 }
 
+html.dark .fd-shellbar,
+html.dark .fd-shellbar .fd-shellbar__button,
+html.dark .fd-shellbar .fd-shellbar__button i,
+html.dark .fd-shellbar .fd-shellbar__title,
+html.dark .fd-shellbar .fd-shellbar__subtitle,
+html.dark .fd-shellbar a {
+  color: #f5f6f7 !important;
+}
+
 .VPNav {
   display: none !important;
 }

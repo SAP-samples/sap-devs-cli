@@ -1,4 +1,5 @@
 import { defineConfig } from 'vitepress'
+import { withMermaid } from 'vitepress-plugin-mermaid'
 import { readFileSync, existsSync } from 'fs'
 import { resolve, dirname } from 'path'
 import { fileURLToPath } from 'url'
@@ -57,14 +58,14 @@ const HTML5_ELEMENTS = new Set([
   'thead', 'time', 'title', 'tr', 'track', 'u', 'ul', 'var', 'video', 'wbr',
 ])
 
-export default defineConfig({
+export default withMermaid(defineConfig({
   title: 'sap-devs',
   description: 'SAP developer knowledge, injected into your AI coding tools',
   base: '/sap-devs-cli/',
   ignoreDeadLinks: true,
 
   head: [
-    ['link', { rel: 'icon', type: 'image/svg+xml', href: '/sap-devs-cli/favicon.svg' }],
+    ['link', { rel: 'icon', type: 'image/png', href: '/sap-devs-cli/favicon.png?v=2' }],
     ['meta', { property: 'og:image', content: 'https://sap-samples.github.io/sap-devs-cli/og-image.svg' }],
   ],
 
@@ -153,4 +154,4 @@ export default defineConfig({
 
     search: { provider: 'local' },
   },
-})
+}))

@@ -1,4 +1,5 @@
 {
+  "vscode-edge-devtools.webhint": false,
   "yaml.schemas": {
     "./content/schemas/pack.schema.json":      "**/packs/*/pack.yaml",
     "./content/schemas/resources.schema.json": "**/packs/*/resources.yaml",

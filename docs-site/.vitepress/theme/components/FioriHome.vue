@@ -1,6 +1,6 @@
 <script setup lang="ts">
 const features = [
-  { icon: 'sap-icon--developer-setting', title: 'Inject', desc: 'Push SAP context into Claude, Cursor, Copilot', link: '/sap-devs-cli/guide/user-guide' },
+  { icon: 'sap-icon--action-settings', title: 'Inject', desc: 'Push SAP context into Claude, Cursor, Copilot', link: '/sap-devs-cli/guide/user-guide' },
   { icon: 'sap-icon--connected', title: 'MCP Server', desc: '31 live tools for AI agents', link: '/sap-devs-cli/developer/mcp-server' },
   { icon: 'sap-icon--learning-assistant', title: 'Learn', desc: 'Tutorials, journeys, and missions', link: '/sap-devs-cli/developer/content-guide' },
   { icon: 'sap-icon--stethoscope', title: 'Doctor', desc: 'Check tools and project health', link: '/sap-devs-cli/developer/developer-guide' },
@@ -14,19 +14,16 @@ const features = [
     <!-- Hero Banner -->
     <section class="hero">
       <div class="hero__inner">
-        <div class="hero__logo">
-          <svg viewBox="0 0 36 36" width="64" height="64" fill="currentColor">
-            <rect x="2" y="2" width="14" height="14" rx="2"/>
-            <rect x="20" y="2" width="14" height="14" rx="2"/>
-            <rect x="2" y="20" width="14" height="14" rx="2"/>
-            <rect x="20" y="20" width="14" height="14" rx="2"/>
-          </svg>
+        <div class="hero__text">
+          <h1 class="hero__title">sap-devs</h1>
+          <p class="hero__subtitle">SAP developer knowledge, injected into your AI coding tools</p>
+          <div class="hero__actions">
+            <a href="/sap-devs-cli/guide/user-guide" class="fd-button fd-button--emphasized">Get Started</a>
+            <a href="https://github.com/SAP-samples/sap-devs-cli" class="fd-button fd-button--transparent" target="_blank" rel="noopener">View on GitHub</a>
+          </div>
         </div>
-        <h1 class="hero__title">sap-devs</h1>
-        <p class="hero__subtitle">SAP developer knowledge, injected into your AI coding tools</p>
-        <div class="hero__actions">
-          <a href="/sap-devs-cli/guide/user-guide" class="fd-button fd-button--emphasized">Get Started</a>
-          <a href="https://github.com/SAP-samples/sap-devs-cli" class="fd-button fd-button--transparent" target="_blank" rel="noopener">View on GitHub</a>
+        <div class="hero__logo">
+          <img src="/sap-devs-cli/mascot.png" alt="sap-devs mascot" class="hero__mascot" />
         </div>
       </div>
     </section>
@@ -53,19 +50,37 @@ const features = [
 .hero {
   background: linear-gradient(135deg, var(--sapShell_Background) 0%, #1a3a5c 100%);
   color: #fff;
-  padding: 80px 24px;
-  text-align: center;
+  padding: 60px 24px;
 }
 html.dark .hero {
   background: linear-gradient(135deg, #12171c 0%, #1a2530 100%);
 }
 .hero__inner {
-  max-width: 640px;
+  max-width: 960px;
   margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 48px;
+}
+.hero__text {
+  flex: 1;
 }
 .hero__logo {
-  margin-bottom: 24px;
-  opacity: 0.9;
+  flex-shrink: 0;
+}
+.hero__mascot {
+  max-height: 280px;
+  width: auto;
+  filter: drop-shadow(0 4px 24px rgba(0, 0, 0, 0.4));
+}
+@media (max-width: 768px) {
+  .hero__inner {
+    flex-direction: column-reverse;
+    text-align: center;
+  }
+  .hero__mascot {
+    max-height: 180px;
+  }
 }
 .hero__title {
   font-size: 3rem;
@@ -82,8 +97,12 @@ html.dark .hero {
 .hero__actions {
   display: flex;
   gap: 12px;
-  justify-content: center;
   flex-wrap: wrap;
+}
+@media (max-width: 768px) {
+  .hero__actions {
+    justify-content: center;
+  }
 }
 .hero__actions .fd-button {
   padding: 10px 24px;
@@ -96,12 +115,13 @@ html.dark .hero {
   cursor: pointer;
 }
 .hero__actions .fd-button--emphasized {
-  background: #fff;
-  color: var(--sapShell_Background);
-  border: 2px solid #fff;
+  background: #0070f2;
+  color: #fff;
+  border: 2px solid #0070f2;
 }
 .hero__actions .fd-button--emphasized:hover {
-  background: #e8ecf0;
+  background: #0058b8;
+  border-color: #0058b8;
 }
 .hero__actions .fd-button--transparent {
   background: transparent;

@@ -2,6 +2,35 @@
 
 `sap-devs` injects up-to-date SAP developer knowledge into your AI coding tools (Claude Code, Cursor, GitHub Copilot, and more), wires SAP MCP servers, and keeps content current automatically.
 
+```mermaid
+graph LR
+    subgraph SAP["SAP Content"]
+        CP["Content Packs<br/><small>CAP · BTP · ABAP</small>"]
+    end
+
+    subgraph CLI["sap-devs CLI"]
+        INJ["inject<br/><small>writes config files</small>"]
+        MCP["mcp serve<br/><small>live MCP server</small>"]
+    end
+
+    subgraph Tools["AI Coding Tools"]
+        CC["Claude Code"]
+        CU["Joule Studio"]
+        GC["GitHub Copilot"]
+    end
+
+    CP --> INJ
+    CP --> MCP
+    INJ -- "CLAUDE.md<br/>.cursorrules<br/>..." --> Tools
+    MCP -- "32 tools<br/>on demand" --> Tools
+    Tools -- "SAP-aware<br/>assistance" --> DEV["Developer"]
+
+    style SAP fill:#0070f2,stroke:#0058b8,color:#fff
+    style CLI fill:#1d232a,stroke:#354a5f,color:#fff
+    style Tools fill:#107e3e,stroke:#0a6128,color:#fff
+    style DEV fill:#e8f0fe,stroke:#0070f2,color:#1d232a
+```
+
 ---
 
 ## Installation

@@ -23,12 +23,7 @@ function openSearch() {
     <div class="fd-shellbar__group fd-shellbar__group--product">
       <a href="/sap-devs-cli/" class="fd-shellbar__branding" aria-label="Home">
         <span class="fd-shellbar__logo">
-          <svg viewBox="0 0 36 36" width="24" height="24" fill="currentColor">
-            <rect x="2" y="2" width="14" height="14" rx="2"/>
-            <rect x="20" y="2" width="14" height="14" rx="2"/>
-            <rect x="2" y="20" width="14" height="14" rx="2"/>
-            <rect x="20" y="20" width="14" height="14" rx="2"/>
-          </svg>
+          <img src="/sap-devs-cli/favicon.png" alt="sap-devs" width="24" height="24" />
         </span>
         <span class="fd-shellbar__title">sap-devs</span>
       </a>

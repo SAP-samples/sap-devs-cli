@@ -8,9 +8,11 @@
     "preview": "vitepress preview"
   },
   "devDependencies": {
-    "vitepress": "^1.6.0",
-    "vue": "^3.5.0",
+    "@sap-theming/theming-base-content": "^11.18.0",
     "fundamental-styles": "^0.39.0",
-    "@sap-theming/theming-base-content": "^11.18.0"
+    "mermaid": "^11.14.0",
+    "vitepress": "^1.6.0",
+    "vitepress-plugin-mermaid": "^2.0.17",
+    "vue": "^3.5.0"
   }
 }
