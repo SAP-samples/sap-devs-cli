@@ -1,0 +1,22 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Pack Skill Definitions",
+  "description": "Schema for sap-devs skills.yaml files (top-level array)",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": ["id", "name", "file", "tools"],
+    "additionalProperties": false,
+    "properties": {
+      "id": { "type": "string", "description": "Unique skill identifier within the pack" },
+      "name": { "type": "string", "description": "Human-readable skill name" },
+      "description": { "type": "string", "description": "Brief description of what the skill does" },
+      "file": { "type": "string", "description": "Path to the skill markdown file, relative to the pack directory" },
+      "tools": {
+        "type": "array",
+        "items": { "type": "string" },
+        "description": "Adapter IDs this skill applies to, e.g. [claude-code]"
+      }
+    }
+  }
+}

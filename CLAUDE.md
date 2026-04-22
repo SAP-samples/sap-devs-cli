@@ -55,7 +55,7 @@ Content is loaded from up to four layered sources, with later layers overriding 
 3. **User** — `~/.local/share/sap-devs/` (Linux), `%LOCALAPPDATA%/sap-devs/data/` (Windows)
 4. **Project** — `.sap-devs/` in the current working directory
 
-`ContentLoader` ([internal/content/loader.go](internal/content/loader.go)) manages this merge. `LoadPacks()` reads all `content/packs/<name>/` directories; each pack contains: `pack.yaml` (metadata), `context.md` (AI context text), `constraints.md` (AI constraint rules), `tips.md` (H2-delimited tips), `tools.yaml`, `resources.yaml`, `mcp.yaml`, `samples.yaml` (canonical code sample references), `known_errors.yaml` (common SAP error patterns). `context.md` files follow standard H3 section conventions: `Overview`, `Key Concepts`, `Best Practices`, `Anti-patterns`, `Code Examples` (all optional, order enforced by `ValidateContextSections()` in `sections.go`).
+`ContentLoader` ([internal/content/loader.go](internal/content/loader.go)) manages this merge. `LoadPacks()` reads all `content/packs/<name>/` directories; each pack contains: `pack.yaml` (metadata), `context.md` (AI context text), `constraints.md` (AI constraint rules), `tips.md` (H2-delimited tips), `tools.yaml`, `resources.yaml`, `mcp.yaml`, `samples.yaml` (canonical code sample references), `known_errors.yaml` (common SAP error patterns), `skills.yaml` (AI tool skill definitions with referenced markdown files). `context.md` files follow standard H3 section conventions: `Overview`, `Key Concepts`, `Best Practices`, `Anti-patterns`, `Code Examples` (all optional, order enforced by `ValidateContextSections()` in `sections.go`).
 
 **Additive Layers:** Packs with `additive: true` in `pack.yaml` augment (append/prepend) same-ID packs from earlier layers instead of overriding them. `AdditivePosition` controls order (`before`/`after`, default `after`). Merge logic: [internal/content/merge.go](internal/content/merge.go). A `base: true` pack (e.g., `content/packs/base/`) is auto-injected into every profile.
 
@@ -175,7 +175,7 @@ On every command invocation (except `update` and dev builds), a background gorou
 | `learning` | Browse SAP Learning Journeys; `learning list/search/show/open` |
 | `learn` | Guided learning recommendations combining tutorials, journeys, and missions; `learn recommend/search`, `learn path list/show/open` |
 | `mcp list/install/status/serve` | Browse, wire, and self-host SAP MCP servers; `serve` starts the built-in MCP server on stdio (31 tools: list_packs, get_context, get_tip, search_resources, get_known_errors, get_recent_news, get_news_detail, search_tutorials, search_learning_journeys, get_samples, check_tools, check_project, search_events, search_videos, search_discovery, cf_target, cf_apps, cf_services, cf_env, cf_routes, cf_domains, cf_buildpacks, btp_target, btp_subaccounts, btp_service_instances, btp_role_collections, get_tutorial_step, update_tutorial_progress, get_tutorial_progress, list_active_tutorials, recommend_tutorials) |
-| `hook list/install/uninstall/status` | Wire AI tool lifecycle hooks from pack definitions |
+| `hook list/install/uninstall/status` | Wire AI tool lifecycle hooks and skills from pack definitions; `install <id>` installs a single hook or skill, `install` (no args) installs all for the active profile |
 | `events` | Browse upcoming SAP community events with location filtering; `events types` lists event categories |
 | `influencers` | Browse SAP community influencers and thought leaders |
 | `resources` | List curated resources from active packs |
@@ -200,7 +200,7 @@ Both are consumed by `cmd/inject.go` (project context injected into AI tools) an
 
 ### YAML Schemas
 
-JSON Schema files in [content/schemas/](content/schemas/) validate `pack.yaml`, `resources.yaml`, `tools.yaml`, `mcp.yaml`, `profile.yaml`, `samples.yaml`, and `known_errors.yaml`. VS Code integration is wired in [.vscode/settings.json](.vscode/settings.json). Update schemas when adding/changing YAML fields.
+JSON Schema files in [content/schemas/](content/schemas/) validate `pack.yaml`, `resources.yaml`, `tools.yaml`, `mcp.yaml`, `profile.yaml`, `samples.yaml`, `known_errors.yaml`, and `skills.yaml`. VS Code integration is wired in [.vscode/settings.json](.vscode/settings.json). Update schemas when adding/changing YAML fields.
 
 ### Release
 

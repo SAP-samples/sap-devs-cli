@@ -21,3 +21,5 @@ hook_config:
   path: "~/.claude/settings.json"
   format: json
   key: "hooks.SessionStart"
+skill_config:
+  path: "~/.claude/skills"
