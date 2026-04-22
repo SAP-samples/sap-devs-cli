@@ -78,6 +78,17 @@ var hookListCmd = &cobra.Command{
 			fmt.Fprintf(cmd.OutOrStdout(), "%-30s %-10s %-16s %-32s %s\n",
 				h.ID, h.PackID, h.Event, h.Command, strings.Join(h.Tools, ", "))
 		}
+
+		skills := content.FlattenSkills(packs)
+		if len(skills) > 0 {
+			fmt.Fprintln(cmd.OutOrStdout())
+			fmt.Fprintf(cmd.OutOrStdout(), "%-30s %-10s %s\n", "SKILL", "PACK", "TOOLS")
+			fmt.Fprintln(cmd.OutOrStdout(), strings.Repeat("-", 55))
+			for _, s := range skills {
+				fmt.Fprintf(cmd.OutOrStdout(), "%-30s %-10s %s\n",
+					s.ID, s.PackID, strings.Join(s.Tools, ", "))
+			}
+		}
 		return nil
 	},
 }
@@ -131,6 +142,30 @@ var hookStatusCmd = &cobra.Command{
 				fmt.Fprintf(cmd.OutOrStdout(), "%-30s %-10s %-14s %s\n", h.ID, h.PackID, toolID, status)
 			}
 		}
+
+		skills := content.FlattenSkills(packs)
+		if len(skills) > 0 {
+			fmt.Fprintln(cmd.OutOrStdout())
+			fmt.Fprintf(cmd.OutOrStdout(), "%-30s %-10s %-14s %s\n", "SKILL", "PACK", "ADAPTER", "STATUS")
+			fmt.Fprintln(cmd.OutOrStdout(), strings.Repeat("-", 65))
+			for _, s := range skills {
+				for _, toolID := range s.Tools {
+					a := findAdapterByID(allAdapters, toolID)
+					if a == nil || a.SkillConfig == nil {
+						continue
+					}
+					basePath, err := adapter.ExpandHome(a.SkillConfig.Path)
+					if err != nil {
+						continue
+					}
+					status := i18n.T(i18n.ActiveLang, "hook.status.not_installed")
+					if adapter.SkillFileInstalled(basePath, s.ID) {
+						status = i18n.T(i18n.ActiveLang, "hook.status.installed")
+					}
+					fmt.Fprintf(cmd.OutOrStdout(), "%-30s %-10s %-14s %s\n", s.ID, s.PackID, toolID, status)
+				}
+			}
+		}
 		return nil
 	},
 }
@@ -167,7 +202,7 @@ func hookInstallOne(loader *content.ContentLoader, allAdapters []adapter.Adapter
 	}
 	h := content.FindHookDef(packs, id)
 	if h == nil {
-		return fmt.Errorf("%s", i18n.Tf(i18n.ActiveLang, "hook.error.not_found", map[string]any{"ID": id}))
+		return installSkillOne(packs, allAdapters, id)
 	}
 	toolSet := make(map[string]bool)
 	for _, t := range h.Tools {
@@ -271,6 +306,36 @@ func hookInstallAll(loader *content.ContentLoader, allAdapters []adapter.Adapter
 	if !hookInstallDryRun {
 		fmt.Println(i18n.Tf(i18n.ActiveLang, "hook.install.summary", map[string]any{"Hooks": installed, "Tools": len(chosen)}))
 	}
+
+	skills := content.FlattenSkills(packs)
+	skillAdapters := detectSkillAdapters(allAdapters, nil)
+	skillsInstalled := 0
+	for _, s := range skills {
+		if s.Content == "" {
+			continue
+		}
+		for _, a := range skillAdapters {
+			if !containsString(s.Tools, a.ID) {
+				continue
+			}
+			basePath, err := adapter.ExpandHome(a.SkillConfig.Path)
+			if err != nil {
+				return err
+			}
+			if err := adapter.WriteSkillFile(basePath, s.ID, s.Content, hookInstallDryRun); err != nil {
+				return fmt.Errorf("skill %q: %w", s.ID, err)
+			}
+			if !hookInstallDryRun {
+				fmt.Println(i18n.Tf(i18n.ActiveLang, "skill.install.registered", map[string]any{
+					"ID": s.ID, "Path": basePath,
+				}))
+				skillsInstalled++
+			}
+		}
+	}
+	if !hookInstallDryRun && skillsInstalled > 0 {
+		fmt.Println(i18n.Tf(i18n.ActiveLang, "skill.install.summary", map[string]any{"Skills": skillsInstalled}))
+	}
 	return nil
 }
 
@@ -295,7 +360,7 @@ var hookUninstallCmd = &cobra.Command{
 		}
 		h := content.FindHookDef(packs, args[0])
 		if h == nil {
-			return fmt.Errorf("%s", i18n.Tf(i18n.ActiveLang, "hook.error.not_found", map[string]any{"ID": args[0]}))
+			return uninstallSkillOne(packs, allAdapters, args[0])
 		}
 		for _, toolID := range h.Tools {
 			a := findAdapterByID(allAdapters, toolID)
@@ -374,6 +439,86 @@ func findAdapterByID(adapters []adapter.Adapter, id string) *adapter.Adapter {
 		if adapters[i].ID == id {
 			return &adapters[i]
 		}
+	}
+	return nil
+}
+
+func detectSkillAdapters(adapters []adapter.Adapter, toolSet map[string]bool) []adapter.Adapter {
+	var out []adapter.Adapter
+	for _, a := range adapters {
+		if a.SkillConfig == nil {
+			continue
+		}
+		if toolSet != nil && !toolSet[a.ID] {
+			continue
+		}
+		if adapter.Detect(a) {
+			out = append(out, a)
+		}
+	}
+	return out
+}
+
+func installSkillOne(packs []*content.Pack, allAdapters []adapter.Adapter, id string) error {
+	s := content.FindSkillDef(packs, id)
+	if s == nil {
+		return fmt.Errorf("%s", i18n.Tf(i18n.ActiveLang, "hook.error.not_found", map[string]any{"ID": id}))
+	}
+	if s.Content == "" {
+		return fmt.Errorf("%s", i18n.Tf(i18n.ActiveLang, "skill.error.no_content", map[string]any{"ID": id}))
+	}
+	toolSet := make(map[string]bool)
+	for _, t := range s.Tools {
+		toolSet[t] = true
+	}
+	detected := detectSkillAdapters(allAdapters, toolSet)
+	if len(detected) == 0 {
+		return fmt.Errorf("%s", i18n.Tf(i18n.ActiveLang, "skill.error.no_tools", map[string]any{"ID": id, "Tools": strings.Join(s.Tools, ", ")}))
+	}
+	if len(detected) > 1 {
+		fmt.Println(i18n.Tf(i18n.ActiveLang, "skill.detected_header", map[string]any{"ID": id}))
+		for i, a := range detected {
+			p, _ := adapter.ExpandHome(a.SkillConfig.Path)
+			fmt.Printf("  %d. %s  (%s)\n", i+1, a.Name, p)
+		}
+	}
+	chosen, err := pickHookAdapters(detected)
+	if err != nil {
+		return err
+	}
+	for _, a := range chosen {
+		basePath, err := adapter.ExpandHome(a.SkillConfig.Path)
+		if err != nil {
+			return err
+		}
+		if err := adapter.WriteSkillFile(basePath, s.ID, s.Content, hookInstallDryRun); err != nil {
+			return fmt.Errorf("skill %q: %w", s.ID, err)
+		}
+		if !hookInstallDryRun {
+			fmt.Println(i18n.Tf(i18n.ActiveLang, "skill.install.registered", map[string]any{"ID": s.ID, "Path": basePath}))
+		}
+	}
+	return nil
+}
+
+func uninstallSkillOne(packs []*content.Pack, allAdapters []adapter.Adapter, id string) error {
+	s := content.FindSkillDef(packs, id)
+	if s == nil {
+		return fmt.Errorf("%s", i18n.Tf(i18n.ActiveLang, "hook.error.not_found", map[string]any{"ID": id}))
+	}
+	for _, toolID := range s.Tools {
+		a := findAdapterByID(allAdapters, toolID)
+		if a == nil || a.SkillConfig == nil {
+			continue
+		}
+		basePath, err := adapter.ExpandHome(a.SkillConfig.Path)
+		if err != nil {
+			return err
+		}
+		if err := adapter.RemoveSkillFile(basePath, s.ID, false); err != nil {
+			return fmt.Errorf("skill %q: %w", s.ID, err)
+		}
+		fmt.Println(i18n.Tf(i18n.ActiveLang, "skill.uninstall.removed", map[string]any{"ID": s.ID, "Path": basePath}))
 	}
 	return nil
 }

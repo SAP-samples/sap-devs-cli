@@ -474,6 +474,13 @@
   "hook.status.installed": "✓ installed",
   "hook.status.not_installed": "✗ not installed",
 
+  "skill.error.no_tools": "no detected AI tools support skill \"{{.ID}}\" (tools: {{.Tools}})",
+  "skill.error.no_content": "skill \"{{.ID}}\" has no content (missing file in pack)",
+  "skill.detected_header": "Detected AI tools for skill \"{{.ID}}\":",
+  "skill.install.registered": "Installed skill \"{{.ID}}\" to {{.Path}}",
+  "skill.install.summary": "Installed {{.Skills}} skill(s).",
+  "skill.uninstall.removed": "Removed skill \"{{.ID}}\" from {{.Path}}",
+
   "news.short": "Browse SAP Developer News episodes",
   "news.list.short": "List recent SAP Developer News episodes",
   "news.latest.short": "Open the most recent SAP Developer News episode in the browser",

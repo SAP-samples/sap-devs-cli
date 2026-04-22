@@ -55,6 +55,7 @@ func (a *Pack) MergeWith(base *Pack) *Pack {
 	merged.Tools = mergeTools(base.Tools, a.Tools)
 	merged.MCPServers = mergeMCPServers(base.MCPServers, a.MCPServers, base.ID)
 	merged.Hooks = mergeHooks(base.Hooks, a.Hooks, base.ID)
+	merged.Skills = mergeSkills(base.Skills, a.Skills, base.ID)
 	merged.Influencers = mergeInfluencers(base.Influencers, a.Influencers, base.ID)
 	merged.EventTypes = mergeEventTypes(base.EventTypes, a.EventTypes, base.ID)
 	merged.EventInstances = mergeEventInstances(base.EventInstances, a.EventInstances, base.ID)
@@ -168,6 +169,28 @@ func mergeHooks(base, additive []HookDef, packID string) []HookDef {
 		}
 	}
 	// Re-stamp all entries: same rationale as mergeResources.
+	for i := range result {
+		result[i].PackID = packID
+	}
+	return result
+}
+
+func mergeSkills(base, additive []SkillDef, packID string) []SkillDef {
+	result := make([]SkillDef, len(base))
+	copy(result, base)
+	for _, a := range additive {
+		replaced := false
+		for i, b := range result {
+			if b.ID == a.ID {
+				result[i] = a
+				replaced = true
+				break
+			}
+		}
+		if !replaced {
+			result = append(result, a)
+		}
+	}
 	for i := range result {
 		result[i].PackID = packID
 	}

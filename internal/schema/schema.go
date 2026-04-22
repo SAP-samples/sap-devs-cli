@@ -23,6 +23,7 @@ var knownFiles = map[string]string{
 	"mcp.yaml":             "mcp",
 	"tools.yaml":           "tools",
 	"hook.yaml":            "hook",
+	"skills.yaml":          "skills",
 	"samples.yaml":         "samples",
 	"known_errors.yaml":    "known_errors",
 }

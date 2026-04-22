@@ -1,0 +1,6 @@
+- id: tutorial
+  name: SAP Tutorial Instructor
+  description: Guide users through SAP tutorials step-by-step
+  file: skills/tutorial/SKILL.md
+  tools:
+    - claude-code
