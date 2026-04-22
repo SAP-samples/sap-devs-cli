@@ -78,10 +78,23 @@ html.dark {
 }
 
 /* ============================================================
-   Shellbar: hide VitePress default nav, style shellbar
+   Shellbar: hide VitePress default nav, adjust layout for shellbar
    ============================================================ */
+:root {
+  --vp-layout-top-height: 44px;
+}
+
 .VPNav {
   display: none !important;
+}
+
+.VPLocalNav {
+  top: var(--vp-layout-top-height) !important;
+  position: sticky !important;
+}
+
+.VPSidebar {
+  padding-top: calc(var(--vp-layout-top-height) + 16px) !important;
 }
 
 /* ============================================================
