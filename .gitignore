@@ -1,6 +1,7 @@
 .worktrees/
 .superpowers/
 .playwright-mcp/
+graphify-out/
 /sap-devs
 /sap-devs.exe
 /sap-devs.e*
