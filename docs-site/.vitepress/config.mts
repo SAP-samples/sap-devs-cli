@@ -36,6 +36,11 @@ const archiveEscapePlugin: Plugin = {
   },
 }
 
+const VUE_BUILTINS = new Set([
+  'component', 'transition', 'transition-group',
+  'keep-alive', 'teleport', 'suspense', 'slot',
+])
+
 const HTML5_ELEMENTS = new Set([
   'a', 'abbr', 'address', 'area', 'article', 'aside', 'audio', 'b', 'base',
   'bdi', 'bdo', 'blockquote', 'body', 'br', 'button', 'canvas', 'caption',
@@ -75,6 +80,7 @@ export default defineConfig({
       compilerOptions: {
         isCustomElement: (tag) => {
           if (!/^[a-z][a-z0-9]*(-[a-z0-9]+)*$/.test(tag)) return false
+          if (VUE_BUILTINS.has(tag)) return false
           return !HTML5_ELEMENTS.has(tag)
         },
       },
