@@ -288,7 +288,7 @@ Experience level is stored in `config.yaml` as `experience_level` (beginner/inte
 
 `sap-devs mcp serve` (`cmd/mcp_serve.go`) starts a built-in MCP (Model Context Protocol) server on stdio, exposing SAP developer knowledge as live tools for AI agents. The server uses the `mark3labs/mcp-go` SDK.
 
-**Package:** `internal/mcpserver/` — thin handler adapters that delegate to existing content, news, tutorial, and learning packages.
+**Package:** `internal/mcpserver/` — thin handler adapters that delegate to existing content, news, tutorial, learning, and CLI wrapper packages.
 
 **Architecture:**
 
@@ -300,17 +300,28 @@ internal/mcpserver/
 ├── tools_resources.go    → search_resources
 ├── tools_errors.go       → get_known_errors
 ├── tools_news.go         → get_recent_news (TTL-based fetcher with disk cache + retry)
+├── tools_news_detail.go  → get_news_detail
 ├── tools_learn.go        → search_tutorials, search_learning_journeys
-└── tools_samples.go      → get_samples
+├── tools_samples.go      → get_samples
+├── tools_doctor.go       → check_tools, check_project
+├── tools_events.go       → search_events
+├── tools_videos.go       → search_videos
+├── tools_discovery.go    → search_discovery
+├── tools_cf.go           → cf_target, cf_apps, cf_services, cf_env, cf_routes, cf_domains, cf_buildpacks
+├── tools_btp.go          → btp_target, btp_subaccounts, btp_service_instances, btp_role_collections
+├── tools_tutorial_exec.go    → get_tutorial_step, get_tutorial_image, update_tutorial_progress, get_tutorial_progress, list_active_tutorials
+└── tools_tutorial_recommend.go → recommend_tutorials
 ```
 
-**Deps struct:** Injected at startup — holds `[]*content.Pack`, `*content.Profile`, `[]tutorials.TutorialMeta`, `[]learning.LearningJourney`, `CacheDir string`, `ConfigDir string`, and `Version string`. No global state. `CacheDir` and `ConfigDir` are used by the news fetcher to access the disk cache and resolve YouTube API credentials.
+**Deps struct:** Injected at startup — holds `[]*content.Pack`, `*content.Profile`, `[]tutorials.TutorialMeta`, `[]learning.LearningJourney`, `CacheDir string`, `ConfigDir string`, `DataDir string`, `Version string`, `Cwd string`, `*cfcli.Client`, `*btpcli.Client`, `CFConfigPath string`. No global state.
 
 **News fetching:** The `newsFetcher` struct uses a TTL-based approach (10-minute memory TTL) with the same layered fallback chain as the CLI: memory cache → disk cache → RSS with retry → YouTube API v3 → stale disk/memory cache → baseline file. This replaces the earlier `sync.Once` implementation, which permanently cached failures.
 
+**Tutorial inline images:** `get_tutorial_step` supports inline image delivery via MCP `ImageContent` blocks. When `include_images` is `true` (default), the handler extracts image references from tutorial markdown, resolves relative paths to full GitHub raw URLs, fetches the images (with local caching), base64-encodes them, and returns them as `ImageContent` alongside the text JSON. When `false`, resolved image URLs are included in the text but images are not fetched. A separate `get_tutorial_image` tool fetches individual images on demand. Image caching uses SHA256 hash-prefixed filenames to prevent collisions, with a 10 MB per-image size limit. Agent instructions ensure clickable `[see screenshot](url)` links are always included in text output for clients that don't render `ImageContent` visually.
+
 **Self-install:** `content/packs/base/mcp.yaml` defines a `sap-devs-server` entry so `sap-devs mcp install sap-devs-server` wires the built-in server into AI tool configs.
 
-**9 tools:** `list_packs`, `get_context`, `get_tip`, `search_resources`, `get_known_errors`, `get_recent_news`, `search_tutorials`, `search_learning_journeys`, `get_samples`.
+**32 tools:** `list_packs`, `get_context`, `get_tip`, `search_resources`, `get_known_errors`, `get_recent_news`, `get_news_detail`, `search_tutorials`, `search_learning_journeys`, `get_samples`, `check_tools`, `check_project`, `search_events`, `search_videos`, `search_discovery`, `cf_target`, `cf_apps`, `cf_services`, `cf_env`, `cf_routes`, `cf_domains`, `cf_buildpacks`, `btp_target`, `btp_subaccounts`, `btp_service_instances`, `btp_role_collections`, `get_tutorial_step`, `get_tutorial_image`, `update_tutorial_progress`, `get_tutorial_progress`, `list_active_tutorials`, `recommend_tutorials`.
 
 ### OS-Native Scheduler
 

@@ -491,20 +491,14 @@ Deliver the "AI Agent as Instructor" vision through a Claude Code skill and targ
 
 **Stretch goal (standalone agent):** If demand emerges for tutorial instruction without an external AI tool, revisit the embedded agent approach. Unlikely given the trajectory of AI coding tool adoption.
 
-#### Phase 3 — Inline image display for tutorials
+#### Phase 3 — Inline image display for tutorials - DONE ✔️
 
-Research displaying images inline when tutorials are executed via MCP tools and in Agent hand-hold mode. Many SAP tutorials include screenshots, diagrams, and UI guidance images that are critical for understanding the steps — text-only rendering loses this context.
+Implemented inline tutorial images in the MCP server. `get_tutorial_step` now extracts image references from tutorial markdown, resolves relative paths to full GitHub raw URLs, and returns images as MCP `ImageContent` blocks alongside the text JSON response. A new `get_tutorial_image` tool fetches individual images on demand. Images are cached locally with SHA256 hash-prefixed filenames to prevent collisions. A 10 MB size limit protects against oversized downloads.
 
-**Research needed:**
+**Key design decisions:**
 
-- How tutorial images are stored and referenced (relative paths, CDN URLs, base64 in markdown?)
-- Whether MCP tool responses can include image data or URLs that agents render inline
-- How different AI tools handle images in MCP responses (Claude Code, Cursor, VS Code Copilot)
-- Fallback for text-only agents — alt text, image descriptions, or skip with a note
-- Image caching strategy — fetch on demand vs. prefetch during `sync`
+- **Dual output strategy:** `ImageContent` blocks give the AI model vision capabilities (it can describe what it sees in screenshots), while agent instructions ensure clickable `[see screenshot](url)` links are always included in text output for clients that don't render `ImageContent` (e.g., VS Code Claude extension)
+- **`include_images` parameter** (default `true`): when `false`, returns resolved URLs only without fetching — reduces latency for text-only workflows
+- **Image URLs always resolved** in markdown content regardless of `include_images` mode, so links work even without fetching
 
-**Open questions:**
-
-- Are tutorial images available at predictable URLs from the `sap-tutorials` GitHub repos?
-- Should `get_tutorial_step` return image URLs/data alongside step markdown, or as separate tool calls?
-- What's the token/bandwidth impact of including images in MCP responses?
+New files: `internal/tutorials/images.go` (extraction, fetching, caching), updates to `internal/mcpserver/tools_tutorial_exec.go` (handlers), with tests alongside. Shipped in PR #16.

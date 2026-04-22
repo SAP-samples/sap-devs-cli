@@ -93,7 +93,7 @@ Profiles ([content/profiles/](content/profiles/)) are YAML files that tag which 
 
 ### Tutorials
 
-`sap-devs tutorial` ([cmd/tutorials.go](cmd/tutorials.go)) fetches and renders tutorials from the `sap-tutorials` GitHub organization (~1,290 tutorials across ~21 repos). Metadata is synced incrementally during `sap-devs sync`; full content is fetched on demand by `tutorial show`. Each pack can include `tutorials.yaml` with curated refs. See [docs/developer/developer-guide.md](docs/developer/developer-guide.md) for sync pipeline details.
+`sap-devs tutorial` ([cmd/tutorials.go](cmd/tutorials.go)) fetches and renders tutorials from the `sap-tutorials` GitHub organization (~1,290 tutorials across ~21 repos). Metadata is synced incrementally during `sap-devs sync`; full content is fetched on demand by `tutorial show`. Each pack can include `tutorials.yaml` with curated refs. The MCP server's `get_tutorial_step` tool supports inline image delivery: it extracts image references from tutorial markdown, resolves relative paths to full GitHub raw URLs, fetches and caches images locally, and returns them as MCP `ImageContent` blocks alongside the text JSON. A separate `get_tutorial_image` tool fetches individual images on demand. See [docs/developer/developer-guide.md](docs/developer/developer-guide.md) for sync pipeline and MCP server details.
 
 ### Learning Journeys
 
