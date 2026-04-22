@@ -16,7 +16,7 @@ import (
 func registerTutorialExecTools(s *server.MCPServer, deps Deps) {
 	s.AddTool(
 		mcp.NewTool("get_tutorial_step",
-			mcp.WithDescription("Get a single step from an SAP tutorial with content, annotations (executable commands, file creates, verifications), and progress. Use to guide users through tutorials step-by-step. First call for an uncached tutorial triggers a GitHub fetch. When include_images is true (default), tutorial images are fetched and returned inline as MCP ImageContent blocks that you can see and describe to the user."),
+			mcp.WithDescription("Get a single step from an SAP tutorial with content, annotations (executable commands, file creates, verifications), and progress. Use to guide users through tutorials step-by-step. First call for an uncached tutorial triggers a GitHub fetch. When include_images is true (default), tutorial images are fetched and returned inline as MCP ImageContent blocks that you can see and describe to the user. IMPORTANT: When presenting tutorial steps, always include image URLs as clickable markdown links in your text (e.g. '[see screenshot](url)') so users can view them even when the client does not render ImageContent visually. The 'images' array in the response contains the URLs and alt text for this purpose."),
 			mcp.WithString("slug", mcp.Required(), mcp.Description("Tutorial slug (e.g., 'cap-getting-started')")),
 			mcp.WithNumber("step", mcp.Description("Step number, 1-indexed (default 1)")),
 			mcp.WithBoolean("track", mcp.Description("If true (default), creates/updates progress. Set false to preview without starting.")),
