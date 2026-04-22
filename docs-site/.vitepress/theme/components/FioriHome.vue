@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { withBase } from 'vitepress'
+
 const features = [
   { icon: 'sap-icon--action-settings', title: 'Inject', desc: 'Push SAP context into Claude, Cursor, Copilot', link: '/sap-devs-cli/guide/user-guide' },
   { icon: 'sap-icon--connected', title: 'MCP Server', desc: '31 live tools for AI agents', link: '/sap-devs-cli/developer/mcp-server' },
@@ -23,7 +25,7 @@ const features = [
           </div>
         </div>
         <div class="hero__logo">
-          <img src="/sap-devs-cli/mascot.png" alt="sap-devs mascot" class="hero__mascot" />
+          <img :src="withBase('/mascot.png')" alt="sap-devs mascot" class="hero__mascot" />
         </div>
       </div>
     </section>

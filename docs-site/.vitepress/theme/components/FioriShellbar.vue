@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useData } from 'vitepress'
+import { useData, withBase } from 'vitepress'
 
 declare const __APP_VERSION__: string
 
@@ -21,9 +21,9 @@ function openSearch() {
 <template>
   <div class="fd-shellbar" role="banner">
     <div class="fd-shellbar__group fd-shellbar__group--product">
-      <a href="/sap-devs-cli/" class="fd-shellbar__branding" aria-label="Home">
+      <a :href="withBase('/')" class="fd-shellbar__branding" aria-label="Home">
         <span class="fd-shellbar__logo">
-          <img src="/sap-devs-cli/favicon.png" alt="sap-devs" width="24" height="24" />
+          <img :src="withBase('/favicon.png')" alt="sap-devs" width="24" height="24" />
         </span>
         <span class="fd-shellbar__title">sap-devs</span>
       </a>
