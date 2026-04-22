@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "node scripts/copy-content.js && vitepress dev",
-    "build": "vitepress build",
+    "build": "node scripts/copy-content.js && vitepress build",
     "preview": "vitepress preview"
   },
   "devDependencies": {

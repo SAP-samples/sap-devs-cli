@@ -66,7 +66,7 @@ function escapeArchiveContent(content) {
 
   for (const line of lines) {
     // Track fenced code block boundaries
-    if (/^(`{3,}|~{3,})/.test(line)) {
+    if (/^\s{0,3}(`{3,}|~{3,})/.test(line)) {
       inFence = !inFence
       result.push(line)
       continue
