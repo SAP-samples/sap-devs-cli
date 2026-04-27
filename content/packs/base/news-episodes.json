@@ -2,7 +2,7 @@
   {
     "Episode": {
       "ID": "9Dkj4TBOexk",
-      "Title": "SAP Developer News",
+      "Title": "Migration Tool for Build Apps, Open Source Webinar, BTP Automation Roundtable | SAP Developer News",
       "URL": "https://www.youtube.com/watch?v=9Dkj4TBOexk",
       "Published": "2026-04-23T19:00:06Z",
       "Description": "ITEMS \n\n*Migration tool for your SAP Build Apps frontend web applications*\n\n- Blog post https://community.sap.com/t5/technology-blog-posts-by-sap/migration-tool-for-your-sap-build-apps-frontend-web-applications/ba-p/14368805  \n\n- SAP Help page https://help.sap.com/docs/build-apps/service-guide/sap-build-apps-path-forward#migrating-from-the-sap-build-apps-standalone-offering-to-sap-build\n\n*SAP Open Source Webinar: Olympic Sailing on Eclipse Technology – From Closed Source to Open Source*\n\n- Event info https://events.sap.com/olympic-sailing-on-eclipse-technology-from-closed-source-to-open/en_us/home.html\n\n*SAP BTP Platform Automation Roundtable #3*\n\n- Blog post https://community.sap.com/t5/technology-blog-posts-by-sap/customer-amp-partner-roundtable-for-sap-btp-platform-automation-3-april/ba-p/14374109  \n\n*DYK #13 Override default auth while using xsuaa (CAP)*\n\n- Capire: Authentication in Production – Enforced by Default https://cap.cloud.sap/docs/node.js/authentication#enforced-by-default  \n\nCHAPTER TITLES \n\n00:00 Intro \n00:07 Migration tool for your SAP Build Apps frontend web applications \n01:31 SAP Open Source Webinar: Olympic Sailing on Eclipse Technology – From Closed Source to Open Source \n02:24 SAP BTP Platform Automation Roundtable #3 \n03:24 DYK #13 Override default auth while using xsuaa (CAP)",
