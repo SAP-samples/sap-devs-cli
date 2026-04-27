@@ -46,6 +46,7 @@
     }
 
     function populateForm(cfg) {
+        setVal('cfg-theme', cfg.tray_theme || 'joule');
         setVal('cfg-location', cfg.location);
         setVal('cfg-experience', cfg.experience_level);
         setVal('cfg-company-repo', cfg.company_repo);
@@ -295,6 +296,7 @@
             }
 
             var body = {
+                tray_theme: getVal('cfg-theme'),
                 language: getVal('cfg-language'),
                 location: getVal('cfg-location'),
                 experience_level: getVal('cfg-experience'),
@@ -386,11 +388,21 @@
         });
     }
 
+    function setupThemePreview() {
+        var sel = document.getElementById('cfg-theme');
+        if (sel && window.__sapDevsTheme) {
+            sel.addEventListener('change', function() {
+                window.__sapDevsTheme.apply(sel.value);
+            });
+        }
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
         setupTypeahead();
         setupDetect();
         setupSave();
         setupServiceActions();
+        setupThemePreview();
         init();
     });
 })();

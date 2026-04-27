@@ -64,7 +64,8 @@ type ServiceConfig struct {
 
 // TrayConfig controls the optional GUI tray companion.
 type TrayConfig struct {
-	Autostart bool `yaml:"autostart,omitempty"`
+	Autostart bool   `yaml:"autostart,omitempty"`
+	Theme     string `yaml:"theme,omitempty"`
 }
 
 func (e EventsConfig) EffectiveLocalRadius() int {

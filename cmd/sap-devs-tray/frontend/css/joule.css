@@ -1,0 +1,197 @@
+/* ═══════════════════════════════════════════════
+   Joule Theme — Light Mode
+   Brand identity: AI assistant purple gradient
+   Activation: data-theme="joule" on <body>
+   ═══════════════════════════════════════════════ */
+
+/* ── Header gradient ── */
+body[data-theme="joule"] .panel-header,
+body[data-theme="joule"] .config-header {
+    background: linear-gradient(135deg, #5D36FF 0%, #7B42F0 40%, #A100C2 100%);
+}
+
+/* ── Logo brand fill ── */
+body[data-theme="joule"] .panel-header .logo rect {
+    fill: rgba(255, 255, 255, 0.22);
+}
+
+/* ── Profile avatar ── */
+body[data-theme="joule"] .profile-avatar {
+    background: #5D36FF;
+}
+
+/* ── Cards — hover accent ── */
+body[data-theme="joule"] .status-card:hover,
+body[data-theme="joule"] .profile-card:hover,
+body[data-theme="joule"] .tools-card:hover {
+    border-color: #5D36FF;
+    box-shadow: 0 0.25rem 1rem rgba(93, 54, 255, 0.12);
+}
+
+/* ── Stat boxes — subtle tint ── */
+body[data-theme="joule"] .stat-box {
+    background: rgba(93, 54, 255, 0.04);
+    border-color: rgba(93, 54, 255, 0.12);
+}
+
+/* ── Tool rows — hover ── */
+body[data-theme="joule"] .tool-row:hover {
+    background: rgba(93, 54, 255, 0.04);
+    border-color: rgba(93, 54, 255, 0.15);
+}
+
+/* ── Badges ── */
+body[data-theme="joule"] .badge-neutral {
+    background: rgba(93, 54, 255, 0.08);
+    color: #5D36FF;
+}
+
+/* ── Injected status dot — keep green for semantic meaning ── */
+
+/* ── Emphasized buttons ── */
+body[data-theme="joule"] .fd-button--emphasized {
+    background-color: #5D36FF !important;
+    border-color: #5D36FF !important;
+}
+
+body[data-theme="joule"] .fd-button--emphasized:hover {
+    background-color: #4B28E0 !important;
+    border-color: #4B28E0 !important;
+}
+
+body[data-theme="joule"] .fd-button--emphasized:active {
+    background-color: #3D1DC0 !important;
+    border-color: #3D1DC0 !important;
+}
+
+/* ── Standard buttons — border accent ── */
+body[data-theme="joule"] .fd-button:not(.fd-button--emphasized):not(.cfg-btn-danger):hover {
+    border-color: #5D36FF;
+    color: #5D36FF;
+}
+
+/* ── Config editor — field focus ring ── */
+body[data-theme="joule"] .cfg-field .fd-input:focus,
+body[data-theme="joule"] .cfg-field select.fd-input:focus {
+    border-color: #5D36FF;
+    box-shadow: 0 0 0 1px #5D36FF;
+}
+
+/* ── Config editor — switch track ── */
+body[data-theme="joule"] .cfg-switch-label input:checked + .cfg-switch-track {
+    background: #5D36FF;
+}
+
+/* ── Config editor — panel header hover ── */
+body[data-theme="joule"] .cfg-panel-header:hover {
+    background: rgba(93, 54, 255, 0.04);
+}
+
+/* ── Config editor — typeahead highlight ── */
+body[data-theme="joule"] .cfg-typeahead-item:hover,
+body[data-theme="joule"] .cfg-typeahead-item.highlighted {
+    background: rgba(93, 54, 255, 0.06);
+}
+
+/* ── Config editor — installed badge ── */
+body[data-theme="joule"] .cfg-badge.installed {
+    background: #5D36FF;
+}
+
+
+/* ═══════════════════════════════════════════════
+   Joule Theme — Dark Mode
+   Compound selector beats light-mode by specificity
+   ═══════════════════════════════════════════════ */
+
+/* ── Header gradient — deep muted purples ── */
+body[data-theme="joule"][data-dark] .panel-header,
+body[data-theme="joule"][data-dark] .config-header {
+    background: linear-gradient(135deg, #2A1066 0%, #4B1A8A 40%, #6B0080 100%);
+}
+
+/* ── Logo brand fill — purple-tinted glass ── */
+body[data-theme="joule"][data-dark] .panel-header .logo rect {
+    fill: rgba(93, 54, 255, 0.25);
+}
+
+/* ── Profile avatar — lightened purple for contrast ── */
+body[data-theme="joule"][data-dark] .profile-avatar {
+    background: #8B6FFF;
+}
+
+/* ── Cards — hover with dark-mode purple ── */
+body[data-theme="joule"][data-dark] .status-card:hover,
+body[data-theme="joule"][data-dark] .profile-card:hover,
+body[data-theme="joule"][data-dark] .tools-card:hover {
+    border-color: #8B6FFF;
+    box-shadow: 0 0.25rem 1rem rgba(93, 54, 255, 0.25);
+}
+
+/* ── Stat boxes — purple-tinted glass ── */
+body[data-theme="joule"][data-dark] .stat-box {
+    background: rgba(139, 111, 255, 0.08);
+    border-color: rgba(139, 111, 255, 0.18);
+}
+
+/* ── Tool rows — hover ── */
+body[data-theme="joule"][data-dark] .tool-row:hover {
+    background: rgba(139, 111, 255, 0.06);
+    border-color: rgba(139, 111, 255, 0.2);
+}
+
+/* ── Badges ── */
+body[data-theme="joule"][data-dark] .badge-neutral {
+    background: rgba(139, 111, 255, 0.12);
+    color: #8B6FFF;
+}
+
+/* ── Emphasized buttons — lightened primary ── */
+body[data-theme="joule"][data-dark] .fd-button--emphasized {
+    background-color: #7B5EFF !important;
+    border-color: #7B5EFF !important;
+}
+
+body[data-theme="joule"][data-dark] .fd-button--emphasized:hover {
+    background-color: #8B6FFF !important;
+    border-color: #8B6FFF !important;
+}
+
+body[data-theme="joule"][data-dark] .fd-button--emphasized:active {
+    background-color: #6B4EEF !important;
+    border-color: #6B4EEF !important;
+}
+
+/* ── Standard buttons ── */
+body[data-theme="joule"][data-dark] .fd-button:not(.fd-button--emphasized):not(.cfg-btn-danger):hover {
+    border-color: #8B6FFF;
+    color: #8B6FFF;
+}
+
+/* ── Config editor — field focus ring ── */
+body[data-theme="joule"][data-dark] .cfg-field .fd-input:focus,
+body[data-theme="joule"][data-dark] .cfg-field select.fd-input:focus {
+    border-color: #8B6FFF;
+    box-shadow: 0 0 0 1px #8B6FFF;
+}
+
+/* ── Config editor — switch track ── */
+body[data-theme="joule"][data-dark] .cfg-switch-label input:checked + .cfg-switch-track {
+    background: #8B6FFF;
+}
+
+/* ── Config editor — panel header hover ── */
+body[data-theme="joule"][data-dark] .cfg-panel-header:hover {
+    background: rgba(139, 111, 255, 0.06);
+}
+
+/* ── Config editor — typeahead highlight ── */
+body[data-theme="joule"][data-dark] .cfg-typeahead-item:hover,
+body[data-theme="joule"][data-dark] .cfg-typeahead-item.highlighted {
+    background: rgba(139, 111, 255, 0.08);
+}
+
+/* ── Config editor — installed badge ── */
+body[data-theme="joule"][data-dark] .cfg-badge.installed {
+    background: #7B5EFF;
+}

@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="css/sap_horizon_dark.css" media="(prefers-color-scheme: dark)">
     <link rel="stylesheet" href="css/fundamental-styles.min.css">
     <link rel="stylesheet" href="css/app.css">
+    <link rel="stylesheet" href="css/joule.css">
 </head>
 <body class="config-editor">
     <div class="config-header">
@@ -63,6 +64,14 @@
                 <span class="cfg-panel-title">Preferences</span>
             </div>
             <div class="cfg-panel-body">
+                <div class="cfg-field">
+                    <label for="cfg-theme">Theme</label>
+                    <select id="cfg-theme" class="fd-input">
+                        <option value="joule">Joule</option>
+                        <option value="standard">Standard Fiori</option>
+                    </select>
+                    <span class="cfg-hint">Joule applies purple AI-assistant branding; Standard uses default Fiori Horizon</span>
+                </div>
                 <div class="cfg-field">
                     <label for="cfg-tip-rotation">Tip Rotation</label>
                     <select id="cfg-tip-rotation" class="fd-input">
@@ -259,6 +268,7 @@
         <button type="button" class="fd-button fd-button--emphasized" id="btn-save">Save</button>
     </div>
 
+    <script src="js/theme.js"></script>
     <script src="js/config.js"></script>
 </body>
 </html>

@@ -103,7 +103,8 @@ type trayServiceConfig struct {
 }
 
 type trayTrayConfig struct {
-	Autostart bool `yaml:"autostart,omitempty" json:"autostart,omitempty"`
+	Autostart bool   `yaml:"autostart,omitempty" json:"autostart,omitempty"`
+	Theme     string `yaml:"theme,omitempty"     json:"theme,omitempty"`
 }
 
 // defaultTrayConfig returns factory defaults matching internal/config.Default().
@@ -182,6 +183,7 @@ type configJSON struct {
 	SyncLearning        string `json:"sync_learning"`
 	ServiceInterval     string `json:"service_interval"`
 	TrayAutostart       bool   `json:"tray_autostart"`
+	TrayTheme           string `json:"tray_theme"`
 }
 
 // toConfigJSON converts a trayConfig to the flat JSON representation,
@@ -212,6 +214,10 @@ func toConfigJSON(cfg *trayConfig) configJSON {
 	serviceInterval := cfg.Service.Interval
 	if serviceInterval == 0 {
 		serviceInterval = defaults.Service.Interval
+	}
+	trayTheme := cfg.Tray.Theme
+	if trayTheme == "" {
+		trayTheme = "joule"
 	}
 
 	durationOr := func(val, def time.Duration) string {
@@ -246,6 +252,7 @@ func toConfigJSON(cfg *trayConfig) configJSON {
 		SyncLearning:         durationOr(cfg.Sync.Learning, defaults.Sync.Learning),
 		ServiceInterval:      serviceInterval.String(),
 		TrayAutostart:        cfg.Tray.Autostart,
+		TrayTheme:            trayTheme,
 	}
 }
 
@@ -307,6 +314,7 @@ func (s *Server) handleConfigPost(w http.ResponseWriter, r *http.Request) {
 	cfg.Events.NotifyMethod = input.EventsNotifyMethod
 	cfg.Sync.Disabled = input.SyncDisabled
 	cfg.Tray.Autostart = input.TrayAutostart
+	cfg.Tray.Theme = input.TrayTheme
 
 	// Parse and apply duration fields. Validation already passed, so errors are safe to ignore.
 	cfg.Sync.Tips, _ = time.ParseDuration(input.SyncTips)
