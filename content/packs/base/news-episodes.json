@@ -1,11 +1,11 @@
 [
   {
     "Episode": {
-      "ID": "9Dkj4TBOexk",
-      "Title": "Migration Tool for Build Apps, Open Source Webinar, BTP Automation Roundtable | SAP Developer News",
-      "URL": "https://www.youtube.com/watch?v=9Dkj4TBOexk",
-      "Published": "2026-04-23T19:00:06Z",
-      "Description": "ITEMS \n\n*Migration tool for your SAP Build Apps frontend web applications*\n\n- Blog post https://community.sap.com/t5/technology-blog-posts-by-sap/migration-tool-for-your-sap-build-apps-frontend-web-applications/ba-p/14368805  \n\n- SAP Help page https://help.sap.com/docs/build-apps/service-guide/sap-build-apps-path-forward#migrating-from-the-sap-build-apps-standalone-offering-to-sap-build\n\n*SAP Open Source Webinar: Olympic Sailing on Eclipse Technology – From Closed Source to Open Source*\n\n- Event info https://events.sap.com/olympic-sailing-on-eclipse-technology-from-closed-source-to-open/en_us/home.html\n\n*SAP BTP Platform Automation Roundtable #3*\n\n- Blog post https://community.sap.com/t5/technology-blog-posts-by-sap/customer-amp-partner-roundtable-for-sap-btp-platform-automation-3-april/ba-p/14374109  \n\n*DYK #13 Override default auth while using xsuaa (CAP)*\n\n- Capire: Authentication in Production – Enforced by Default https://cap.cloud.sap/docs/node.js/authentication#enforced-by-default  \n\nCHAPTER TITLES \n\n00:00 Intro \n00:07 Migration tool for your SAP Build Apps frontend web applications \n01:31 SAP Open Source Webinar: Olympic Sailing on Eclipse Technology – From Closed Source to Open Source \n02:24 SAP BTP Platform Automation Roundtable #3 \n03:24 DYK #13 Override default auth while using xsuaa (CAP)",
+      "ID": "pvwdRgImGQY",
+      "Title": "NPM supply chain attack, CAP April Release, SAP Architecture Center | SAP Developer News",
+      "URL": "https://www.youtube.com/watch?v=pvwdRgImGQY",
+      "Published": "2026-04-30T14:47:07Z",
+      "Description": "🚨 *NPM supply chain attack campaign, SAP packages affected*\n  - Step Security post https://sap.to/6057BBuS93 \n  - OSS note https://me.sap.com/notes/3747787/E \n\n\n*CAP Apr 2026 release*\n  - Release notes https://sap.to/6051BBuS9R \n\n*The refreshed SAP Architecture Center*\n  - Announcement: https://sap.to/6053BBuS9T\n  - SAP Architecture Center: https://sap.to/6054BBuS9p \n\n*CAP AI Plugin for Node.js*\n  - GitHub Repo: https://sap.to/6055BBuS9V\n\n*DYK #14 CW18*\n  - More Info: https://sap.to/6056BBuS9n\n\n=======================================================\n\n*CHAPTER TITLES*\n0:00 Intro\n0:10 🚨 NPM supply chain attack campaign, SAP packages affected\n1:20 CAP Apr 2026 release\n10:08 The refreshed SAP Architecture Center\n11:13 CAP AI Plugin for Node.js\n11:57 DYK #14 CW18",
       "Duration": "",
       "Tags": null
     },
@@ -14,6 +14,30 @@
       "URL": "https://community.sap.com/t5/developer-news/sap-developer-news-for-april-23rd-2026/ba-p/14381400",
       "Published": "2026-04-23T19:00:00Z"
     }
+  },
+  {
+    "Episode": {
+      "ID": "csTzKIBqH7M",
+      "Title": "NPM supply chain attack campaign, SAP packages affected | SAP Developer News",
+      "URL": "https://www.youtube.com/shorts/csTzKIBqH7M",
+      "Published": "2026-04-30T11:39:25Z",
+      "Description": "Details: https://www.stepsecurity.io/blog/a-mini-shai-hulud-has-appeared\nOSS note: https://me.sap.com/notes/3747787/E",
+      "Duration": "",
+      "Tags": null
+    },
+    "Community": null
+  },
+  {
+    "Episode": {
+      "ID": "9Dkj4TBOexk",
+      "Title": "Migration Tool for Build Apps, Open Source Webinar, BTP Automation Roundtable | SAP Developer News",
+      "URL": "https://www.youtube.com/watch?v=9Dkj4TBOexk",
+      "Published": "2026-04-23T19:00:06Z",
+      "Description": "ITEMS \n\n*Migration tool for your SAP Build Apps frontend web applications*\n\n- Blog post https://community.sap.com/t5/technology-blog-posts-by-sap/migration-tool-for-your-sap-build-apps-frontend-web-applications/ba-p/14368805  \n\n- SAP Help page https://help.sap.com/docs/build-apps/service-guide/sap-build-apps-path-forward#migrating-from-the-sap-build-apps-standalone-offering-to-sap-build\n\n*SAP Open Source Webinar: Olympic Sailing on Eclipse Technology – From Closed Source to Open Source*\n\n- Event info https://events.sap.com/olympic-sailing-on-eclipse-technology-from-closed-source-to-open/en_us/home.html\n\n*SAP BTP Platform Automation Roundtable #3*\n\n- Blog post https://community.sap.com/t5/technology-blog-posts-by-sap/customer-amp-partner-roundtable-for-sap-btp-platform-automation-3-april/ba-p/14374109  \n\n*DYK #13 Override default auth while using xsuaa (CAP)*\n\n- Capire: Authentication in Production – Enforced by Default https://cap.cloud.sap/docs/node.js/authentication#enforced-by-default  \n\nCHAPTER TITLES \n\n00:00 Intro \n00:07 Migration tool for your SAP Build Apps frontend web applications \n01:31 SAP Open Source Webinar: Olympic Sailing on Eclipse Technology – From Closed Source to Open Source \n02:24 SAP BTP Platform Automation Roundtable #3 \n03:24 DYK #13 Override default auth while using xsuaa (CAP)",
+      "Duration": "",
+      "Tags": null
+    },
+    "Community": null
   },
   {
     "Episode": {
@@ -157,86 +181,6 @@
       "Title": "SAP Developer News, February 19th, 2026",
       "URL": "https://community.sap.com/t5/developer-news/sap-developer-news-february-19th-2026/ba-p/14332168",
       "Published": "2026-02-19T20:10:00Z"
-    }
-  },
-  {
-    "Episode": {
-      "ID": "jp6k7atZp6E",
-      "Title": "SAP Developer Insights Survey 2026 #sap #developers",
-      "URL": "https://www.youtube.com/shorts/jp6k7atZp6E",
-      "Published": "2026-02-16T21:57:44Z",
-      "Description": "The 2026 SAP Developer Insights Survey is live now: https://sapinsights.eu.qualtrics.com/jfe/form/SV_9prRAJk5ccYPMMe\n\n2025 Survey Report: https://community.sap.com/t5/technology-blog-posts-by-sap/the-2025-developer-insights-survey-the-report/ba-p/14323198\n\nCurious about how others in the SAP ecosystem are leveraging AI? There're many new questions on that topic .. and more. \n\nSurvey open through the next six weeks.",
-      "Duration": "",
-      "Tags": null
-    },
-    "Community": {
-      "Title": "SAP Developer News, February 12th, 2026",
-      "URL": "https://community.sap.com/t5/developer-news/sap-developer-news-february-12th-2026/ba-p/14327391",
-      "Published": "2026-02-12T20:10:00Z"
-    }
-  },
-  {
-    "Episode": {
-      "ID": "aU3Eu2SlvxE",
-      "Title": "ABAP AI Roadmap, CAP Jan 2026 Release, Brazil CodeJams, CAP Roundtable, DYK #3 | SAP Developer News",
-      "URL": "https://www.youtube.com/watch?v=aU3Eu2SlvxE",
-      "Published": "2026-02-12T20:00:06Z",
-      "Description": "*Your 2026 Roadmap to Getting Started with ABAP AI and ABAP-1*\n  • ABAP AI and ABAP-1 Roadmap https://community.sap.com/t5/technology-blog-posts-by-sap/your-2026-roadmap-to-getting-started-with-abap-ai-and-abap-1/ba-p/14312060\n\n*CAP January 2026 release*\n  • Release notes https://cap.cloud.sap/docs/releases/2026/jan26\n  • Blog post \"Modifying queries, replacing the WHERE clause\" https://qmacro.org/blog/posts/2026/02/04/modifying-queries-replacing-the-where-clause/ \n  • Hands-on SAP Dev mini-series on CXL in CAP https://qmacro.org/blog/posts/2025/12/09/a-new-hands-on-sap-dev-mini-series-on-the-core-expression-language-in-cds/ \n\n*Brazil CodeJam roadshow*\n  • SAP CodeJam Roadshow 2026 - Brazil edition 🇧🇷 - https://community.sap.com/t5/sap-codejam-blog-posts/sap-codejam-roadshow-2026-brazil-edition-kicking-off-in-march-and/ba-p/14317926 \n\n*CAP Customer Roundtable*\n  • Agenda and details https://community.sap.com/t5/technology-blog-posts-by-sap/sap-cloud-application-programming-model-cap-customer-roundtable-february/ba-p/14317448 \n\n*Did You Know? #3 – Debugging apps on CF*\n  • Debugging with cds debug https://cap.cloud.sap/docs/tools/cds-cli#cds-debug \n\n============================================================\n\nCHAPTER TITLES \n0:00 Intro\n0:10 ABAP AI and ABAP-1 Roadmap\n1:25 CAP January 2026 release\n5:48 Brazil CodeJam roadshow\n6:51 CAP Customer Roundtable 18 Feb\n7:29 Did You Know? #3 – Debugging apps on CF",
-      "Duration": "",
-      "Tags": null
-    },
-    "Community": {
-      "Title": "SAP Developer News, February 5th, 2026",
-      "URL": "https://community.sap.com/t5/developer-news/sap-developer-news-february-5th-2026/ba-p/14322485",
-      "Published": "2026-02-05T20:10:00Z"
-    }
-  },
-  {
-    "Episode": {
-      "ID": "HqlUHFtW0g4",
-      "Title": "Build Q4 2025, My Home ABAP, DYK Mocking Auth, Devtoberfest Winners | SAP Developer News",
-      "URL": "https://www.youtube.com/watch?v=HqlUHFtW0g4",
-      "Published": "2026-02-05T20:00:06Z",
-      "Description": "*SAP Build Q4 2025 Release Highlights*\n  • https://sap.to/6056hJYOG\n\n*My Home in SAP BTP ABAP Environment*\n  • https://sap.to/6058hJYOy \n\n*Did You Know? #2 – Mocking Auth in CAP*\n  • Authentication Strategies https://cap.cloud.sap/docs/node.js/authentication#strategies \n\n*Devtoberfest 2025 – Winners Announcement*\n  • https://sap.to/6050hJYOK\n\n*New live stream series and blog post series on CAP topics*\n  • Modules, modularity \u0026 reuse in CDS models (blog post series) https://sap.to/6051hJYOz \n  • Hands-on SAP Dev CXL live stream series playlist https://sap.to/6052hJYOM\n  • A new Hands-on SAP Dev mini-series on the core expression language in CDS (blog post) https://sap.to/6053hJYO3 \n  • Constraints, expressions and axioms in action (blog post) https://sap.to/6054hJYOO\n\n=================================================\n\n*CHAPTER TITLES*\n0:00 Intro\n0:10 SAP Build Q4 2025 Release Highlights\n1:36 My Home in SAP BTP ABAP Environment\n3:04 DYK #2 Mocking Auth in CAP\n4:10 Devtoberfest 2025 – Winners Announcement\n4:44 New live stream series and blog post series on CAP topics",
-      "Duration": "",
-      "Tags": null
-    },
-    "Community": {
-      "Title": "SAP Developer News, January 29th, 2026",
-      "URL": "https://community.sap.com/t5/developer-news/sap-developer-news-january-29th-2026/ba-p/14318110",
-      "Published": "2026-01-30T13:11:15Z"
-    }
-  },
-  {
-    "Episode": {
-      "ID": "5-mzMGS1gHo",
-      "Title": "CodeConnect, Joule Studio CodeJams, DYK #1, HANA ML Hackathon, Python Client | Developer News",
-      "URL": "https://www.youtube.com/watch?v=5-mzMGS1gHo",
-      "Published": "2026-01-29T20:00:06Z",
-      "Description": "*Code Connect 2026 Call For Papers / Proposals*\n  • Code Connect Website (find the CFP links via the individual conference links) https://sap.to/6058hDT7k \n\n*Joule Studio CodeJams*\n  • Request to host by posting here: https://sap.to/6052hDT7j\n  • Milan: https://sap.to/6053hDT7d\n  • Sydney: https://sap.to/6054hDT7e\n  • Paris: https://sap.to/6055hDT75\n  • Melbourne: https://sap.to/6056hDT7g\n  • Brisbane: https://sap.to/6057hDT79\n  • Amsterdam: https://sap.to/6058hDT7i\n  • Risch-Rotkreuz, Switzerland: https://sap.to/6059hDT7c\n  • All CodeJams: https://sap.to/6050hDT7Y\n\n*Did You Know #1 – The cds REPL*\n  • A reCAP intro to the cds REPL https://qmacro.org/blog/posts/2025/07/21/a-recap-intro-to-the-cds-repl/ \n\n*HANA ML and RPT-1 at AI Hackathon in Oslo*\n  • Defense Interest Group (DEIG): https://sap.to/6051hDT7l \n  • Getting Started with Data Science: https://sap.to/6052hDT7m\n  • AI Agent with LiteLLM, CrewAI and SAP-RPT-1: Here’s What Actually Worked: https://sap.to/6053hDT7W \n\n*Support for async in Python clients for SAP HANA*\n  • Use the SAP HANA Client Python driver with the Asynchronous I/O (asyncio) library: https://sap.to/6054hDT7o\n  • SQLAlchemy Dialect for SAP HANA 4.3.0: https://sap.to/6055hDT7U \n\n=======================================================\n\n*CHAPTER TITLES* \n0:00 Intro\n0:10 Code Connect 2026 Call For Papers / Proposals\n0:54 Joule Studio CodeJams \n2:19 DYK #1 CDS REPL\n3:22 HANA ML and RPT-1 at AI Hackathon in Oslo; async in Python clients for SAP HANA\n4:33 Edgar Martinez – Devtoberfest Winners’ Interview",
-      "Duration": "",
-      "Tags": null
-    },
-    "Community": {
-      "Title": "SAP Developer News, January 22nd, 2026",
-      "URL": "https://community.sap.com/t5/developer-news/sap-developer-news-january-22nd-2026/ba-p/14312899",
-      "Published": "2026-01-22T20:10:00Z"
-    }
-  },
-  {
-    "Episode": {
-      "ID": "WH52v01BYOo",
-      "Title": "UI5Con Bangalore, BTP Automation Roundtable, Event Mesh Monitoring, UI5 Roadmap | SAP Developer News",
-      "URL": "https://www.youtube.com/watch?v=WH52v01BYOo",
-      "Published": "2026-01-22T20:00:06Z",
-      "Description": "*UI5Con Bangalore*\n  - UI5con Bangalore: https://sap.to/6055CA7XJ \n\n*SAP BTP Platform Automation Roundtable #1* \n  - Blog post https://sap.to/6057CA7Xz  \n  - Registration https://sap.to/6058CA7XM \n\n*Event Mesh capability monitoring in SAP Cloud ALM*\n  - Monitoring Event Mesh from SAP Integration Suite with SAP Cloud ALM: https://sap.to/6059CA7X3  \n\n*SAPUI5 Roadmap Explorer*\n  - Link to the Roadmap: https://sap.to/6050CA7XO \n\n*Code Connect 2026* \n  - Code Connect website https://sap.to/6051CA7XP  \n\n*Devtoberfest Winners Interview - Gert Mertens* \n\n=============================================\n\n*CHAPTER TITLES*  \n\n0:00 Intro \n0:10 UI5con Bangalore \n0:45 SAP BTP Platform Automation Roundtable #1\n1:28 Event Mesh capability monitoring in SAP Cloud ALM \n2:19 SAPUI5 Roadmap Explorer \n3:23 Code Connect 2026 \n4:48 Devtoberfest Winners Interview - Gert Mertens",
-      "Duration": "",
-      "Tags": null
-    },
-    "Community": {
-      "Title": "SAP Developer News, January 15th 2026",
-      "URL": "https://community.sap.com/t5/developer-news/sap-developer-news-january-15th-2026/ba-p/14308211",
-      "Published": "2026-01-15T20:20:00Z"
     }
   }
 ]
