@@ -4,15 +4,15 @@
       "ID": "pvwdRgImGQY",
       "Title": "NPM supply chain attack, CAP April Release, SAP Architecture Center | SAP Developer News",
       "URL": "https://www.youtube.com/watch?v=pvwdRgImGQY",
-      "Published": "2026-04-30T14:47:07Z",
+      "Published": "2026-04-30T19:00:06Z",
       "Description": "🚨 *NPM supply chain attack campaign, SAP packages affected*\n  - Step Security post https://sap.to/6057BBuS93 \n  - OSS note https://me.sap.com/notes/3747787/E \n\n\n*CAP Apr 2026 release*\n  - Release notes https://sap.to/6051BBuS9R \n\n*The refreshed SAP Architecture Center*\n  - Announcement: https://sap.to/6053BBuS9T\n  - SAP Architecture Center: https://sap.to/6054BBuS9p \n\n*CAP AI Plugin for Node.js*\n  - GitHub Repo: https://sap.to/6055BBuS9V\n\n*DYK #14 CW18*\n  - More Info: https://sap.to/6056BBuS9n\n\n=======================================================\n\n*CHAPTER TITLES*\n0:00 Intro\n0:10 🚨 NPM supply chain attack campaign, SAP packages affected\n1:20 CAP Apr 2026 release\n10:08 The refreshed SAP Architecture Center\n11:13 CAP AI Plugin for Node.js\n11:57 DYK #14 CW18",
       "Duration": "",
       "Tags": null
     },
     "Community": {
-      "Title": "SAP Developer News for April 23rd, 2026",
-      "URL": "https://community.sap.com/t5/developer-news/sap-developer-news-for-april-23rd-2026/ba-p/14381400",
-      "Published": "2026-04-23T19:00:00Z"
+      "Title": "SAP Developer News for April 30th, 2026",
+      "URL": "https://community.sap.com/t5/developer-news/sap-developer-news-for-april-30th-2026/ba-p/14387145",
+      "Published": "2026-04-30T19:20:00Z"
     }
   },
   {
@@ -25,7 +25,11 @@
       "Duration": "",
       "Tags": null
     },
-    "Community": null
+    "Community": {
+      "Title": "SAP Developer News for April 23rd, 2026",
+      "URL": "https://community.sap.com/t5/developer-news/sap-developer-news-for-april-23rd-2026/ba-p/14381400",
+      "Published": "2026-04-23T19:00:00Z"
+    }
   },
   {
     "Episode": {
