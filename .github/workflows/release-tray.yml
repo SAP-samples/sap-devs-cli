@@ -1,14 +1,16 @@
 name: Release Tray Binary
 
 on:
-  release:
-    types: [published]
+  workflow_run:
+    workflows: ["Release"]
+    types: [completed]
 
 permissions:
   contents: write
 
 jobs:
   build-tray:
+    if: github.event.workflow_run.conclusion == 'success'
     strategy:
       fail-fast: false
       matrix:
@@ -37,6 +39,23 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Extract release tag
+        id: tag
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          CANDIDATE="${{ github.event.workflow_run.head_branch }}"
+          if [[ ! "$CANDIDATE" =~ ^v[0-9]+\.[0-9]+\.[0-9]+ ]]; then
+            CANDIDATE=$(gh release list --limit 1 --json tagName -q '.[0].tagName')
+          fi
+          if [[ ! "$CANDIDATE" =~ ^v[0-9]+\.[0-9]+\.[0-9]+ ]]; then
+            echo "::error::Could not determine release tag"
+            exit 1
+          fi
+          echo "TAG=$CANDIDATE" >> "$GITHUB_ENV"
+          echo "VERSION=${CANDIDATE#v}" >> "$GITHUB_ENV"
+
       - uses: actions/setup-go@v5
         with:
           go-version-file: cmd/sap-devs-tray/go.mod
@@ -61,14 +80,12 @@ jobs:
           GOARCH: ${{ matrix.goarch }}
           CC: ${{ matrix.cc }}
         run: |
-          VERSION="${GITHUB_REF_NAME#v}"
           EXT=""
           if [ "${{ matrix.goos }}" = "windows" ]; then EXT=".exe"; fi
           go build -ldflags "-X main.version=${VERSION}" -o "sap-devs-tray${EXT}" .
 
       - name: Package
         run: |
-          VERSION="${GITHUB_REF_NAME#v}"
           ASSET="sap-devs-tray_${VERSION}_${{ matrix.goos }}_${{ matrix.goarch }}"
           if [ "${{ matrix.goos }}" = "windows" ]; then
             zip "${ASSET}.zip" -j cmd/sap-devs-tray/sap-devs-tray.exe
@@ -79,7 +96,6 @@ jobs:
       - name: Generate checksum
         shell: bash
         run: |
-          VERSION="${GITHUB_REF_NAME#v}"
           ASSET="sap-devs-tray_${VERSION}_${{ matrix.goos }}_${{ matrix.goarch }}"
           if [ "${{ matrix.goos }}" = "windows" ]; then
             FILE="${ASSET}.zip"
@@ -96,12 +112,11 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          VERSION="${GITHUB_REF_NAME#v}"
           ASSET="sap-devs-tray_${VERSION}_${{ matrix.goos }}_${{ matrix.goarch }}"
           if [ "${{ matrix.goos }}" = "windows" ]; then
-            gh release upload "${GITHUB_REF_NAME}" "${ASSET}.zip" "${ASSET}.zip.sha256" --clobber
+            gh release upload "$TAG" "${ASSET}.zip" "${ASSET}.zip.sha256" --clobber
           else
-            gh release upload "${GITHUB_REF_NAME}" "${ASSET}.tar.gz" "${ASSET}.tar.gz.sha256" --clobber
+            gh release upload "$TAG" "${ASSET}.tar.gz" "${ASSET}.tar.gz.sha256" --clobber
           fi
 
   aggregate-checksums:
@@ -110,15 +125,26 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Extract release tag
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          CANDIDATE="${{ github.event.workflow_run.head_branch }}"
+          if [[ ! "$CANDIDATE" =~ ^v[0-9]+\.[0-9]+\.[0-9]+ ]]; then
+            CANDIDATE=$(gh release list --limit 1 --json tagName -q '.[0].tagName')
+          fi
+          echo "TAG=$CANDIDATE" >> "$GITHUB_ENV"
+          echo "VERSION=${CANDIDATE#v}" >> "$GITHUB_ENV"
+
       - name: Download per-artifact checksums
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          VERSION="${GITHUB_REF_NAME#v}"
           mkdir -p checksums
           for suffix in linux_amd64.tar.gz linux_arm64.tar.gz darwin_arm64.tar.gz darwin_amd64.tar.gz windows_amd64.zip; do
             FILE="sap-devs-tray_${VERSION}_${suffix}.sha256"
-            gh release download "${GITHUB_REF_NAME}" -p "${FILE}" -D checksums || true
+            gh release download "$TAG" -p "${FILE}" -D checksums || true
           done
 
       - name: Aggregate into tray-checksums.txt
@@ -130,4 +156,4 @@ jobs:
             echo "::warning::Expected 5 checksums, got $COUNT"
           fi
           cat checksums/*.sha256 > tray-checksums.txt
-          gh release upload "${GITHUB_REF_NAME}" tray-checksums.txt --clobber
+          gh release upload "$TAG" tray-checksums.txt --clobber
