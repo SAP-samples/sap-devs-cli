@@ -429,6 +429,10 @@ func TestAdd_CreatesProfileForDetectedShell(t *testing.T) {
 	defer func() { detectShellEnv = orig }()
 	detectShellEnv = func() Shell { return ShellPowerShell }
 
+	origOS := currentOS
+	defer func() { currentOS = origOS }()
+	currentOS = "windows"
+
 	// Profile doesn't exist yet — Add should create it
 	origHome := homeDir
 	defer func() { homeDir = origHome }()
@@ -461,6 +465,10 @@ func TestAdd_DetectedShellZsh_CreatesZshrc(t *testing.T) {
 	orig := detectShellEnv
 	defer func() { detectShellEnv = orig }()
 	detectShellEnv = func() Shell { return ShellZsh }
+
+	origOS := currentOS
+	defer func() { currentOS = origOS }()
+	currentOS = "linux"
 
 	origHome := homeDir
 	defer func() { homeDir = origHome }()

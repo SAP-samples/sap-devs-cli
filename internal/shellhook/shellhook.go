@@ -82,6 +82,9 @@ type Result struct {
 	Updated bool // false = already present (Add) or line not found (Remove)
 }
 
+// currentOS is the GOOS value used by candidateProfiles, replaceable in tests.
+var currentOS = runtime.GOOS
+
 // homeDir is a variable so tests can substitute a temp directory.
 var homeDir = os.UserHomeDir
 
@@ -92,7 +95,7 @@ func candidateProfiles() ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	return profilesForOS(runtime.GOOS, home), nil
+	return profilesForOS(currentOS, home), nil
 }
 
 // profilesForOS returns candidate profile paths for a given GOOS and home
