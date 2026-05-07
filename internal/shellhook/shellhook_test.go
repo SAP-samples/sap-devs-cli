@@ -1,6 +1,7 @@
 package shellhook
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -27,11 +28,14 @@ func TestProfilesForOS_Linux(t *testing.T) {
 
 func TestProfilesForOS_Windows(t *testing.T) {
 	profiles := profilesForOS("windows", `C:\Users\user`)
-	if len(profiles) != 3 {
-		t.Fatalf("expected 3 windows profiles, got %d: %v", len(profiles), profiles)
+	if len(profiles) != 4 {
+		t.Fatalf("expected 4 windows profiles, got %d: %v", len(profiles), profiles)
 	}
 	if !strings.Contains(profiles[0], "PowerShell") {
 		t.Errorf("expected PowerShell profile first, got %q", profiles[0])
+	}
+	if !strings.Contains(profiles[1], "WindowsPowerShell") {
+		t.Errorf("expected WindowsPowerShell profile second, got %q", profiles[1])
 	}
 }
 
@@ -421,6 +425,59 @@ func TestEnsureFileExists_ExistingFileUnchanged(t *testing.T) {
 	}
 }
 
+func TestCandidateProfiles_Windows_ResolvedProfile(t *testing.T) {
+	dir := t.TempDir()
+	onedrivePath := filepath.Join(dir, "OneDrive - SAP SE", "Documents", "WindowsPowerShell", "Microsoft.PowerShell_profile.ps1")
+
+	origOS := currentOS
+	defer func() { currentOS = origOS }()
+	currentOS = "windows"
+
+	origHome := homeDir
+	defer func() { homeDir = origHome }()
+	homeDir = func() (string, error) { return dir, nil }
+
+	origQuery := queryPSProfile
+	defer func() { queryPSProfile = origQuery }()
+	queryPSProfile = func(binary string) (string, error) { return onedrivePath, nil }
+
+	candidates, err := candidateProfiles()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(candidates) == 0 {
+		t.Fatal("expected candidates")
+	}
+	if candidates[0] != onedrivePath {
+		t.Errorf("expected resolved OneDrive path first, got %q", candidates[0])
+	}
+}
+
+func TestCandidateProfiles_Windows_QueryFails(t *testing.T) {
+	dir := t.TempDir()
+
+	origOS := currentOS
+	defer func() { currentOS = origOS }()
+	currentOS = "windows"
+
+	origHome := homeDir
+	defer func() { homeDir = origHome }()
+	homeDir = func() (string, error) { return dir, nil }
+
+	origQuery := queryPSProfile
+	defer func() { queryPSProfile = origQuery }()
+	queryPSProfile = func(binary string) (string, error) { return "", fmt.Errorf("not found") }
+
+	candidates, err := candidateProfiles()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	// Should fall back to hardcoded paths
+	if len(candidates) != 4 {
+		t.Fatalf("expected 4 hardcoded candidates, got %d: %v", len(candidates), candidates)
+	}
+}
+
 func TestAdd_CreatesProfileForDetectedShell(t *testing.T) {
 	dir := t.TempDir()
 	psPath := filepath.Join(dir, "Documents", "PowerShell", "Microsoft.PowerShell_profile.ps1")
@@ -433,10 +490,13 @@ func TestAdd_CreatesProfileForDetectedShell(t *testing.T) {
 	defer func() { currentOS = origOS }()
 	currentOS = "windows"
 
-	// Profile doesn't exist yet — Add should create it
 	origHome := homeDir
 	defer func() { homeDir = origHome }()
 	homeDir = func() (string, error) { return dir, nil }
+
+	origQuery := queryPSProfile
+	defer func() { queryPSProfile = origQuery }()
+	queryPSProfile = func(binary string) (string, error) { return "", fmt.Errorf("not available") }
 
 	results, err := Add("sap-devs tip", "# SAP developer tips")
 	if err != nil {

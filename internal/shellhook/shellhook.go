@@ -2,12 +2,16 @@ package shellhook
 
 import (
 	"bufio"
+	"context"
 	"errors"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"strings"
+	"time"
 )
 
 // Shell identifies a shell type.
@@ -88,14 +92,48 @@ var currentOS = runtime.GOOS
 // homeDir is a variable so tests can substitute a temp directory.
 var homeDir = os.UserHomeDir
 
+// queryPSProfile queries PowerShell's $PROFILE path. Replaceable in tests.
+var queryPSProfile = queryPSProfileFn
+
+func queryPSProfileFn(binary string) (string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	out, err := exec.CommandContext(ctx, binary, "-NoProfile", "-NonInteractive", "-Command", "echo $PROFILE").Output()
+	if err != nil {
+		return "", err
+	}
+	p := strings.TrimSpace(string(out))
+	if p == "" {
+		return "", fmt.Errorf("empty $PROFILE from %s", binary)
+	}
+	return p, nil
+}
+
+func preferredPSBinary() string {
+	if _, err := exec.LookPath("pwsh"); err == nil {
+		return "pwsh"
+	}
+	return "powershell"
+}
+
 // candidateProfiles returns platform-appropriate shell profile paths
-// rooted at homeDir(). Does not check whether paths exist.
+// rooted at homeDir(). On Windows with PowerShell detected, queries the
+// actual $PROFILE path to handle OneDrive folder redirection.
 func candidateProfiles() ([]string, error) {
 	home, err := homeDir()
 	if err != nil {
 		return nil, err
 	}
-	return profilesForOS(currentOS, home), nil
+	candidates := profilesForOS(currentOS, home)
+	if currentOS == "windows" {
+		binary := preferredPSBinary()
+		if resolved, err := queryPSProfile(binary); err == nil {
+			if !slices.Contains(candidates, resolved) {
+				candidates = append([]string{resolved}, candidates...)
+			}
+		}
+	}
+	return candidates, nil
 }
 
 // profilesForOS returns candidate profile paths for a given GOOS and home
@@ -105,6 +143,7 @@ func profilesForOS(goos, home string) []string {
 	if goos == "windows" {
 		return []string{
 			filepath.Join(home, "Documents", "PowerShell", "Microsoft.PowerShell_profile.ps1"),
+			filepath.Join(home, "Documents", "WindowsPowerShell", "Microsoft.PowerShell_profile.ps1"),
 			filepath.Join(home, ".bashrc"),
 			filepath.Join(home, ".bash_profile"),
 		}
