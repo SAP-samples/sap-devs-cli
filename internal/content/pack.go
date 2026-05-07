@@ -99,6 +99,7 @@ type MCPServer struct {
 type MCPInstall struct {
 	Command string   `yaml:"command"`
 	Args    []string `yaml:"args"`
+	Type    string   `yaml:"type"`
 }
 
 // Tip is a single actionable tip with profile tags.

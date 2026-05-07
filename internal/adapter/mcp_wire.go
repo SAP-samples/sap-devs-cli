@@ -53,6 +53,9 @@ func WriteMCPConfig(settingsPath, key string, server content.MCPServer, dryRun b
 		"command": server.Install.Command,
 		"args":    args,
 	}
+	if server.Install.Type != "" {
+		entry["type"] = server.Install.Type
+	}
 	servers[server.ID] = entry
 	root[key] = servers
 

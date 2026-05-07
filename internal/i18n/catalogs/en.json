@@ -206,6 +206,8 @@
   "mcp.install.invalid_selection": "invalid selection \"{{.Selection}}\" — enter numbers (e.g. 1,2) or \"all\"",
   "mcp.install.install_err_one": "install → {{.Name}}",
   "mcp.install.install_err_all": "install {{.ID}} → {{.Name}}",
+  "mcp.install.project_registered": "✓ Registered {{.ServerID}} in .mcp.json",
+  "mcp.install.project_summary": "Registered {{.Servers}} server(s) in .mcp.json",
 
   "resources.short": "Browse curated SAP resources",
   "resources.list.short": "List curated resources for your active profile",

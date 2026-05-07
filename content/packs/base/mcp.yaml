@@ -4,6 +4,7 @@
   install:
     command: sap-devs
     args: ["mcp", "serve"]
+    type: stdio
   hosts:
     - claude-code
     - cursor

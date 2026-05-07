@@ -148,6 +148,7 @@ var mcpStatusCmd = &cobra.Command{
 
 var mcpInstallAll bool
 var mcpInstallDryRun bool
+var mcpInstallProject bool
 
 var mcpInstallCmd = &cobra.Command{
 	Use:   "install [id]",
@@ -170,6 +171,9 @@ var mcpInstallCmd = &cobra.Command{
 			return err
 		}
 
+		if mcpInstallProject {
+			return installProject(loader, args)
+		}
 		if mcpInstallAll {
 			return installAll(loader, allAdapters)
 		}
@@ -306,6 +310,63 @@ func installAll(loader *content.ContentLoader, allAdapters []adapter.Adapter) er
 	return nil
 }
 
+func installProject(loader *content.ContentLoader, args []string) error {
+	packs, err := loader.LoadPacks(nil, i18n.ActiveLang)
+	if err != nil {
+		return err
+	}
+
+	var servers []content.MCPServer
+	if mcpInstallAll {
+		paths, err := xdg.New()
+		if err != nil {
+			return err
+		}
+		profileCfg, err := config.LoadProfile(paths.ConfigDir)
+		if err != nil {
+			return err
+		}
+		if profileCfg.ID == "" {
+			return fmt.Errorf("%s", i18n.T(i18n.ActiveLang, "mcp.list.no_profile"))
+		}
+		activeProfile, err := loader.FindProfile(profileCfg.ID)
+		if err != nil {
+			return err
+		}
+		if activeProfile == nil {
+			return fmt.Errorf("%s", i18n.Tf(i18n.ActiveLang, "mcp.list.profile_not_found", map[string]any{"ID": profileCfg.ID}))
+		}
+		profilePacks, err := loader.LoadPacks(activeProfile, i18n.ActiveLang)
+		if err != nil {
+			return err
+		}
+		servers = content.FlattenMCPServers(profilePacks)
+		if len(servers) == 0 {
+			fmt.Println(i18n.T(i18n.ActiveLang, "mcp.install.no_servers"))
+			return nil
+		}
+	} else {
+		server := content.FindMCPServer(packs, args[0])
+		if server == nil {
+			return fmt.Errorf("%s", i18n.Tf(i18n.ActiveLang, "mcp.install.server_not_found", map[string]any{"ID": args[0]}))
+		}
+		servers = []content.MCPServer{*server}
+	}
+
+	for _, s := range servers {
+		if err := adapter.WriteMCPConfig(".mcp.json", "mcpServers", s, mcpInstallDryRun); err != nil {
+			return err
+		}
+		if !mcpInstallDryRun {
+			fmt.Println(i18n.Tf(i18n.ActiveLang, "mcp.install.project_registered", map[string]any{"ServerID": s.ID}))
+		}
+	}
+	if !mcpInstallDryRun && len(servers) > 1 {
+		fmt.Println(i18n.Tf(i18n.ActiveLang, "mcp.install.project_summary", map[string]any{"Servers": len(servers)}))
+	}
+	return nil
+}
+
 // pickAdapters prints a numbered list and reads a selection from stdin.
 // The user may enter comma/space-separated numbers or "all".
 func pickAdapters(adapters []adapter.Adapter) ([]adapter.Adapter, error) {
@@ -380,6 +441,7 @@ func init() {
 	mcpListCmd.Flags().BoolVar(&mcpListAll, "all", false, "list servers from all packs (default: active profile only)")
 	mcpInstallCmd.Flags().BoolVar(&mcpInstallAll, "all", false, "install all MCP servers for the active profile")
 	mcpInstallCmd.Flags().BoolVar(&mcpInstallDryRun, "dry-run", false, "preview without writing config files")
+	mcpInstallCmd.Flags().BoolVar(&mcpInstallProject, "project", false, "write to .mcp.json in the current directory")
 	mcpCmd.AddCommand(mcpListCmd, mcpInstallCmd, mcpStatusCmd)
 	rootCmd.AddCommand(mcpCmd)
 }

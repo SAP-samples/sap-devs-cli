@@ -21,6 +21,11 @@
             "type": "array",
             "items": { "type": "string" },
             "description": "Arguments passed to the command"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["stdio", "sse"],
+            "description": "MCP transport protocol (stdio or sse); included in host config when set"
           }
         }
       },
