@@ -1,11 +1,11 @@
 [
   {
     "Episode": {
-      "ID": "pvwdRgImGQY",
-      "Title": "NPM supply chain attack, CAP April Release, SAP Architecture Center | SAP Developer News",
-      "URL": "https://www.youtube.com/watch?v=pvwdRgImGQY",
-      "Published": "2026-04-30T19:00:06Z",
-      "Description": "🚨 *NPM supply chain attack campaign, SAP packages affected*\n  - Step Security post https://sap.to/6057BBuS93 \n  - OSS note https://me.sap.com/notes/3747787/E \n\n\n*CAP Apr 2026 release*\n  - Release notes https://sap.to/6051BBuS9R \n\n*The refreshed SAP Architecture Center*\n  - Announcement: https://sap.to/6053BBuS9T\n  - SAP Architecture Center: https://sap.to/6054BBuS9p \n\n*CAP AI Plugin for Node.js*\n  - GitHub Repo: https://sap.to/6055BBuS9V\n\n*DYK #14 CW18*\n  - More Info: https://sap.to/6056BBuS9n\n\n=======================================================\n\n*CHAPTER TITLES*\n0:00 Intro\n0:10 🚨 NPM supply chain attack campaign, SAP packages affected\n1:20 CAP Apr 2026 release\n10:08 The refreshed SAP Architecture Center\n11:13 CAP AI Plugin for Node.js\n11:57 DYK #14 CW18",
+      "ID": "bLwvT_R43HM",
+      "Title": "Sapphire Preview, May Dev Challenge, MDK 2.0 | SAP Developer News",
+      "URL": "https://www.youtube.com/watch?v=bLwvT_R43HM",
+      "Published": "2026-05-07T13:09:34Z",
+      "Description": "*Sapphire – Monday, Tuesday, and Wednesday Next Week Live From Orlando, FL*\n  • SAP Sapphire Virtual: https://sap.to/6054BBcDvK\n\n*May developer challenge - From events to intelligence: Building an event-driven RAG pipeline*\n  • Blog Post: https://sap.to/6055BBcDvz\n  • Week 1: https://sap.to/6056BBcDvM \n\n*SAP Mobile Development Kit Editor 2.0 -- One Editor, Every Platform*\n  • Blog Post: https://sap.to/6057BBcDv3\n\n*DYK #15 – Prompt Registry in Generative AI Hub*\n  • Additional Details: https://sap.to/6059BBcDvP\n\n=================================================\n\n*CHAPTER TITLES*\n0:00 Intro\n0:10 Sapphire - Preview\n1:30 May developer challenge - From events to intelligence: Building an event-driven RAG pipeline\n2:13 SAP Mobile Development Kit Editor 2.0 -- One Editor, Every Platform\n3:17 DYK #15 – Prompt Registry in Generative AI Hub",
       "Duration": "",
       "Tags": null
     },
@@ -14,6 +14,18 @@
       "URL": "https://community.sap.com/t5/developer-news/sap-developer-news-for-april-30th-2026/ba-p/14387145",
       "Published": "2026-04-30T19:20:00Z"
     }
+  },
+  {
+    "Episode": {
+      "ID": "pvwdRgImGQY",
+      "Title": "NPM supply chain attack, CAP April Release, SAP Architecture Center | SAP Developer News",
+      "URL": "https://www.youtube.com/watch?v=pvwdRgImGQY",
+      "Published": "2026-04-30T19:00:06Z",
+      "Description": "🚨 *NPM supply chain attack campaign, SAP packages affected*\n  - Step Security post https://sap.to/6057BBuS93 \n  - OSS note https://me.sap.com/notes/3747787/E \n\n\n*CAP Apr 2026 release*\n  - Release notes https://sap.to/6051BBuS9R \n\n*The refreshed SAP Architecture Center*\n  - Announcement: https://sap.to/6053BBuS9T\n  - SAP Architecture Center: https://sap.to/6054BBuS9p \n\n*CAP AI Plugin for Node.js*\n  - GitHub Repo: https://sap.to/6055BBuS9V\n\n*DYK #14 CW18*\n  - More Info: https://sap.to/6056BBuS9n\n\n=======================================================\n\n*CHAPTER TITLES*\n0:00 Intro\n0:10 🚨 NPM supply chain attack campaign, SAP packages affected\n1:20 CAP Apr 2026 release\n10:08 The refreshed SAP Architecture Center\n11:13 CAP AI Plugin for Node.js\n11:57 DYK #14 CW18",
+      "Duration": "",
+      "Tags": null
+    },
+    "Community": null
   },
   {
     "Episode": {
@@ -169,22 +181,6 @@
       "Title": "SAP Developer News, February 26th, 2026",
       "URL": "https://community.sap.com/t5/developer-news/sap-developer-news-february-26th-2026/ba-p/14337247",
       "Published": "2026-02-27T04:00:00Z"
-    }
-  },
-  {
-    "Episode": {
-      "ID": "-PQk6qfZLeQ",
-      "Title": "Developer Survey, RPT-1 Beta, CodeJams in ANZ, ABAP Roundtable, DYK 4 | SAP Developer News",
-      "URL": "https://www.youtube.com/watch?v=-PQk6qfZLeQ",
-      "Published": "2026-02-19T20:00:06Z",
-      "Description": "*SAP Developer Insights Survey*\n  • The 2026 SAP Developer Insights Survey is live now: https://sap.to/6057h5Lhl \n  • 2025 Survey Report: https://sap.to/6058h5Lhm\n\n*SAP RPT-1 Beta Available in the SAP Cloud SDK for AI*\n  • SAP RPT-1 (Beta): https://sap.to/6059h5LhW\n\n*SAP CodeJams in Australia and New Zealand*\n  • SAP CodeJam Group: https://sap.to/6050h5Lho\n\n*SAP BTP, ABAP Environment Customer and Partner Roundtable*\n  • Event Details: https://sap.to/6051h5LhU\n\n*Did You Know #4: Released Object in ABAP Development Tools*\n• More Details: https://sap.to/6052h5Lhq\n\n===========================================================\n\n*CHAPTER TITLES* \n0:00 Intro\n0:10 SAP Developer Insights Survey\n0:44 SAP RPT-1 Beta available in the SAP Cloud SDK for AI\n1:17 SAP CodeJams in Australia and New Zealand\n3:15 SAP BTP, ABAP Environment Customer and Partner Roundtable\n4:07 DYK 4 Released Object in ADT",
-      "Duration": "",
-      "Tags": null
-    },
-    "Community": {
-      "Title": "SAP Developer News, February 19th, 2026",
-      "URL": "https://community.sap.com/t5/developer-news/sap-developer-news-february-19th-2026/ba-p/14332168",
-      "Published": "2026-02-19T20:10:00Z"
     }
   }
 ]
