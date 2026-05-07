@@ -196,7 +196,7 @@ func findChecksum(data []byte, assetName string) (string, error) {
 			continue
 		}
 		parts := strings.Fields(line)
-		if len(parts) >= 2 && parts[1] == assetName {
+		if len(parts) >= 2 && strings.TrimPrefix(parts[1], "*") == assetName {
 			return parts[0], nil
 		}
 	}
