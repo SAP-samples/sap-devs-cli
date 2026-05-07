@@ -1,12 +1,12 @@
 {
-    "version": "0.0.6",
+    "version": "0.0.7",
     "architecture": {
         "64bit": {
-            "url": "https://github.com/SAP-samples/sap-devs-cli/releases/download/v0.0.6/sap-devs_0.0.6_windows_amd64.zip",
+            "url": "https://github.com/SAP-samples/sap-devs-cli/releases/download/v0.0.7/sap-devs_0.0.7_windows_amd64.zip",
             "bin": [
                 "sap-devs.exe"
             ],
-            "hash": "1ac065cbec75bf18f884e6862b5a3c3caa19cb4ff3f747c13eceecd22dc4dd8f"
+            "hash": "92fe2f4d87d086010e57ba4bce77d49bd91afec5de48d4ae3b427c164842caca"
         }
     },
     "homepage": "https://github.com/SAP-samples/sap-devs-cli",
