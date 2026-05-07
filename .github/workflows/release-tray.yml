@@ -19,17 +19,9 @@ jobs:
             goos: linux
             goarch: amd64
             cc: gcc
-          - os: ubuntu-latest
-            goos: linux
-            goarch: arm64
-            cc: aarch64-linux-gnu-gcc
           - os: macos-latest
             goos: darwin
             goarch: arm64
-            cc: ""
-          - os: macos-13
-            goos: darwin
-            goarch: amd64
             cc: ""
           - os: windows-latest
             goos: windows
@@ -64,13 +56,8 @@ jobs:
         if: matrix.goos == 'linux' && matrix.goarch == 'amd64'
         run: sudo apt-get update && sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev
 
-      - name: Install Linux arm64 cross-compile deps
-        if: matrix.goos == 'linux' && matrix.goarch == 'arm64'
-        run: |
-          sudo dpkg --add-architecture arm64
-          sudo apt-get update
-          sudo apt-get install -y crossbuild-essential-arm64 \
-            libgtk-3-dev:arm64 libwebkit2gtk-4.1-dev:arm64
+      - name: Prepare tray build assets
+        run: cp internal/geo/cities.json cmd/sap-devs-tray/data/cities.json
 
       - name: Build
         working-directory: cmd/sap-devs-tray
@@ -145,7 +132,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           mkdir -p checksums
-          for suffix in linux_amd64.tar.gz linux_arm64.tar.gz darwin_arm64.tar.gz darwin_amd64.tar.gz windows_amd64.zip; do
+          for suffix in linux_amd64.tar.gz darwin_arm64.tar.gz windows_amd64.zip; do
             FILE="sap-devs-tray_${VERSION}_${suffix}.sha256"
             gh release download "$TAG" -p "${FILE}" -D checksums || true
           done
@@ -155,8 +142,8 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           COUNT=$(ls checksums/*.sha256 2>/dev/null | wc -l)
-          if [ "$COUNT" -ne 5 ]; then
-            echo "::warning::Expected 5 checksums, got $COUNT"
+          if [ "$COUNT" -ne 3 ]; then
+            echo "::warning::Expected 3 checksums, got $COUNT"
           fi
           cat checksums/*.sha256 > tray-checksums.txt
           gh release upload "$TAG" tray-checksums.txt --clobber
