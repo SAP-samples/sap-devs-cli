@@ -14,8 +14,8 @@
   name: SAP CDS CLI
   required: ">=7.0.0"
   detect:
-    command: "cds --version"
-    pattern: "@sap/cds-dk\\s+(\\d+\\.\\d+\\.\\d+)"
+    command: "cds version --json"
+    pattern: "\"@sap/cds-dk\":\\s*\\{\\s*\"version\":\\s*\"(\\d+\\.\\d+\\.\\d+)"
   install:
     all: "npm install -g @sap/cds-dk"
   docs: "https://cap.cloud.sap"
