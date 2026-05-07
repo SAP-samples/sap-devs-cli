@@ -344,7 +344,7 @@ func pickAdapters(adapters []adapter.Adapter) ([]adapter.Adapter, error) {
 func mcpWireAdapters(adapters []adapter.Adapter, hostSet map[string]bool) []adapter.Adapter {
 	var out []adapter.Adapter
 	for _, a := range adapters {
-		if a.Type != "mcp-wire" || a.MCPConfig == nil {
+		if a.MCPConfig == nil {
 			continue
 		}
 		if hostSet != nil && !hostSet[a.ID] {
