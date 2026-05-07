@@ -33,7 +33,7 @@ func WriteHookConfig(settingsPath, key, command string, dryRun bool) error {
 		"hooks": []interface{}{
 			map[string]interface{}{
 				"type":    "command",
-				"command": command,
+				"command": ResolveSelfCommand(command),
 			},
 		},
 	}

@@ -50,7 +50,7 @@ func WriteMCPConfig(settingsPath, key string, server content.MCPServer, dryRun b
 		args = []string{}
 	}
 	entry := map[string]interface{}{
-		"command": server.Install.Command,
+		"command": ResolveSelfArgs(server.Install.Command),
 		"args":    args,
 	}
 	if server.Install.Type != "" {
