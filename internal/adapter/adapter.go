@@ -20,9 +20,10 @@ type Adapter struct {
 	MaxBytes     int          `yaml:"max_bytes,omitempty"`   // hard byte ceiling; 0 = unconstrained
 	Verbosity    string       `yaml:"verbosity,omitempty"`   // "minimal" | "standard" | "full"; default "full"
 	ExportPath   string       `yaml:"export_path,omitempty"` // file-export: path to write full context
-	MCPConfig    *MCPConfig   `yaml:"mcp_config,omitempty"`
-	HookConfig   *HookConfig  `yaml:"hook_config,omitempty"`
-	SkillConfig  *SkillConfig `yaml:"skill_config,omitempty"`
+	MCPConfig       *MCPConfig   `yaml:"mcp_config,omitempty"`
+	ExtraMCPConfigs []MCPConfig  `yaml:"extra_mcp_configs,omitempty"`
+	HookConfig      *HookConfig  `yaml:"hook_config,omitempty"`
+	SkillConfig     *SkillConfig `yaml:"skill_config,omitempty"`
 	Detect       []DetectRule `yaml:"detect"`
 }
 
@@ -58,6 +59,16 @@ type SkillConfig struct {
 type DetectRule struct {
 	Command string `yaml:"command,omitempty"`
 	Path    string `yaml:"path,omitempty"`
+}
+
+// AllMCPConfigs returns the primary MCPConfig (if set) plus any extras.
+func (a Adapter) AllMCPConfigs() []MCPConfig {
+	var out []MCPConfig
+	if a.MCPConfig != nil {
+		out = append(out, *a.MCPConfig)
+	}
+	out = append(out, a.ExtraMCPConfigs...)
+	return out
 }
 
 // LoadAdapters reads all *.yaml files from dir and returns the parsed adapters.

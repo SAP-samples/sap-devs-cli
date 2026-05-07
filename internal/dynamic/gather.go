@@ -103,18 +103,22 @@ func detectWiredMCP(adapters []adapter.Adapter, packs []*content.Pack) []content
 
 	var entries []content.WiredMCPEntry
 	for _, a := range adapters {
-		if a.MCPConfig == nil || a.MCPConfig.Path == "" {
+		configs := a.AllMCPConfigs()
+		if len(configs) == 0 {
 			continue
 		}
-		path, err := adapter.ExpandHome(a.MCPConfig.Path)
-		if err != nil {
-			continue
-		}
-		installed := readMCPServerIDs(path, a.MCPConfig.Key)
 		var matched []string
-		for _, id := range installed {
-			if sapIDs[id] {
-				matched = append(matched, id)
+		seen := make(map[string]bool)
+		for _, cfg := range configs {
+			path, err := adapter.ExpandHome(cfg.Path)
+			if err != nil {
+				continue
+			}
+			for _, id := range readMCPServerIDs(path, cfg.Key) {
+				if sapIDs[id] && !seen[id] {
+					matched = append(matched, id)
+					seen[id] = true
+				}
 			}
 		}
 		if len(matched) > 0 {

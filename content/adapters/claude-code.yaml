@@ -17,6 +17,10 @@ mcp_config:
   path: "~/.claude/settings.json"
   format: json
   key: "mcpServers"
+extra_mcp_configs:
+  - path: "~/.claude/.mcp.json"
+    format: json
+    key: "mcpServers"
 hook_config:
   path: "~/.claude/settings.json"
   format: json

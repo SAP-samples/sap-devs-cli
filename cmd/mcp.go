@@ -112,15 +112,23 @@ var mcpStatusCmd = &cobra.Command{
 		// Build lookup: adapterID → registered server ID map
 		registered := make(map[string]map[string]interface{})
 		for _, a := range mcpAdapters {
-			path, err := adapter.ExpandHome(a.MCPConfig.Path)
-			if err != nil {
-				continue
+			for _, cfg := range a.AllMCPConfigs() {
+				path, err := adapter.ExpandHome(cfg.Path)
+				if err != nil {
+					continue
+				}
+				m, err := adapter.ReadMCPConfig(path, cfg.Key)
+				if err != nil {
+					continue
+				}
+				if registered[a.ID] == nil {
+					registered[a.ID] = m
+				} else {
+					for k, v := range m {
+						registered[a.ID][k] = v
+					}
+				}
 			}
-			m, err := adapter.ReadMCPConfig(path, a.MCPConfig.Key)
-			if err != nil {
-				continue
-			}
-			registered[a.ID] = m
 		}
 
 		fmt.Printf("%-20s %-14s %s\n",
@@ -205,7 +213,7 @@ func installOne(loader *content.ContentLoader, allAdapters []adapter.Adapter, id
 
 	fmt.Println(i18n.Tf(i18n.ActiveLang, "mcp.install.detected_hosts", map[string]any{"ID": server.ID}))
 	for i, a := range detected {
-		path, _ := adapter.ExpandHome(a.MCPConfig.Path)
+		path, _ := adapter.ExpandHome(a.AllMCPConfigs()[0].Path)
 		fmt.Printf("  %d. %s  (%s)\n", i+1, a.Name, path)
 	}
 	chosen, err := pickAdapters(detected)
@@ -214,15 +222,17 @@ func installOne(loader *content.ContentLoader, allAdapters []adapter.Adapter, id
 	}
 
 	for _, a := range chosen {
-		path, err := adapter.ExpandHome(a.MCPConfig.Path)
-		if err != nil {
-			return err
-		}
-		if err := adapter.WriteMCPConfig(path, a.MCPConfig.Key, *server, mcpInstallDryRun); err != nil {
-			return fmt.Errorf("%s: %w", i18n.Tf(i18n.ActiveLang, "mcp.install.install_err_one", map[string]any{"Name": a.Name}), err)
-		}
-		if !mcpInstallDryRun {
-			fmt.Println(i18n.Tf(i18n.ActiveLang, "mcp.install.registered", map[string]any{"ServerID": server.ID, "Path": path}))
+		for _, cfg := range a.AllMCPConfigs() {
+			path, err := adapter.ExpandHome(cfg.Path)
+			if err != nil {
+				return err
+			}
+			if err := adapter.WriteMCPConfig(path, cfg.Key, *server, mcpInstallDryRun); err != nil {
+				return fmt.Errorf("%s: %w", i18n.Tf(i18n.ActiveLang, "mcp.install.install_err_one", map[string]any{"Name": a.Name}), err)
+			}
+			if !mcpInstallDryRun {
+				fmt.Println(i18n.Tf(i18n.ActiveLang, "mcp.install.registered", map[string]any{"ServerID": server.ID, "Path": path}))
+			}
 		}
 	}
 	return nil
@@ -277,7 +287,7 @@ func installAll(loader *content.ContentLoader, allAdapters []adapter.Adapter) er
 
 	fmt.Println(i18n.T(i18n.ActiveLang, "mcp.install.all_detected_hosts"))
 	for i, a := range detected {
-		path, _ := adapter.ExpandHome(a.MCPConfig.Path)
+		path, _ := adapter.ExpandHome(a.AllMCPConfigs()[0].Path)
 		fmt.Printf("  %d. %s  (%s)\n", i+1, a.Name, path)
 	}
 	chosen, err := pickAdapters(detected)
@@ -291,16 +301,18 @@ func installAll(loader *content.ContentLoader, allAdapters []adapter.Adapter) er
 			if !containsString(s.Hosts, a.ID) {
 				continue
 			}
-			path, err := adapter.ExpandHome(a.MCPConfig.Path)
-			if err != nil {
-				return err
-			}
-			if err := adapter.WriteMCPConfig(path, a.MCPConfig.Key, s, mcpInstallDryRun); err != nil {
-				return fmt.Errorf("%s: %w", i18n.Tf(i18n.ActiveLang, "mcp.install.install_err_all", map[string]any{"ID": s.ID, "Name": a.Name}), err)
-			}
-			if !mcpInstallDryRun {
-				fmt.Println(i18n.Tf(i18n.ActiveLang, "mcp.install.registered", map[string]any{"ServerID": s.ID, "Path": path}))
-				serversWritten[s.ID] = true
+			for _, cfg := range a.AllMCPConfigs() {
+				path, err := adapter.ExpandHome(cfg.Path)
+				if err != nil {
+					return err
+				}
+				if err := adapter.WriteMCPConfig(path, cfg.Key, s, mcpInstallDryRun); err != nil {
+					return fmt.Errorf("%s: %w", i18n.Tf(i18n.ActiveLang, "mcp.install.install_err_all", map[string]any{"ID": s.ID, "Name": a.Name}), err)
+				}
+				if !mcpInstallDryRun {
+					fmt.Println(i18n.Tf(i18n.ActiveLang, "mcp.install.registered", map[string]any{"ServerID": s.ID, "Path": path}))
+					serversWritten[s.ID] = true
+				}
 			}
 		}
 	}
@@ -400,12 +412,12 @@ func pickAdapters(adapters []adapter.Adapter) ([]adapter.Adapter, error) {
 
 // --- shared helpers ---
 
-// mcpWireAdapters returns adapters of type "mcp-wire" with a non-nil MCPConfig.
+// mcpWireAdapters returns adapters that have at least one MCP config location.
 // If hostSet is non-nil, only adapters whose ID is in hostSet are returned.
 func mcpWireAdapters(adapters []adapter.Adapter, hostSet map[string]bool) []adapter.Adapter {
 	var out []adapter.Adapter
 	for _, a := range adapters {
-		if a.MCPConfig == nil {
+		if a.MCPConfig == nil && len(a.ExtraMCPConfigs) == 0 {
 			continue
 		}
 		if hostSet != nil && !hostSet[a.ID] {
