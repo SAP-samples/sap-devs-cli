@@ -98,8 +98,14 @@ func buildAPIURL(repoURL string) (string, error) {
 		return "", fmt.Errorf("expected owner/repo in path, got %q", u.Path)
 	}
 	owner, repo := parts[len(parts)-2], parts[len(parts)-1]
-	// GitHub Enterprise: <host>/api/v3/repos/<owner>/<repo>/releases/latest
-	base := u.Scheme + "://" + u.Host + "/api/v3"
+
+	var base string
+	if u.Host == "github.com" {
+		base = "https://api.github.com"
+	} else {
+		// GitHub Enterprise: <host>/api/v3
+		base = u.Scheme + "://" + u.Host + "/api/v3"
+	}
 	return base + "/repos/" + owner + "/" + repo + "/releases/latest", nil
 }
 
