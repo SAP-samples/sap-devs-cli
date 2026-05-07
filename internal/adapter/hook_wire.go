@@ -227,6 +227,8 @@ func hookCommandPresent(arr []interface{}, command string) bool {
 }
 
 // entryMatchesCommand returns true if the matcher-group entry contains a hook with the given command.
+// It compares against both the raw command and the resolved form (absolute path)
+// since WriteHookConfig stores commands in resolved form.
 func entryMatchesCommand(item interface{}, command string) bool {
 	m, ok := item.(map[string]interface{})
 	if !ok {
@@ -236,12 +238,14 @@ func entryMatchesCommand(item interface{}, command string) bool {
 	if !ok {
 		return false
 	}
+	resolved := ResolveSelfCommand(command)
 	for _, h := range hooks {
 		hm, ok := h.(map[string]interface{})
 		if !ok {
 			continue
 		}
-		if hm["command"] == command {
+		cmd, _ := hm["command"].(string)
+		if cmd == command || cmd == resolved {
 			return true
 		}
 	}
