@@ -133,13 +133,7 @@ func (m *Manager) Start() error {
 	if !m.IsInstalled() {
 		return fmt.Errorf("tray is not installed — run `sap-devs tray install` first")
 	}
-	cmd := exec.Command(m.BinaryPath())
-	cmd.Stdout = nil
-	cmd.Stderr = nil
-	if err := cmd.Start(); err != nil {
-		return err
-	}
-	return cmd.Process.Release()
+	return startProcess(m.BinaryPath())
 }
 
 // Stop terminates the running tray process.
