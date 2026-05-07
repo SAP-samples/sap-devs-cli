@@ -1,5 +1,8 @@
 {
   "mcpServers": {
-    
+    "sap-devs": {
+      "command": "sap-devs",
+      "args": ["mcp", "serve"]
+    }
   }
 }
