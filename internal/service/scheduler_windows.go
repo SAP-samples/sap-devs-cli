@@ -4,6 +4,7 @@ package service
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"strconv"
@@ -25,13 +26,24 @@ func (s *windowsScheduler) logPath() string {
 	return filepath.Join(s.cacheDir, "daemon.log")
 }
 
+func (s *windowsScheduler) scriptPath() string {
+	return filepath.Join(s.cacheDir, "sap-devs-sync.cmd")
+}
+
 func (s *windowsScheduler) Install(interval time.Duration, binaryPath string) error {
-	script := fmt.Sprintf(`"%s" sync > "%s" 2>&1 && "%s" inject --no-sync >> "%s" 2>&1`,
+	script := fmt.Sprintf("@echo off\r\n\"%s\" sync > \"%s\" 2>&1 && \"%s\" inject --no-sync >> \"%s\" 2>&1\r\n",
 		binaryPath, s.logPath(), binaryPath, s.logPath())
+
+	if err := os.MkdirAll(filepath.Dir(s.scriptPath()), 0755); err != nil {
+		return err
+	}
+	if err := os.WriteFile(s.scriptPath(), []byte(script), 0644); err != nil {
+		return fmt.Errorf("write scheduler script: %w", err)
+	}
 
 	cmd := exec.Command("schtasks", "/create",
 		"/tn", s.taskName(),
-		"/tr", fmt.Sprintf(`cmd /c "%s"`, script),
+		"/tr", fmt.Sprintf(`"%s"`, s.scriptPath()),
 		"/sc", "minute",
 		"/mo", intervalMinutes(interval),
 		"/f",
@@ -49,6 +61,7 @@ func (s *windowsScheduler) Uninstall() error {
 	if err != nil {
 		return fmt.Errorf("schtasks delete failed: %s: %w", strings.TrimSpace(string(out)), err)
 	}
+	os.Remove(s.scriptPath())
 	return nil
 }
 
