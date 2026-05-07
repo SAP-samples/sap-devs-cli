@@ -10,11 +10,80 @@ import (
 	"strings"
 )
 
+// Shell identifies a shell type.
+type Shell int
+
+const (
+	ShellUnknown Shell = iota
+	ShellPowerShell
+	ShellBash
+	ShellZsh
+)
+
+// detectShellEnv is the detection function variable, replaceable in tests.
+var detectShellEnv = detectShell
+
+// detectShell returns the active shell based on environment heuristics.
+func detectShell() Shell {
+	if os.Getenv("PSModulePath") != "" {
+		return ShellPowerShell
+	}
+	sh := os.Getenv("SHELL")
+	if strings.Contains(sh, "zsh") {
+		return ShellZsh
+	}
+	if strings.Contains(sh, "bash") {
+		return ShellBash
+	}
+	return ShellUnknown
+}
+
+// primaryProfileIndex returns the index into candidates that corresponds to the
+// detected shell's profile, or -1 if none matches.
+func primaryProfileIndex(shell Shell, candidates []string) int {
+	for i, c := range candidates {
+		switch shell {
+		case ShellPowerShell:
+			if strings.HasSuffix(c, ".ps1") {
+				return i
+			}
+		case ShellZsh:
+			if strings.HasSuffix(c, ".zshrc") {
+				return i
+			}
+		case ShellBash:
+			if strings.HasSuffix(c, ".bashrc") {
+				return i
+			}
+		}
+	}
+	return -1
+}
+
+// ensureFileExists creates the file (and parent directories) if it does not
+// already exist. Returns nil if the file already exists.
+func ensureFileExists(path string) error {
+	if _, err := os.Stat(path); err == nil {
+		return nil
+	}
+	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+		return err
+	}
+	f, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return err
+	}
+	return f.Close()
+}
+
 // Result describes what happened to a single profile file.
 type Result struct {
 	Path    string
 	Updated bool // false = already present (Add) or line not found (Remove)
 }
+
+// currentOS is the GOOS value used by candidateProfiles, replaceable in tests.
+var currentOS = runtime.GOOS
 
 // homeDir is a variable so tests can substitute a temp directory.
 var homeDir = os.UserHomeDir
@@ -26,7 +95,7 @@ func candidateProfiles() ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	return profilesForOS(runtime.GOOS, home), nil
+	return profilesForOS(currentOS, home), nil
 }
 
 // profilesForOS returns candidate profile paths for a given GOOS and home
@@ -49,12 +118,19 @@ func profilesForOS(goos, home string) []string {
 }
 
 // Add appends comment and line to every existing profile that does not
-// already contain line as a complete line. Returns one Result per
-// candidate profile found on disk.
+// already contain line as a complete line. The detected shell's profile
+// is created if it does not exist. Returns one Result per candidate
+// profile found on disk.
 func Add(line, comment string) ([]Result, error) {
 	candidates, err := candidateProfiles()
 	if err != nil {
 		return nil, err
+	}
+	shell := detectShellEnv()
+	if idx := primaryProfileIndex(shell, candidates); idx >= 0 {
+		if err := ensureFileExists(candidates[idx]); err != nil {
+			return nil, fmt.Errorf("creating profile %s: %w", candidates[idx], err)
+		}
 	}
 	return addToProfiles(line, comment, candidates)
 }

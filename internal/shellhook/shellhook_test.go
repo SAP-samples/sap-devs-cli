@@ -336,3 +336,156 @@ func TestRemove_WindowsPowerShellPath(t *testing.T) {
 		t.Error("hook should be removed from PowerShell profile")
 	}
 }
+
+// --- Shell detection tests ---
+
+func TestDetectShell_PowerShell(t *testing.T) {
+	orig := detectShellEnv
+	defer func() { detectShellEnv = orig }()
+
+	detectShellEnv = func() Shell { return ShellPowerShell }
+	if detectShellEnv() != ShellPowerShell {
+		t.Error("expected PowerShell")
+	}
+}
+
+func TestDetectShell_Zsh(t *testing.T) {
+	orig := detectShellEnv
+	defer func() { detectShellEnv = orig }()
+
+	detectShellEnv = func() Shell { return ShellZsh }
+	if detectShellEnv() != ShellZsh {
+		t.Error("expected Zsh")
+	}
+}
+
+func TestDetectShell_Bash(t *testing.T) {
+	orig := detectShellEnv
+	defer func() { detectShellEnv = orig }()
+
+	detectShellEnv = func() Shell { return ShellBash }
+	if detectShellEnv() != ShellBash {
+		t.Error("expected Bash")
+	}
+}
+
+func TestPrimaryProfileIndex(t *testing.T) {
+	candidates := []string{
+		"/home/user/Documents/PowerShell/Microsoft.PowerShell_profile.ps1",
+		"/home/user/.bashrc",
+		"/home/user/.zshrc",
+	}
+	if idx := primaryProfileIndex(ShellPowerShell, candidates); idx != 0 {
+		t.Errorf("PowerShell: want 0, got %d", idx)
+	}
+	if idx := primaryProfileIndex(ShellBash, candidates); idx != 1 {
+		t.Errorf("Bash: want 1, got %d", idx)
+	}
+	if idx := primaryProfileIndex(ShellZsh, candidates); idx != 2 {
+		t.Errorf("Zsh: want 2, got %d", idx)
+	}
+	if idx := primaryProfileIndex(ShellUnknown, candidates); idx != -1 {
+		t.Errorf("Unknown: want -1, got %d", idx)
+	}
+}
+
+func TestEnsureFileExists_CreatesFileAndDirs(t *testing.T) {
+	dir := t.TempDir()
+	target := filepath.Join(dir, "sub", "dir", "profile.ps1")
+
+	if err := ensureFileExists(target); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	info, err := os.Stat(target)
+	if err != nil {
+		t.Fatalf("file should exist: %v", err)
+	}
+	if info.Size() != 0 {
+		t.Errorf("newly created file should be empty, got %d bytes", info.Size())
+	}
+}
+
+func TestEnsureFileExists_ExistingFileUnchanged(t *testing.T) {
+	dir := t.TempDir()
+	target := filepath.Join(dir, ".zshrc")
+	if err := os.WriteFile(target, []byte("existing content\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := ensureFileExists(target); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	data, _ := os.ReadFile(target)
+	if string(data) != "existing content\n" {
+		t.Error("existing file should not be modified")
+	}
+}
+
+func TestAdd_CreatesProfileForDetectedShell(t *testing.T) {
+	dir := t.TempDir()
+	psPath := filepath.Join(dir, "Documents", "PowerShell", "Microsoft.PowerShell_profile.ps1")
+
+	orig := detectShellEnv
+	defer func() { detectShellEnv = orig }()
+	detectShellEnv = func() Shell { return ShellPowerShell }
+
+	origOS := currentOS
+	defer func() { currentOS = origOS }()
+	currentOS = "windows"
+
+	// Profile doesn't exist yet — Add should create it
+	origHome := homeDir
+	defer func() { homeDir = origHome }()
+	homeDir = func() (string, error) { return dir, nil }
+
+	results, err := Add("sap-devs tip", "# SAP developer tips")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	found := false
+	for _, r := range results {
+		if r.Path == psPath && r.Updated {
+			found = true
+		}
+	}
+	if !found {
+		t.Errorf("expected PowerShell profile to be created and updated, got %+v", results)
+	}
+	data, _ := os.ReadFile(psPath)
+	if !strings.Contains(string(data), "sap-devs tip") {
+		t.Error("hook should be present in newly created PowerShell profile")
+	}
+}
+
+func TestAdd_DetectedShellZsh_CreatesZshrc(t *testing.T) {
+	dir := t.TempDir()
+	zshrc := filepath.Join(dir, ".zshrc")
+
+	orig := detectShellEnv
+	defer func() { detectShellEnv = orig }()
+	detectShellEnv = func() Shell { return ShellZsh }
+
+	origOS := currentOS
+	defer func() { currentOS = origOS }()
+	currentOS = "linux"
+
+	origHome := homeDir
+	defer func() { homeDir = origHome }()
+	homeDir = func() (string, error) { return dir, nil }
+
+	results, err := Add("sap-devs tip", "# SAP developer tips")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	found := false
+	for _, r := range results {
+		if r.Path == zshrc && r.Updated {
+			found = true
+		}
+	}
+	if !found {
+		t.Errorf("expected .zshrc to be created and updated, got %+v", results)
+	}
+}
