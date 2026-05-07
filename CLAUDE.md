@@ -204,7 +204,7 @@ JSON Schema files in [content/schemas/](content/schemas/) validate `pack.yaml`, 
 
 ### Release
 
-Releases use GoReleaser triggered by `v*` tags. The binary is named `sap-devs`. Version is injected at build time via `-ldflags`.
+Releases use GoReleaser triggered by `v*` tags. The binary is named `sap-devs`. Version is injected at build time via `-ldflags`. Windows `.exe` binaries (CLI and tray) are Authenticode-signed via SignPath.io as a best-effort post-release step (`.github/workflows/sign-windows.yml`), triggered after the tray workflow completes. Package manager manifests (Scoop `bucket/sap-devs.json`, Homebrew `Casks/sap-devs.rb`) are auto-generated and committed by GoReleaser on each release.
 
 ### Worktrees
 

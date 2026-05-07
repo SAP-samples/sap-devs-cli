@@ -48,3 +48,26 @@ checksum:
 
 changelog:
   sort: asc
+
+scoops:
+  - repository:
+      owner: SAP-samples
+      name: sap-devs-cli
+      branch: main
+      token: "{{ .Env.GITHUB_TOKEN }}"
+    directory: bucket
+    homepage: https://github.com/SAP-samples/sap-devs-cli
+    description: SAP developer context CLI — inject SAP knowledge into AI coding tools
+    license: Apache-2.0
+
+homebrew_casks:
+  - repository:
+      owner: SAP-samples
+      name: sap-devs-cli
+      branch: main
+      token: "{{ .Env.GITHUB_TOKEN }}"
+    directory: Casks
+    homepage: https://github.com/SAP-samples/sap-devs-cli
+    description: SAP developer context CLI — inject SAP knowledge into AI coding tools
+    license: Apache-2.0
+    name: sap-devs

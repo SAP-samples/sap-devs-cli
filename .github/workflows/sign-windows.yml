@@ -1,0 +1,179 @@
+name: Sign Windows Binaries
+
+on:
+  workflow_run:
+    workflows: ["Release Tray Binary"]
+    types: [completed]
+
+permissions:
+  contents: write
+
+jobs:
+  sign:
+    runs-on: ubuntu-latest
+    if: github.event.workflow_run.conclusion == 'success'
+    outputs:
+      signed: ${{ steps.result.outputs.signed }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extract release tag
+        id: tag
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          CANDIDATE="${{ github.event.workflow_run.head_branch }}"
+          if [[ ! "$CANDIDATE" =~ ^v[0-9]+\.[0-9]+\.[0-9]+ ]]; then
+            CANDIDATE=$(gh release list --limit 1 --json tagName -q '.[0].tagName')
+          fi
+          if [[ ! "$CANDIDATE" =~ ^v[0-9]+\.[0-9]+\.[0-9]+ ]]; then
+            echo "::error::Could not determine release tag"
+            exit 1
+          fi
+          echo "TAG=$CANDIDATE" >> "$GITHUB_ENV"
+          echo "VERSION=${CANDIDATE#v}" >> "$GITHUB_ENV"
+
+      - name: Download Windows artifacts
+        continue-on-error: true
+        id: download
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p staging
+          gh release download "$TAG" -D staging \
+            -p "sap-devs_${VERSION}_windows_amd64.zip" \
+            -p "sap-devs_${VERSION}_windows_amd64.exe" \
+            -p "sap-devs-tray_${VERSION}_windows_amd64.zip"
+
+      - name: Extract exe files for signing
+        if: steps.download.outcome == 'success'
+        continue-on-error: true
+        id: extract
+        run: |
+          mkdir -p to-sign
+          unzip -o "staging/sap-devs_${VERSION}_windows_amd64.zip" -d to-sign/cli
+          cp "staging/sap-devs_${VERSION}_windows_amd64.exe" to-sign/cli/sap-devs-bare.exe
+          unzip -o "staging/sap-devs-tray_${VERSION}_windows_amd64.zip" -d to-sign/tray
+          # Package all exe files into a single zip for SignPath
+          cd to-sign
+          zip -r ../signing-payload.zip cli/sap-devs.exe cli/sap-devs-bare.exe tray/sap-devs-tray.exe
+
+      - name: Submit to SignPath
+        if: steps.extract.outcome == 'success'
+        continue-on-error: true
+        id: sign
+        uses: SignPath/github-action-submit-signing-request@v1
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ secrets.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ secrets.SIGNPATH_PROJECT_SLUG }}
+          signing-policy-slug: ${{ secrets.SIGNPATH_SIGNING_POLICY_SLUG }}
+          artifact-configuration-slug: ${{ secrets.SIGNPATH_ARTIFACT_CONFIGURATION_SLUG }}
+          github-artifact-id: signing-payload.zip
+          wait-for-completion: true
+          output-artifact-directory: signed-output
+
+      - name: Repackage signed binaries
+        if: steps.sign.outcome == 'success'
+        continue-on-error: true
+        id: repackage
+        run: |
+          mkdir -p upload
+          # Re-zip CLI archive with signed binary
+          cd signed-output/cli
+          zip "../../upload/sap-devs_${VERSION}_windows_amd64.zip" sap-devs.exe
+          # Copy bare binary
+          cp sap-devs-bare.exe "../../upload/sap-devs_${VERSION}_windows_amd64.exe"
+          cd ../tray
+          # Re-zip tray archive with signed binary
+          zip "../../upload/sap-devs-tray_${VERSION}_windows_amd64.zip" sap-devs-tray.exe
+
+      - name: Upload signed artifacts to release
+        if: steps.repackage.outcome == 'success'
+        continue-on-error: true
+        id: upload
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload "$TAG" \
+            "upload/sap-devs_${VERSION}_windows_amd64.zip" \
+            "upload/sap-devs_${VERSION}_windows_amd64.exe" \
+            "upload/sap-devs-tray_${VERSION}_windows_amd64.zip" \
+            --clobber
+
+      - name: Regenerate checksums
+        if: steps.upload.outcome == 'success'
+        continue-on-error: true
+        id: checksums
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p checksums-work
+
+          # Download existing checksums.txt
+          gh release download "$TAG" -D checksums-work -p "checksums.txt"
+
+          # Calculate new SHA256 for signed CLI artifacts
+          CLI_ZIP_SHA=$(sha256sum "upload/sap-devs_${VERSION}_windows_amd64.zip" | awk '{print $1}')
+          CLI_EXE_SHA=$(sha256sum "upload/sap-devs_${VERSION}_windows_amd64.exe" | awk '{print $1}')
+
+          # Replace Windows lines in checksums.txt (preserve all other platforms)
+          sed -i "s|^[a-f0-9]*  sap-devs_${VERSION}_windows_amd64.zip$|${CLI_ZIP_SHA}  sap-devs_${VERSION}_windows_amd64.zip|" checksums-work/checksums.txt
+          sed -i "s|^[a-f0-9]*  sap-devs_${VERSION}_windows_amd64.exe$|${CLI_EXE_SHA}  sap-devs_${VERSION}_windows_amd64.exe|" checksums-work/checksums.txt
+
+          # Generate new tray checksum
+          TRAY_ZIP_SHA=$(sha256sum "upload/sap-devs-tray_${VERSION}_windows_amd64.zip" | awk '{print $1}')
+          echo "${TRAY_ZIP_SHA}  sap-devs-tray_${VERSION}_windows_amd64.zip" > "checksums-work/sap-devs-tray_${VERSION}_windows_amd64.zip.sha256"
+
+          # Regenerate tray-checksums.txt from all per-platform .sha256 files
+          gh release download "$TAG" -D checksums-work -p "sap-devs-tray_*.sha256" || true
+          # Overwrite the windows one with our new value
+          cat checksums-work/sap-devs-tray_*.sha256 | sort > checksums-work/tray-checksums.txt
+
+          # Upload all modified checksum files
+          gh release upload "$TAG" \
+            checksums-work/checksums.txt \
+            "checksums-work/sap-devs-tray_${VERSION}_windows_amd64.zip.sha256" \
+            checksums-work/tray-checksums.txt \
+            --clobber
+
+      - name: Update Scoop manifest hash
+        if: steps.checksums.outcome == 'success'
+        continue-on-error: true
+        id: scoop-manifest
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Calculate SHA256 of the signed Windows zip
+          NEW_HASH=$(sha256sum "upload/sap-devs_${VERSION}_windows_amd64.zip" | awk '{print $1}')
+
+          # Clone repo (shallow), update manifest, push
+          git clone --depth 1 "https://x-access-token:${GH_TOKEN}@github.com/SAP-samples/sap-devs-cli.git" scoop-update
+          cd scoop-update
+
+          # Only update if the manifest exists (first release won't have it yet)
+          if [ -f bucket/sap-devs.json ]; then
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git config user.name "github-actions[bot]"
+            jq --arg hash "$NEW_HASH" '.architecture["64bit"].hash = $hash' bucket/sap-devs.json > tmp.json && mv tmp.json bucket/sap-devs.json
+            git add bucket/sap-devs.json
+            git diff --cached --quiet || git commit -m "chore: update Scoop manifest hash after signing v${VERSION}"
+            git push
+          else
+            echo "::notice::bucket/sap-devs.json not found — skipping (first release?)"
+          fi
+
+      - name: Set output
+        id: result
+        run: |
+          if [ "${{ steps.sign.outcome }}" = "success" ] && [ "${{ steps.upload.outcome }}" = "success" ]; then
+            echo "signed=true" >> "$GITHUB_OUTPUT"
+            echo "✅ Windows binaries signed and uploaded successfully"
+            if [ "${{ steps.scoop-manifest.outcome }}" != "success" ]; then
+              echo "::warning::Scoop manifest hash update failed — manual fix needed"
+            fi
+          else
+            echo "signed=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Signing incomplete — release ships with unsigned binaries"
+            echo "::warning::Download: ${{ steps.download.outcome }}, Extract: ${{ steps.extract.outcome }}, Sign: ${{ steps.sign.outcome }}, Repackage: ${{ steps.repackage.outcome }}, Upload: ${{ steps.upload.outcome }}, Scoop: ${{ steps.scoop-manifest.outcome }}"
+          fi

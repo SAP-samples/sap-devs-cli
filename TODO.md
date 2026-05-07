@@ -12,22 +12,9 @@ Repository migrated from `github.tools.sap/developer-relations/sap-devs-cli` to 
 
 ---
 
-### Package manager publishing
+### Package manager publishing - DONE ✔️
 
-Distribute via package managers so users never see a Windows SmartScreen warning on install and updates are handled automatically. GoReleaser has first-class support for Scoop and Homebrew — each can be added as a section in `.goreleaser.yml` and published to a companion "bucket/tap" repo on release.
-
-**Priority order:**
-
-| Manager | Platform | Notes |
-| --- | --- | --- |
-| **Scoop** | Windows | Best fit for developer CLIs; add `scoop:` section to `.goreleaser.yml`; publish manifest to a `scoop-bucket` companion repo |
-| **Homebrew** | macOS / Linux | Add `brews:` section to `.goreleaser.yml`; publish formula to a `homebrew-tap` companion repo |
-| **winget** | Windows | Submit to `microsoft/winget-pkgs`; higher friction but reaches non-Scoop Windows users |
-
-**GoReleaser references:**
-
-- [Scoop support](https://goreleaser.com/customization/scoop/)
-- [Homebrew support](https://goreleaser.com/customization/homebrew/)
+Implemented via GoReleaser native `scoops:` and `homebrew_casks:` sections. Manifests committed to same repo on release (`bucket/sap-devs.json`, `Casks/sap-devs.rb`). Signing workflow updates Scoop hash post-signing.
 
 ---
 
@@ -122,17 +109,9 @@ Research publishing `sap-devs` as a GitHub Copilot Extension, making SAP context
 
 ---
 
-### Windows code signing for unsigned binary distribution
+### Windows code signing for unsigned binary distribution - DONE ✔️
 
-Unsigned `.exe` files downloaded from the internet are blocked or warned about by Windows SmartScreen. Investigate free signing options for OSS.
-
-**Options (best to worst for OSS):**
-
-1. **[SignPath.io](https://signpath.io)** — free tier for OSS projects; integrates with GitHub Actions; signs `.exe` artifacts; most straightforward path for a public SAP-samples repo
-2. **Azure Trusted Signing — Community tier** — Microsoft's cloud signing service added a free OSS tier in 2024; requires an Azure account and some setup; integrates via `azure/trusted-signing-action` in the release workflow; signs produce full SmartScreen trust immediately
-3. **OV code signing cert (self-managed)** — store PFX in GitHub Secrets; sign with `signtool.exe` in CI; OV certs still show a warning until SmartScreen builds reputation over time (many downloads)
-
-**Note:** If distributing primarily via Scoop/Homebrew/winget, SmartScreen is largely a non-issue for the install path — package managers are already trusted. Signing is still useful for users who download the binary directly. Consider signing as a follow-up once package manager publishing is in place.
+Implemented via SignPath.io. Workflow at `.github/workflows/sign-windows.yml` triggers after the tray release workflow and Authenticode-signs all Windows `.exe` artifacts as a best-effort post-release step. Design spec: `docs/superpowers/specs/2026-05-07-signpath-signing-design.md`.
 
 ---
 
