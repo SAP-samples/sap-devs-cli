@@ -11,7 +11,6 @@ permissions:
 jobs:
   sign:
     runs-on: ubuntu-latest
-    if: github.event.workflow_run.conclusion == 'success'
     outputs:
       signed: ${{ steps.result.outputs.signed }}
     steps:
@@ -177,3 +176,8 @@ jobs:
             echo "::warning::Signing incomplete — release ships with unsigned binaries"
             echo "::warning::Download: ${{ steps.download.outcome }}, Extract: ${{ steps.extract.outcome }}, Sign: ${{ steps.sign.outcome }}, Repackage: ${{ steps.repackage.outcome }}, Upload: ${{ steps.upload.outcome }}, Scoop: ${{ steps.scoop-manifest.outcome }}"
           fi
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release edit "$TAG" --draft=false

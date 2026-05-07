@@ -6,6 +6,7 @@ release:
   github:
     owner: SAP-samples
     name: sap-devs-cli
+  draft: true
 
 builds:
   - main: .
@@ -51,6 +52,7 @@ changelog:
 
 scoops:
   - ids: [archives]
+    skip_upload: "false"
     repository:
       owner: SAP-samples
       name: sap-devs-cli
@@ -63,6 +65,7 @@ scoops:
 
 homebrew_casks:
   - ids: [archives]
+    skip_upload: "false"
     repository:
       owner: SAP-samples
       name: sap-devs-cli

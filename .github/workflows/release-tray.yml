@@ -77,7 +77,7 @@ jobs:
         run: |
           ASSET="sap-devs-tray_${VERSION}_${{ matrix.goos }}_${{ matrix.goarch }}"
           if [ "${{ matrix.goos }}" = "windows" ]; then
-            zip "${ASSET}.zip" -j cmd/sap-devs-tray/sap-devs-tray.exe
+            7z a "${ASSET}.zip" ./cmd/sap-devs-tray/sap-devs-tray.exe
           else
             tar czf "${ASSET}.tar.gz" -C cmd/sap-devs-tray sap-devs-tray
           fi
