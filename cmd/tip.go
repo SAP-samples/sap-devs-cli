@@ -7,6 +7,8 @@ import (
 
 	"github.com/charmbracelet/glamour"
 	"github.com/spf13/cobra"
+	"golang.org/x/term"
+
 	"github.com/SAP-samples/sap-devs-cli/internal/config"
 	"github.com/SAP-samples/sap-devs-cli/internal/content"
 	"github.com/SAP-samples/sap-devs-cli/internal/i18n"
@@ -150,8 +152,8 @@ var tipCmd = &cobra.Command{
 		}
 		tip := selectedTip
 
-		if tipMarkdown || tipPlain {
-			fmt.Fprint(cmd.OutOrStdout(), FormatTip(*tip, tipMarkdown, tipPlain))
+		if tipMarkdown || tipPlain || !term.IsTerminal(int(os.Stdout.Fd())) {
+			fmt.Fprint(cmd.OutOrStdout(), FormatTip(*tip, tipMarkdown, !tipMarkdown))
 			return nil
 		}
 		md := fmt.Sprintf("## 💡 %s\n\n%s\n", tip.Title, tip.Content)

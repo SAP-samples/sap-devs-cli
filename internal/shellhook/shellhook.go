@@ -117,10 +117,11 @@ func profilesForOS(goos, home string) []string {
 	}
 }
 
-// Add appends comment and line to every existing profile that does not
-// already contain line as a complete line. The detected shell's profile
-// is created if it does not exist. Returns one Result per candidate
-// profile found on disk.
+// Add appends comment and line to the detected shell's primary profile.
+// Only one profile is written to avoid duplication on platforms where
+// multiple profiles are sourced in the same session (e.g. Git Bash sources
+// both .bashrc and .bash_profile). Falls back to the first existing
+// candidate if the shell cannot be detected.
 func Add(line, comment string) ([]Result, error) {
 	candidates, err := candidateProfiles()
 	if err != nil {
@@ -131,8 +132,15 @@ func Add(line, comment string) ([]Result, error) {
 		if err := ensureFileExists(candidates[idx]); err != nil {
 			return nil, fmt.Errorf("creating profile %s: %w", candidates[idx], err)
 		}
+		return addToProfiles(line, comment, []string{candidates[idx]})
 	}
-	return addToProfiles(line, comment, candidates)
+	// Unknown shell — use first existing candidate only.
+	for _, c := range candidates {
+		if _, err := os.Stat(c); err == nil {
+			return addToProfiles(line, comment, []string{c})
+		}
+	}
+	return nil, fmt.Errorf("no shell profile found; add %q to your shell profile manually", line)
 }
 
 // addToProfiles is the testable core of Add: it operates on an explicit
