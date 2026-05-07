@@ -111,8 +111,11 @@ func buildAPIURL(repoURL string) (string, error) {
 
 // compareVersions compares two "major.minor.patch" version strings (no "v" prefix).
 // Returns >0 if a > b, 0 if equal, <0 if a < b.
+// Strips git-describe suffixes (e.g. "0.0.8-2-gb16d6f0-dirty" → "0.0.8") before comparing.
 // Uses integer comparison field by field. Missing fields treated as 0.
 func compareVersions(a, b string) int {
+	a = strings.SplitN(a, "-", 2)[0]
+	b = strings.SplitN(b, "-", 2)[0]
 	aParts := strings.Split(a, ".")
 	bParts := strings.Split(b, ".")
 	n := len(aParts)

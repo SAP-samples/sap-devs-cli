@@ -47,6 +47,40 @@ func TestCheckLatest_AlreadyLatest(t *testing.T) {
 	}
 }
 
+func TestCheckLatest_DevBuildSameBase(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		json.NewEncoder(w).Encode(map[string]string{"tag_name": "v0.0.8"})
+	}))
+	defer srv.Close()
+	apiBase = srv.URL
+	t.Cleanup(func() { apiBase = "" })
+
+	_, newer, err := CheckLatest("https://example.com/owner/repo", "v0.0.8-2-gb16d6f0-dirty", "")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if newer {
+		t.Fatal("expected newer=false for dev build based on same version")
+	}
+}
+
+func TestCheckLatest_DevBuildOlderBase(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		json.NewEncoder(w).Encode(map[string]string{"tag_name": "v0.0.9"})
+	}))
+	defer srv.Close()
+	apiBase = srv.URL
+	t.Cleanup(func() { apiBase = "" })
+
+	_, newer, err := CheckLatest("https://example.com/owner/repo", "v0.0.8-5-gabcdef0", "")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !newer {
+		t.Fatal("expected newer=true when release is ahead of dev build base")
+	}
+}
+
 func TestCheckLatest_NetworkError(t *testing.T) {
 	apiBase = "http://127.0.0.1:1" // nothing listening
 	t.Cleanup(func() { apiBase = "" })
