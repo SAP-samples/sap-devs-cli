@@ -1,0 +1,15 @@
+{
+    "version": "0.0.4",
+    "architecture": {
+        "64bit": {
+            "url": "https://github.com/SAP-samples/sap-devs-cli/releases/download/v0.0.4/sap-devs_0.0.4_windows_amd64.zip",
+            "bin": [
+                "sap-devs.exe"
+            ],
+            "hash": "5fbca55a4030ba899cb9e629b21a42524703866939164afb0201fb8102895acd"
+        }
+    },
+    "homepage": "https://github.com/SAP-samples/sap-devs-cli",
+    "license": "Apache-2.0",
+    "description": "SAP developer context CLI — inject SAP knowledge into AI coding tools"
+}
