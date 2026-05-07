@@ -35,9 +35,8 @@ var serviceInstallCmd = &cobra.Command{
 		if err != nil {
 			return fmt.Errorf("could not determine binary path: %w", err)
 		}
-		binaryPath, err = filepath.EvalSymlinks(binaryPath)
-		if err != nil {
-			return fmt.Errorf("could not resolve binary path: %w", err)
+		if resolved, err := filepath.EvalSymlinks(binaryPath); err == nil {
+			binaryPath = resolved
 		}
 
 		sched := service.New(paths.CacheDir)
