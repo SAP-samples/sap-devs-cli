@@ -50,7 +50,8 @@ changelog:
   sort: asc
 
 scoops:
-  - repository:
+  - ids: [archives]
+    repository:
       owner: SAP-samples
       name: sap-devs-cli
       branch: main
@@ -61,7 +62,8 @@ scoops:
     license: Apache-2.0
 
 homebrew_casks:
-  - repository:
+  - ids: [archives]
+    repository:
       owner: SAP-samples
       name: sap-devs-cli
       branch: main
