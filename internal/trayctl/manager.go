@@ -131,10 +131,11 @@ func (m *Manager) Verify() error {
 	return nil
 }
 
-// Uninstall stops the tray and removes the binary.
+// Uninstall stops the tray, removes shortcuts, and deletes the bin directory.
 func (m *Manager) Uninstall() error {
+	_ = m.RemoveShortcuts()
 	_ = m.Stop()
-	return os.Remove(m.BinaryPath())
+	return os.RemoveAll(m.binDir())
 }
 
 // Start launches the tray process in the background.
