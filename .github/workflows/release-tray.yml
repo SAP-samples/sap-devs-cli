@@ -59,6 +59,17 @@ jobs:
       - name: Prepare tray build assets
         run: cp internal/geo/cities.json cmd/sap-devs-tray/data/cities.json
 
+      - name: Copy platform icon
+        shell: bash
+        run: |
+          if [ "${{ matrix.goos }}" = "windows" ]; then
+            cp cmd/sap-devs-tray/assets/icon.ico cmd/sap-devs-tray/sap-devs-tray.ico
+          elif [ "${{ matrix.goos }}" = "darwin" ]; then
+            cp cmd/sap-devs-tray/assets/icon.icns cmd/sap-devs-tray/icon.icns
+          else
+            cp cmd/sap-devs-tray/assets/icon.png cmd/sap-devs-tray/sap-devs-tray.png
+          fi
+
       - name: Build
         working-directory: cmd/sap-devs-tray
         shell: bash
@@ -69,17 +80,23 @@ jobs:
           CC: ${{ matrix.cc }}
         run: |
           EXT=""
-          if [ "${{ matrix.goos }}" = "windows" ]; then EXT=".exe"; fi
-          go build -ldflags "-X main.version=${VERSION}" -o "sap-devs-tray${EXT}" .
+          EXTRA_LDFLAGS=""
+          if [ "${{ matrix.goos }}" = "windows" ]; then
+            EXT=".exe"
+            EXTRA_LDFLAGS="-H windowsgui"
+          fi
+          go build -ldflags "-X main.version=${VERSION} ${EXTRA_LDFLAGS}" -o "sap-devs-tray${EXT}" .
 
       - name: Package
         shell: bash
         run: |
           ASSET="sap-devs-tray_${VERSION}_${{ matrix.goos }}_${{ matrix.goarch }}"
           if [ "${{ matrix.goos }}" = "windows" ]; then
-            7z a "${ASSET}.zip" ./cmd/sap-devs-tray/sap-devs-tray.exe
+            7z a "${ASSET}.zip" ./cmd/sap-devs-tray/sap-devs-tray.exe ./cmd/sap-devs-tray/sap-devs-tray.ico
+          elif [ "${{ matrix.goos }}" = "darwin" ]; then
+            tar czf "${ASSET}.tar.gz" -C cmd/sap-devs-tray sap-devs-tray icon.icns
           else
-            tar czf "${ASSET}.tar.gz" -C cmd/sap-devs-tray sap-devs-tray
+            tar czf "${ASSET}.tar.gz" -C cmd/sap-devs-tray sap-devs-tray sap-devs-tray.png
           fi
 
       - name: Generate checksum
