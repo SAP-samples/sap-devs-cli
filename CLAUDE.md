@@ -205,7 +205,34 @@ JSON Schema files in [content/schemas/](content/schemas/) validate `pack.yaml`, 
 
 ### Release
 
-Releases use GoReleaser triggered by `v*` tags. The binary is named `sap-devs`. Version is injected at build time via `-ldflags`. Windows `.exe` binaries (CLI and tray) are Authenticode-signed via SignPath.io as a best-effort post-release step (`.github/workflows/sign-windows.yml`), triggered after the tray workflow completes. Package manager manifests (Scoop `bucket/sap-devs.json`, Homebrew `Casks/sap-devs.rb`) are auto-generated and committed by GoReleaser on each release.
+**How to release (3 steps):**
+
+```bash
+# 1. Trigger the release workflow (creates tag + builds CLI binaries as draft)
+gh workflow run release.yml -f version=X.Y.Z
+
+# 2. Wait for BOTH workflows to complete (main release ~2min, tray ~3min after)
+gh run list --workflow=release.yml --limit 1
+gh run list --workflow=release-tray.yml --limit 1
+
+# 3. Publish only after all assets are uploaded (draft → published is irreversible)
+gh release edit vX.Y.Z --draft=false --latest --notes "release notes here"
+```
+
+**Why `workflow_dispatch` instead of tag push:** The SAP-samples org has a ruleset that blocks direct tag pushes and makes published release tags permanently immutable (even after deletion). The workflow uses `GITHUB_TOKEN` to push the tag internally, bypassing the org rule. GoReleaser creates the release as a draft (`draft: true` in `.goreleaser.yml`).
+
+**Critical: do NOT publish before the tray workflow completes.** Once published, the release becomes immutable — no more asset uploads. The tray workflow triggers automatically via `workflow_run` after the main Release workflow succeeds.
+
+**Pipeline sequence:**
+
+1. `release.yml` (workflow_dispatch) → creates tag, builds CLI binaries via GoReleaser, creates draft release
+2. `release-tray.yml` (workflow_run on Release success) → builds tray binaries for 3 platforms (CGO, ~3min), uploads to same draft release, aggregates `tray-checksums.txt`
+3. `sign-windows.yml` (workflow_run on Tray success) → Authenticode-signs Windows `.exe` binaries via SignPath.io (best-effort)
+4. Manual: `gh release edit --draft=false` publishes the release
+
+**Artifacts per release:** CLI binaries (linux/amd64, linux/arm64, darwin/amd64, darwin/arm64, windows/amd64) + tray binaries (linux/amd64, darwin/arm64, windows/amd64) + checksums + tray-checksums + Scoop manifest + Homebrew cask.
+
+**Version burned?** If a version was published then deleted, GitHub permanently blocks that tag name. Increment and move on — do not try to recreate.
 
 ### Worktrees
 
