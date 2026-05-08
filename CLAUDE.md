@@ -29,6 +29,7 @@ SAP_DEVS_DEV=1 go run . inject --dry-run
 
 - **`go test` fails on Windows** — Windows Defender blocks test binaries from `~/.config` paths. Use `go build ./...` + `go vet ./...` locally; CI (`ubuntu-latest`) is the authoritative test runner.
 - **Tray binary has its own `go.mod`** — `cmd/sap-devs-tray/` is a separate Go module. The main CLI must never import Wails. Build it separately with `CGO_ENABLED=1`.
+- **Cross-compile trayctl** — after modifying build-tagged files in `internal/trayctl/`, verify all platforms: `GOOS=windows go build ./internal/trayctl/`, `GOOS=darwin ...`, `GOOS=linux ...`. These don't need CGO (unlike the tray binary itself).
 - **Worktrees live in `.worktrees/`** — not in `~/.config` (Windows Defender). Use `git worktree add .worktrees/<name> -b feature/<name>`.
 - **`sap-devs inject` manages part of this file** — the `<!-- sap-devs:start -->` block at the bottom is auto-generated. Don't edit it manually; run `sap-devs inject` to refresh.
 - **Content loaded from `./content/` in dev mode** — set `SAP_DEVS_DEV=1` to bypass the user cache during development.
