@@ -143,7 +143,7 @@ On every command invocation (except `update` and dev builds), a background gorou
 
 ### Tray Companion (Experimental)
 
-`internal/trayctl/` manages an optional GUI tray binary (`sap-devs-tray`) downloaded from GitHub Releases. `Manager` handles download, SHA256 checksum verification (via `tray-checksums.txt`), extraction (tar.gz/zip), start/stop (process management), and version-matched updates during `sap-devs update`. `autostart.go` provides cross-platform login startup registration: Windows registry (`HKCU\...\Run`), macOS LaunchAgent plist, Linux XDG `.desktop` file. The tray binary is stored at `~/.cache/sap-devs/bin/sap-devs-tray`. Config key: `config.Tray.Autostart`.
+`internal/trayctl/` manages an optional GUI tray binary (`sap-devs-tray`) downloaded from GitHub Releases. `Manager` handles download, SHA256 checksum verification (via `tray-checksums.txt`), extraction (tar.gz/zip), start/stop (process management), and version-matched updates during `sap-devs update`. `autostart.go` provides cross-platform login startup registration: Windows registry (`HKCU\...\Run`), macOS LaunchAgent plist, Linux XDG `.desktop` file. The tray binary is stored at `~/.cache/sap-devs/bin/sap-devs-tray`. Config key: `config.Tray.Autostart`. `shortcut_windows.go` / `shortcut_darwin.go` / `shortcut_linux.go` handle native app shortcuts (Windows `.lnk`, macOS `.app` bundle, Linux `.desktop` files) — created during install, removed during uninstall. The release pipeline ships platform-specific icons alongside the binary and sets the Windows PE subsystem to GUI (`-H windowsgui`) to prevent terminal window allocation.
 
 ### Tray Binary (Optional)
 
