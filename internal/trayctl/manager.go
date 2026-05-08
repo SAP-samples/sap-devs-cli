@@ -114,6 +114,10 @@ func (m *Manager) Install() error {
 			return err
 		}
 	}
+
+	if err := m.CreateShortcuts(); err != nil {
+		fmt.Fprintf(os.Stderr, "Warning: could not create shortcuts: %v\n", err)
+	}
 	return nil
 }
 
