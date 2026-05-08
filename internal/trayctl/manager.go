@@ -97,17 +97,22 @@ func (m *Manager) Install() error {
 		return fmt.Errorf("checksum mismatch — download may be corrupt")
 	}
 
-	binBytes, err := extractBinary(archive, asset)
+	assets, err := extractAssets(archive, asset)
 	if err != nil {
-		return fmt.Errorf("could not extract binary: %w", err)
+		return fmt.Errorf("could not extract assets: %w", err)
 	}
 
 	if err := os.MkdirAll(m.binDir(), 0755); err != nil {
 		return err
 	}
-	path := m.BinaryPath()
-	if err := os.WriteFile(path, binBytes, 0755); err != nil {
-		return err
+	for name, content := range assets {
+		perm := os.FileMode(0644)
+		if name == binaryName() {
+			perm = 0755
+		}
+		if err := os.WriteFile(filepath.Join(m.binDir(), name), content, perm); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -197,10 +202,3 @@ func findChecksum(data []byte, assetName string) (string, error) {
 	return "", fmt.Errorf("asset %s not found in checksums", assetName)
 }
 
-func extractBinary(data []byte, assetFileName string) ([]byte, error) {
-	name := binaryName()
-	if strings.HasSuffix(assetFileName, ".zip") {
-		return extractFromZip(data, name)
-	}
-	return extractFromTarGz(data, name)
-}
