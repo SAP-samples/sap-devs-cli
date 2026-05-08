@@ -97,17 +97,26 @@ func (m *Manager) Install() error {
 		return fmt.Errorf("checksum mismatch — download may be corrupt")
 	}
 
-	binBytes, err := extractBinary(archive, asset)
+	assets, err := extractAssets(archive, asset)
 	if err != nil {
-		return fmt.Errorf("could not extract binary: %w", err)
+		return fmt.Errorf("could not extract assets: %w", err)
 	}
 
 	if err := os.MkdirAll(m.binDir(), 0755); err != nil {
 		return err
 	}
-	path := m.BinaryPath()
-	if err := os.WriteFile(path, binBytes, 0755); err != nil {
-		return err
+	for name, content := range assets {
+		perm := os.FileMode(0644)
+		if name == binaryName() {
+			perm = 0755
+		}
+		if err := os.WriteFile(filepath.Join(m.binDir(), name), content, perm); err != nil {
+			return err
+		}
+	}
+
+	if err := m.CreateShortcuts(); err != nil {
+		fmt.Fprintf(os.Stderr, "Warning: could not create shortcuts: %v\n", err)
 	}
 	return nil
 }
@@ -122,10 +131,11 @@ func (m *Manager) Verify() error {
 	return nil
 }
 
-// Uninstall stops the tray and removes the binary.
+// Uninstall stops the tray, removes shortcuts, and deletes the bin directory.
 func (m *Manager) Uninstall() error {
+	_ = m.RemoveShortcuts()
 	_ = m.Stop()
-	return os.Remove(m.BinaryPath())
+	return os.RemoveAll(m.binDir())
 }
 
 // Start launches the tray process in the background.
@@ -133,13 +143,7 @@ func (m *Manager) Start() error {
 	if !m.IsInstalled() {
 		return fmt.Errorf("tray is not installed — run `sap-devs tray install` first")
 	}
-	cmd := exec.Command(m.BinaryPath())
-	cmd.Stdout = nil
-	cmd.Stderr = nil
-	if err := cmd.Start(); err != nil {
-		return err
-	}
-	return cmd.Process.Release()
+	return startProcess(m.BinaryPath())
 }
 
 // Stop terminates the running tray process.
@@ -203,10 +207,3 @@ func findChecksum(data []byte, assetName string) (string, error) {
 	return "", fmt.Errorf("asset %s not found in checksums", assetName)
 }
 
-func extractBinary(data []byte, assetFileName string) ([]byte, error) {
-	name := binaryName()
-	if strings.HasSuffix(assetFileName, ".zip") {
-		return extractFromZip(data, name)
-	}
-	return extractFromTarGz(data, name)
-}
