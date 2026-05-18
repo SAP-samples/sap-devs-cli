@@ -1,18 +1,34 @@
 [
   {
     "Episode": {
+      "ID": "7BcagScmyzU",
+      "Title": "SAP Developer News Sapphire 2026 Special Edition",
+      "URL": "https://www.youtube.com/watch?v=7BcagScmyzU",
+      "Published": "2026-05-13T01:07:28Z",
+      "Description": "Live from the Sapphire 2026 event in Orlando, FL\n\nSapphire Innovation Guide\n   https://sap.to/6054BBQLiw\n\n=====================================================\n\nCHAPTER TITLES \n0:00 Intro\n0:10 Joule Studio\n2:13 Integration Suite\n3:44 ABAP",
+      "Duration": "",
+      "Tags": null
+    },
+    "Community": {
+      "Title": "SAP Developer News Special Sapphire 2026 Edition",
+      "URL": "https://community.sap.com/t5/developer-news/sap-developer-news-special-sapphire-2026-edition/ba-p/14394740",
+      "Published": "2026-05-13T01:11:51Z"
+    }
+  },
+  {
+    "Episode": {
       "ID": "bLwvT_R43HM",
       "Title": "Sapphire Preview, May Dev Challenge, MDK 2.0 | SAP Developer News",
       "URL": "https://www.youtube.com/watch?v=bLwvT_R43HM",
-      "Published": "2026-05-07T13:09:34Z",
+      "Published": "2026-05-07T19:00:06Z",
       "Description": "*Sapphire – Monday, Tuesday, and Wednesday Next Week Live From Orlando, FL*\n  • SAP Sapphire Virtual: https://sap.to/6054BBcDvK\n\n*May developer challenge - From events to intelligence: Building an event-driven RAG pipeline*\n  • Blog Post: https://sap.to/6055BBcDvz\n  • Week 1: https://sap.to/6056BBcDvM \n\n*SAP Mobile Development Kit Editor 2.0 -- One Editor, Every Platform*\n  • Blog Post: https://sap.to/6057BBcDv3\n\n*DYK #15 – Prompt Registry in Generative AI Hub*\n  • Additional Details: https://sap.to/6059BBcDvP\n\n=================================================\n\n*CHAPTER TITLES*\n0:00 Intro\n0:10 Sapphire - Preview\n1:30 May developer challenge - From events to intelligence: Building an event-driven RAG pipeline\n2:13 SAP Mobile Development Kit Editor 2.0 -- One Editor, Every Platform\n3:17 DYK #15 – Prompt Registry in Generative AI Hub",
       "Duration": "",
       "Tags": null
     },
     "Community": {
-      "Title": "SAP Developer News for April 30th, 2026",
-      "URL": "https://community.sap.com/t5/developer-news/sap-developer-news-for-april-30th-2026/ba-p/14387145",
-      "Published": "2026-04-30T19:20:00Z"
+      "Title": "SAP Developer News for May 7th, 2026",
+      "URL": "https://community.sap.com/t5/developer-news/sap-developer-news-for-may-7th-2026/ba-p/14391439",
+      "Published": "2026-05-07T19:10:00Z"
     }
   },
   {
@@ -25,7 +41,11 @@
       "Duration": "",
       "Tags": null
     },
-    "Community": null
+    "Community": {
+      "Title": "SAP Developer News for April 30th, 2026",
+      "URL": "https://community.sap.com/t5/developer-news/sap-developer-news-for-april-30th-2026/ba-p/14387145",
+      "Published": "2026-04-30T19:20:00Z"
+    }
   },
   {
     "Episode": {
@@ -165,22 +185,6 @@
       "Title": "SAP Developer News, March 5th, 2026",
       "URL": "https://community.sap.com/t5/developer-news/sap-developer-news-march-5th-2026/ba-p/14342611",
       "Published": "2026-03-05T20:10:00Z"
-    }
-  },
-  {
-    "Episode": {
-      "ID": "MI7CC4ji5z0",
-      "Title": "March Dev Challenge, RAG in SAP, BTP ABAP 2602, Integration Suite Updates | SAP Developer News",
-      "URL": "https://www.youtube.com/watch?v=MI7CC4ji5z0",
-      "Published": "2026-02-26T20:00:06Z",
-      "Description": "ITEMS\n\n*March Developer Challenge Announcement - ABAP*\n\n- Application Development and Automation Blog Posts on the SAP Community https://community.sap.com/t5/application-development-and-automation-blog-posts/bg-p/application-developmentblog-board \n- Learn about the SAP Joule for Developers, ABAP AI Capabilities https://help.sap.com/docs/abap-cloud/abap-development-tools-user-guide/joule-for-developers-abap-ai-capabilities-f14ebffef77b41bfb0746c33dcb70e84 \n\n*Implementing Retrieval-Augmented Generation (RAG) in an SAP Environment*\n\n- Implementing Retrieval-Augmented Generation (RAG) in an SAP Environment: https://community.sap.com/t5/enterprise-architecture-knowledge-base/implementing-retrieval-augmented-generation-rag-in-an-sap-environment/ta-p/14325588  \n- SAP CodeJam Topics: https://community.sap.com/t5/sap-codejam-blog-posts/sap-codejam-topics/ba-p/221407#codejam1  \n- SAP CodeJam Roadshow 2026 - Brazil edition: https://community.sap.com/t5/sap-codejam-blog-posts/sap-codejam-roadshow-2026-brazil-edition-kicking-off-in-march-and/ba-p/14317926  \n\n*SAP BTP ABAP Environment - Release 2602*\n\n- Blog post https://community.sap.com/t5/technology-blog-posts-by-sap/sap-btp-abap-environment-release-2602/ba-p/14329182 \n\n*Integration Suite updates*\n\n- What's new in SAP Cloud Integration https://help.sap.com/whats-new/cf0cb2cb149647329b5d02aa96303f56?locale=en-US\u0026lastSent=2026-02-16\u0026Component=SAP+Cloud+Application+Event+Hub;Integration%2BSuite%2BGeneral%2BFeatures;Event%2BMesh;Edge%2BIntegration%2BCell;Cloud%2BIntegration;API%2BManagement\u0026Valid_as_Of=2026-01-01:2026-03-31  \n\n*SAP Audit Log Viewer for Global Accounts and SAP Audit Log Viewer Now Automatically Enabled for All Subaccounts*\n\n- SAP Audit Log Viewer service for the Cloud Foundry Environment https://help.sap.com/docs/btp/sap-business-technology-platform/audit-log-viewer-for-cloud-foundry-environment  \n\n*DYK #5 - Search ABAP CDS Objects using Annotations*\n\n- ABAP Development Tools for Eclipse guide https://help.sap.com/docs/abap-cloud/abap-development-tools-user-guide/about-abap-development-tools-user-guide  \n\nCHAPTER TITLES  \n\n00:00 Intro \n00:07 March Developer Challenge Announcement-ABAP \n01:25 Implementing Retrieval-Augmented Generation (RAG) in an SAP Environment \n03:23 SAP BTP ABAP Environment - Release 2602 \n04:42 Integration Suite updates \n05:35 SAP Audit Log Viewer for Global Accounts and SAP Audit Log Viewer Now Automatically Enabled for All Subaccounts \n06:30 DYK #5 - Search ABAP CDS Objects using Annotations",
-      "Duration": "",
-      "Tags": null
-    },
-    "Community": {
-      "Title": "SAP Developer News, February 26th, 2026",
-      "URL": "https://community.sap.com/t5/developer-news/sap-developer-news-february-26th-2026/ba-p/14337247",
-      "Published": "2026-02-27T04:00:00Z"
     }
   }
 ]
