@@ -6,11 +6,13 @@ on:
     types: [completed]
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   sign:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     outputs:
       signed: ${{ steps.result.outputs.signed }}
     steps:

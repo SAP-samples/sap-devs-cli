@@ -6,11 +6,13 @@ on:
     types: [completed]
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   build-tray:
     if: github.event.workflow_run.conclusion == 'success'
+    permissions:
+      contents: write
     strategy:
       fail-fast: false
       matrix:
@@ -129,6 +131,8 @@ jobs:
   aggregate-checksums:
     needs: build-tray
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
 
