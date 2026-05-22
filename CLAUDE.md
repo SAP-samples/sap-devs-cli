@@ -225,10 +225,12 @@ gh release edit vX.Y.Z --draft=false --latest --notes "release notes here"
 
 **Pipeline sequence:**
 
-1. `release.yml` (workflow_dispatch) → creates tag, builds CLI binaries via GoReleaser, creates draft release
-2. `release-tray.yml` (workflow_run on Release success) → builds tray binaries for 3 platforms (CGO, ~3min), uploads to same draft release, aggregates `tray-checksums.txt`
-3. `sign-windows.yml` (workflow_run on Tray success) → Authenticode-signs Windows `.exe` binaries via SignPath.io (best-effort)
-4. Manual: `gh release edit --draft=false` publishes the release
+1. `release.yml` (workflow_dispatch, env: `release`) → creates tag, builds CLI binaries via GoReleaser, creates draft release
+2. `release-tray.yml` (workflow_run on Release success, env: `signing`) → builds tray binaries for 3 platforms (CGO, ~3min), uploads to same draft release, aggregates `tray-checksums.txt`
+3. `sign-windows.yml` (workflow_run on Tray success, env: `signing`) → **pauses for required-reviewer approval** (OSPO gate), then Authenticode-signs Windows `.exe` binaries via SignPath.io and publishes the release (best-effort)
+4. Manual: `gh release edit --draft=false` only needed if signing is skipped — otherwise the signing job publishes automatically after approval
+
+**OSPO compliance:** `main` is protected by ruleset (`main-protection`: requires PR + CI `test` check, blocks force-push and deletion, admins can bypass). Workflows that touch secrets or publish artifacts run in named environments: `release`, `signing` (required reviewer = repo admin), `news-sync`. SignPath secrets and `YOUTUBE_API_KEY` should be scoped to their respective environments rather than the org/repo level. Ruleset spec: [.github/rulesets/main-protection.json](.github/rulesets/main-protection.json).
 
 **Artifacts per release:** CLI binaries (linux/amd64, linux/arm64, darwin/amd64, darwin/arm64, windows/amd64) + tray binaries (linux/amd64, darwin/arm64, windows/amd64) + checksums + tray-checksums + Scoop manifest + Homebrew cask.
 
