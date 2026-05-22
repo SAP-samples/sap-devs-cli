@@ -11,6 +11,7 @@ permissions:
 jobs:
   sync-news:
     runs-on: ubuntu-latest
+    environment: news-sync
     steps:
       - uses: actions/checkout@v4
 

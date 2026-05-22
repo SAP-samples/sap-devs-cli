@@ -11,6 +11,7 @@ permissions:
 jobs:
   sign:
     runs-on: ubuntu-latest
+    environment: signing
     permissions:
       contents: write
     outputs:

@@ -11,6 +11,7 @@ permissions:
 jobs:
   build-tray:
     if: github.event.workflow_run.conclusion == 'success'
+    environment: signing
     permissions:
       contents: write
     strategy:
@@ -131,6 +132,7 @@ jobs:
   aggregate-checksums:
     needs: build-tray
     runs-on: ubuntu-latest
+    environment: signing
     permissions:
       contents: write
     steps:
