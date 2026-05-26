@@ -36,8 +36,3 @@ service CatalogService @(path:'/browse') {
   @readonly entity Books as SELECT from my.Books;
 }
 ```
-
-<!-- verbosity:extended -->
-### Recent CAP Releases
-
-<!-- sync:fetch url="https://cap.cloud.sap/docs/releases/2026/feb26" format="markdown" selector="main" max_lines="1000" label="CAP Release Notes (feb26)" -->
