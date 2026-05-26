@@ -86,8 +86,3 @@ grep -rnE "ieee754compatible|compat_srv_getters|compat_texts_entities|legacyLock
 #### cds test 1.0
 
 Vitest is the new primary runner (Jest/Mocha still compatible); Chai 6 is the assertion library; native `fetch()` replaces Axios for remote calls in dev (Cloud SDK still required for production BTP destinations).
-
-<!-- verbosity:extended -->
-### Recent CAP Releases
-
-<!-- sync:fetch url="https://cap.cloud.sap/docs/releases/2026/apr26" format="markdown" selector="main" max_lines="1000" label="CAP Release Notes (apr26 — preparing for CAP 10)" -->
