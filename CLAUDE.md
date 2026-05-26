@@ -86,7 +86,7 @@ Profiles ([content/profiles/](content/profiles/)) are YAML files that tag which 
 
 **Independent sync categories** run in parallel after the archive fetch: `events`, `youtube`, `news`, `discovery`, `tutorials`, `learning`. Each has its own TTL in `config.yaml`. The `news` category (default 2h) uses `runNewsFetch` which tries RSS with retry → YouTube API v3 → baseline file fallback, then caches to `<cacheDir>/news/news-cache.json`.
 
-**Phase 2 — Dynamic Content Expansion:** After the zip fetch, `sync` scans each `context.md` for `<!-- sap-devs:fetch ... -->` markers via `ScanMarkers()`, fetches remote content in parallel (Bubbletea progress UI), then writes `context.expanded.md` alongside `context.md`. `inject` prefers `context.expanded.md` when present. Marker authoring details: [docs/content-authoring.md](docs/content-authoring.md).
+**Phase 2 — Dynamic Content Expansion:** After the zip fetch, `sync` scans each `context.md` for `<!-- sap-devs:fetch ... -->` markers via `ScanMarkers()`, fetches remote content in parallel (Bubbletea progress UI), then writes `context.expanded.md` alongside `context.md`. `inject` prefers `context.expanded.md` when present. When a pack loses all its markers between syncs, `runMarkerExpansion` deletes the previously-written `context.expanded.md` so the loader falls back to the fresh `context.md` instead of serving stale fetched content. Marker authoring details: [docs/content-authoring.md](docs/content-authoring.md).
 
 ### Discovery Center
 
