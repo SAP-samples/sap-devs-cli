@@ -448,6 +448,17 @@ func runSyncPlain(plan *syncPlan, out io.Writer) error {
 	return nil
 }
 
+// removeStaleExpansion deletes packDir/context.expanded.md if it exists.
+// Used when a pack no longer has sync:fetch markers — without this the loader
+// would keep preferring the stale expansion over the fresh context.md.
+func removeStaleExpansion(packDir string) error {
+	path := filepath.Join(packDir, "context.expanded.md")
+	if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
+		return err
+	}
+	return nil
+}
+
 // runMarkerExpansion scans all official-layer packs for sync:fetch markers,
 // fetches them in parallel, and writes context.expanded.md alongside each context.md.
 // When p is non-nil, it sends SetMarkersMsg and MarkerDoneMsg to the Bubbletea program.
@@ -488,6 +499,12 @@ func runMarkerExpansion(officialCache string, engine *sapSync.Engine, p *tea.Pro
 		if hasMarkers {
 			packContexts[packID] = contextContent
 			allMarkers = append(allMarkers, markers...)
+		} else {
+			// Pack lost its markers since the previous sync — drop the stale
+			// expanded file so the loader falls back to the fresh context.md.
+			if err := removeStaleExpansion(filepath.Join(packsDir, packID)); err != nil {
+				return fmt.Errorf("clean up stale expansion for %s: %w", packID, err)
+			}
 		}
 	}
 
