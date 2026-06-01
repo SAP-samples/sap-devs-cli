@@ -61,42 +61,65 @@ The ruleset JSON in this repo is a **declarative source of truth**, not auto-app
 
 [.github/workflows/news-sync.yml](../../.github/workflows/news-sync.yml) currently does `git commit && git push` directly to `main` after fetching the news episode index. With Change 1 applied, this fails: the bot's bypass is `"pull_request"` only, not `"always"`.
 
-Replace the final commit-and-push block with a PR-based flow that uses only the built-in `gh` CLI (no third-party action introduced):
+**Operational prerequisite:** the repository setting **Settings → General → Pull Requests → Allow auto-merge** must be enabled. `gh pr merge --auto` is a no-op (errors out) if this setting is off. This is a one-time toggle, applied alongside the ruleset import.
 
-```yaml
-- name: Open or update PR if changed
-  env:
-    GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  run: |
-    git config user.name "github-actions[bot]"
-    git config user.email "github-actions[bot]@users.noreply.github.com"
-    if git diff --quiet content/packs/base/news-episodes.json 2>/dev/null; then
-      echo "No changes."
-      exit 0
-    fi
-    BRANCH="bot/news-sync-update"
-    git checkout -B "$BRANCH"
-    git add content/packs/base/news-episodes.json
-    git commit -m "chore: update news episode index"
-    git push -f origin "$BRANCH"
-    EXISTING=$(gh pr list --head "$BRANCH" --json number -q '.[0].number' || echo "")
-    if [ -z "$EXISTING" ]; then
-      PR_NUM=$(gh pr create \
-        --title "chore: update news episode index" \
-        --body  "Automated update of \`content/packs/base/news-episodes.json\`." \
-        --base  main --head "$BRANCH" \
-        --label "automation,news-sync" | tail -1 | grep -oE '[0-9]+$')
-      gh pr merge --auto --squash "$PR_NUM"
-    else
-      echo "PR #$EXISTING already open; new commit pushed to $BRANCH"
-    fi
-```
+**Workflow-level changes:**
+
+1. Expand the top-level `permissions:` block so `gh pr create` / `gh pr merge` can call the PRs API:
+
+   ```yaml
+   permissions:
+     contents: write
+     pull-requests: write
+   ```
+
+2. Add a `concurrency:` block to serialize overlapping runs. Without this, a manual `workflow_dispatch` triggered while the cron run is mid-flight will force-push to the same bot branch and invalidate the in-flight auto-merge queue:
+
+   ```yaml
+   concurrency:
+     group: news-sync
+     cancel-in-progress: false
+   ```
+
+3. Replace the final commit-and-push step with a PR-based flow using only the built-in `gh` CLI (no third-party action introduced):
+
+   ```yaml
+   - name: Open or update PR if changed
+     env:
+       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+     run: |
+       git config user.name "github-actions[bot]"
+       git config user.email "github-actions[bot]@users.noreply.github.com"
+       if git diff --quiet content/packs/base/news-episodes.json 2>/dev/null; then
+         echo "No changes."
+         exit 0
+       fi
+       BRANCH="bot/news-sync-update"
+       git checkout -B "$BRANCH"
+       git add content/packs/base/news-episodes.json
+       git commit -m "chore: update news episode index"
+       git push -f origin "$BRANCH"
+       EXISTING=$(gh pr list --head "$BRANCH" --json number -q '.[0].number' 2>/dev/null || echo "")
+       if [ -z "$EXISTING" ]; then
+         gh pr create \
+           --title "chore: update news episode index" \
+           --body  "Automated update of \`content/packs/base/news-episodes.json\`." \
+           --base  main --head "$BRANCH" \
+           --label "automation,news-sync"
+       else
+         echo "PR #$EXISTING already open; new commit pushed to $BRANCH"
+       fi
+       gh pr merge --auto --squash "$BRANCH"
+   ```
+
+   `gh pr merge` accepts the branch name directly, so no fragile output-parsing of `gh pr create`. Calling `gh pr merge --auto` on every run (whether we just opened the PR or refreshed an existing one) is idempotent — if auto-merge is already queued, it's a no-op.
 
 Behaviour:
 
 - A stable bot branch (`bot/news-sync-update`) is force-pushed each run. One PR, refreshed in place, until merged or closed.
 - `gh pr merge --auto --squash` queues the merge to fire once the `test` check passes. No human approval required (Change 1's narrow bypass).
-- If a PR is already open against the same branch (e.g., test failure left it open), the next run just refreshes the branch and skips PR creation.
+- The required `test` status check (defined in [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml)) runs on the `git push -f` event because `ci.yml` triggers on both `push` and `pull_request`. The `required_status_checks` rule matches by check-run name, so the push-triggered `test` run satisfies the gate even though `GITHUB_TOKEN`-authored PRs don't fire `pull_request`-triggered runs. **This design depends on `ci.yml` keeping `push` as a trigger** — a future maintainer who removes it must either re-add it or switch news-sync to a PAT/GitHub App token.
+- If a PR is already open against the same branch (e.g., test failure left it open), the next run just refreshes the branch and re-arms auto-merge.
 - The cron cadence stays at 2x/day. Net user-visible change: the news index updates land via reviewable PR commits instead of opaque direct pushes.
 
 ### Change 3 — Admin demotion draft (Control 7)
@@ -115,7 +138,7 @@ If the bottom bucket is fully demoted, the admin count drops from 25 to ~9 (3 le
 
 ## Data flow
 
-```
+```text
 ┌─────────────────┐
 │   Cron 2x/day   │
 └────────┬────────┘
@@ -144,11 +167,22 @@ Human-authored PRs follow the same path but without the bypass — they need 1 a
 
 ## Error handling & rollback
 
+**Deployment ordering matters.** The two repo changes must land in this order:
+
+1. Merge the workflow refactor (Change 2) to `main`.
+2. Enable **Settings → General → Pull Requests → Allow auto-merge**.
+3. Import the new ruleset (Change 1) via the GitHub UI or `gh api`.
+
+If steps are reversed (ruleset imported before the workflow lands), the next scheduled news-sync run fails with a ruleset violation on `git push origin main`. No data loss — just a failed run until the workflow change merges.
+
+**This PR is the last admin-bypassable merge before the new posture takes effect.** The very PR that introduces these changes cannot itself benefit from the bot's narrow PR-merge bypass (the bypass is only in force after the ruleset is imported). It must merge under the *current* admin-bypass ruleset, which is fine.
+
 | Scenario | Handling |
 |---|---|
 | Ruleset breaks an unforeseen workflow | `git revert` the ruleset commit and re-import via the GitHub UI / `gh api`. The old (admin-bypass) state is one revert away. |
 | news-sync PR can't auto-merge (test fails on the bot's PR) | PR stays open; next cron run force-pushes to the same branch, refreshing the diff. A human can intervene. No data loss. |
 | `bot/news-sync-update` branch grows stale during a long test outage | Force-push semantics keep the branch current; the PR auto-updates. |
+| Two news-sync runs overlap | The `concurrency: news-sync` block serializes them — second run waits for the first to finish. |
 | GitHub Actions Integration ID changes (~unprecedented) | Update `actor_id` in the ruleset. |
 | Release pipeline regression | Unaffected — release pushes a tag, not to `main`. Tags are not gated by branch rulesets. |
 
