@@ -34,11 +34,29 @@ jobs:
           YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
         run: ./sap-devs news fetch-index --output content/packs/base/news-episodes.json
 
-      - name: Commit if changed
+      - name: Open or update PR if changed
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git diff --quiet content/packs/base/news-episodes.json 2>/dev/null || \
-            (git add content/packs/base/news-episodes.json && \
-             git commit -m "chore: update news episode index" && \
-             git push)
+          if git diff --quiet content/packs/base/news-episodes.json 2>/dev/null; then
+            echo "No changes."
+            exit 0
+          fi
+          BRANCH="bot/news-sync-update"
+          git checkout -B "$BRANCH"
+          git add content/packs/base/news-episodes.json
+          git commit -m "chore: update news episode index"
+          git push -f origin "$BRANCH"
+          EXISTING=$(gh pr list --head "$BRANCH" --json number -q '.[0].number // empty' 2>/dev/null || echo "")
+          if [ -z "$EXISTING" ]; then
+            gh pr create \
+              --title "chore: update news episode index" \
+              --body  "Automated update of \`content/packs/base/news-episodes.json\`." \
+              --base  main --head "$BRANCH"
+          else
+            echo "PR #$EXISTING already open; new commit pushed to $BRANCH"
+          fi
+          gh pr merge --auto --squash "$BRANCH" || \
+            echo "::warning::auto-merge not armed; check 'Allow auto-merge' is enabled in repo Settings"
