@@ -31,7 +31,5 @@
       }
     }
   ],
-  "bypass_actors": [
-    {"actor_id": 15368, "actor_type": "Integration", "bypass_mode": "pull_request"}
-  ]
+  "bypass_actors": []
 }
