@@ -17,12 +17,12 @@
 | `.github/rulesets/main-protection.json` | Modify | Source-of-truth ruleset; `bypass_actors` swap |
 | `.github/workflows/news-sync.yml` | Modify | Schedule + fetch + open-PR-with-auto-merge (replaces direct push) |
 | `docs/superpowers/specs/2026-06-01-ospo-hardening-design.md` | Already exists | Spec, no further edits |
-| `CLAUDE.md` | Modify | Update "OSPO compliance" paragraph (line 233) to reflect new posture |
+| `CLAUDE.md` | Modify | Update "OSPO compliance" paragraph in the Release section to reflect new posture |
 | `docs/ospo-admin-demotion-draft.md` | Create | The 16-account demotion draft from Change 3 of the spec, for the project owner to act on |
 
 The ruleset and workflow files are tightly coupled — neither works correctly without the other — so they're staged in deployment order (workflow first, ruleset second) per the spec's "Deployment ordering" section.
 
-**Verification note:** The plan does not include unit tests because nothing in the change is application code. The spec defines an empirical testing plan; that's reproduced as the final task in this plan and must be run after merge + ruleset import. The closest thing to a "test" we can run pre-merge is `gh workflow run news-sync.yml` against a feature branch (covered in Task 4) and `gh api -X POST /repos/.../rulesets/{id}/check` for ruleset syntax (covered in Task 1).
+**Verification note:** The plan does not include unit tests because nothing in the change is application code. The spec defines an empirical testing plan; that's reproduced as Task 8 and must be run after merge + ruleset import. Pre-merge verification is limited to syntactic validation: `jq` for the ruleset JSON (Task 1) and `yq` + `shellcheck` for the workflow YAML and embedded shell (Tasks 2–4). GitHub's REST API exposes no dry-run/check sub-resource on rulesets, so semantic validation of `actor_id` / `actor_type` / `bypass_mode` happens server-side at import time (Task 8); a 422 there fails harmlessly without changing the active ruleset.
 
 ---
 
@@ -83,7 +83,7 @@ Replace the contents of `.github/rulesets/main-protection.json` with:
 
 The only substantive diff vs the previous version is the single `bypass_actors` entry: `RepositoryRole 5 / always` → `Integration 15368 / pull_request`. All other rules are unchanged.
 
-- [ ] **Step 3: Validate JSON syntax and ruleset semantics**
+- [ ] **Step 3: Validate JSON syntax**
 
 ```bash
 cat .github/rulesets/main-protection.json | jq . > /dev/null && echo "JSON OK"
@@ -91,18 +91,7 @@ cat .github/rulesets/main-protection.json | jq . > /dev/null && echo "JSON OK"
 
 Expected: `JSON OK`. Exit 0.
 
-For semantic validation against GitHub's API (catches typos in `actor_id`, `actor_type`, `bypass_mode` that pass `jq`):
-
-```bash
-RULESET_ID=$(gh api repos/SAP-samples/sap-devs-cli/rulesets \
-  -q '.[] | select(.name=="main-protection") | .id')
-if [ -n "$RULESET_ID" ]; then
-  gh api -X PUT "repos/SAP-samples/sap-devs-cli/rulesets/$RULESET_ID/check" \
-    --input .github/rulesets/main-protection.json 2>&1 | head -20
-fi
-```
-
-Expected: `204 No Content` (or empty body) on success. If it returns a 422 with field-level errors, fix the JSON before committing. If `RULESET_ID` is empty (ruleset doesn't exist yet on the server), this step is a no-op — that's fine; the ruleset gets created during Task 8.
+Note: there is no public GitHub REST endpoint for *dry-run* validation of a ruleset payload (the `/repos/{owner}/{repo}/rulesets/{id}` endpoints are GET / PUT / DELETE only — no `/check` sub-resource). Semantic validation of fields like `actor_id`, `actor_type`, `bypass_mode` happens server-side at import time (Task 8, Step 2). A typo there returns a 422 with field-level errors and the import fails harmlessly without changing the active ruleset.
 
 - [ ] **Step 4: Commit**
 
@@ -340,7 +329,7 @@ Expected: no errors. SC2086 / SC2155 warnings about variable expansion are accep
 
 Run: `grep -n "OSPO compliance" CLAUDE.md`
 
-Expected: matches line 233 with text starting `**OSPO compliance:** \`main\` is protected by ruleset...admins can bypass...`.
+Expected: matches the line containing the text `**OSPO compliance:** \`main\` is protected by ruleset...admins can bypass...`. Note the resulting line number — Step 2 modifies that single line.
 
 - [ ] **Step 2: Replace the paragraph**
 
