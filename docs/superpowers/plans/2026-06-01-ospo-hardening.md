@@ -209,13 +209,12 @@ Replace the entire step (currently lines ~32–39) with:
           git add content/packs/base/news-episodes.json
           git commit -m "chore: update news episode index"
           git push -f origin "$BRANCH"
-          EXISTING=$(gh pr list --head "$BRANCH" --json number -q '.[0].number' 2>/dev/null || echo "")
+          EXISTING=$(gh pr list --head "$BRANCH" --json number -q '.[0].number // empty' 2>/dev/null || echo "")
           if [ -z "$EXISTING" ]; then
             gh pr create \
               --title "chore: update news episode index" \
               --body  "Automated update of \`content/packs/base/news-episodes.json\`." \
-              --base  main --head "$BRANCH" \
-              --label "automation,news-sync"
+              --base  main --head "$BRANCH"
           else
             echo "PR #$EXISTING already open; new commit pushed to $BRANCH"
           fi
