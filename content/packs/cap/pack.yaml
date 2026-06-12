@@ -14,3 +14,5 @@ versions:
 changelog:
   - "CAP 9.8: native SQLite support via `cds.requires.db.driver: node` (Node 22.5+)"
   - "CAP 9.8: new `cds repl --ql` query mode for interactive CQL"
+  - "CAP 10 (June 2026): Node.js 22 minimum; several `compat_*` flags removed and defaults flipped — see Preparing for CAP 10 in context"
+  - "CAP 10 Java: Application Services serve only `odata-v2/v4/x4` by default — annotate services or set `cds.protocols.defaults`"

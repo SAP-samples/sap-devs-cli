@@ -14,7 +14,15 @@
 ## Quick Start
 
 ```bash
-# Install: download from GitHub Releases, extract, add to PATH
+# Install (Windows, Scoop):
+#   scoop bucket add sap-devs https://github.com/SAP-samples/sap-devs-cli.git
+#   scoop install sap-devs
+#
+# Install (macOS, Homebrew):
+#   brew tap SAP-samples/sap-devs-cli https://github.com/SAP-samples/sap-devs-cli.git
+#   brew install --cask sap-devs
+#
+# Install (Linux or manual): download from GitHub Releases, extract, add to PATH
 sap-devs version
 
 # First-time setup

@@ -35,7 +35,41 @@ graph LR
 
 ## Installation
 
-### Download
+The easiest way to install is via a package manager (Scoop on Windows, Homebrew on macOS). If you prefer not to use one — or you are on Linux — grab the archive from GitHub Releases.
+
+### Install via Scoop (Windows)
+
+[Scoop](https://scoop.sh/) is a command-line installer for Windows. Each `sap-devs` release publishes an updated manifest to the [`bucket/`](../../bucket) folder of this repo.
+
+```powershell
+scoop bucket add sap-devs https://github.com/SAP-samples/sap-devs-cli.git
+scoop install sap-devs
+```
+
+Update with:
+
+```powershell
+scoop update sap-devs
+```
+
+### Install via Homebrew Cask (macOS)
+
+Each release publishes an updated cask to the [`Casks/`](../../Casks) folder of this repo. Tap the repo, then install the cask:
+
+```bash
+brew tap SAP-samples/sap-devs-cli https://github.com/SAP-samples/sap-devs-cli.git
+brew install --cask sap-devs
+```
+
+Update with:
+
+```bash
+brew update && brew upgrade --cask sap-devs
+```
+
+> Homebrew casks are macOS-only. On Linux, use the manual download below.
+
+### Manual download (all platforms)
 
 Go to the [GitHub Releases page](https://github.com/SAP-samples/sap-devs-cli/releases) and download the archive for your platform:
 

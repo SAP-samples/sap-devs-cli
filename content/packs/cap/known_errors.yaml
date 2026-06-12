@@ -44,3 +44,17 @@
   fix: "Change the key type to `key ID : UUID;` or add `HasActiveEntity` and `HasDraftEntity` aspects"
   docs: https://cap.cloud.sap/docs/java/fiori-drafts
   tags: [draft, fiori, cds]
+
+- id: cap/java-protocol-not-served
+  pattern: "No protocol adapter found|protocol .* not served|404 .* /odata/"
+  cause: "CAP 10 Java change: Application Services now serve only `odata-v2`, `odata-v4`, and `odata-x4` by default; older or non-OData protocols (e.g. `rest`, `hcql`) are no longer auto-registered"
+  fix: "Annotate the service with `@odata`, `@rest`, or `@hcql` as needed, or set `cds.protocols.defaults: [\"*\"]` in `application.yaml` to restore the previous behavior of serving all available protocols"
+  docs: https://cap.cloud.sap/docs/java/cqn-services/application-services#configure-path-and-protocol
+  tags: [java, protocols, cap10, migration]
+
+- id: cap/assert-error-code-changed
+  pattern: "ASSERT_NOT_NULL"
+  cause: "CAP 10: `compat_assert_not_null` flag removed; `@assert:notNull` violations now surface as `ASSERT_NOT_NULL` instead of generic `ASSERT_MANDATORY`"
+  fix: "Update any error handlers or tests that match on the old `ASSERT_MANDATORY` code to use `ASSERT_NOT_NULL`. To restore old behavior temporarily in CAP 9, set `cds.features.compat_assert_not_null: true`"
+  docs: https://cap.cloud.sap/docs/releases/2026/apr26
+  tags: [migration, cap10, validation]

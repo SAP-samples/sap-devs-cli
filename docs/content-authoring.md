@@ -263,6 +263,8 @@ For a plain-text or non-HTML source, use `format="raw"`:
 
 After `sap-devs sync`, the marker is expanded in `context.expanded.md` and the fetched release notes appear directly below it. The original `context.md` is never modified — only the derived `context.expanded.md` changes.
 
+**Removing a marker.** If you delete every `<!-- sync:fetch ... -->` marker from a pack's `context.md`, the next `sap-devs sync` will delete the previously-written `context.expanded.md` for that pack. This ensures the loader falls back to the fresh `context.md` instead of continuing to serve stale fetched content.
+
 For a real-world example see [`content/packs/cap/context.md`](../content/packs/cap/context.md).
 
 ---

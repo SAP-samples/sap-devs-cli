@@ -22,17 +22,6 @@
     youtube: https://youtube.com/@sapdevs
     linkedin: https://linkedin.com/in/thomasjungsap
 
-- id: marius-obert
-  name: Marius Obert
-  role: Developer Advocate
-  org: SAP
-  focus: [btp, fiori, ui5, javascript]
-  links:
-    blog: https://community.sap.com/t5/user/viewprofilepage/user-id/381
-    github: https://github.com/IObert
-    twitter: https://x.com/IObert_
-    linkedin: https://linkedin.com/in/marius-obert
-
 - id: rich-heilman
   name: Rich Heilman
   role: Developer Advocate
@@ -53,13 +42,3 @@
     blog: https://community.sap.com/t5/user/viewprofilepage/user-id/138734
     github: https://github.com/rrainey
     linkedin: https://linkedin.com/in/rileyrainey
-
-- id: ian-thain
-  name: Ian Thain
-  role: Developer Advocate
-  org: SAP
-  focus: [abap, btp, integration]
-  links:
-    blog: https://community.sap.com/t5/user/viewprofilepage/user-id/225
-    twitter: https://x.com/ithain
-    linkedin: https://linkedin.com/in/ian-thain
