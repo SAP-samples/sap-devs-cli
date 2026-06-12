@@ -1,6 +1,54 @@
 [
   {
     "Episode": {
+      "ID": "AMfgRgIwtyg",
+      "Title": "CAP Customer Roundtable, Terraform updates, AI agents \u0026 CAP, n8n \u0026 CAP, DYK 20 | SAP Developer News",
+      "URL": "https://www.youtube.com/watch?v=AMfgRgIwtyg",
+      "Published": "2026-06-11T19:00:06Z",
+      "Description": "Items\n\n*CAP Customer Roundtable 17 June*\n- Blog post https://community.sap.com/t5/technology-blog-posts-by-sap/sap-cloud-application-programming-model-cap-customer-roundtable-june-2026/ba-p/14409654 \n- Teams meeting link https://teams.microsoft.com/meet/326256808750220?p=TOjOLvKwt79TaDUmog%20 \n- Meeting Request Download link https://cap.cloud.sap/resources/events/CAP_Customer_Roundtable_%20June_2026.ics \n\n*Terraform Provider updates*\n- Terraform Provider for SAP BTP https://registry.terraform.io/providers/SAP/btp/latest  \n- Terraform Provider for SAP Cloud Connector https://registry.terraform.io/providers/SAP/scc/latest  \n\n*Teaching AI Agents Best Practices: A Skills Workspace for CAP Development*\n- Blog post https://community.sap.com/t5/technology-blog-posts-by-sap/teaching-ai-agents-best-practices-a-skills-workspace-for-cap-development/ba-p/14414367  \n\n*n8n plugin for CAP*\n- Repo on GitHub https://github.com/sleibach/cap-n8n\n- Post on LinkedIn https://www.linkedin.com/posts/soeren-leibach_cap-now-speaks-n8n-annotations-in-workflows-share-7470229600531431425-SUkY \n\n*Did You Know? #20 cds up*\n- Capire documentation topic “Deployment” https://cap.cloud.sap/docs/guides/deploy/  \n\nChapter titles\n\n00:00 Intro \n00:07 CAP Customer Roundtable 17 June \n00:52 Terraform Provider updates \n02:02 Teaching AI Agents Best Practices: A Skills Workspace for CAP Development \n02:51 n8n plugin for CAP \n04:22 Did You Know? #20 cds up",
+      "Duration": "",
+      "Tags": null
+    },
+    "Community": {
+      "Title": "SAP Developer News, June 11th, 2026",
+      "URL": "https://community.sap.com/t5/developer-news/sap-developer-news-june-11th-2026/ba-p/14416528",
+      "Published": "2026-06-11T19:00:00Z"
+    }
+  },
+  {
+    "Episode": {
+      "ID": "RMQiC_-XaPQ",
+      "Title": "ADT for VS Code, SAP BTP ABAP Env 2605, June Dev Challenge, DYK 19 | SAP Developer News",
+      "URL": "https://www.youtube.com/watch?v=RMQiC_-XaPQ",
+      "Published": "2026-06-04T19:00:06Z",
+      "Description": "ITEMS \n\n*ADT for VS Code available on VS Code Marketplace*\n- Official announcement blog post https://community.sap.com/t5/technology-blog-posts-by-sap/abap-development-tools-for-visual-studio-code-is-now-available-on-the-vs/ba-p/14402120  \n- FAQ https://community.sap.com/t5/technology-blog-posts-by-sap/abap-development-tools-for-visual-studio-code-is-now-available-on-the-vs/ba-p/14402120  \n- GitHub Tutorial https://github.com/SAP-samples/abap-platform-rap130/tree/main \n- VS Code Marketplace Link https://marketplace.visualstudio.com/items?itemName=SAPSE.adt-vscode  \n\n*SAP BTP ABAP Environment – release 2605*\n- Blog post https://community.sap.com/t5/technology-blog-posts-by-sap/sap-btp-abap-environment-release-2605/ba-p/14403929 \n- What’s New for SAP BTP ABAP environment https://help.sap.com/whats-new/7a822d3bcaa74f31b98fa315601e9c96?locale=en-US \n- What’s New in Generative AI in ABAP Cloud https://help.sap.com/whats-new/4d359a7f8e8248e18f98e85ea0b9d83e?locale=en-US \n\n*June Developer Challenge details*\n- The challenge https://community.sap.com/t5/sap-cap-blog-posts/june-developer-challenge-cap-knowledge/ba-p/14405157  \n\n*Did You Know? #19 Standardize Class Definition*\n- ABAP Cleaner https://github.com/SAP/abap-cleaner  \n\nCHAPTER TITLES  \n\n00:00 Intro \n00:07 ADT for VS Code available on VS Code Marketplace \n02:01 SAP BTP ABAP Environment – release 2605 \n03:20 June Developer Challenge details \n04:54 Did You Know? #19 Standardize Class Definition",
+      "Duration": "",
+      "Tags": null
+    },
+    "Community": {
+      "Title": "SAP Developer News, June 4th, 2026",
+      "URL": "https://community.sap.com/t5/developer-news/sap-developer-news-june-4th-2026/ba-p/14411237",
+      "Published": "2026-06-04T19:00:00Z"
+    }
+  },
+  {
+    "Episode": {
+      "ID": "wr684y_DK7U",
+      "Title": "Mexico CodeJams, Building Agents with CAP, Sapphire BDC, Dev Challenge | SAP Developer News",
+      "URL": "https://www.youtube.com/watch?v=wr684y_DK7U",
+      "Published": "2026-05-28T19:00:06Z",
+      "Description": "*CodeJam report live from Mexico with Tom and Rich*\n  - SAP CodeJam topics https://community.sap.com/t5/sap-codejam-blog-posts/sap-codejam-topics/ba-p/221407  \n\n*Building an LLM Agent using CAP*\n  - Blog post https://community.sap.com/t5/technology-blog-posts-by-sap/building-an-llm-agent-using-cap/ba-p/14404223 \n\n*Sapphire 2026 highlights for SAP Business Data Cloud*\n  - SAP Business Data Cloud: Top New Features | SAP Sapphire 2026 Highlights https://youtu.be/cOnmdvZk5xo  \n  - “Mastering SAP Data Architecture” new course https://learning.sap.com/courses/mastering-sap-data-architecture  \n\n*Developer challenges May into June*\n  - Challenge overview (May) https://community.sap.com/t5/integration-blog-posts/may-2026-developer-challenge-from-events-to-intelligence-building-an-event/ba-p/14386772 \n  - Challenge overview (June) https://community.sap.com/t5/sap-cap-blog-posts/june-developer-challenge-cap-knowledge/ba-p/14405157\n\n*Did You Know? #18 – Sharing and synchronising profiles*\n  - ABAP Cleaner https://github.com/SAP/abap-cleaner  \n\nCHAPTER TITLES  \n\n00:00 Intro \n00:07 CodeJam report live from Mexico with Tom and Rich  \n02:00 Building an LLM Agent using CAP \n03:20 Sapphire 2026 highlights for SAP Business Data Cloud \n05:21 Developer Challenges May into June \n07:00 DYK #18 Sharing and synchronising profiles",
+      "Duration": "",
+      "Tags": null
+    },
+    "Community": {
+      "Title": "SAP Developer News, May 28th, 2026",
+      "URL": "https://community.sap.com/t5/developer-news/sap-developer-news-may-28th-2026/ba-p/14406012",
+      "Published": "2026-05-28T19:00:00Z"
+    }
+  },
+  {
+    "Episode": {
       "ID": "o1--Kx2SmQY",
       "Title": "Insight Survey Results, Fiori Apps Library, Sapphire Spain, UX Innovation Day | SAP Developer News",
       "URL": "https://www.youtube.com/watch?v=o1--Kx2SmQY",
